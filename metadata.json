@@ -1,0 +1,5 @@
+{
+  "name": "Federal Police Private Security Agency Licensing & HRMS",
+  "description": "A comprehensive management system for licensing, renewal, and human resource management of private security agencies in Ethiopia.",
+  "requestFramePermissions": ["geolocation"]
+}
