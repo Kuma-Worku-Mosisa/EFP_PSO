@@ -11,7 +11,8 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
-  ShieldCheck
+  ShieldCheck,
+  CreditCard
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -21,7 +22,9 @@ import { StatusTracking } from './StatusTracking';
 import { Renewal } from './Renewal';
 import { FormalLetter } from './FormalLetter';
 import { Agreement } from './Agreement';
+import { AgencyPayment } from './AgencyPayment';
 import { Profile } from './Profile';
+import { Notifications } from './Notifications';
 
 const Overview = () => {
   const { t, language } = useLanguage();
@@ -92,6 +95,10 @@ const Overview = () => {
               <span className="font-bold text-sm">{language === 'am' ? 'ውል ይፈርሙ' : 'Sign Agreement'}</span>
               <ShieldCheck className="w-5 h-5 text-secondary" />
             </Link>
+            <Link to="payment" className="flex items-center justify-between p-4 bg-white/10 rounded-2xl hover:bg-white/20 transition-all border border-white/10">
+              <span className="font-bold text-sm">{language === 'am' ? 'ክፍያ ይፈጽሙ' : 'Make Payment'}</span>
+              <CreditCard className="w-5 h-5 text-secondary" />
+            </Link>
           </div>
         </div>
       </div>
@@ -109,6 +116,7 @@ export const AgencyDashboard = () => {
     { icon: <RefreshCw className="w-5 h-5" />, label: t.dashboard.renewal, path: "/dashboard/renewal" },
     { icon: <Search className="w-5 h-5" />, label: t.dashboard.trackStatus, path: "/dashboard/track" },
     { icon: <ShieldCheck className="w-5 h-5" />, label: t.dashboard.agreement, path: "/dashboard/agreement" },
+    { icon: <CreditCard className="w-5 h-5" />, label: t.dashboard.payment, path: "/dashboard/payment" },
     { icon: <Award className="w-5 h-5" />, label: t.dashboard.license, path: "/dashboard/license" },
   ];
 
@@ -121,8 +129,10 @@ export const AgencyDashboard = () => {
         <Route path="renewal" element={<Renewal />} />
         <Route path="track" element={<StatusTracking />} />
         <Route path="agreement" element={<Agreement />} />
+        <Route path="payment" element={<AgencyPayment />} />
         <Route path="license" element={<LicenseViewer />} />
         <Route path="profile" element={<Profile />} />
+        <Route path="notifications" element={<Notifications />} />
       </Routes>
     </DashboardLayout>
   );

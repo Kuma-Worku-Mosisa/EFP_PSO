@@ -42,11 +42,32 @@ export const DashboardLayout = ({ children, sidebarItems, title }: DashboardLayo
   const { t, language, setLanguage } = useLanguage();
   const { user, logout } = useAuth();
 
-  const notifications = [
-    { id: 1, title: language === 'am' ? 'ማመልከቻ ተቀባይነት አግኝቷል' : 'Application Approved', message: language === 'am' ? 'የእርስዎ ማመልከቻ በፌዴራል ፖሊስ ጸድቋል' : 'Your application has been approved by Federal Police', time: '2m ago', read: false },
-    { id: 2, title: language === 'am' ? 'አዲስ መልእክት' : 'New Message', message: language === 'am' ? 'ከአስተዳዳሪው አዲስ መልእክት አለዎት' : 'You have a new message from Administrator', time: '1h ago', read: false },
-    { id: 3, title: language === 'am' ? 'ውል ይፈርሙ' : 'Sign Agreement', message: language === 'am' ? 'እባክዎን የፈቃድ ውሉን ይፈርሙ' : 'Please sign your license agreement', time: '5h ago', read: true },
-  ];
+  // Specialized notifications based on role
+  const [notifications, setNotifications] = useState(() => {
+    if (user?.role === 'agency') {
+      return [
+        { id: '1', title: language === 'am' ? 'ፈቃድ እድሳት ማሳሰቢያ' : 'License Renewal Reminder', message: language === 'am' ? 'የእርስዎ የንግድ ፈቃድ በ30 ቀናት ውስጥ ይቆያል።' : 'Your operating license expires in 30 days.', time: '2h ago', read: false, type: 'warning' },
+        { id: '2', title: language === 'am' ? 'ማመልከቻ ጸድቋል' : 'Application Approved', message: language === 'am' ? 'ለአዲስ ቅርንጫፍ ያቀረቡት ማመልከቻ ጸድቋል።' : 'Your new branch application is approved.', time: '5h ago', read: false, type: 'success' },
+        { id: '3', title: language === 'am' ? 'አስተያየት ተሰጥቷል' : 'Admin Comment', message: language === 'am' ? 'አስተዳዳሪው በሪፖርቱ ላይ አስተያየት ሰጥተዋል።' : 'Admin left a comment on your report.', time: '1d ago', read: true, type: 'message' },
+      ];
+    } else {
+      return [
+        { id: 'a1', title: language === 'am' ? 'አዲስ አመልካች ተመዝግቧል' : 'New Applicant Registered', message: language === 'am' ? '"አቢሲኒያ ሴኩሪቲ" አዲስ ተመዝግቧል።' : '"Abyssinia Security" just registered.', time: '5m ago', read: false, type: 'info' },
+        { id: 'a2', title: language === 'am' ? 'ይፋዊ ደብዳቤ ገብቷል' : 'Formal Letter Submitted', message: language === 'am' ? '"አንበሳ ጥበቃ" ደብዳቤ አስገብቷል።' : 'Lion Guard submitted a letter.', time: '1h ago', read: false, type: 'info' },
+        { id: 'a4', title: language === 'am' ? 'የወንጀል ሪፖርት ቀርቧል' : 'Criminal Report Received', message: language === 'am' ? 'የወንጀል ሪፖርት ተልኳል።' : 'A criminal alert was reported.', time: '6h ago', read: false, type: 'error' },
+      ];
+    }
+  });
+
+  const handleClearAll = () => {
+    setNotifications([]);
+  };
+
+  const handleViewAll = () => {
+    setShowNotifications(false);
+    const basePath = user?.role === 'agency' ? '/dashboard' : (user?.role === 'super_admin' ? '/super-admin/dashboard' : '/admin');
+    navigate(`${basePath}/notifications`);
+  };
 
   const handleLogout = () => {
     logout();
@@ -54,22 +75,22 @@ export const DashboardLayout = ({ children, sidebarItems, title }: DashboardLayo
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="h-screen bg-gray-50 flex overflow-hidden">
       {/* Sidebar */}
       <aside 
         className={cn(
-          "bg-[#001835] text-white transition-all duration-300 flex flex-col z-50",
+          "bg-[#001835] text-white transition-all duration-300 flex flex-col z-50 h-full",
           isSidebarOpen ? "w-72" : "w-20"
         )}
       >
-        <div className="h-20 flex items-center px-6 border-b border-white/10">
+        <div className="h-20 flex items-center px-6 border-b border-white/10 flex-shrink-0">
           <Shield className="text-secondary w-8 h-8 flex-shrink-0" />
           {isSidebarOpen && (
             <span className="ml-3 font-bold text-lg tracking-tight whitespace-nowrap">FP-LICENSING</span>
           )}
         </div>
 
-        <nav className="flex-grow py-8 px-4 space-y-2 overflow-y-auto custom-scrollbar">
+        <nav className="flex-grow py-8 px-4 space-y-2 overflow-y-auto sidebar-scrollbar">
           {sidebarItems.map((item, idx) => {
             if (item.isHeader) {
               return isSidebarOpen ? (
@@ -118,7 +139,7 @@ export const DashboardLayout = ({ children, sidebarItems, title }: DashboardLayo
       {/* Main Content */}
       <div className="flex-grow flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="h-20 bg-white border-b flex items-center justify-between px-8 z-40">
+        <header className="h-20 bg-white border-b flex items-center justify-between px-8 z-40 flex-shrink-0">
           <div className="flex items-center space-x-4">
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -173,7 +194,9 @@ export const DashboardLayout = ({ children, sidebarItems, title }: DashboardLayo
                 )}
               >
                 <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
+                {notifications.filter(n => !n.read).length > 0 && (
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
+                )}
               </button>
 
               <AnimatePresence>
@@ -186,21 +209,37 @@ export const DashboardLayout = ({ children, sidebarItems, title }: DashboardLayo
                   >
                     <div className="p-4 border-b flex justify-between items-center">
                       <h3 className="font-bold text-primary">{language === 'am' ? 'ማሳወቂያዎች' : 'Notifications'}</h3>
-                      <button className="text-[10px] text-accent font-bold uppercase tracking-wider">{language === 'am' ? 'ሁሉንም አጽዳ' : 'Clear All'}</button>
+                      <button 
+                        onClick={handleClearAll}
+                        className="text-[10px] text-accent font-bold uppercase tracking-wider hover:underline"
+                      >
+                        {language === 'am' ? 'ሁሉንም አጽዳ' : 'Clear All'}
+                      </button>
                     </div>
                     <div className="max-h-96 overflow-y-auto">
-                      {notifications.map((n) => (
-                        <div key={n.id} className={cn("p-4 border-b hover:bg-gray-50 transition-all cursor-pointer", !n.read && "bg-blue-50/50")}>
-                          <div className="flex justify-between items-start mb-1">
-                            <h4 className="text-xs font-bold text-primary">{n.title}</h4>
-                            <span className="text-[10px] text-gray-400">{n.time}</span>
+                      {notifications.length > 0 ? (
+                        notifications.map((n) => (
+                          <div key={n.id} className={cn("p-4 border-b hover:bg-gray-50 transition-all cursor-pointer", !n.read && "bg-blue-50/50")}>
+                            <div className="flex justify-between items-start mb-1">
+                              <h4 className="text-xs font-bold text-primary">{n.title}</h4>
+                              <span className="text-[10px] text-gray-400">{n.time}</span>
+                            </div>
+                            <p className="text-[11px] text-gray-500 line-clamp-2">{n.message}</p>
                           </div>
-                          <p className="text-[11px] text-gray-500 line-clamp-2">{n.message}</p>
+                        ))
+                      ) : (
+                        <div className="p-8 text-center text-gray-400 text-xs italic">
+                          {language === 'am' ? 'ምንም ማሳወቂያ የለም' : 'No notifications'}
                         </div>
-                      ))}
+                      )}
                     </div>
                     <div className="p-3 text-center border-t">
-                      <button className="text-xs font-bold text-accent hover:underline">{language === 'am' ? 'ሁሉንም ተመልከት' : 'View All Notifications'}</button>
+                      <button 
+                        onClick={handleViewAll}
+                        className="text-xs font-bold text-accent hover:underline w-full"
+                      >
+                        {language === 'am' ? 'ሁሉንም ተመልከት' : 'View All Notifications'}
+                      </button>
                     </div>
                   </motion.div>
                 )}
@@ -263,7 +302,7 @@ export const DashboardLayout = ({ children, sidebarItems, title }: DashboardLayo
         </header>
 
         {/* Content Area */}
-        <main className="flex-grow overflow-y-auto flex flex-col">
+        <main className="flex-grow overflow-y-auto flex flex-col custom-scrollbar bg-slate-50/50">
           <div className="flex-grow p-8">
             <motion.div
               initial={{ opacity: 0, y: 10 }}

@@ -18,7 +18,12 @@ import {
   Activity,
   History,
   Lock,
-  ChevronRight
+  ChevronRight,
+  XCircle,
+  Newspaper,
+  Files,
+  HelpCircle,
+  MessageSquare
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useLanguage } from '../context/LanguageContext';
@@ -44,8 +49,16 @@ import { HRMSReports } from './HRMSReports';
 import { BackupRecovery } from './BackupRecovery';
 import { PermissionsManagement } from './PermissionsManagement';
 
+import { ManageNews } from './ManageNews';
+import { ManagePublicContent } from './ManagePublicContent';
+import { ManageFAQ } from './ManageFAQ';
+import { Communications } from './Communications';
+import { Notifications } from './Notifications';
+
 const SuperOverview = () => {
   const { language } = useLanguage();
+  const isAm = language === 'am';
+  
   const performanceData = [
     { name: '00:00', load: 12 },
     { name: '04:00', load: 8 },
@@ -57,6 +70,45 @@ const SuperOverview = () => {
 
   return (
     <div className="space-y-8">
+      {/* Commission Overview Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-black text-primary uppercase tracking-tight">{isAm ? "የኮሚሽኑ ዓለም አቀፍ አጠቃላይ እይታ" : "Commission Global Overview"}</h3>
+          <span className="px-4 py-1 bg-secondary/10 text-primary text-[10px] font-black rounded-full border border-secondary/20 uppercase tracking-widest">{isAm ? "ከአስተዳዳሪ የመጣ" : "Pooled from Admin"}</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            { label: isAm ? "የተመዘገቡ ኤጀንሲዎች" : "Registered Agencies", value: "524", icon: <ShieldCheck className="w-5 h-5 text-primary" />, trend: "+2%" },
+            { label: isAm ? "የደህንነት ሰራተኞች" : "Security Personnel", value: "25,482", icon: <Users className="w-5 h-5 text-amber-500" />, trend: "+8%" },
+            { label: isAm ? "ንቁ ፈቃዶች" : "Active Licenses", value: "482", icon: <FileCheck className="w-5 h-5 text-green-500" />, trend: "+3%" },
+            { label: isAm ? "የተሸፈኑ ክልሎች" : "Regions Covered", value: "11", icon: <Map className="w-5 h-5 text-purple-500" />, trend: "Stable" },
+            { label: isAm ? "በመጠባበቅ ላይ ያሉ ማመልከቻዎች" : "Pending Applications", value: "142", icon: <Clock className="w-5 h-5 text-amber-500" />, trend: "+12%" },
+            { label: isAm ? "ንቁ ያልሆኑ ፈቃዶች" : "Inactive Licenses", value: "38", icon: <ShieldAlert className="w-5 h-5 text-red-400" />, trend: "+1%" },
+            { label: isAm ? "ውድቅ የተደረጉ ማመልከቻዎች" : "Rejected Applications", value: "24", icon: <XCircle className="w-5 h-5 text-red-500" />, trend: "-5%" },
+            { label: isAm ? "አጠቃላይ የኮሚሽን ገቢ" : "Commission Revenue", value: "ETB 14.2M", icon: <BarChart3 className="w-5 h-5 text-primary" />, trend: "+22%" },
+          ].map((stat, i) => (
+            <motion.div 
+              key={i} 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100 flex flex-col justify-between h-32"
+            >
+              <div className="flex justify-between items-start">
+                <div className="p-2 bg-gray-50 rounded-xl">{stat.icon}</div>
+                <span className={`text-[10px] font-black ${stat.trend.startsWith('+') ? 'text-green-500' : 'text-red-500'}`}>{stat.trend}</span>
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{stat.label}</p>
+                <p className="text-xl font-black text-primary">{stat.value}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      <div className="h-[2px] bg-gray-100/50 rounded-full w-full" />
+
       {/* System Health Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
@@ -143,7 +195,8 @@ const SuperOverview = () => {
 };
 
 export const SuperAdminDashboard = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isAm = language === 'am';
 
   const sidebarItems = [
     { icon: <LayoutDashboard className="w-5 h-5" />, label: "Global Overview", path: "/super-admin/dashboard" },
@@ -163,6 +216,13 @@ export const SuperAdminDashboard = () => {
     { icon: <Database className="w-5 h-5" />, label: "Backup & Recovery", path: "/super-admin/dashboard/backup" },
     { icon: <Lock className="w-5 h-5" />, label: "Permissions", path: "/super-admin/dashboard/permissions" },
     { icon: <Settings className="w-5 h-5" />, label: "System Settings", path: "/super-admin/dashboard/settings" },
+    
+    // Content Management (Mirrored from Admin)
+    { label: "Content & Communication", isHeader: true },
+    { icon: <Newspaper className="w-5 h-5" />, label: isAm ? "ዜና እና ማስታወቂያ" : "News & Announcements", path: "/super-admin/dashboard/news" },
+    { icon: <Files className="w-5 h-5" />, label: isAm ? "የህዝብ ሰነዶች" : "Public Documents", path: "/super-admin/dashboard/content" },
+    { icon: <HelpCircle className="w-5 h-5" />, label: isAm ? "FAQ አስተዳዳሪ" : "FAQ Management", path: "/super-admin/dashboard/faq-manage" },
+    { icon: <MessageSquare className="w-5 h-5" />, label: isAm ? "ኮሙኒኬሽን" : "Communications", path: "/super-admin/dashboard/communications" },
   ];
 
   return (
@@ -173,15 +233,20 @@ export const SuperAdminDashboard = () => {
         <Route path="audit" element={<AdminReports />} />
         <Route path="profile" element={<Profile />} />
         
-        {/* Admin Mirrored Routes */}
+        {/* Admin Mirrored Routes ... */}
         <Route path="admin-agencies" element={<AgenciesManagement />} />
         <Route path="admin-apps" element={<ApplicationsReview />} />
         <Route path="admin-licenses" element={<LicenseManagement />} />
         <Route path="admin-gps" element={<GPSTracking />} />
         <Route path="admin-hrms" element={<HRMSReports />} />
         <Route path="backup" element={<BackupRecovery />} />
+        <Route path="news" element={<ManageNews />} />
+        <Route path="content" element={<ManagePublicContent />} />
+        <Route path="faq-manage" element={<ManageFAQ />} />
+        <Route path="communications" element={<Communications />} />
         <Route path="permissions" element={<PermissionsManagement />} />
         <Route path="settings" element={<AdminSettings />} />
+        <Route path="notifications" element={<Notifications />} />
         
         <Route path="*" element={<SuperOverview />} />
       </Routes>

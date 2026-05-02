@@ -1,16 +1,17 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { FileText, CheckCircle2, Download, CreditCard, AlertCircle, ShieldCheck } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export const Agreement = () => {
   const { t, language } = useLanguage();
+  const navigate = useNavigate();
   const [agreed, setAgreed] = React.useState(false);
-  const [paid, setPaid] = React.useState(false);
 
-  const handlePayment = () => {
-    setPaid(true);
-    // In a real app, this would trigger a payment gateway
+  const handleConfirm = () => {
+    // Navigate to payment page after agreement
+    navigate('/dashboard/payment');
   };
 
   return (
@@ -127,54 +128,16 @@ export const Agreement = () => {
           </div>
         </div>
 
-        {!paid ? (
-          <div className="space-y-6">
-            <div className="p-6 bg-blue-50 rounded-3xl border border-blue-100 flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-white rounded-2xl shadow-sm">
-                  <CreditCard className="w-6 h-6 text-blue-500" />
-                </div>
-                <div>
-                  <p className="text-xs text-blue-600 font-bold uppercase tracking-wider">Licensing Fee</p>
-                  <p className="text-2xl font-bold text-primary">15,000 ETB</p>
-                </div>
-              </div>
-              <button 
-                onClick={handlePayment}
-                disabled={!agreed}
-                className={`px-8 py-4 blue-gradient text-white rounded-2xl font-bold hover:shadow-xl transition-all ${!agreed ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                {language === 'am' ? 'ክፈል እና አጠናቅ' : 'Pay & Finalize'}
-              </button>
-            </div>
-            <div className="flex items-center justify-center space-x-6">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Telebirr_Logo.png/1200px-Telebirr_Logo.png" alt="Telebirr" className="h-8 object-contain opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all cursor-pointer" />
-              <img src="https://upload.wikimedia.org/wikipedia/en/thumb/8/80/Commercial_Bank_of_Ethiopia_logo.png/220px-Commercial_Bank_of_Ethiopia_logo.png" alt="CBE" className="h-8 object-contain opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all cursor-pointer" />
-            </div>
-          </div>
-        ) : (
-          <div className="p-12 text-center space-y-6 bg-green-50 rounded-3xl border border-green-100">
-            <div className="w-20 h-20 bg-white text-green-500 rounded-full flex items-center justify-center mx-auto shadow-sm">
-              <CheckCircle2 className="w-10 h-10" />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-xl font-bold text-primary">
-                {language === 'am' ? 'ክፍያ ተሳክቷል!' : 'Payment Successful!'}
-              </h3>
-              <p className="text-gray-500">
-                {language === 'am' 
-                  ? 'ውልዎ ተፈርሟል እና የፈቃድ ክፍያው ተፈጽሟል። ኦፊሴላዊ ፈቃድዎ አሁን ለማውረድ ዝግጁ ነው።' 
-                  : 'Your agreement has been signed and the licensing fee has been processed. Your official license is now available for download.'}
-              </p>
-            </div>
-            <button 
-              onClick={() => window.location.href = '/dashboard/license'}
-              className="px-8 py-4 blue-gradient text-white rounded-2xl font-bold hover:shadow-xl transition-all"
-            >
-              {language === 'am' ? 'ፈቃዴን እይ' : 'View My License'}
-            </button>
-          </div>
-        )}
+        <div className="flex justify-end">
+          <button 
+            onClick={handleConfirm}
+            disabled={!agreed}
+            className={`px-12 py-5 blue-gradient text-white rounded-2xl font-bold hover:shadow-xl transition-all flex items-center space-x-3 ${!agreed ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            <span>{language === 'am' ? 'ውሉን አረጋግጥ' : 'Confirm Agreement'}</span>
+            <CheckCircle2 className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center justify-center space-x-2 text-gray-400 text-xs font-medium">

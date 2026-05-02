@@ -4,24 +4,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../context/LanguageContext';
 
 export const HRMSReports = () => {
-  const { language } = useLanguage();
-  const isAm = language === 'am';
+  const { t, language } = useLanguage();
   const [selectedAgency, setSelectedAgency] = useState<any>(null);
   const [activeReport, setActiveReport] = useState<string | null>(null);
-
-  const t = {
-    title: isAm ? "የኤጀንሲዎች HRMS ሪፖርቶች" : "Agencies HRMS Reports",
-    subtitle: isAm ? "ከኤጀንሲዎች የሰው ኃይል አስተዳደር ስርዓት የተገኙ ሪፖርቶች" : "Reports retrieved from individual agency HRMS systems",
-    search: isAm ? "ኤጀንሲ ይፈልጉ..." : "Search agency...",
-    table: {
-      agency: isAm ? "የኤጀንሲ ስም" : "Agency Name",
-      totalStaff: isAm ? "ጠቅላላ ሰራተኞች" : "Total Staff",
-      trained: isAm ? "የሰለጠኑ" : "Trained",
-      deployed: isAm ? "የተሰማሩ" : "Deployed",
-      lastUpdate: isAm ? "የመጨረሻ ዝመና" : "Last Update",
-      actions: isAm ? "እርምጃዎች" : "Actions"
-    }
-  };
 
   const reports = [
     { id: 1, agency: "Abyssinia Security", total: 450, trained: 420, deployed: 380, lastUpdate: "2024-10-15" },
@@ -31,41 +16,48 @@ export const HRMSReports = () => {
   ];
 
   const reportTypes = [
-    { id: 'monthly', name: 'Monthly Performance', icon: <Calendar className="w-5 h-5 text-blue-500" />, desc: 'Statistical overview of agency activities.' },
-    { id: 'personnel', name: 'Personnel Documents', icon: <FileText className="w-5 h-5 text-purple-500" />, desc: 'Background checks and legal IDs of guards.' },
-    { id: 'payroll', name: 'Payroll & Benefits', icon: <CreditCard className="w-5 h-5 text-green-500" />, desc: 'Wages, insurance, and social security compliance.' },
-    { id: 'incidents', name: 'Crime & Incidents', icon: <AlertCircle className="w-5 h-5 text-red-500" />, desc: 'Reported crimes or disciplinary actions by staff.' },
-    { id: 'training', name: 'Training Certs', icon: <Award className="w-5 h-5 text-amber-500" />, desc: 'Certification status of all security personnel.' },
+    { id: 'monthly', name: t.hrmsReports.reportTypes.monthly.name, icon: <Calendar className="w-5 h-5 text-blue-500" />, desc: t.hrmsReports.reportTypes.monthly.desc },
+    { id: 'personnel', name: t.hrmsReports.reportTypes.personnel.name, icon: <FileText className="w-5 h-5 text-purple-500" />, desc: t.hrmsReports.reportTypes.personnel.desc },
+    { id: 'payroll', name: t.hrmsReports.reportTypes.payroll.name, icon: <CreditCard className="w-5 h-5 text-green-500" />, desc: t.hrmsReports.reportTypes.payroll.desc },
+    { id: 'incidents', name: t.hrmsReports.reportTypes.incidents.name, icon: <AlertCircle className="w-5 h-5 text-red-500" />, desc: t.hrmsReports.reportTypes.incidents.desc },
+    { id: 'training', name: t.hrmsReports.reportTypes.training.name, icon: <Award className="w-5 h-5 text-amber-500" />, desc: t.hrmsReports.reportTypes.training.desc },
   ];
+
+  const handleExportAll = () => {
+    alert(t.hrmsReports.success);
+  };
 
   return (
     <div className="space-y-8">
       <div className="flex flex-col lg:flex-row justify-between items-end gap-6">
         <div className="space-y-2">
-          <h3 className="text-2xl font-bold text-primary">{t.title}</h3>
-          <p className="text-gray-500 text-sm">{t.subtitle}</p>
+          <h3 className="text-2xl font-bold text-primary">{t.hrmsReports.title}</h3>
+          <p className="text-gray-500 text-sm">{t.hrmsReports.subtitle}</p>
         </div>
         <div className="flex space-x-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input 
               type="text" 
-              placeholder={t.search} 
+              placeholder={t.hrmsReports.search} 
               className="pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary w-64 shadow-sm" 
             />
           </div>
-          <button className="flex items-center space-x-2 px-6 py-3 bg-primary text-white rounded-xl text-sm font-bold shadow-lg hover:shadow-xl transition-all">
+          <button 
+            onClick={handleExportAll}
+            className="flex items-center space-x-2 px-6 py-3 bg-primary text-white rounded-xl text-sm font-bold shadow-lg hover:shadow-xl transition-all"
+          >
             <Download className="w-4 h-4" />
-            <span>{isAm ? "ሪፖርት አውርድ" : "Export All"}</span>
+            <span>{t.hrmsReports.exportAll}</span>
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
-          { label: isAm ? "ጠቅላላ የደህንነት ሰራተኞች" : "Total Security Personnel", value: "25,482", icon: <Users className="text-blue-600" />, color: "bg-blue-50" },
-          { label: isAm ? "የሰለጠኑ ሰራተኞች" : "Certified Trained Staff", value: "23,120", icon: <Shield className="text-green-600" />, color: "bg-green-50" },
-          { label: isAm ? "ንቁ ስምሪቶች" : "Active Deployments", value: "18,940", icon: <MapPin className="text-purple-600" />, color: "bg-purple-50" },
+          { label: t.hrmsReports.totalPersonnel, value: "25,482", icon: <Users className="text-blue-600" />, color: "bg-blue-50" },
+          { label: t.hrmsReports.certifiedStaff, value: "23,120", icon: <Shield className="text-green-600" />, color: "bg-green-50" },
+          { label: t.hrmsReports.activeDeployments, value: "18,940", icon: <MapPin className="text-purple-600" />, color: "bg-purple-50" },
         ].map((stat, i) => (
           <div key={i} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center space-x-4">
             <div className={`p-4 rounded-2xl ${stat.color}`}>
@@ -84,12 +76,12 @@ export const HRMSReports = () => {
           <table className="w-full text-left">
             <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider font-bold">
               <tr>
-                <th className="px-8 py-6">{t.table.agency}</th>
-                <th className="px-8 py-6">{t.table.totalStaff}</th>
-                <th className="px-8 py-6">{t.table.trained}</th>
-                <th className="px-8 py-6">{t.table.deployed}</th>
-                <th className="px-8 py-6">{t.table.lastUpdate}</th>
-                <th className="px-8 py-6 text-right">{t.table.actions}</th>
+                <th className="px-8 py-6">{t.hrmsReports.table.agency}</th>
+                <th className="px-8 py-6">{t.hrmsReports.table.totalStaff}</th>
+                <th className="px-8 py-6">{t.hrmsReports.table.trained}</th>
+                <th className="px-8 py-6">{t.hrmsReports.table.deployed}</th>
+                <th className="px-8 py-6">{t.hrmsReports.table.lastUpdate}</th>
+                <th className="px-8 py-6 text-right">{t.hrmsReports.table.actions}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -125,7 +117,6 @@ export const HRMSReports = () => {
         </div>
       </div>
 
-      {/* Reports Drilldown Modal */}
       <AnimatePresence>
         {selectedAgency && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-primary/40 backdrop-blur-sm">
@@ -141,8 +132,8 @@ export const HRMSReports = () => {
                     <FileBarChart className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="text-2xl font-black text-primary uppercase tracking-tighter">Agency HRMS Reports</h4>
-                    <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">{selectedAgency.agency} Management System</p>
+                    <h4 className="text-2xl font-black text-primary uppercase tracking-tighter">{t.hrmsReports.modal.title}</h4>
+                    <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">{selectedAgency.agency} {t.hrmsReports.modal.subtitle}</p>
                   </div>
                 </div>
                 <button onClick={() => { setSelectedAgency(null); setActiveReport(null); }} className="p-2 hover:bg-gray-100 rounded-full text-gray-400">
@@ -167,7 +158,7 @@ export const HRMSReports = () => {
                         <p className="text-xs text-gray-500 font-medium leading-relaxed mt-1">{type.desc}</p>
                       </div>
                       <div className="flex items-center text-xs font-black text-primary uppercase tracking-widest pt-2">
-                        View Report <ExternalLink className="w-3 h-3 ml-2" />
+                        {t.hrmsReports.modal.viewReport} <ExternalLink className="w-3 h-3 ml-2" />
                       </div>
                     </motion.button>
                   ))}
@@ -175,21 +166,23 @@ export const HRMSReports = () => {
               ) : (
                 <div className="space-y-8 overflow-y-auto pr-2">
                   <div className="flex items-center space-x-4">
-                    <button onClick={() => setActiveReport(null)} className="text-primary font-bold text-sm hover:underline italic">← Back to selection</button>
+                    <button onClick={() => setActiveReport(null)} className="text-primary font-bold text-sm hover:underline italic">← {t.hrmsReports.modal.backToSelection}</button>
                     <div className="h-4 w-px bg-gray-200" />
                     <h5 className="text-lg font-black text-primary uppercase tracking-tighter">{reportTypes.find(r => r.id === activeReport)?.name}</h5>
                   </div>
 
                   <div className="bg-gray-50 p-8 rounded-[40px] space-y-6">
                     <div className="flex justify-between items-center">
-                      <p className="text-sm font-bold text-gray-500 italic">Showing live data for {selectedAgency.agency}</p>
-                      <button className="flex items-center space-x-2 text-xs font-black text-blue-600 bg-white px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition-all">
+                      <p className="text-sm font-bold text-gray-500 italic">{language === 'am' ? `${selectedAgency.agency} የቀጥታ መረጃዎችን በማሳየት ላይ` : `Showing live data for ${selectedAgency.agency}`}</p>
+                      <button 
+                        onClick={() => alert(`${t.hrmsReports.reportTypes[activeReport as keyof typeof t.hrmsReports.reportTypes].name} ${t.hrmsReports.success}`)}
+                        className="flex items-center space-x-2 text-xs font-black text-blue-600 bg-white px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition-all"
+                      >
                         <Download className="w-4 h-4" />
-                        <span>Download PDF</span>
+                        <span>{t.hrmsReports.modal.downloadPdf}</span>
                       </button>
                     </div>
 
-                    {/* Mock Content Based on type */}
                     {activeReport === 'incidents' ? (
                       <div className="space-y-4">
                         {[
@@ -208,7 +201,7 @@ export const HRMSReports = () => {
                     ) : (
                       <div className="h-64 flex flex-col items-center justify-center space-y-4 border-2 border-dashed border-gray-200 rounded-[32px]">
                         <FileBarChart className="w-12 h-12 text-gray-300" />
-                        <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Generating {activeReport} data visualization...</p>
+                        <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">{t.hrmsReports.modal.generating}</p>
                       </div>
                     )}
                   </div>

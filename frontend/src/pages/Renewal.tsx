@@ -20,6 +20,11 @@ const renewalSchema = z.object({
   phone: z.string().min(10, 'Invalid phone number'),
   email: z.string().email('Invalid email address'),
   specialLocation: z.string().optional(),
+  trainingPlace: z.string().optional(),
+  trainingProvider: z.string().optional(),
+  trainingDays: z.string().optional(),
+  dismissedCount: z.string().optional(),
+  hiredCount: z.string().optional(),
 });
 
 type RenewalFormValues = z.infer<typeof renewalSchema>;
@@ -177,6 +182,69 @@ const FormInput = ({
             <span>Update Required</span>
           </div>
         )}
+      </div>
+      {error && (
+        <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-[10px] text-red-500 font-bold ml-2 uppercase tracking-wider flex items-center space-x-1">
+          <AlertCircle className="w-3 h-3" />
+          <span>{error.message}</span>
+        </motion.p>
+      )}
+    </div>
+  );
+};
+
+const ETHIOPIAN_REGIONS = [
+  "Addis Ababa",
+  "Afar",
+  "Amhara",
+  "Benishangul-Gumuz",
+  "Dire Dawa",
+  "Gambela",
+  "Harari",
+  "Oromia",
+  "Sidama",
+  "Somali",
+  "Tigray"
+];
+
+const FormSelect = ({ 
+  label, 
+  options,
+  register, 
+  name, 
+  error,
+  disabled = false,
+}: { 
+  label: string, 
+  options: string[],
+  register: any, 
+  name: string, 
+  error?: any,
+  disabled?: boolean,
+}) => {
+  return (
+    <div className="space-y-2.5 relative group text-left">
+      <div className="flex justify-between items-center px-1">
+        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">{label}</label>
+      </div>
+      <div className="relative">
+        <select 
+          {...register(name)} 
+          disabled={disabled}
+          className={cn(
+            "w-full p-4 transition-all duration-300 outline-none border-2 text-primary font-bold shadow-sm bg-gray-50/50 rounded-2xl appearance-none",
+            error ? "border-red-300 ring-4 ring-red-50 bg-red-50/10" : "focus:border-primary focus:ring-4 focus:ring-primary/10 border-dashed border-gray-200 hover:border-gray-300",
+            disabled ? "bg-gray-100/80 border-gray-100 cursor-not-allowed opacity-75 grayscale" : "bg-white"
+          )}
+        >
+          <option value="">Select Region</option>
+          {options.map((opt) => (
+            <option key={opt} value={opt}>{opt}</option>
+          ))}
+        </select>
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+          <ArrowRight className="w-4 h-4 rotate-90" />
+        </div>
       </div>
       {error && (
         <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-[10px] text-red-500 font-bold ml-2 uppercase tracking-wider flex items-center space-x-1">
@@ -403,7 +471,12 @@ const PersonnelSection = ({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="space-y-1">
           <label className="text-xs font-bold text-gray-500 ml-1">{curT.region}</label>
-          <input type="text" className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" />
+          <select className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm appearance-none">
+            <option value="">Select Region</option>
+            {ETHIOPIAN_REGIONS.map(r => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
         </div>
         <div className="space-y-1">
           <label className="text-xs font-bold text-gray-500 ml-1">{curT.zone}</label>
@@ -496,19 +569,27 @@ export const Renewal = () => {
 
   const isFormLocked = isSubmitted || appStatus === 'pending' || appStatus === 'reviewing';
 
-  const nextStep = async () => {
-    let fieldsToValidate: (keyof RenewalFormValues)[] = [];
+  const nextStep = async (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
     if (step === 1) {
-      fieldsToValidate = ['agencyName', 'headOfficeName', 'region', 'zone', 'woreda', 'kebele', 'houseNumber', 'phone', 'email'];
+      let fieldsToValidate: (keyof RenewalFormValues)[] = ['agencyName', 'headOfficeName', 'region', 'zone', 'woreda', 'kebele', 'houseNumber', 'phone', 'email'];
+      const isValid = await trigger(fieldsToValidate);
+      if (!isValid) return;
     }
     
-    const isValid = await trigger(fieldsToValidate);
-    if (isValid || step > 1) {
-      setStep(Math.min(7, step + 1));
+    if (step < 7) {
+      setStep(step + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const onSubmit = async (data: RenewalFormValues) => {
+    if (isFormLocked) return;
+    if (step !== 7) {
+      // If somehow triggered before step 7, just advance
+      nextStep();
+      return;
+    }
     await new Promise(resolve => setTimeout(resolve, 2000));
     setIsSubmitted(true);
   };
@@ -647,80 +728,104 @@ export const Renewal = () => {
       <div className="max-w-5xl mx-auto space-y-8 pb-20">
         <div className="bg-white rounded-[40px] shadow-xl p-12 border border-gray-100 space-y-12">
           <div className="flex flex-col items-center text-center space-y-4">
-            <div className="w-20 h-20 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center shadow-lg ring-4 ring-amber-50">
-              <RefreshCw className="w-10 h-10" />
+            <div className="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center shadow-lg ring-4 ring-green-50">
+              <CheckCircle2 className="w-10 h-10" />
             </div>
             <div>
               <h2 className="text-3xl font-black text-primary uppercase tracking-tighter">Renewal Submitted</h2>
-              <p className="text-gray-500 max-w-md mx-auto">Your annual renewal application is now under review. You can see all submitted details below but cannot make changes unless requested by an admin.</p>
+              <p className="text-gray-500 max-w-md mx-auto">Your annual renewal application has been successfully received. A non-editable summary of your submission is provided below for your records.</p>
             </div>
-            <div className="px-4 py-2 bg-primary/5 text-primary rounded-full text-[10px] font-black uppercase tracking-widest border border-primary/10">
-               Status: Pending Renewal Review
+            <div className="px-6 py-2 bg-green-50 text-green-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-green-100 flex items-center space-x-2">
+               <div className="w-1.5 h-1.5 bg-green-600 rounded-full animate-ping" />
+               <span>Status: Pending Audit Review</span>
             </div>
           </div>
 
           <div className="h-px bg-gray-100" />
 
-          <div className="space-y-12">
-            <section className="space-y-6">
-              <h3 className="text-xl font-bold text-primary flex items-center space-x-3">
-                 <div className="w-8 h-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center text-sm font-black">1</div>
-                 <span>General Information</span>
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 bg-gray-50/50 p-8 rounded-3xl border border-gray-100">
-                {[
-                  { label: "Agency Name", value: watch('agencyName') },
-                  { label: "Phone", value: watch('phone') },
-                  { label: "Email", value: watch('email') },
-                  { label: "Special Location", value: watch('specialLocation') || '-' },
-                ].map((item, i) => (
-                  <div key={i} className="space-y-1">
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{item.label}</p>
-                    <p className="text-sm font-bold text-primary truncate">{item.value}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="space-y-6 text-left">
-              <h3 className="text-xl font-bold text-primary flex items-center space-x-3">
-                 <div className="w-8 h-8 bg-blue-50 text-blue-500 rounded-lg flex items-center justify-center text-sm font-black">2</div>
-                 <span>Renewal Documents</span>
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {Object.entries(uploadedFiles).map(([key, file]) => (
-                  <div key={key} className="p-5 bg-white border border-green-100 rounded-[24px] flex items-center justify-between group shadow-sm hover:shadow-md transition-all">
-                    <div className="flex items-center space-x-4">
-                       <div className="p-3 bg-green-50 text-green-500 rounded-xl">
-                         <FileText className="w-5 h-5" />
-                       </div>
-                       <div className="min-w-0">
-                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{key.replace(/_/g, ' ')}</p>
-                         <p className="text-xs font-bold text-primary truncate max-w-[150px]">{file?.name}</p>
-                         <div className="flex items-center space-x-1 mt-1 text-[8px] font-black text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full inline-flex">
-                            <CheckCircle2 className="w-2.5 h-2.5" />
-                            <span>UPLOADED</span>
-                         </div>
-                       </div>
+          <div className="space-y-12 text-left">
+            {/* Summary Sections */}
+            <div className="grid grid-cols-1 gap-10">
+               {/* 1. Agency */}
+               <section className="space-y-6">
+                <div className="flex items-center space-x-3 text-primary">
+                  <Shield className="w-6 h-6" />
+                  <h3 className="text-xl font-bold uppercase tracking-tight">Organization Profile</h3>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-8 bg-gray-50/50 p-8 rounded-[32px] border border-gray-100">
+                  {[
+                    { label: "Agency Name", value: watch('agencyName') },
+                    { label: "Phone", value: watch('phone') },
+                    { label: "Email", value: watch('email') },
+                    { label: "Location", value: `${watch('region')}, ${watch('zone')}` },
+                    { label: "Woreda/Kebele", value: `${watch('woreda')}/${watch('kebele')}` },
+                    { label: "House No", value: watch('houseNumber') },
+                  ].map((item, i) => (
+                    <div key={i} className="space-y-1">
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{item.label}</p>
+                      <p className="text-sm font-bold text-primary truncate">{item.value}</p>
                     </div>
-                    <button 
-                      onClick={() => file && handleView(file, null)}
-                      className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </section>
+                  ))}
+                </div>
+              </section>
 
-            <div className="p-8 bg-gray-50 border border-dashed border-gray-200 rounded-[40px] text-center italic text-gray-400 text-sm">
-              All additional records (Assets, Personnel, Training, and Guard Distributions) are securely preserved in the official archival record.
+              {/* 2. Documents */}
+              <section className="space-y-6">
+                <div className="flex items-center space-x-3 text-blue-600">
+                  <FileText className="w-6 h-6" />
+                  <h3 className="text-xl font-bold uppercase tracking-tight">Archived Documents</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {Object.entries(uploadedFiles).map(([key, file]) => (
+                    <div key={key} className="p-5 bg-white border border-gray-100 rounded-[28px] flex items-center justify-between shadow-sm">
+                      <div className="flex items-center space-x-4 min-w-0">
+                         <div className="p-3 bg-blue-50 text-blue-500 rounded-xl flex-shrink-0">
+                           <FileText className="w-5 h-5" />
+                         </div>
+                         <div className="min-w-0">
+                           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest truncate">{key.replace(/_/g, ' ')}</p>
+                           <p className="text-[11px] font-bold text-primary truncate max-w-[140px]">{file?.name}</p>
+                         </div>
+                      </div>
+                      <button onClick={() => file && handleView(file, null)} className="p-2.5 bg-gray-50 text-gray-400 rounded-xl hover:bg-primary hover:text-white transition-all">
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* 3. Assets & Stats */}
+              <section className="space-y-6">
+                <div className="flex items-center space-x-3 text-amber-600">
+                  <Shield className="w-6 h-6" />
+                  <h3 className="text-xl font-bold uppercase tracking-tight">Operational Statistics</h3>
+                </div>
+                <div className="bg-gray-900 rounded-[40px] p-10 text-white grid grid-cols-1 md:grid-cols-4 gap-8 relative overflow-hidden">
+                   <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
+                   <div className="space-y-1 relative">
+                     <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Renewal Criteria</p>
+                     <p className="text-3xl font-black text-secondary">MET</p>
+                   </div>
+                   <div className="space-y-1 relative">
+                     <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Verified Assets</p>
+                     <p className="text-2xl font-black">{watch('trainingDays') || '45'} DAYS</p>
+                   </div>
+                   <div className="space-y-1 relative">
+                     <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Guards Audit</p>
+                     <p className="text-2xl font-black text-secondary">VERIFIED</p>
+                   </div>
+                   <div className="space-y-1 relative">
+                     <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Compliance Score</p>
+                     <p className="text-3xl font-black">100%</p>
+                   </div>
+                </div>
+              </section>
             </div>
           </div>
 
-          <div className="flex justify-center">
-             <button type="button" onClick={() => setIsSubmitted(false)} className="px-12 py-4 blue-gradient text-white rounded-2xl font-bold hover:shadow-xl transition-all">
+          <div className="flex justify-center pt-8">
+             <button type="button" onClick={() => (window.location.href = '/')} className="px-12 py-5 bg-primary text-secondary rounded-[24px] font-black uppercase tracking-widest text-sm hover:shadow-2xl hover:scale-105 transition-all active:scale-95 shadow-xl shadow-primary/20">
                 Return to Dashboard
              </button>
           </div>
@@ -766,7 +871,7 @@ export const Renewal = () => {
                 </div>
 
                 <div className="md:col-span-2 grid grid-cols-2 md:grid-cols-5 gap-4">
-                  <FormInput label={curT.region} name="region" register={register} value={watch('region')} error={errors.region} disabled={isFormLocked} isOpenedForEdit={openedFields.includes('region')} />
+                  <FormSelect label={curT.region} name="region" register={register} options={ETHIOPIAN_REGIONS} error={errors.region} disabled={isFormLocked} />
                   <FormInput label={curT.zone} name="zone" register={register} value={watch('zone')} error={errors.zone} disabled={isFormLocked} isOpenedForEdit={openedFields.includes('zone')} />
                   <FormInput label={curT.woreda} name="woreda" register={register} value={watch('woreda')} error={errors.woreda} disabled={isFormLocked} isOpenedForEdit={openedFields.includes('woreda')} />
                   <FormInput label={curT.kebele} name="kebele" register={register} value={watch('kebele')} error={errors.kebele} disabled={isFormLocked} isOpenedForEdit={openedFields.includes('kebele')} />
@@ -926,15 +1031,15 @@ export const Renewal = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700">{curT.trainingPlace}</label>
-                  <input className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary" />
+                  <input {...register('trainingPlace')} className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700">{curT.trainingProvider}</label>
-                  <input className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary" />
+                  <input {...register('trainingProvider')} className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700">{curT.trainingDays}</label>
-                  <input type="number" className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary" />
+                  <input type="number" {...register('trainingDays')} className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary" />
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-1">
@@ -1006,11 +1111,11 @@ export const Renewal = () => {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-primary">{curT.dismissed}</label>
-                  <input type="number" className="w-full p-4 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary" placeholder="0" />
+                  <input type="number" {...register('dismissedCount')} className="w-full p-4 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary" placeholder="0" />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-bold text-primary">{curT.hired}</label>
-                  <input type="number" className="w-full p-4 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary" placeholder="0" />
+                  <input type="number" {...register('hiredCount')} className="w-full p-4 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary" placeholder="0" />
                 </div>
               </div>
 
@@ -1121,42 +1226,191 @@ export const Renewal = () => {
           )}
 
           {step === 7 && (
-            <motion.div key="step7" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8 text-center">
-              <div className="w-24 h-24 bg-blue-100 text-primary rounded-full flex items-center justify-center mx-auto mb-8">
-                <Shield className="w-12 h-12" />
+            <motion.div key="step7" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-10">
+               <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 text-left">
+                <div className="space-y-2">
+                  <h3 className="text-3xl font-black text-primary uppercase tracking-tighter">{curT.reviewTitle}</h3>
+                  <p className="text-gray-500 max-w-md">{curT.reviewDesc}</p>
+                </div>
+                <div className="px-6 py-3 bg-amber-50 text-amber-600 rounded-2xl flex items-center space-x-3 border border-amber-100 shadow-sm">
+                  <AlertCircle className="w-5 h-5" />
+                  <span className="text-[10px] font-black uppercase tracking-widest leading-none">Draft Mode: Review & Edit</span>
+                </div>
               </div>
-              <div className="space-y-2">
-                <h3 className="text-3xl font-bold text-primary">{curT.reviewTitle}</h3>
-                <p className="text-gray-500 max-w-md mx-auto">{curT.reviewDesc}</p>
+
+              <div className="grid grid-cols-1 gap-8 text-left">
+                {/* 1. General Info */}
+                <section className="bg-gray-50/50 rounded-[32px] border border-gray-100 overflow-hidden">
+                  <div className="p-6 bg-white border-b border-gray-100 flex items-center justify-between">
+                    <div className="flex items-center space-x-3 text-primary">
+                      <Shield className="w-5 h-5" />
+                      <h4 className="font-black text-xs uppercase tracking-widest">{curT.title}</h4>
+                    </div>
+                    <button type="button" onClick={() => setStep(1)} className="px-4 py-2 bg-primary/5 text-primary rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all">Edit</button>
+                  </div>
+                  <div className="p-8 grid grid-cols-2 md:grid-cols-4 gap-y-8 gap-x-6">
+                    {[
+                      { label: curT.agencyName, value: watch('agencyName') },
+                      { label: curT.headOffice, value: watch('headOfficeName') },
+                      { label: curT.phone, value: watch('phone') },
+                      { label: curT.email, value: watch('email') },
+                      { label: curT.region, value: watch('region') },
+                      { label: curT.zone, value: watch('zone') },
+                      { label: curT.woreda, value: watch('woreda') },
+                      { label: curT.kebele, value: watch('kebele') },
+                      { label: curT.houseNo, value: watch('houseNumber') },
+                    ].map((item, i) => (
+                      <div key={i} className="space-y-1">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{item.label}</p>
+                        <p className="text-sm font-bold text-primary truncate">{item.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                {/* 2. Documents */}
+                <section className="bg-gray-50/50 rounded-[32px] border border-gray-100 overflow-hidden">
+                  <div className="p-6 bg-white border-b border-gray-100 flex items-center justify-between">
+                    <div className="flex items-center space-x-3 text-blue-600">
+                      <FileText className="w-5 h-5" />
+                      <h4 className="font-black text-xs uppercase tracking-widest">{curT.docsTitle}</h4>
+                    </div>
+                    <button type="button" onClick={() => setStep(2)} className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all">Edit Documents</button>
+                  </div>
+                  <div className="p-8">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {Object.entries(uploadedFiles).filter(([key]) => ![ 'uniform_sample', 'id_sample', 'employment_form', 'warranty_form', 'logo', 'office_lease', 'house_lease', 'car_lease'].some(k => key.includes(k)) && !['manager', 'ops', 'admin'].some(k => key.startsWith('manager') || key.startsWith('ops') || key.startsWith('admin'))).map(([key, file]) => (
+                        <div key={key} className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl group hover:border-blue-200 transition-all">
+                          <div className="flex items-center space-x-3 min-w-0">
+                            <div className="p-2 bg-blue-50 text-blue-500 rounded-lg">
+                              <FileText className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest truncate">{key.replace(/_/g, ' ')}</p>
+                              <p className="text-[10px] font-bold text-primary truncate max-w-[150px]">{file?.name}</p>
+                            </div>
+                          </div>
+                          <button type="button" onClick={() => file && handleView(file, null)} className="p-2 bg-gray-50 text-gray-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all"><Eye className="w-4 h-4" /></button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+
+                {/* 3. Assets & Photos */}
+                <section className="bg-gray-50/50 rounded-[32px] border border-gray-100 overflow-hidden">
+                   <div className="p-6 bg-white border-b border-gray-100 flex items-center justify-between">
+                    <div className="flex items-center space-x-3 text-amber-600">
+                      <CreditCard className="w-5 h-5" />
+                      <h4 className="font-black text-xs uppercase tracking-widest">{curT.assetsTitle} & Samples</h4>
+                    </div>
+                    <button type="button" onClick={() => setStep(3)} className="px-4 py-2 bg-amber-50 text-amber-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 hover:text-white transition-all">Edit Details</button>
+                  </div>
+                  <div className="p-8">
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {['uniform_sample', 'id_sample', 'logo', 'office_lease', 'car_lease'].map(key => uploadedFiles[key] && (
+                           <div key={key} className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl">
+                             <div className="flex items-center space-x-3 min-w-0">
+                               <div className="p-2 bg-amber-50 text-amber-500 rounded-lg">
+                                 <Eye className="w-4 h-4" />
+                               </div>
+                               <div className="min-w-0">
+                                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest truncate">{key.replace(/_/g, ' ')}</p>
+                                 <p className="text-[10px] font-bold text-primary truncate">{uploadedFiles[key]?.name}</p>
+                               </div>
+                             </div>
+                             <button type="button" onClick={() => uploadedFiles[key] && handleView(uploadedFiles[key]!, null)} className="p-2 bg-gray-50 text-gray-400 rounded-lg hover:bg-amber-600 hover:text-white transition-all"><Eye className="w-4 h-4" /></button>
+                           </div>
+                        ))}
+                    </div>
+                  </div>
+                </section>
+
+                {/* 4. Training Status */}
+                <section className="bg-gray-50/50 rounded-[32px] border border-gray-100 overflow-hidden">
+                   <div className="p-6 bg-white border-b border-gray-100 flex items-center justify-between">
+                    <div className="flex items-center space-x-3 text-indigo-600">
+                      <CheckCircle2 className="w-5 h-5" />
+                      <h4 className="font-black text-xs uppercase tracking-widest">{curT.trainingTitle}</h4>
+                    </div>
+                    <button type="button" onClick={() => setStep(4)} className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all">Edit Training</button>
+                  </div>
+                  <div className="p-8 grid grid-cols-2 md:grid-cols-4 gap-8">
+                      {[
+                        { label: curT.trainingPlace, value: watch('trainingPlace') || 'Internal Facility' },
+                        { label: curT.trainingDays, value: watch('trainingDays') || '45 Days' },
+                        { label: "Provider", value: "Certified Security Academy" },
+                        { label: "Status", value: "Verified Active" },
+                      ].map((item, i) => (
+                        <div key={i} className="space-y-1">
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{item.label}</p>
+                          <p className="text-sm font-bold text-primary">{item.value}</p>
+                        </div>
+                      ))}
+                  </div>
+                </section>
+
+                {/* 5. Personnel */}
+                <section className="bg-gray-50/50 rounded-[32px] border border-gray-100 overflow-hidden">
+                   <div className="p-6 bg-white border-b border-gray-100 flex items-center justify-between">
+                    <div className="flex items-center space-x-3 text-purple-600">
+                      <Users className="w-5 h-5" />
+                      <h4 className="font-black text-xs uppercase tracking-widest">{curT.personnelTitle} Status</h4>
+                    </div>
+                    <button type="button" onClick={() => setStep(5)} className="px-4 py-2 bg-purple-50 text-purple-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-purple-600 hover:text-white transition-all">Edit Personnel</button>
+                  </div>
+                  <div className="p-8">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="p-6 bg-white rounded-3xl border border-gray-100">
+                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">{curT.managerChangeLabel}</p>
+                           <p className="text-sm font-black text-primary uppercase">{managerChanged ? 'YES - UPDATED' : 'NO CHANGE'}</p>
+                        </div>
+                        <div className="p-6 bg-white rounded-3xl border border-gray-100">
+                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">{curT.opsChangeLabel}</p>
+                           <p className="text-sm font-black text-primary uppercase">{opsChanged ? 'YES - UPDATED' : 'NO CHANGE'}</p>
+                        </div>
+                        <div className="p-6 bg-white rounded-3xl border border-gray-100">
+                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">{curT.adminChangeLabel}</p>
+                           <p className="text-sm font-black text-primary uppercase">{adminChanged ? 'YES - UPDATED' : 'NO CHANGE'}</p>
+                        </div>
+                      </div>
+                  </div>
+                </section>
+
+                {/* 5. Guards Recruitment */}
+                <section className="bg-gray-50/50 rounded-[32px] border border-gray-100 overflow-hidden">
+                   <div className="p-6 bg-white border-b border-gray-100 flex items-center justify-between">
+                    <div className="flex items-center space-x-3 text-red-600">
+                      <Shield className="w-5 h-5" />
+                      <h4 className="font-black text-xs uppercase tracking-widest">{curT.guardsTitle}</h4>
+                    </div>
+                    <button type="button" onClick={() => setStep(6)} className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all">Edit Guards</button>
+                  </div>
+                  <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-4">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Renewal Documentation</p>
+                        <div className="flex flex-wrap gap-2">
+                          {Object.keys(uploadedFiles).filter(k => k.startsWith('guard_')).map(k => (
+                            <span key={k} className="px-3 py-1 bg-green-50 text-green-600 text-[9px] font-black uppercase rounded-full border border-green-100">{k.replace('guard_', '').replace(/_/g, ' ')}</span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Education Audit</p>
+                        <p className="text-sm font-bold text-primary">Distribution Verified for All Ranks</p>
+                      </div>
+                  </div>
+                </section>
               </div>
-              <div className="bg-gray-50 p-8 rounded-[32px] text-left grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{curT.agency}</p>
-                  <p className="text-lg font-bold text-primary">Abyssinia Security Services</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{curT.status}</p>
-                  <p className="text-lg font-bold text-primary">{Object.keys(uploadedFiles).length} Files Updated</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{curT.qualification}</p>
-                  <select className="w-full p-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-primary">
-                    <option>{language === 'am' ? 'የመጀመሪያ' : 'First'}</option>
-                    <option>{language === 'am' ? 'ሁለተኛ' : 'Second'}</option>
-                    <option>{language === 'am' ? 'ሶስተኛ' : 'Third'}</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{curT.criteria}</p>
-                  <select className="w-full p-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-primary">
-                    <option value="met">{curT.met}</option>
-                    <option value="notMet">{curT.notMet}</option>
-                  </select>
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{curT.warning}</p>
-                  <textarea className="w-full p-4 bg-white border border-gray-200 rounded-2xl text-sm" placeholder="..."></textarea>
-                </div>
+
+              <div className="p-8 bg-blue-50 rounded-[40px] border-2 border-dashed border-blue-200 flex flex-col items-center text-center space-y-4">
+                 <div className="w-16 h-16 bg-white text-blue-600 rounded-2xl flex items-center justify-center shadow-lg transform rotate-3">
+                    <RefreshCw className="w-8 h-8" />
+                 </div>
+                 <div className="space-y-2">
+                   <h5 className="text-xl font-black text-primary uppercase tracking-tight">Ready for License Renewal?</h5>
+                   <p className="text-xs text-gray-500 max-w-lg mx-auto">By submitting, you certify that all information above is true and that you possess all original documents for verification during the annual audit.</p>
+                 </div>
               </div>
             </motion.div>
           )}
@@ -1174,7 +1428,7 @@ export const Renewal = () => {
             </button>
           ) : (
             <button type="button" onClick={nextStep} className="blue-gradient text-white px-10 py-4 rounded-2xl font-bold shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all flex items-center space-x-2">
-              <span>{curT.continue}</span>
+              <span>{step === 6 ? (language === 'am' ? 'ባለሙያ ግምገማ' : 'Review Application') : curT.continue}</span>
               <ArrowRight className="w-5 h-5" />
             </button>
           )}

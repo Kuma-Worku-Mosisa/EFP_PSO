@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Mail, Shield, Briefcase, MapPin, Camera, Save, Fingerprint } from 'lucide-react';
+import { User, Mail, Shield, Briefcase, MapPin, Camera, Save, Fingerprint, Key, Eye, EyeOff, Check, X } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -10,15 +10,47 @@ export const Profile = () => {
   const isAm = language === 'am';
 
   const [formData, setFormData] = useState({
-    name: user?.name || '',
+    firstName: user?.name?.split(' ')[0] || '',
+    middleName: user?.name?.split(' ')[1] || '',
+    lastName: user?.name?.split(' ')[2] || '',
+    username: user?.username || '',
     email: user?.email || '',
     phone: user?.role === 'agency' ? '+251 911 223344' : '+251 988 776655',
     location: user?.role === 'agency' ? 'Addis Ababa, Bole Subcity' : 'Federal Police HQ, Addis Ababa',
     bio: user?.role === 'agency' ? 'Authorized manager for Abyssinia Security Services. Managing over 500 security personnel.' : 'Verified administrator for the Federal Police PSA licensing commission.'
   });
 
+  const [passwords, setPasswords] = useState({
+    password: '',
+    confirmPassword: ''
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const getPasswordStrength = (pass: string) => {
+    if (!pass) return { label: '', color: 'bg-gray-200', text: '' };
+    if (pass.length < 6) return { label: isAm ? 'ደካማ' : 'Weak', color: 'bg-red-500', text: 'text-red-500' };
+    if (pass.length < 10) return { label: isAm ? 'መካከለኛ' : 'Medium', color: 'bg-amber-500', text: 'text-amber-500' };
+    return { label: isAm ? 'ጠንካራ' : 'Strong', color: 'bg-green-500', text: 'text-green-500' };
+  };
+
+  const strength = getPasswordStrength(passwords.password);
+  const confirmStrength = getPasswordStrength(passwords.confirmPassword);
+  const passwordsMatch = passwords.password && passwords.confirmPassword && passwords.password === passwords.confirmPassword;
+
+  const PasswordStrengthBar = ({ str }: { str: any }) => (
+    <div className="space-y-1">
+      <div className="mt-2 h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+        <div 
+          className={`h-full transition-all ${str.color}`} 
+          style={{ width: str.label === (isAm ? 'ደካማ' : 'Weak') ? '33%' : str.label === (isAm ? 'መካከለኛ' : 'Medium') ? '66%' : str.label === '' ? '0%' : '100%' }} 
+        />
+      </div>
+      <p className={`text-[10px] font-bold uppercase tracking-tight ${str.text}`}>{str.label}</p>
+    </div>
+  );
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -32,6 +64,10 @@ export const Profile = () => {
   };
 
   const handleSave = () => {
+    if (passwords.password && passwords.password !== passwords.confirmPassword) {
+      alert(isAm ? 'የይለፍ ቃሎች አይዛመዱም' : 'Passwords do not match');
+      return;
+    }
     setIsSaving(true);
     setTimeout(() => {
       setIsSaving(false);
@@ -39,6 +75,8 @@ export const Profile = () => {
       setTimeout(() => setSaveSuccess(false), 3000);
     }, 1500);
   };
+
+  const fullName = `${formData.firstName} ${formData.middleName} ${formData.lastName}`.trim();
 
   return (
     <div className="max-w-4xl space-y-8 pb-12">
@@ -69,7 +107,7 @@ export const Profile = () => {
       </div>
 
       <div className="pt-48 text-center space-y-2">
-        <h2 className="text-4xl font-black text-primary tracking-tight uppercase">{formData.name}</h2>
+        <h2 className="text-4xl font-black text-primary tracking-tight uppercase">{fullName || (isAm ? 'ተጠቃሚ' : 'User')}</h2>
         <div className="flex items-center justify-center space-x-3">
           <span className="h-[2px] w-8 bg-secondary rounded-full" />
           <p className="text-gray-500 font-black uppercase text-xs tracking-widest flex items-center">
@@ -87,20 +125,46 @@ export const Profile = () => {
               {isAm ? 'የግል መረጃ' : 'Personal Information'}
             </h3>
             
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">{isAm ? 'መጀመሪያ ስም' : 'First Name'}</label>
+                <input 
+                  type="text" 
+                  value={formData.firstName}
+                  onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                  className="w-full px-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-medium" 
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">{isAm ? 'የአባት ስም' : 'Middle Name'}</label>
+                <input 
+                  type="text" 
+                  value={formData.middleName}
+                  onChange={(e) => setFormData({...formData, middleName: e.target.value})}
+                  className="w-full px-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-medium" 
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">{isAm ? 'የአያት ስም' : 'Last Name'}</label>
+                <input 
+                  type="text" 
+                  value={formData.lastName}
+                  onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                  className="w-full px-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-medium" 
+                />
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">{isAm ? 'ሙሉ ስም' : 'Full Name'}</label>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input 
-                    type="text" 
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full pl-11 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-medium" 
-                  />
-                </div>
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">{isAm ? 'የተጠቃሚ ስም' : 'Username'}</label>
+                <input 
+                  type="text" 
+                  value={formData.username}
+                  onChange={(e) => setFormData({...formData, username: e.target.value})}
+                  className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-medium" 
+                />
               </div>
-
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">{isAm ? 'ኢሜል' : 'Email Address'}</label>
                 <div className="relative">
@@ -113,7 +177,62 @@ export const Profile = () => {
                   />
                 </div>
               </div>
+            </div>
 
+            <div className="h-[1px] bg-gray-50" />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">{isAm ? 'አዲስ የይለፍ ቃል' : 'New Password'}</label>
+                <div className="relative">
+                  <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input 
+                    type={showPassword ? "text" : "password"}
+                    value={passwords.password}
+                    onChange={(e) => setPasswords({...passwords, password: e.target.value})}
+                    placeholder="••••••••"
+                    className="w-full pl-11 pr-12 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-medium" 
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                <PasswordStrengthBar str={strength} />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">{isAm ? 'የይለፍ ቃል ያረጋግጡ' : 'Confirm Password'}</label>
+                <div className="relative">
+                  <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input 
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={passwords.confirmPassword}
+                    onChange={(e) => setPasswords({...passwords, confirmPassword: e.target.value})}
+                    placeholder="••••••••"
+                    className={`w-full pl-11 pr-20 py-4 bg-gray-50 border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-medium ${passwords.confirmPassword ? (passwordsMatch ? 'border-green-500 ring-2 ring-green-100' : 'border-red-500 ring-2 ring-red-100') : 'border-gray-100'}`}
+                  />
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-2">
+                    <button 
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="text-gray-400 hover:text-primary transition-colors"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                    {passwords.confirmPassword && (
+                      passwordsMatch ? <Check className="w-5 h-5 text-green-500" /> : <X className="w-5 h-5 text-red-500" />
+                    )}
+                  </div>
+                </div>
+                <PasswordStrengthBar str={confirmStrength} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">{isAm ? 'ስልክ ቁጥር' : 'Phone Number'}</label>
                 <input 

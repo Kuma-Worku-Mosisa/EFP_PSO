@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 interface User {
   name: string;
   email: string;
+  username?: string;
   role: 'admin' | 'agency' | 'super_admin';
   initials: string;
   agencyName?: string;
@@ -31,6 +32,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       mockUser = {
         name: 'Abenezer Kassa',
         email: 'abenezer.manager@abyssinia.com',
+        username: 'abenezer_k',
         role: 'agency',
         initials: 'AK',
         agencyName: 'Abyssinia Security Services'
@@ -39,6 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       mockUser = {
         name: 'Super Admin',
         email: 'super.admin@fedpolice.gov.et',
+        username: 'super_admin',
         role: 'super_admin',
         initials: 'SA'
       };
@@ -46,6 +49,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       mockUser = {
         name: 'Admin User',
         email: 'admin.verify@fedpolice.gov.et',
+        username: 'admin_verify',
         role: 'admin',
         initials: 'AU'
       };
