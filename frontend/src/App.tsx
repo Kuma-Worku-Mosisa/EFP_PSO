@@ -4,7 +4,7 @@ import { LanguageProvider } from "./context/LanguageContext";
 import { AuthProvider } from "./context/AuthContext";
 import { Layout } from "./components/Layout";
 import { Home } from "./pages/Home";
-import { Login } from "./pages/Login";
+import { Login } from "./pages/auth/login/Login";
 import { AgencyDashboard } from "./pages/AgencyDashboard";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { Requirements } from "./pages/Requirements";

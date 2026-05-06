@@ -1,26 +1,173 @@
-import React from 'react';
-import { useLanguage } from '../context/LanguageContext';
-import { CheckCircle2, Circle, FileText, Upload, Shield, Users, MapPin, CreditCard, ArrowRight, ArrowLeft, AlertCircle, Eye, RefreshCw, X, Trash2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { cn } from '../lib/utils';
-import { DigitalPayment } from '../components/DigitalPayment';
+// --- LocationFields Component ---
+type Kebele = { id: number; name: string; woredaId: number };
+function LocationFields({
+  register,
+  errors,
+  watch,
+  isFormLocked,
+  openedFields,
+}: any) {
+  const {
+    regions,
+    zones,
+    woredas,
+    kebeles,
+    setRegionId,
+    setZoneId,
+    setWoredaId,
+    regionId,
+    zoneId,
+    woredaId,
+  } = useLocationData();
+
+  // Watch form values
+  const selectedRegion = watch("region");
+  const selectedZone = watch("zone");
+  const selectedWoreda = watch("woreda");
+  const selectedKebele = watch("kebele");
+
+  // Find regionId by name or id
+  React.useEffect(() => {
+    if (selectedRegion) {
+      const region = regions.find(
+        (r) => r.id === Number(selectedRegion) || r.name === selectedRegion,
+      );
+      if (region) setRegionId(region.id);
+    }
+  }, [selectedRegion, regions, setRegionId]);
+
+  React.useEffect(() => {
+    if (selectedZone) {
+      const zone = zones.find(
+        (z) => z.id === Number(selectedZone) || z.name === selectedZone,
+      );
+      if (zone) setZoneId(zone.id);
+    }
+  }, [selectedZone, zones, setZoneId]);
+
+  React.useEffect(() => {
+    if (selectedWoreda) {
+      const woreda = woredas.find(
+        (w) => w.id === Number(selectedWoreda) || w.name === selectedWoreda,
+      );
+      if (woreda) setWoredaId(woreda.id);
+    }
+  }, [selectedWoreda, woredas, setWoredaId]);
+
+  return (
+    <div className="md:col-span-2 grid grid-cols-2 md:grid-cols-5 gap-4">
+      <FormSelect
+        label="Region"
+        name="region"
+        register={register}
+        value={selectedRegion}
+        onChange={(val) => {
+          register("region").onChange({
+            target: { value: val, name: "region" },
+          });
+          setRegionId(Number(val));
+        }}
+        options={regions.map((r) => ({ value: r.id, label: r.name }))}
+        error={errors.region}
+        disabled={isFormLocked}
+        placeholder="Select Region"
+      />
+      <FormSelect
+        label="Zone"
+        name="zone"
+        register={register}
+        value={selectedZone}
+        onChange={(val) => {
+          register("zone").onChange({ target: { value: val, name: "zone" } });
+          setZoneId(Number(val));
+        }}
+        options={zones.map((z) => ({ value: z.id, label: z.name }))}
+        error={errors.zone}
+        disabled={isFormLocked || !regionId}
+        placeholder="Select Zone"
+      />
+      <FormSelect
+        label="Woreda"
+        name="woreda"
+        register={register}
+        value={selectedWoreda}
+        onChange={(val) => {
+          register("woreda").onChange({
+            target: { value: val, name: "woreda" },
+          });
+          setWoredaId(Number(val));
+        }}
+        options={woredas.map((w) => ({ value: w.id, label: w.name }))}
+        error={errors.woreda}
+        disabled={isFormLocked || !zoneId}
+        placeholder="Select Woreda"
+      />
+      <FormSelect
+        label="Kebele"
+        name="kebele"
+        register={register}
+        value={selectedKebele}
+        onChange={(val) =>
+          register("kebele").onChange({
+            target: { value: val, name: "kebele" },
+          })
+        }
+        options={kebeles.map((k) => ({ value: k.id, label: k.name }))}
+        error={errors.kebele}
+        disabled={isFormLocked || !woredaId}
+        placeholder="Select Kebele"
+      />
+      <FormInput
+        label="House No"
+        name="houseNumber"
+        register={register}
+        value={watch("houseNumber")}
+        error={errors.houseNumber}
+        disabled={isFormLocked}
+        isOpenedForEdit={openedFields.includes("houseNumber")}
+      />
+    </div>
+  );
+}
+import React from "react";
+import { useLanguage } from "../context/LanguageContext";
+import {
+  CheckCircle2,
+  FileText,
+  Upload,
+  Shield,
+  Users,
+  CreditCard,
+  ArrowRight,
+  ArrowLeft,
+  AlertCircle,
+  Eye,
+  RefreshCw,
+  X,
+  Trash2,
+} from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+import { cn } from "../lib/utils";
+
+import { apiRequest } from "../lib/api";
 
 const applicationSchema = z.object({
   // Step 1: Agency Info
-  agencyName: z.string().min(3, 'Agency name is required'),
-  headOfficeName: z.string().min(3, 'Head office name is required'),
+  agencyName: z.string().min(3, "Agency name is required"),
+  headOfficeName: z.string().min(3, "Head office name is required"),
   branchOfficeName: z.string().optional(),
-  region: z.string().min(1, 'Region is required'),
-  zone: z.string().min(1, 'Zone is required'),
-  woreda: z.string().min(1, 'Woreda is required'),
-  kebele: z.string().min(1, 'Kebele is required'),
-  houseNumber: z.string().min(1, 'House number is required'),
-  phone: z.string().min(10, 'Invalid phone number'),
+  region: z.string().min(1, "Region is required"),
+  zone: z.string().min(1, "Zone is required"),
+  woreda: z.string().min(1, "Woreda is required"),
+  kebele: z.string().min(1, "Kebele is required"),
+  houseNumber: z.string().min(1, "House number is required"),
+  phone: z.string().min(10, "Invalid phone number"),
   fax: z.string().optional(),
-  email: z.string().email('Invalid email address'),
+  email: z.string().email("Invalid email address"),
   specialLocation: z.string().optional(),
 
   // Step 3 & 4: Assets
@@ -30,23 +177,23 @@ const applicationSchema = z.object({
   hasStoreHouse: z.boolean().optional(),
 
   // Step 5: Personnel (Simplified for schema, but UI will have all)
-  managerName: z.string().min(3, 'Manager name is required'),
-  opsHeadName: z.string().min(3, 'Operations head name is required'),
-  adminHeadName: z.string().min(3, 'Administration head name is required'),
+  managerName: z.string().min(3, "Manager name is required"),
+  opsHeadName: z.string().min(3, "Operations head name is required"),
+  adminHeadName: z.string().min(3, "Administration head name is required"),
 });
 
 type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
-const ViewerModal = ({ 
-  isOpen, 
-  onClose, 
-  file, 
-  previewUrl 
-}: { 
-  isOpen: boolean, 
-  onClose: () => void, 
-  file: File | null, 
-  previewUrl: string | null 
+const ViewerModal = ({
+  isOpen,
+  onClose,
+  file,
+  previewUrl,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  file: File | null;
+  previewUrl: string | null;
 }) => {
   const [rotation, setRotation] = React.useState(0);
 
@@ -56,16 +203,16 @@ const ViewerModal = ({
 
   if (!isOpen || !file) return null;
 
-  const isImage = file.type.startsWith('image/');
-  const isPDF = file.type === 'application/pdf';
+  const isImage = file.type.startsWith("image/");
+  const isPDF = file.type === "application/pdf";
 
   const handleRotate = () => {
-    setRotation(prev => (prev + 90) % 360);
+    setRotation((prev) => (prev + 90) % 360);
   };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-primary/40 backdrop-blur-sm">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
@@ -75,10 +222,12 @@ const ViewerModal = ({
           <div className="flex items-center space-x-4">
             <div>
               <h3 className="font-bold text-primary">{file.name}</h3>
-              <p className="text-xs text-gray-500 uppercase tracking-widest">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+              <p className="text-xs text-gray-500 uppercase tracking-widest">
+                {(file.size / 1024 / 1024).toFixed(2)} MB
+              </p>
             </div>
             {isImage && (
-              <button 
+              <button
                 onClick={handleRotate}
                 className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-bold text-primary transition-all ml-4"
               >
@@ -87,27 +236,27 @@ const ViewerModal = ({
               </button>
             )}
           </div>
-          <button 
+          <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition-all"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
-        
+
         <div className="flex-1 overflow-auto p-4 md:p-8 bg-gray-100 flex items-center justify-center">
           {isImage && previewUrl ? (
             <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
-              <img 
-                src={previewUrl} 
-                alt="Preview" 
-                className="max-w-full max-h-full object-contain rounded-xl shadow-lg transition-transform duration-300" 
+              <img
+                src={previewUrl}
+                alt="Preview"
+                className="max-w-full max-h-full object-contain rounded-xl shadow-lg transition-transform duration-300"
                 style={{ transform: `rotate(${rotation}deg)` }}
               />
             </div>
           ) : isPDF && previewUrl ? (
-            <iframe 
-              src={`${previewUrl}#toolbar=0`} 
+            <iframe
+              src={`${previewUrl}#toolbar=0`}
               className="w-full h-full rounded-xl border-0 bg-white shadow-lg"
               title="PDF Preview"
             />
@@ -118,10 +267,13 @@ const ViewerModal = ({
               </div>
               <div>
                 <p className="font-bold text-primary">Preview Not Available</p>
-                <p className="text-sm text-gray-500">This file type cannot be previewed directly. You can download it to verify contents.</p>
+                <p className="text-sm text-gray-500">
+                  This file type cannot be previewed directly. You can download
+                  it to verify contents.
+                </p>
               </div>
-              <button 
-                onClick={() => window.open(previewUrl || '', '_blank')}
+              <button
+                onClick={() => window.open(previewUrl || "", "_blank")}
                 className="px-6 py-2 bg-primary text-white rounded-xl font-bold text-sm hover:shadow-lg transition-all"
               >
                 Download File
@@ -134,55 +286,66 @@ const ViewerModal = ({
   );
 };
 
-const FormInput = ({ 
-  label, 
+const FormInput = ({
+  label,
   value,
-  register, 
-  name, 
-  placeholder, 
+  register,
+  name,
+  placeholder,
   type = "text",
   error,
   disabled = false,
-  isOpenedForEdit = false
-}: { 
-  label: string, 
-  value?: string,
-  register: any, 
-  name: string, 
-  placeholder?: string, 
-  type?: string,
-  error?: any,
-  disabled?: boolean,
-  isOpenedForEdit?: boolean
+  isOpenedForEdit = false,
+}: {
+  label: string;
+  value?: string;
+  register: any;
+  name: string;
+  placeholder?: string;
+  type?: string;
+  error?: any;
+  disabled?: boolean;
+  isOpenedForEdit?: boolean;
 }) => {
   const isFilled = value && value.length > 0;
-  
+
   return (
     <div className="space-y-2.5 relative group">
       <div className="flex justify-between items-center px-1">
-        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">{label}</label>
+        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
+          {label}
+        </label>
         {isFilled && !error && (
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center space-x-1.5 text-[10px] text-green-500 font-black uppercase tracking-widest">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="flex items-center space-x-1.5 text-[10px] text-green-500 font-black uppercase tracking-widest"
+          >
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>Verified</span>
           </motion.div>
         )}
       </div>
       <div className="relative">
-        <input 
-          {...register(name)} 
+        <input
+          {...register(name)}
           type={type}
           disabled={disabled && !isOpenedForEdit}
           className={cn(
             "w-full p-4 transition-all duration-300 outline-none border-2 text-primary font-bold shadow-sm",
-            !isFilled 
-              ? "bg-gray-50/50 border-dashed border-gray-200 hover:border-gray-300 focus:bg-white" 
+            !isFilled
+              ? "bg-gray-50/50 border-dashed border-gray-200 hover:border-gray-300 focus:bg-white"
               : "bg-white border-solid border-green-200 shadow-green-500/5",
-            error ? "border-red-300 ring-4 ring-red-50 bg-red-50/10" : "focus:border-primary focus:ring-4 focus:ring-primary/10",
-            disabled && !isOpenedForEdit ? "bg-gray-100/80 border-gray-100 cursor-not-allowed opacity-75 grayscale" : "rounded-2xl",
-            isOpenedForEdit && "border-amber-400 ring-4 ring-amber-50 animate-pulse border-dashed bg-amber-50/20"
-          )} 
-          placeholder={placeholder} 
+            error
+              ? "border-red-300 ring-4 ring-red-50 bg-red-50/10"
+              : "focus:border-primary focus:ring-4 focus:ring-primary/10",
+            disabled && !isOpenedForEdit
+              ? "bg-gray-100/80 border-gray-100 cursor-not-allowed opacity-75 grayscale"
+              : "rounded-2xl",
+            isOpenedForEdit &&
+              "border-amber-400 ring-4 ring-amber-50 animate-pulse border-dashed bg-amber-50/20",
+          )}
+          placeholder={placeholder}
         />
         {isOpenedForEdit && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-2 text-amber-600 bg-white px-2 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-tighter shadow-sm border border-amber-100">
@@ -192,7 +355,11 @@ const FormInput = ({
         )}
       </div>
       {error && (
-        <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-[10px] text-red-500 font-bold ml-2 uppercase tracking-wider flex items-center space-x-1">
+        <motion.p
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-[10px] text-red-500 font-bold ml-2 uppercase tracking-wider flex items-center space-x-1"
+        >
           <AlertCircle className="w-3 h-3" />
           <span>{error.message}</span>
         </motion.p>
@@ -201,53 +368,131 @@ const FormInput = ({
   );
 };
 
-const ETHIOPIAN_REGIONS = [
-  "Addis Ababa",
-  "Afar",
-  "Amhara",
-  "Benishangul-Gumuz",
-  "Dire Dawa",
-  "Gambela",
-  "Harari",
-  "Oromia",
-  "Sidama",
-  "Somali",
-  "Tigray"
-];
+// --- Dynamic Location Data ---
+type Region = { id: number; name: string };
+type Zone = { id: number; name: string; regionId: number };
+type Woreda = { id: number; name: string; zoneId: number };
 
-const FormSelect = ({ 
-  label, 
+function useLocationData() {
+  const [regions, setRegions] = React.useState<Region[]>([]);
+  const [zones, setZones] = React.useState<Zone[]>([]);
+  const [woredas, setWoredas] = React.useState<Woreda[]>([]);
+  const [kebeles, setKebeles] = React.useState<Kebele[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [regionId, setRegionId] = React.useState<number | null>(null);
+  const [zoneId, setZoneId] = React.useState<number | null>(null);
+  const [woredaId, setWoredaId] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    setLoading(true);
+    apiRequest<{ data: Region[] }>("/location/regions")
+      .then((res) => setRegions(res.data))
+      .finally(() => setLoading(false));
+  }, []);
+
+  React.useEffect(() => {
+    if (regionId) {
+      setLoading(true);
+      apiRequest<{ data: Zone[] }>(`/location/regions/${regionId}/zones`)
+        .then((res) => setZones(res.data))
+        .finally(() => setLoading(false));
+    } else {
+      setZones([]);
+    }
+    setZoneId(null);
+    setWoredas([]);
+    setWoredaId(null);
+    setKebeles([]);
+  }, [regionId]);
+
+  React.useEffect(() => {
+    if (zoneId) {
+      setLoading(true);
+      apiRequest<{ data: Woreda[] }>(`/location/zones/${zoneId}/woredas`)
+        .then((res) => setWoredas(res.data))
+        .finally(() => setLoading(false));
+    } else {
+      setWoredas([]);
+    }
+    setWoredaId(null);
+    setKebeles([]);
+  }, [zoneId]);
+
+  React.useEffect(() => {
+    if (woredaId) {
+      setLoading(true);
+      apiRequest<{ data: Kebele[] }>(`/location/woredas/${woredaId}/kebeles`)
+        .then((res) => setKebeles(res.data))
+        .finally(() => setLoading(false));
+    } else {
+      setKebeles([]);
+    }
+  }, [woredaId]);
+
+  return {
+    regions,
+    zones,
+    woredas,
+    kebeles,
+    loading,
+    setRegionId,
+    setZoneId,
+    setWoredaId,
+    regionId,
+    zoneId,
+    woredaId,
+  };
+}
+
+const FormSelect = ({
+  label,
   options,
-  register, 
-  name, 
+  register,
+  name,
   error,
   disabled = false,
-}: { 
-  label: string, 
-  options: string[],
-  register: any, 
-  name: string, 
-  error?: any,
-  disabled?: boolean,
+  onChange,
+  value,
+  placeholder = "Select...",
+}: {
+  label: string;
+  options: { value: string | number; label: string }[];
+  register: any;
+  name: string;
+  error?: any;
+  disabled?: boolean;
+  onChange?: (value: string | number) => void;
+  value?: string | number;
+  placeholder?: string;
 }) => {
   return (
     <div className="space-y-2.5 relative group">
       <div className="flex justify-between items-center px-1">
-        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">{label}</label>
+        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
+          {label}
+        </label>
       </div>
       <div className="relative">
-        <select 
-          {...register(name)} 
+        <select
+          {...register(name)}
+          value={value ?? ""}
+          onChange={(e) => onChange?.(e.target.value)}
           disabled={disabled}
           className={cn(
             "w-full p-4 transition-all duration-300 outline-none border-2 text-primary font-bold shadow-sm bg-gray-50/50 rounded-2xl appearance-none",
-            error ? "border-red-300 ring-4 ring-red-50 bg-red-50/10" : "focus:border-primary focus:ring-4 focus:ring-primary/10 border-dashed border-gray-200 hover:border-gray-300",
-            disabled ? "bg-gray-100/80 border-gray-100 cursor-not-allowed opacity-75 grayscale" : "bg-white"
+            error
+              ? "border-red-300 ring-4 ring-red-50 bg-red-50/10"
+              : "focus:border-primary focus:ring-4 focus:ring-primary/10 border-dashed border-gray-200 hover:border-gray-300",
+            disabled
+              ? "bg-gray-100/80 border-gray-100 cursor-not-allowed opacity-75 grayscale"
+              : "bg-white",
           )}
         >
-          <option value="">Select Region</option>
+          <option value="">{placeholder}</option>
           {options.map((opt) => (
-            <option key={opt} value={opt}>{opt}</option>
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
           ))}
         </select>
         <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
@@ -255,7 +500,11 @@ const FormSelect = ({
         </div>
       </div>
       {error && (
-        <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-[10px] text-red-500 font-bold ml-2 uppercase tracking-wider flex items-center space-x-1">
+        <motion.p
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-[10px] text-red-500 font-bold ml-2 uppercase tracking-wider flex items-center space-x-1"
+        >
           <AlertCircle className="w-3 h-3" />
           <span>{error.message}</span>
         </motion.p>
@@ -264,26 +513,26 @@ const FormSelect = ({
   );
 };
 
-const FileUpload = ({ 
-  label, 
-  type = 'document', 
+const FileUpload = ({
+  label,
+  type = "document",
   required = true,
   file,
   onUpload,
   onDelete,
   onView,
   disabled = false,
-  isOpenedForEdit = false
-}: { 
-  label: string, 
-  type?: 'document' | 'photo', 
-  required?: boolean,
-  file?: File | null,
-  onUpload: (file: File) => void,
-  onDelete: () => void,
-  onView: (file: File, url: string | null) => void,
-  disabled?: boolean,
-  isOpenedForEdit?: boolean
+  isOpenedForEdit = false,
+}: {
+  label: string;
+  type?: "document" | "photo";
+  required?: boolean;
+  file?: File | null;
+  onUpload: (file: File) => void;
+  onDelete: () => void;
+  onView: (file: File, url: string | null) => void;
+  disabled?: boolean;
+  isOpenedForEdit?: boolean;
 }) => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
@@ -308,13 +557,16 @@ const FileUpload = ({
   const isDisabled = disabled && !isOpenedForEdit;
 
   return (
-    <div className={cn(
-      "group relative rounded-[28px] border-2 transition-all duration-500 p-5",
-      file 
-        ? "bg-white border-solid border-green-200 shadow-lg shadow-green-500/5 ring-4 ring-green-50/30" 
-        : "bg-gray-50/50 border-dashed border-gray-200 hover:border-primary/40 hover:bg-white cursor-pointer hover:shadow-xl",
-      isOpenedForEdit && "border-amber-400 bg-amber-50/20 ring-4 ring-amber-50 animate-pulse border-dashed"
-    )}>
+    <div
+      className={cn(
+        "group relative rounded-[28px] border-2 transition-all duration-500 p-5",
+        file
+          ? "bg-white border-solid border-green-200 shadow-lg shadow-green-500/5 ring-4 ring-green-50/30"
+          : "bg-gray-50/50 border-dashed border-gray-200 hover:border-primary/40 hover:bg-white cursor-pointer hover:shadow-xl",
+        isOpenedForEdit &&
+          "border-amber-400 bg-amber-50/20 ring-4 ring-amber-50 animate-pulse border-dashed",
+      )}
+    >
       {file && (
         <div className="absolute -top-3 -right-3 z-10">
           <div className="flex items-center space-x-1.5 bg-green-500 text-white px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl shadow-green-500/30 border-2 border-white animate-in zoom-in">
@@ -324,40 +576,58 @@ const FileUpload = ({
         </div>
       )}
 
-      <input 
-        type="file" 
+      <input
+        type="file"
         ref={fileInputRef}
         onChange={handleFileChange}
         className="hidden"
         disabled={isDisabled}
-        accept={type === 'photo' ? "image/*" : ".pdf,.doc,.docx"}
+        accept={type === "photo" ? "image/*" : ".pdf,.doc,.docx"}
       />
-      
+
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center space-x-5 flex-1 min-w-0">
-          <div className={cn(
-            "w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500 flex-shrink-0 shadow-sm",
-            file ? "bg-green-50 text-green-500" : "bg-white border text-gray-400 group-hover:scale-105 group-hover:text-primary group-hover:shadow-lg"
-          )}>
+          <div
+            className={cn(
+              "w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500 flex-shrink-0 shadow-sm",
+              file
+                ? "bg-green-50 text-green-500"
+                : "bg-white border text-gray-400 group-hover:scale-105 group-hover:text-primary group-hover:shadow-lg",
+            )}
+          >
             {isOpenedForEdit ? (
               <RefreshCw className="w-8 h-8 animate-spin-slow text-amber-500" />
+            ) : file ? (
+              <FileText className="w-8 h-8" />
+            ) : type === "photo" ? (
+              <Users className="w-8 h-8" />
             ) : (
-              file ? <FileText className="w-8 h-8" /> : (type === 'photo' ? <Users className="w-8 h-8" /> : <Upload className="w-8 h-8" />)
+              <Upload className="w-8 h-8" />
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <h4 className={cn(
-              "font-black text-sm uppercase tracking-tight truncate",
-              file ? "text-green-600" : "text-primary/70 group-hover:text-primary"
-            )}>
+            <h4
+              className={cn(
+                "font-black text-sm uppercase tracking-tight truncate",
+                file
+                  ? "text-green-600"
+                  : "text-primary/70 group-hover:text-primary",
+              )}
+            >
               {file ? file.name : label}
             </h4>
             <div className="flex items-center space-x-2 mt-1">
               <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                {file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : (type === 'photo' ? 'JPG, PNG Max 2MB' : 'PDF, DOCX Max 5MB')}
+                {file
+                  ? `${(file.size / 1024 / 1024).toFixed(2)} MB`
+                  : type === "photo"
+                    ? "JPG, PNG Max 2MB"
+                    : "PDF, DOCX Max 5MB"}
               </span>
               {required && !file && (
-                <span className="text-[10px] text-amber-500 font-black uppercase tracking-widest bg-amber-50 px-1.5 rounded-md">Required</span>
+                <span className="text-[10px] text-amber-500 font-black uppercase tracking-widest bg-amber-50 px-1.5 rounded-md">
+                  Required
+                </span>
               )}
             </div>
           </div>
@@ -375,14 +645,14 @@ const FileUpload = ({
             </button>
           ) : (
             <div className="flex items-center space-x-2">
-              <button 
+              <button
                 type="button"
                 onClick={() => onView(file, previewUrl)}
                 className="p-3 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
               >
                 <Eye className="w-5 h-5" />
               </button>
-              <button 
+              <button
                 type="button"
                 onClick={() => onDelete()}
                 className="p-3 bg-red-50 text-red-600 rounded-2xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
@@ -397,22 +667,22 @@ const FileUpload = ({
   );
 };
 
-const PersonnelSection = ({ 
-  title, 
+const PersonnelSection = ({
+  title,
   prefix,
   files,
   onUpload,
   onDelete,
   onView,
-  curT
-}: { 
-  title: string, 
-  prefix: string,
-  files: Record<string, File | null>,
-  onUpload: (key: string, file: File) => void,
-  onDelete: (key: string) => void,
-  onView: (file: File, url: string | null) => void,
-  curT: any
+  curT,
+}: {
+  title: string;
+  prefix: string;
+  files: Record<string, File | null>;
+  onUpload: (key: string, file: File) => void;
+  onDelete: (key: string) => void;
+  onView: (file: File, url: string | null) => void;
+  curT: any;
 }) => {
   const personnelDocs = [
     { label: "Fingerprint from Police", key: "fingerprint" },
@@ -434,88 +704,141 @@ const PersonnelSection = ({
         <Users className="w-5 h-5" />
         <span>{title}</span>
       </h4>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1">
-          <label className="text-xs font-bold text-gray-500 ml-1">Full Name</label>
-          <input type="text" className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" placeholder="Full Name" />
+          <label className="text-xs font-bold text-gray-500 ml-1">
+            Full Name
+          </label>
+          <input
+            type="text"
+            className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm"
+            placeholder="Full Name"
+          />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-500 ml-1">Gender</label>
+            <label className="text-xs font-bold text-gray-500 ml-1">
+              Gender
+            </label>
             <select className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm">
               <option>Male</option>
               <option>Female</option>
             </select>
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-500 ml-1">Citizenship</label>
-            <input type="text" className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" placeholder="Ethiopian" />
+            <label className="text-xs font-bold text-gray-500 ml-1">
+              Citizenship
+            </label>
+            <input
+              type="text"
+              className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm"
+              placeholder="Ethiopian"
+            />
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-100 pt-6">
         <div className="space-y-1 text-left">
-          <label className="text-xs font-bold text-gray-500 ml-1">{curT.faydaId}</label>
+          <label className="text-xs font-bold text-gray-500 ml-1">
+            {curT.faydaId}
+          </label>
           <div className="flex flex-col sm:flex-row gap-2">
-            <input type="text" className="flex-1 p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" placeholder="FAYDA-XXXXX" />
+            <input
+              type="text"
+              className="flex-1 p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm"
+              placeholder="FAYDA-XXXXX"
+            />
             <div className="flex items-center space-x-2 px-4 py-2 bg-white rounded-xl border border-gray-200 w-full sm:w-40">
               <Shield className="w-4 h-4 text-primary shrink-0" />
-              <input type="text" placeholder={curT.otp} className="w-full bg-transparent border-none outline-none text-xs font-bold text-primary" />
+              <input
+                type="text"
+                placeholder={curT.otp}
+                className="w-full bg-transparent border-none outline-none text-xs font-bold text-primary"
+              />
             </div>
           </div>
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-bold text-gray-500 ml-1">{curT.email}</label>
-          <input type="email" className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" placeholder="email@example.com" />
+          <label className="text-xs font-bold text-gray-500 ml-1">
+            {curT.email}
+          </label>
+          <input
+            type="email"
+            className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm"
+            placeholder="email@example.com"
+          />
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-bold text-gray-500 ml-1">{curT.phone}</label>
-          <input type="tel" className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" placeholder="+251..." />
+          <label className="text-xs font-bold text-gray-500 ml-1">
+            {curT.phone}
+          </label>
+          <input
+            type="tel"
+            className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm"
+            placeholder="+251..."
+          />
         </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* Region/Zone/Woreda fields are now handled by LocationFields in the main form. If needed for personnel, implement similar logic here. */}
         <div className="space-y-1">
-          <label className="text-xs font-bold text-gray-500 ml-1">{curT.region}</label>
-          <select className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm appearance-none">
-            <option value="">Select Region</option>
-            {ETHIOPIAN_REGIONS.map(r => (
-              <option key={r} value={r}>{r}</option>
-            ))}
-          </select>
+          <label className="text-xs font-bold text-gray-500 ml-1">
+            {curT.zone}
+          </label>
+          <input
+            type="text"
+            className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm"
+          />
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-bold text-gray-500 ml-1">{curT.zone}</label>
-          <input type="text" className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" />
+          <label className="text-xs font-bold text-gray-500 ml-1">
+            {curT.woreda}
+          </label>
+          <input
+            type="text"
+            className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm"
+          />
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-bold text-gray-500 ml-1">{curT.woreda}</label>
-          <input type="text" className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" />
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-bold text-gray-500 ml-1">{curT.kebele}</label>
-          <input type="text" className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" />
+          <label className="text-xs font-bold text-gray-500 ml-1">
+            {curT.kebele}
+          </label>
+          <input
+            type="text"
+            className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm"
+          />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1">
-          <label className="text-xs font-bold text-gray-500 ml-1">{curT.houseNo}</label>
-          <input type="text" className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" />
+          <label className="text-xs font-bold text-gray-500 ml-1">
+            {curT.houseNo}
+          </label>
+          <input
+            type="text"
+            className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm"
+          />
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-bold text-gray-500 ml-1">{curT.specialLocation}</label>
-          <input type="text" className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" />
+          <label className="text-xs font-bold text-gray-500 ml-1">
+            {curT.specialLocation}
+          </label>
+          <input
+            type="text"
+            className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm"
+          />
         </div>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-100 pt-6">
         {personnelDocs.map((doc) => (
           <div key={doc.key} className="space-y-2">
-            <FileUpload 
-              label={doc.label} 
+            <FileUpload
+              label={doc.label}
               file={files[`${prefix}_${doc.key}`]}
               onUpload={(file) => onUpload(`${prefix}_${doc.key}`, file)}
               onDelete={() => onDelete(`${prefix}_${doc.key}`)}
@@ -532,17 +855,33 @@ export const NewApplication = () => {
   const { language } = useLanguage();
   const [step, setStep] = React.useState(1);
   const [isSubmitted, setIsSubmitted] = React.useState(false);
-  const [appStatus, setAppStatus] = React.useState<'draft' | 'pending' | 'reviewing' | 'correction'>('draft');
-  const [openedFields, setOpenedFields] = React.useState<string[]>(['trade_license', 'kebele_id_m_2024']); // Mock admin opened fields
-  const [uploadedFiles, setUploadedFiles] = React.useState<Record<string, File | null>>({});
+  const [appStatus] = React.useState<
+    "draft" | "pending" | "reviewing" | "correction"
+  >("draft");
+  const [openedFields] = React.useState<string[]>([
+    "trade_license",
+    "kebele_id_m_2024",
+  ]); // Mock admin opened fields
+  const [uploadedFiles, setUploadedFiles] = React.useState<
+    Record<string, File | null>
+  >({});
 
-  const isFormLocked = isSubmitted || appStatus === 'pending' || appStatus === 'reviewing';
+  const isFormLocked =
+    isSubmitted || appStatus === "pending" || appStatus === "reviewing";
 
   const t_new = {
     en: {
-      steps: ["Agency Info", "Org Docs", "Assets", "Training", "Personnel", "Review"],
+      steps: [
+        "Agency Info",
+        "Org Docs",
+        "Assets",
+        "Training",
+        "Personnel",
+        "Review",
+      ],
       submittedTitle: "Application Submitted!",
-      submittedDesc: "Your application for a new private security agency license has been successfully submitted. The Federal Police will review your documents and contact you for the next steps.",
+      submittedDesc:
+        "Your application for a new private security agency license has been successfully submitted. The Federal Police will review your documents and contact you for the next steps.",
       step1Title: "Agency & Office Information",
       orgName: "Organization Name",
       headOffice: "Head Office Name",
@@ -569,18 +908,21 @@ export const NewApplication = () => {
       step4Title: "Training Status",
       step4Desc: "Details about the organization's training program.",
       step5Title: "Key Personnel Requirements",
-      step5Desc: "Provide details and documents for the Manager, Operations Head, and Admin Head.",
+      step5Desc:
+        "Provide details and documents for the Manager, Operations Head, and Admin Head.",
       step6Title: "Final Review",
-      step6Desc: "Please ensure all uploaded documents and photos are clear and valid. False information may lead to permanent disqualification.",
+      step6Desc:
+        "Please ensure all uploaded documents and photos are clear and valid. False information may lead to permanent disqualification.",
       back: "Back",
       continue: "Continue",
       submit: "Submit Application",
-      processing: "Submitting..."
+      processing: "Submitting...",
     },
     am: {
       steps: ["መረጃ", "ሰነዶች", "ንብረቶች", "ስልጠና", "ሰራተኞች", "ግምገማ"],
       submittedTitle: "ማመልከቻው ገብቷል!",
-      submittedDesc: "ለአዲስ የግል ጥበቃ ተቋም ፈቃድ ያቀረቡት ማመልከቻ በተሳካ ሁኔታ ገብቷል። ፌዴራል ፖሊስ ሰነዶችዎን ገምግሞ ለቀጣይ እርምጃዎች ያገኝዎታል።",
+      submittedDesc:
+        "ለአዲስ የግል ጥበቃ ተቋም ፈቃድ ያቀረቡት ማመልከቻ በተሳካ ሁኔታ ገብቷል። ፌዴራል ፖሊስ ሰነዶችዎን ገምግሞ ለቀጣይ እርምጃዎች ያገኝዎታል።",
       step1Title: "የተቋም እና የቢሮ መረጃ",
       orgName: "የተቋሙ ስም",
       headOffice: "የዋና መስሪያ ቤት ስም",
@@ -609,16 +951,17 @@ export const NewApplication = () => {
       step5Title: "የቁልፍ ሰራተኞች መስፈርቶች",
       step5Desc: "ለስራ አስኪያጅ፣ ለኦፕሬሽን ኃላፊ እና ለአስተዳደር ኃላፊ ዝርዝር መረጃ እና ሰነዶችን ያቅርቡ።",
       step6Title: "የመጨረሻ ግምገማ",
-      step6Desc: "እባክዎ ሁሉም የተሰቀሉ ሰነዶች እና ፎቶዎች ግልጽ እና ትክክለኛ መሆናቸውን ያረጋግጡ። የተሳሳተ መረጃ መስጠት ለዘላቂ ብቁ አለመሆን ሊያጋልጥ ይችላል።",
+      step6Desc:
+        "እባክዎ ሁሉም የተሰቀሉ ሰነዶች እና ፎቶዎች ግልጽ እና ትክክለኛ መሆናቸውን ያረጋግጡ። የተሳሳተ መረጃ መስጠት ለዘላቂ ብቁ አለመሆን ሊያጋልጥ ይችላል።",
       back: "ተመለስ",
       continue: "ቀጥል",
       submit: "ማመልከቻውን አቅርብ",
-      processing: "በማቅረብ ላይ..."
-    }
+      processing: "በማቅረብ ላይ...",
+    },
   };
 
   const curT = t_new[language as keyof typeof t_new] || t_new.en;
-  
+
   const [viewerState, setViewerState] = React.useState<{
     isOpen: boolean;
     file: File | null;
@@ -626,7 +969,7 @@ export const NewApplication = () => {
   }>({
     isOpen: false,
     file: null,
-    url: null
+    url: null,
   });
 
   const handleView = (file: File, url: string | null) => {
@@ -634,11 +977,11 @@ export const NewApplication = () => {
   };
 
   const handleUpload = (key: string, file: File) => {
-    setUploadedFiles(prev => ({ ...prev, [key]: file }));
+    setUploadedFiles((prev) => ({ ...prev, [key]: file }));
   };
 
   const handleDelete = (key: string) => {
-    setUploadedFiles(prev => {
+    setUploadedFiles((prev) => {
       const next = { ...prev };
       delete next[key];
       return next;
@@ -658,23 +1001,33 @@ export const NewApplication = () => {
   const nextStep = async (e?: React.MouseEvent) => {
     if (e) e.preventDefault();
     if (step === 1) {
-      let fieldsToValidate: (keyof ApplicationFormValues)[] = ['agencyName', 'headOfficeName', 'region', 'zone', 'woreda', 'kebele', 'houseNumber', 'phone', 'email'];
+      let fieldsToValidate: (keyof ApplicationFormValues)[] = [
+        "agencyName",
+        "headOfficeName",
+        "region",
+        "zone",
+        "woreda",
+        "kebele",
+        "houseNumber",
+        "phone",
+        "email",
+      ];
       const isValid = await trigger(fieldsToValidate);
       if (!isValid) return;
     }
-    
+
     if (step < 6) {
       setStep(step + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
-  const onSubmit = async (data: ApplicationFormValues) => {
+  const onSubmit = async () => {
     if (step !== 6) {
-       nextStep();
-       return;
+      nextStep();
+      return;
     }
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
     setIsSubmitted(true);
   };
 
@@ -696,12 +1049,18 @@ export const NewApplication = () => {
               <CheckCircle2 className="w-10 h-10" />
             </div>
             <div>
-              <h2 className="text-3xl font-black text-primary uppercase tracking-tighter">Application Submitted</h2>
-              <p className="text-gray-500 max-w-md mx-auto">Your application for a new private security agency license has been successfully received. A non-editable summary of your submission is provided below.</p>
+              <h2 className="text-3xl font-black text-primary uppercase tracking-tighter">
+                Application Submitted
+              </h2>
+              <p className="text-gray-500 max-w-md mx-auto">
+                Your application for a new private security agency license has
+                been successfully received. A non-editable summary of your
+                submission is provided below.
+              </p>
             </div>
             <div className="px-6 py-2 bg-green-50 text-green-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-green-100 flex items-center space-x-2">
-               <div className="w-1.5 h-1.5 bg-green-600 rounded-full animate-ping" />
-               <span>Status: Pending Document Verification</span>
+              <div className="w-1.5 h-1.5 bg-green-600 rounded-full animate-ping" />
+              <span>Status: Pending Document Verification</span>
             </div>
           </div>
 
@@ -709,25 +1068,37 @@ export const NewApplication = () => {
 
           <div className="space-y-12 text-left">
             <div className="grid grid-cols-1 gap-12">
-               {/* 1. Agency */}
-               <section className="space-y-6">
+              {/* 1. Agency */}
+              <section className="space-y-6">
                 <div className="flex items-center space-x-3 text-primary">
                   <Shield className="w-6 h-6" />
-                  <h3 className="text-xl font-bold uppercase tracking-tight">Organization Profile</h3>
+                  <h3 className="text-xl font-bold uppercase tracking-tight">
+                    Organization Profile
+                  </h3>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-8 bg-gray-50/50 p-8 rounded-[32px] border border-gray-100">
                   {[
-                    { label: curT.orgName, value: watch('agencyName') },
-                    { label: curT.headOffice, value: watch('headOfficeName') },
-                    { label: curT.phone, value: watch('phone') },
-                    { label: curT.email, value: watch('email') },
-                    { label: "Location", value: `${watch('region')}, ${watch('zone')}` },
-                    { label: "Woreda/Kebele", value: `${watch('woreda')}/${watch('kebele')}` },
-                    { label: "House No", value: watch('houseNumber') },
+                    { label: curT.orgName, value: watch("agencyName") },
+                    { label: curT.headOffice, value: watch("headOfficeName") },
+                    { label: curT.phone, value: watch("phone") },
+                    { label: curT.email, value: watch("email") },
+                    {
+                      label: "Location",
+                      value: `${watch("region")}, ${watch("zone")}`,
+                    },
+                    {
+                      label: "Woreda/Kebele",
+                      value: `${watch("woreda")}/${watch("kebele")}`,
+                    },
+                    { label: "House No", value: watch("houseNumber") },
                   ].map((item, i) => (
                     <div key={i} className="space-y-1">
-                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{item.label}</p>
-                      <p className="text-sm font-bold text-primary truncate">{item.value}</p>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                        {item.label}
+                      </p>
+                      <p className="text-sm font-bold text-primary truncate">
+                        {item.value}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -737,21 +1108,33 @@ export const NewApplication = () => {
               <section className="space-y-6">
                 <div className="flex items-center space-x-3 text-blue-600">
                   <FileText className="w-6 h-6" />
-                  <h3 className="text-xl font-bold uppercase tracking-tight">Submitted Documents</h3>
+                  <h3 className="text-xl font-bold uppercase tracking-tight">
+                    Submitted Documents
+                  </h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {Object.entries(uploadedFiles).map(([key, file]) => (
-                    <div key={key} className="p-5 bg-white border border-gray-100 rounded-[24px] flex items-center justify-between shadow-sm hover:shadow-md transition-all">
+                    <div
+                      key={key}
+                      className="p-5 bg-white border border-gray-100 rounded-[24px] flex items-center justify-between shadow-sm hover:shadow-md transition-all"
+                    >
                       <div className="flex items-center space-x-4 min-w-0">
-                         <div className="p-3 bg-blue-50 text-blue-500 rounded-xl flex-shrink-0">
-                           <FileText className="w-5 h-5" />
-                         </div>
-                         <div className="min-w-0">
-                           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest truncate">{key.replace(/_/g, ' ')}</p>
-                           <p className="text-[11px] font-bold text-primary truncate max-w-[140px]">{file?.name}</p>
-                         </div>
+                        <div className="p-3 bg-blue-50 text-blue-500 rounded-xl flex-shrink-0">
+                          <FileText className="w-5 h-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest truncate">
+                            {key.replace(/_/g, " ")}
+                          </p>
+                          <p className="text-[11px] font-bold text-primary truncate max-w-[140px]">
+                            {file?.name}
+                          </p>
+                        </div>
                       </div>
-                      <button onClick={() => file && handleView(file, null)} className="p-2.5 bg-gray-50 text-gray-400 rounded-xl hover:bg-primary hover:text-white transition-all shadow-sm">
+                      <button
+                        onClick={() => file && handleView(file, null)}
+                        className="p-2.5 bg-gray-50 text-gray-400 rounded-xl hover:bg-primary hover:text-white transition-all shadow-sm"
+                      >
                         <Eye className="w-4 h-4" />
                       </button>
                     </div>
@@ -763,34 +1146,56 @@ export const NewApplication = () => {
               <section className="space-y-6">
                 <div className="flex items-center space-x-3 text-amber-600">
                   <Shield className="w-6 h-6" />
-                  <h3 className="text-xl font-bold uppercase tracking-tight">System Records & Staff</h3>
+                  <h3 className="text-xl font-bold uppercase tracking-tight">
+                    System Records & Staff
+                  </h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                   <div className="p-6 bg-gray-900 rounded-[32px] text-white space-y-1">
-                      <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Manager</p>
-                      <p className="text-sm font-black text-secondary truncate">{watch('managerName') || 'Verified'}</p>
-                   </div>
-                   <div className="p-6 bg-gray-900 rounded-[32px] text-white space-y-1">
-                      <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Operations Head</p>
-                      <p className="text-sm font-black truncate">{watch('opsHeadName') || 'Enrolled'}</p>
-                   </div>
-                   <div className="p-6 bg-gray-900 rounded-[32px] text-white space-y-1">
-                      <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Admin Head</p>
-                      <p className="text-sm font-black text-secondary truncate">{watch('adminHeadName') || 'Cleared'}</p>
-                   </div>
-                   <div className="p-6 bg-gray-900 rounded-[32px] text-white space-y-1">
-                      <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Branch Profile</p>
-                      <p className="text-sm font-black truncate">{watch('branchOfficeName') || 'Initiated'}</p>
-                   </div>
+                  <div className="p-6 bg-gray-900 rounded-[32px] text-white space-y-1">
+                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">
+                      Manager
+                    </p>
+                    <p className="text-sm font-black text-secondary truncate">
+                      {watch("managerName") || "Verified"}
+                    </p>
+                  </div>
+                  <div className="p-6 bg-gray-900 rounded-[32px] text-white space-y-1">
+                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">
+                      Operations Head
+                    </p>
+                    <p className="text-sm font-black truncate">
+                      {watch("opsHeadName") || "Enrolled"}
+                    </p>
+                  </div>
+                  <div className="p-6 bg-gray-900 rounded-[32px] text-white space-y-1">
+                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">
+                      Admin Head
+                    </p>
+                    <p className="text-sm font-black text-secondary truncate">
+                      {watch("adminHeadName") || "Cleared"}
+                    </p>
+                  </div>
+                  <div className="p-6 bg-gray-900 rounded-[32px] text-white space-y-1">
+                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">
+                      Branch Profile
+                    </p>
+                    <p className="text-sm font-black truncate">
+                      {watch("branchOfficeName") || "Initiated"}
+                    </p>
+                  </div>
                 </div>
               </section>
             </div>
           </div>
 
           <div className="flex justify-center pt-8">
-             <button type="button" onClick={() => (window.location.href = '/')} className="px-12 py-5 bg-primary text-secondary rounded-[24px] font-black uppercase tracking-widest text-sm hover:shadow-2xl hover:scale-105 transition-all shadow-xl shadow-primary/20">
-                Return to Dashboard
-             </button>
+            <button
+              type="button"
+              onClick={() => (window.location.href = "/")}
+              className="px-12 py-5 bg-primary text-secondary rounded-[24px] font-black uppercase tracking-widest text-sm hover:shadow-2xl hover:scale-105 transition-all shadow-xl shadow-primary/20"
+            >
+              Return to Dashboard
+            </button>
           </div>
         </div>
       </div>
@@ -803,58 +1208,144 @@ export const NewApplication = () => {
       <div className="flex justify-between items-center relative px-4">
         <div className="absolute top-1/2 left-0 w-full h-0.5 bg-gray-200 -translate-y-1/2 z-0" />
         {steps.map((s) => (
-          <div key={s.id} className="relative z-10 flex flex-col items-center space-y-2">
-            <div 
+          <div
+            key={s.id}
+            className="relative z-10 flex flex-col items-center space-y-2"
+          >
+            <div
               className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-500 ${
-                step >= s.id ? 'bg-primary text-secondary shadow-lg scale-110' : 'bg-white text-gray-400 border-2 border-gray-200'
+                step >= s.id
+                  ? "bg-primary text-secondary shadow-lg scale-110"
+                  : "bg-white text-gray-400 border-2 border-gray-200"
               }`}
             >
-              {step > s.id ? <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6" /> : <s.icon className="w-5 h-5 md:w-6 md:h-6" />}
+              {step > s.id ? (
+                <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6" />
+              ) : (
+                <s.icon className="w-5 h-5 md:w-6 md:h-6" />
+              )}
             </div>
-            <span className={`hidden md:block text-[10px] font-bold uppercase tracking-wider ${step >= s.id ? 'text-primary' : 'text-gray-400'}`}>
+            <span
+              className={`hidden md:block text-[10px] font-bold uppercase tracking-wider ${step >= s.id ? "text-primary" : "text-gray-400"}`}
+            >
               {s.title}
             </span>
           </div>
         ))}
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-[40px] shadow-xl p-6 md:p-12 border border-gray-100 min-h-[600px] flex flex-col">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="bg-white rounded-[40px] shadow-xl p-6 md:p-12 border border-gray-100 min-h-[600px] flex flex-col"
+      >
         <AnimatePresence mode="wait">
           {step === 1 && (
-            <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
+            <motion.div
+              key="step1"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-8"
+            >
               <div className="space-y-2">
-                <h3 className="text-2xl font-bold text-primary">{curT.step1Title}</h3>
+                <h3 className="text-2xl font-bold text-primary">
+                  {curT.step1Title}
+                </h3>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <FormInput label={curT.orgName} name="agencyName" register={register} value={watch('agencyName')} error={errors.agencyName} disabled={isFormLocked} isOpenedForEdit={openedFields.includes('agencyName')} />
-                  <FormInput label={curT.headOffice} name="headOfficeName" register={register} value={watch('headOfficeName')} error={errors.headOfficeName} disabled={isFormLocked} isOpenedForEdit={openedFields.includes('headOfficeName')} />
-                  <FormInput label={curT.branchOffice} name="branchOfficeName" register={register} value={watch('branchOfficeName')} error={errors.branchOfficeName} disabled={isFormLocked} isOpenedForEdit={openedFields.includes('branchOfficeName')} />
+                  <FormInput
+                    label={curT.orgName}
+                    name="agencyName"
+                    register={register}
+                    value={watch("agencyName")}
+                    error={errors.agencyName}
+                    disabled={isFormLocked}
+                    isOpenedForEdit={openedFields.includes("agencyName")}
+                  />
+                  <FormInput
+                    label={curT.headOffice}
+                    name="headOfficeName"
+                    register={register}
+                    value={watch("headOfficeName")}
+                    error={errors.headOfficeName}
+                    disabled={isFormLocked}
+                    isOpenedForEdit={openedFields.includes("headOfficeName")}
+                  />
+                  <FormInput
+                    label={curT.branchOffice}
+                    name="branchOfficeName"
+                    register={register}
+                    value={watch("branchOfficeName")}
+                    error={errors.branchOfficeName}
+                    disabled={isFormLocked}
+                    isOpenedForEdit={openedFields.includes("branchOfficeName")}
+                  />
                 </div>
 
-                <div className="md:col-span-2 grid grid-cols-2 md:grid-cols-5 gap-4">
-                  <FormSelect label={curT.region} name="region" register={register} options={ETHIOPIAN_REGIONS} error={errors.region} disabled={isFormLocked} />
-                  <FormInput label={curT.zone} name="zone" register={register} value={watch('zone')} error={errors.zone} disabled={isFormLocked} isOpenedForEdit={openedFields.includes('zone')} />
-                  <FormInput label={curT.woreda} name="woreda" register={register} value={watch('woreda')} error={errors.woreda} disabled={isFormLocked} isOpenedForEdit={openedFields.includes('woreda')} />
-                  <FormInput label={curT.kebele} name="kebele" register={register} value={watch('kebele')} error={errors.kebele} disabled={isFormLocked} isOpenedForEdit={openedFields.includes('kebele')} />
-                  <FormInput label={curT.houseNo} name="houseNumber" register={register} value={watch('houseNumber')} error={errors.houseNumber} disabled={isFormLocked} isOpenedForEdit={openedFields.includes('houseNumber')} />
-                </div>
+                <LocationFields
+                  register={register}
+                  errors={errors}
+                  watch={watch}
+                  isFormLocked={isFormLocked}
+                  openedFields={openedFields}
+                />
 
-                <FormInput label={curT.phone} name="phone" register={register} value={watch('phone')} error={errors.phone} disabled={isFormLocked} isOpenedForEdit={openedFields.includes('phone')} />
-                <FormInput label={curT.fax} name="fax" register={register} value={watch('fax')} error={errors.fax} disabled={isFormLocked} isOpenedForEdit={openedFields.includes('fax')} />
-                <FormInput label={curT.specialLocation} name="specialLocation" register={register} value={watch('specialLocation')} error={errors.specialLocation} disabled={isFormLocked} isOpenedForEdit={openedFields.includes('specialLocation')} />
+                <FormInput
+                  label={curT.phone}
+                  name="phone"
+                  register={register}
+                  value={watch("phone")}
+                  error={errors.phone}
+                  disabled={isFormLocked}
+                  isOpenedForEdit={openedFields.includes("phone")}
+                />
+                <FormInput
+                  label={curT.fax}
+                  name="fax"
+                  register={register}
+                  value={watch("fax")}
+                  error={errors.fax}
+                  disabled={isFormLocked}
+                  isOpenedForEdit={openedFields.includes("fax")}
+                />
+                <FormInput
+                  label={curT.specialLocation}
+                  name="specialLocation"
+                  register={register}
+                  value={watch("specialLocation")}
+                  error={errors.specialLocation}
+                  disabled={isFormLocked}
+                  isOpenedForEdit={openedFields.includes("specialLocation")}
+                />
                 <div className="md:col-span-2">
-                  <FormInput label={curT.email} name="email" register={register} value={watch('email')} error={errors.email} disabled={isFormLocked} isOpenedForEdit={openedFields.includes('email')} />
+                  <FormInput
+                    label={curT.email}
+                    name="email"
+                    register={register}
+                    value={watch("email")}
+                    error={errors.email}
+                    disabled={isFormLocked}
+                    isOpenedForEdit={openedFields.includes("email")}
+                  />
                 </div>
               </div>
             </motion.div>
           )}
 
           {step === 2 && (
-            <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
+            <motion.div
+              key="step2"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-8"
+            >
               <div className="space-y-2">
-                <h3 className="text-2xl font-bold text-primary">{curT.step2Title}</h3>
+                <h3 className="text-2xl font-bold text-primary">
+                  {curT.step2Title}
+                </h3>
                 <p className="text-sm text-gray-500">{curT.step2Desc}</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -862,18 +1353,21 @@ export const NewApplication = () => {
                   { label: "Trade name designation", key: "trade_name" },
                   { label: "Trade pre-registration", key: "trade_pre" },
                   { label: "Renewed Trade license", key: "trade_license" },
-                  { label: "Labor and Skill Bureau registration", key: "labor_skill" },
+                  {
+                    label: "Labor and Skill Bureau registration",
+                    key: "labor_skill",
+                  },
                   { label: "TIN number", key: "tin" },
                   { label: "Trademark", key: "trademark" },
                   { label: "Organizational structure", key: "org_structure" },
                   { label: "Articles of incorporation", key: "articles" },
                   { label: "Internal regulations", key: "regulations" },
                   { label: "Lists of technologies used", key: "tech_list" },
-                  { label: "Capital (Bank statement)", key: "capital" }
+                  { label: "Capital (Bank statement)", key: "capital" },
                 ].map((doc) => (
-                  <FileUpload 
-                    key={doc.key} 
-                    label={doc.label} 
+                  <FileUpload
+                    key={doc.key}
+                    label={doc.label}
                     file={uploadedFiles[doc.key]}
                     onUpload={(file) => handleUpload(doc.key, file)}
                     onDelete={() => handleDelete(doc.key)}
@@ -885,47 +1379,72 @@ export const NewApplication = () => {
           )}
 
           {step === 3 && (
-            <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
+            <motion.div
+              key="step3"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-8"
+            >
               <div className="space-y-2">
-                <h3 className="text-2xl font-bold text-primary">{curT.step3Title}</h3>
+                <h3 className="text-2xl font-bold text-primary">
+                  {curT.step3Title}
+                </h3>
                 <p className="text-sm text-gray-500">{curT.step3Desc}</p>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500">{curT.offices}</label>
-                  <input type="number" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary" />
+                  <label className="text-xs font-bold text-gray-500">
+                    {curT.offices}
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
+                  />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500">{curT.storeHouse}</label>
+                  <label className="text-xs font-bold text-gray-500">
+                    {curT.storeHouse}
+                  </label>
                   <select className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary">
                     <option>Yes</option>
                     <option>No</option>
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500">{curT.computers}</label>
-                  <input type="number" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary" />
+                  <label className="text-xs font-bold text-gray-500">
+                    {curT.computers}
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
+                  />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500">{curT.vehicles}</label>
-                  <input type="number" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary" />
+                  <label className="text-xs font-bold text-gray-500">
+                    {curT.vehicles}
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
+                  />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FileUpload 
-                  label="Notarized Vehicle Rent/Ownership" 
+                <FileUpload
+                  label="Notarized Vehicle Rent/Ownership"
                   file={uploadedFiles.vehicle_rent}
-                  onUpload={(file) => handleUpload('vehicle_rent', file)}
-                  onDelete={() => handleDelete('vehicle_rent')}
+                  onUpload={(file) => handleUpload("vehicle_rent", file)}
+                  onDelete={() => handleDelete("vehicle_rent")}
                   onView={handleView}
                 />
-                <FileUpload 
-                  label="Notarized House Rent/Ownership" 
+                <FileUpload
+                  label="Notarized House Rent/Ownership"
                   file={uploadedFiles.house_rent}
-                  onUpload={(file) => handleUpload('house_rent', file)}
-                  onDelete={() => handleDelete('house_rent')}
+                  onUpload={(file) => handleUpload("house_rent", file)}
+                  onDelete={() => handleDelete("house_rent")}
                   onView={handleView}
                 />
               </div>
@@ -933,44 +1452,44 @@ export const NewApplication = () => {
               <div className="space-y-4">
                 <h4 className="font-bold text-primary">Photo Samples</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FileUpload 
-                    label="Uniform Sample" 
-                    type="photo" 
+                  <FileUpload
+                    label="Uniform Sample"
+                    type="photo"
                     file={uploadedFiles.uniform_sample}
-                    onUpload={(file) => handleUpload('uniform_sample', file)}
-                    onDelete={() => handleDelete('uniform_sample')}
+                    onUpload={(file) => handleUpload("uniform_sample", file)}
+                    onDelete={() => handleDelete("uniform_sample")}
                     onView={handleView}
                   />
-                  <FileUpload 
-                    label="Employee ID Sample (Front & Back)" 
-                    type="photo" 
+                  <FileUpload
+                    label="Employee ID Sample (Front & Back)"
+                    type="photo"
                     file={uploadedFiles.id_sample}
-                    onUpload={(file) => handleUpload('id_sample', file)}
-                    onDelete={() => handleDelete('id_sample')}
+                    onUpload={(file) => handleUpload("id_sample", file)}
+                    onDelete={() => handleDelete("id_sample")}
                     onView={handleView}
                   />
-                  <FileUpload 
-                    label="Employment Form" 
-                    type="photo" 
+                  <FileUpload
+                    label="Employment Form"
+                    type="photo"
                     file={uploadedFiles.employment_form}
-                    onUpload={(file) => handleUpload('employment_form', file)}
-                    onDelete={() => handleDelete('employment_form')}
+                    onUpload={(file) => handleUpload("employment_form", file)}
+                    onDelete={() => handleDelete("employment_form")}
                     onView={handleView}
                   />
-                  <FileUpload 
-                    label="Employment Warranty Form" 
-                    type="photo" 
+                  <FileUpload
+                    label="Employment Warranty Form"
+                    type="photo"
                     file={uploadedFiles.warranty_form}
-                    onUpload={(file) => handleUpload('warranty_form', file)}
-                    onDelete={() => handleDelete('warranty_form')}
+                    onUpload={(file) => handleUpload("warranty_form", file)}
+                    onDelete={() => handleDelete("warranty_form")}
                     onView={handleView}
                   />
-                  <FileUpload 
-                    label="Logo of Organization" 
-                    type="photo" 
+                  <FileUpload
+                    label="Logo of Organization"
+                    type="photo"
                     file={uploadedFiles.logo}
-                    onUpload={(file) => handleUpload('logo', file)}
-                    onDelete={() => handleDelete('logo')}
+                    onUpload={(file) => handleUpload("logo", file)}
+                    onDelete={() => handleDelete("logo")}
                     onView={handleView}
                   />
                 </div>
@@ -979,39 +1498,56 @@ export const NewApplication = () => {
           )}
 
           {step === 4 && (
-            <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
+            <motion.div
+              key="step4"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-8"
+            >
               <div className="space-y-2">
-                <h3 className="text-2xl font-bold text-primary">{curT.step4Title}</h3>
+                <h3 className="text-2xl font-bold text-primary">
+                  {curT.step4Title}
+                </h3>
                 <p className="text-sm text-gray-500">{curT.step4Desc}</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">Training Address</label>
+                  <label className="text-sm font-bold text-gray-700">
+                    Training Address
+                  </label>
                   <input className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">No. of Days Trained</label>
-                  <input type="number" className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary" />
+                  <label className="text-sm font-bold text-gray-700">
+                    No. of Days Trained
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
+                  />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">Training Provider Body</label>
+                  <label className="text-sm font-bold text-gray-700">
+                    Training Provider Body
+                  </label>
                   <input className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary" />
                 </div>
                 <div className="space-y-2">
-                  <FileUpload 
-                    label="Training Manual" 
+                  <FileUpload
+                    label="Training Manual"
                     file={uploadedFiles.training_manual}
-                    onUpload={(file) => handleUpload('training_manual', file)}
-                    onDelete={() => handleDelete('training_manual')}
+                    onUpload={(file) => handleUpload("training_manual", file)}
+                    onDelete={() => handleDelete("training_manual")}
                     onView={handleView}
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <FileUpload 
-                    label="Certificate of Training" 
+                  <FileUpload
+                    label="Certificate of Training"
                     file={uploadedFiles.training_cert}
-                    onUpload={(file) => handleUpload('training_cert', file)}
-                    onDelete={() => handleDelete('training_cert')}
+                    onUpload={(file) => handleUpload("training_cert", file)}
+                    onDelete={() => handleDelete("training_cert")}
                     onView={handleView}
                   />
                 </div>
@@ -1020,33 +1556,41 @@ export const NewApplication = () => {
           )}
 
           {step === 5 && (
-            <motion.div key="step5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
+            <motion.div
+              key="step5"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-8"
+            >
               <div className="space-y-2">
-                <h3 className="text-2xl font-bold text-primary">{curT.step5Title}</h3>
+                <h3 className="text-2xl font-bold text-primary">
+                  {curT.step5Title}
+                </h3>
                 <p className="text-sm text-gray-500">{curT.step5Desc}</p>
               </div>
               <div className="space-y-12">
-                <PersonnelSection 
-                  title="Manager of Organization" 
-                  prefix="manager" 
+                <PersonnelSection
+                  title="Manager of Organization"
+                  prefix="manager"
                   files={uploadedFiles}
                   onUpload={handleUpload}
                   onDelete={handleDelete}
                   onView={handleView}
                   curT={curT}
                 />
-                <PersonnelSection 
-                  title="Operations Head" 
-                  prefix="ops" 
+                <PersonnelSection
+                  title="Operations Head"
+                  prefix="ops"
                   files={uploadedFiles}
                   onUpload={handleUpload}
                   onDelete={handleDelete}
                   onView={handleView}
                   curT={curT}
                 />
-                <PersonnelSection 
-                  title="Administration Head" 
-                  prefix="admin" 
+                <PersonnelSection
+                  title="Administration Head"
+                  prefix="admin"
                   files={uploadedFiles}
                   onUpload={handleUpload}
                   onDelete={handleDelete}
@@ -1058,15 +1602,25 @@ export const NewApplication = () => {
           )}
 
           {step === 6 && (
-            <motion.div key="step6" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-10">
+            <motion.div
+              key="step6"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-10"
+            >
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div className="space-y-2">
-                  <h3 className="text-3xl font-black text-primary uppercase tracking-tighter">{curT.step6Title}</h3>
+                  <h3 className="text-3xl font-black text-primary uppercase tracking-tighter">
+                    {curT.step6Title}
+                  </h3>
                   <p className="text-gray-500 max-w-md">{curT.step6Desc}</p>
                 </div>
                 <div className="px-6 py-3 bg-amber-50 text-amber-600 rounded-2xl flex items-center space-x-3 border border-amber-100 shadow-sm">
                   <AlertCircle className="w-5 h-5" />
-                  <span className="text-[10px] font-black uppercase tracking-widest leading-none">Draft Mode: Review & Edit</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest leading-none">
+                    Draft Mode: Review & Edit
+                  </span>
                 </div>
               </div>
 
@@ -1076,27 +1630,48 @@ export const NewApplication = () => {
                   <div className="p-6 bg-white border-b border-gray-100 flex items-center justify-between">
                     <div className="flex items-center space-x-3 text-primary">
                       <Shield className="w-5 h-5" />
-                      <h4 className="font-black text-xs uppercase tracking-widest">{curT.steps[0]}</h4>
+                      <h4 className="font-black text-xs uppercase tracking-widest">
+                        {curT.steps[0]}
+                      </h4>
                     </div>
-                    <button type="button" onClick={() => setStep(1)} className="px-4 py-2 bg-primary/5 text-primary rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all">Edit</button>
+                    <button
+                      type="button"
+                      onClick={() => setStep(1)}
+                      className="px-4 py-2 bg-primary/5 text-primary rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all"
+                    >
+                      Edit
+                    </button>
                   </div>
                   <div className="p-8 grid grid-cols-2 md:grid-cols-4 gap-y-8 gap-x-6">
                     {[
-                      { label: curT.orgName, value: watch('agencyName') },
-                      { label: curT.headOffice, value: watch('headOfficeName') },
-                      { label: curT.branchOffice, value: watch('branchOfficeName') || '-' },
-                      { label: curT.phone, value: watch('phone') },
-                      { label: curT.email, value: watch('email') },
-                      { label: curT.region, value: watch('region') },
-                      { label: curT.zone, value: watch('zone') },
-                      { label: curT.woreda, value: watch('woreda') },
-                      { label: curT.kebele, value: watch('kebele') },
-                      { label: curT.houseNo, value: watch('houseNumber') },
-                      { label: "Special Location", value: watch('specialLocation') || '-' },
+                      { label: curT.orgName, value: watch("agencyName") },
+                      {
+                        label: curT.headOffice,
+                        value: watch("headOfficeName"),
+                      },
+                      {
+                        label: curT.branchOffice,
+                        value: watch("branchOfficeName") || "-",
+                      },
+                      { label: curT.phone, value: watch("phone") },
+                      { label: curT.email, value: watch("email") },
+                      { label: curT.region, value: watch("region") },
+                      { label: curT.zone, value: watch("zone") },
+                      { label: curT.woreda, value: watch("woreda") },
+                      { label: curT.kebele, value: watch("kebele") },
+                      { label: curT.houseNo, value: watch("houseNumber") },
+                      {
+                        label: "Special Location",
+                        value: watch("specialLocation") || "-",
+                      },
                     ].map((item, i) => (
                       <div key={i} className="space-y-1">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{item.label}</p>
-                        <p className="text-sm font-bold text-primary truncate">{item.value}</p>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                          {item.label}
+                        </p>
+                        <p className="text-sm font-bold text-primary truncate">
+                          {item.value}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -1107,26 +1682,65 @@ export const NewApplication = () => {
                   <div className="p-6 bg-white border-b border-gray-100 flex items-center justify-between">
                     <div className="flex items-center space-x-3 text-blue-600">
                       <FileText className="w-5 h-5" />
-                      <h4 className="font-black text-xs uppercase tracking-widest">{curT.steps[1]}</h4>
+                      <h4 className="font-black text-xs uppercase tracking-widest">
+                        {curT.steps[1]}
+                      </h4>
                     </div>
-                    <button type="button" onClick={() => setStep(2)} className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all">Edit Documents</button>
+                    <button
+                      type="button"
+                      onClick={() => setStep(2)}
+                      className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all"
+                    >
+                      Edit Documents
+                    </button>
                   </div>
                   <div className="p-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {Object.entries(uploadedFiles).filter(([key]) => ![ 'vehicle_rent', 'house_rent', 'uniform_sample', 'id_sample', 'employment_form', 'warranty_form', 'logo', 'training_manual', 'training_cert'].some(k => key.includes(k)) && !['manager', 'ops', 'admin'].some(k => key.startsWith(k))).map(([key, file]) => (
-                        <div key={key} className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl group hover:border-blue-200 transition-all">
-                          <div className="flex items-center space-x-3 min-w-0">
-                            <div className="p-2 bg-blue-50 text-blue-500 rounded-lg">
-                              <FileText className="w-4 h-4" />
+                      {Object.entries(uploadedFiles)
+                        .filter(
+                          ([key]) =>
+                            ![
+                              "vehicle_rent",
+                              "house_rent",
+                              "uniform_sample",
+                              "id_sample",
+                              "employment_form",
+                              "warranty_form",
+                              "logo",
+                              "training_manual",
+                              "training_cert",
+                            ].some((k) => key.includes(k)) &&
+                            !["manager", "ops", "admin"].some((k) =>
+                              key.startsWith(k),
+                            ),
+                        )
+                        .map(([key, file]) => (
+                          <div
+                            key={key}
+                            className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl group hover:border-blue-200 transition-all"
+                          >
+                            <div className="flex items-center space-x-3 min-w-0">
+                              <div className="p-2 bg-blue-50 text-blue-500 rounded-lg">
+                                <FileText className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest truncate">
+                                  {key.replace(/_/g, " ")}
+                                </p>
+                                <p className="text-[10px] font-bold text-primary truncate max-w-[150px]">
+                                  {file?.name}
+                                </p>
+                              </div>
                             </div>
-                            <div className="min-w-0">
-                              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest truncate">{key.replace(/_/g, ' ')}</p>
-                              <p className="text-[10px] font-bold text-primary truncate max-w-[150px]">{file?.name}</p>
-                            </div>
+                            <button
+                              type="button"
+                              onClick={() => file && handleView(file, null)}
+                              className="p-2 bg-gray-50 text-gray-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
                           </div>
-                          <button type="button" onClick={() => file && handleView(file, null)} className="p-2 bg-gray-50 text-gray-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all"><Eye className="w-4 h-4" /></button>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   </div>
                 </section>
@@ -1136,39 +1750,79 @@ export const NewApplication = () => {
                   <div className="p-6 bg-white border-b border-gray-100 flex items-center justify-between">
                     <div className="flex items-center space-x-3 text-amber-600">
                       <CreditCard className="w-5 h-5" />
-                      <h4 className="font-black text-xs uppercase tracking-widest">{curT.steps[2]} & {curT.steps[3]}</h4>
+                      <h4 className="font-black text-xs uppercase tracking-widest">
+                        {curT.steps[2]} & {curT.steps[3]}
+                      </h4>
                     </div>
-                    <button type="button" onClick={() => setStep(3)} className="px-4 py-2 bg-amber-50 text-amber-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 hover:text-white transition-all">Edit Assets</button>
+                    <button
+                      type="button"
+                      onClick={() => setStep(3)}
+                      className="px-4 py-2 bg-amber-50 text-amber-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 hover:text-white transition-all"
+                    >
+                      Edit Assets
+                    </button>
                   </div>
                   <div className="p-8">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
                       {[
-                        { label: "Offices", value: watch('officesCount') },
-                        { label: "Computers", value: watch('computersCount') },
-                        { label: "Vehicles", value: watch('vehiclesCount') },
-                        { label: "Store House", value: watch('hasStoreHouse') ? 'Yes' : 'No' },
+                        { label: "Offices", value: watch("officesCount") },
+                        { label: "Computers", value: watch("computersCount") },
+                        { label: "Vehicles", value: watch("vehiclesCount") },
+                        {
+                          label: "Store House",
+                          value: watch("hasStoreHouse") ? "Yes" : "No",
+                        },
                       ].map((item, i) => (
                         <div key={i} className="space-y-1">
-                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{item.label}</p>
-                          <p className="text-sm font-bold text-primary">{item.value || '0'}</p>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                            {item.label}
+                          </p>
+                          <p className="text-sm font-bold text-primary">
+                            {item.value || "0"}
+                          </p>
                         </div>
                       ))}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {['vehicle_rent', 'house_rent', 'uniform_sample', 'id_sample', 'logo'].map(key => uploadedFiles[key] && (
-                           <div key={key} className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl">
-                             <div className="flex items-center space-x-3 min-w-0">
-                               <div className="p-2 bg-amber-50 text-amber-500 rounded-lg">
-                                 <Eye className="w-4 h-4" />
-                               </div>
-                               <div className="min-w-0">
-                                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest truncate">{key.replace(/_/g, ' ')}</p>
-                                 <p className="text-[10px] font-bold text-primary truncate">{uploadedFiles[key]?.name}</p>
-                               </div>
-                             </div>
-                             <button type="button" onClick={() => uploadedFiles[key] && handleView(uploadedFiles[key]!, null)} className="p-2 bg-gray-50 text-gray-400 rounded-lg hover:bg-amber-600 hover:text-white transition-all"><Eye className="w-4 h-4" /></button>
-                           </div>
-                        ))}
+                      {[
+                        "vehicle_rent",
+                        "house_rent",
+                        "uniform_sample",
+                        "id_sample",
+                        "logo",
+                      ].map(
+                        (key) =>
+                          uploadedFiles[key] && (
+                            <div
+                              key={key}
+                              className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl"
+                            >
+                              <div className="flex items-center space-x-3 min-w-0">
+                                <div className="p-2 bg-amber-50 text-amber-500 rounded-lg">
+                                  <Eye className="w-4 h-4" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest truncate">
+                                    {key.replace(/_/g, " ")}
+                                  </p>
+                                  <p className="text-[10px] font-bold text-primary truncate">
+                                    {uploadedFiles[key]?.name}
+                                  </p>
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  uploadedFiles[key] &&
+                                  handleView(uploadedFiles[key]!, null)
+                                }
+                                className="p-2 bg-gray-50 text-gray-400 rounded-lg hover:bg-amber-600 hover:text-white transition-all"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ),
+                      )}
                     </div>
                   </div>
                 </section>
@@ -1178,29 +1832,52 @@ export const NewApplication = () => {
                   <div className="p-6 bg-white border-b border-gray-100 flex items-center justify-between">
                     <div className="flex items-center space-x-3 text-purple-600">
                       <Users className="w-5 h-5" />
-                      <h4 className="font-black text-xs uppercase tracking-widest">{curT.steps[4]}</h4>
+                      <h4 className="font-black text-xs uppercase tracking-widest">
+                        {curT.steps[4]}
+                      </h4>
                     </div>
-                    <button type="button" onClick={() => setStep(5)} className="px-4 py-2 bg-purple-50 text-purple-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-purple-600 hover:text-white transition-all">Edit Personnel</button>
+                    <button
+                      type="button"
+                      onClick={() => setStep(5)}
+                      className="px-4 py-2 bg-purple-50 text-purple-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-purple-600 hover:text-white transition-all"
+                    >
+                      Edit Personnel
+                    </button>
                   </div>
                   <div className="p-8">
-                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {[
-                          { label: "General Manager", value: watch('managerName') },
-                          { label: "Operations Head", value: watch('opsHeadName') },
-                          { label: "Admin Head", value: watch('adminHeadName') },
-                        ].map((item, i) => (
-                          <div key={i} className="space-y-4 p-6 bg-white rounded-3xl border border-gray-50 shadow-sm">
-                            <div>
-                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-tight mb-1">{item.label}</p>
-                              <p className="text-sm font-black text-primary uppercase">{item.value || 'NOT PROVIDED'}</p>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                               <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Verification Documents Provided</span>
-                            </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                      {[
+                        {
+                          label: "General Manager",
+                          value: watch("managerName"),
+                        },
+                        {
+                          label: "Operations Head",
+                          value: watch("opsHeadName"),
+                        },
+                        { label: "Admin Head", value: watch("adminHeadName") },
+                      ].map((item, i) => (
+                        <div
+                          key={i}
+                          className="space-y-4 p-6 bg-white rounded-3xl border border-gray-50 shadow-sm"
+                        >
+                          <div>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-tight mb-1">
+                              {item.label}
+                            </p>
+                            <p className="text-sm font-black text-primary uppercase">
+                              {item.value || "NOT PROVIDED"}
+                            </p>
                           </div>
-                        ))}
-                     </div>
+                          <div className="flex items-center space-x-2">
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                              Verification Documents Provided
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </section>
 
@@ -1209,63 +1886,114 @@ export const NewApplication = () => {
                   <div className="p-6 bg-white border-b border-gray-100 flex items-center justify-between">
                     <div className="flex items-center space-x-3 text-red-600">
                       <Shield className="w-5 h-5" />
-                      <h4 className="font-black text-xs uppercase tracking-widest">Guards Recruitment Criteria</h4>
+                      <h4 className="font-black text-xs uppercase tracking-widest">
+                        Guards Recruitment Criteria
+                      </h4>
                     </div>
-                    <button type="button" onClick={() => setStep(5)} className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all">Edit Criteria</button>
+                    <button
+                      type="button"
+                      onClick={() => setStep(5)}
+                      className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all"
+                    >
+                      Edit Criteria
+                    </button>
                   </div>
                   <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-                     <div className="space-y-4">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Mandatory Requirements Status</p>
-                        <div className="flex flex-wrap gap-2">
-                           {['No Criminal Record', 'Healthy / Medical Fit', 'Training Completed', 'Fingerprint Verified'].map(tag => (
-                             <span key={tag} className="px-3 py-1 bg-green-50 text-green-600 text-[9px] font-black uppercase rounded-full border border-green-100">{tag}</span>
-                           ))}
+                    <div className="space-y-4">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                        Mandatory Requirements Status
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          "No Criminal Record",
+                          "Healthy / Medical Fit",
+                          "Training Completed",
+                          "Fingerprint Verified",
+                        ].map((tag) => (
+                          <span
+                            key={tag}
+                            className="px-3 py-1 bg-green-50 text-green-600 text-[9px] font-black uppercase rounded-full border border-green-100"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                        Education Distribution
+                      </p>
+                      <div className="flex items-center space-x-6 text-primary">
+                        <div>
+                          <p className="text-2xl font-black italic">80%</p>
+                          <p className="text-[8px] font-bold text-gray-400 uppercase">
+                            Grades 9-12
+                          </p>
                         </div>
-                     </div>
-                     <div className="space-y-4">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Education Distribution</p>
-                        <div className="flex items-center space-x-6 text-primary">
-                           <div>
-                              <p className="text-2xl font-black italic">80%</p>
-                              <p className="text-[8px] font-bold text-gray-400 uppercase">Grades 9-12</p>
-                           </div>
-                           <div className="w-px h-8 bg-gray-200" />
-                           <div>
-                              <p className="text-2xl font-black italic">20%</p>
-                              <p className="text-[8px] font-bold text-gray-400 uppercase">Cert / Diploma</p>
-                           </div>
+                        <div className="w-px h-8 bg-gray-200" />
+                        <div>
+                          <p className="text-2xl font-black italic">20%</p>
+                          <p className="text-[8px] font-bold text-gray-400 uppercase">
+                            Cert / Diploma
+                          </p>
                         </div>
-                     </div>
+                      </div>
+                    </div>
                   </div>
                 </section>
               </div>
 
               <div className="p-8 bg-primary/5 rounded-[40px] border-2 border-dashed border-primary/20 flex flex-col items-center text-center space-y-4">
-                 <div className="w-16 h-16 bg-white text-primary rounded-2xl flex items-center justify-center shadow-lg transform -rotate-3">
-                    <Shield className="w-8 h-8" />
-                 </div>
-                 <div className="space-y-2">
-                   <h5 className="text-xl font-black text-primary uppercase tracking-tight">Ready for Final Submission?</h5>
-                   <p className="text-xs text-gray-500 max-w-lg mx-auto">By submitting, you certify that all information above is true and that you possess all original documents for verification during the Federal Police site visit.</p>
-                 </div>
+                <div className="w-16 h-16 bg-white text-primary rounded-2xl flex items-center justify-center shadow-lg transform -rotate-3">
+                  <Shield className="w-8 h-8" />
+                </div>
+                <div className="space-y-2">
+                  <h5 className="text-xl font-black text-primary uppercase tracking-tight">
+                    Ready for Final Submission?
+                  </h5>
+                  <p className="text-xs text-gray-500 max-w-lg mx-auto">
+                    By submitting, you certify that all information above is
+                    true and that you possess all original documents for
+                    verification during the Federal Police site visit.
+                  </p>
+                </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
         <div className="flex justify-between pt-12 mt-auto">
-          <button type="button" onClick={() => setStep(Math.max(1, step - 1))} disabled={step === 1} className="flex items-center space-x-2 px-8 py-4 rounded-2xl font-bold text-gray-500 hover:bg-gray-100 disabled:opacity-0 transition-all">
+          <button
+            type="button"
+            onClick={() => setStep(Math.max(1, step - 1))}
+            disabled={step === 1}
+            className="flex items-center space-x-2 px-8 py-4 rounded-2xl font-bold text-gray-500 hover:bg-gray-100 disabled:opacity-0 transition-all"
+          >
             <ArrowLeft className="w-5 h-5" />
             <span>{curT.back}</span>
           </button>
           {step === 6 ? (
-            <button type="submit" disabled={isSubmitting} className="blue-gradient text-white px-10 py-4 rounded-2xl font-bold shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all flex items-center space-x-2">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="blue-gradient text-white px-10 py-4 rounded-2xl font-bold shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all flex items-center space-x-2"
+            >
               <span>{isSubmitting ? curT.processing : curT.submit}</span>
               {!isSubmitting && <ArrowRight className="w-5 h-5" />}
             </button>
           ) : (
-            <button type="button" onClick={nextStep} className="blue-gradient text-white px-10 py-4 rounded-2xl font-bold shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all flex items-center space-x-2">
-              <span>{step === 5 ? (language === 'am' ? 'ባለሙያ ግምገማ' : 'Review Application') : curT.continue}</span>
+            <button
+              type="button"
+              onClick={nextStep}
+              className="blue-gradient text-white px-10 py-4 rounded-2xl font-bold shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all flex items-center space-x-2"
+            >
+              <span>
+                {step === 5
+                  ? language === "am"
+                    ? "ባለሙያ ግምገማ"
+                    : "Review Application"
+                  : curT.continue}
+              </span>
               <ArrowRight className="w-5 h-5" />
             </button>
           )}
@@ -1273,9 +2001,9 @@ export const NewApplication = () => {
       </form>
 
       <AnimatePresence>
-        <ViewerModal 
+        <ViewerModal
           isOpen={viewerState.isOpen}
-          onClose={() => setViewerState(prev => ({ ...prev, isOpen: false }))}
+          onClose={() => setViewerState((prev) => ({ ...prev, isOpen: false }))}
           file={viewerState.file}
           previewUrl={viewerState.url}
         />

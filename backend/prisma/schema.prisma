@@ -1,0 +1,88 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlserver"
+}
+
+model Region {
+  id    Int    @id(map: "PK__regions__01146BAEBE221DD1") @default(autoincrement()) @map("region_id")
+  name  String @unique(map: "UQ__regions__4BB31B03F2BF7603") @map("region_name") @db.VarChar(100)
+  zones Zone[]
+
+  @@map("regions")
+}
+
+model Zone {
+  id       Int      @id(map: "PK__zones__80B401DF6769EBAD") @default(autoincrement()) @map("zone_id")
+  regionId Int      @map("region_id")
+  name     String   @map("zone_name") @db.VarChar(100)
+  woredas  Woreda[]
+  region   Region   @relation(fields: [regionId], references: [id], onUpdate: NoAction, map: "FK_Zones_Regions")
+
+  @@map("zones")
+}
+
+model Woreda {
+  id      Int      @id(map: "PK__woredas__024DE9E7AD1B218E") @default(autoincrement()) @map("woreda_id")
+  zoneId  Int      @map("zone_id")
+  name    String   @map("woreda_name") @db.VarChar(100)
+  kebeles Kebele[]
+  zone    Zone     @relation(fields: [zoneId], references: [id], onUpdate: NoAction, map: "FK_Woredas_Zones")
+
+  @@map("woredas")
+}
+
+model Kebele {
+  id        Int       @id(map: "PK__kebeles__E44A705322F18FA2") @default(autoincrement()) @map("kebele_id")
+  woredaId  Int       @map("woreda_id")
+  name      String    @map("kebele_name") @db.VarChar(100)
+  addresses Address[]
+  woreda    Woreda    @relation(fields: [woredaId], references: [id], onUpdate: NoAction, map: "FK_Kebeles_Woredas")
+
+  @@map("kebeles")
+}
+
+model Address {
+  id              Int     @id(map: "PK__addresse__CAA247C865086651") @default(autoincrement()) @map("address_id")
+  kebeleId        Int     @map("kebele_id")
+  houseNumber     String? @map("house_number") @db.VarChar(50)
+  specialLocation String? @map("special_location") @db.VarChar(Max)
+  kebele          Kebele  @relation(fields: [kebeleId], references: [id], onUpdate: NoAction, map: "FK_Addresses_Kebeles")
+  users           User[]
+
+  @@map("addresses")
+}
+
+model User {
+  id         Int          @id(map: "PK__users__B9BE370FAA48DD8D") @default(autoincrement()) @map("user_id")
+  addressId  Int?         @map("address_id")
+  username   String       @unique(map: "UQ__users__F3DBC572ABE5C56B") @db.VarChar(100)
+  fullName   String       @map("full_name") @db.VarChar(255)
+  email      String       @unique(map: "UQ__users__20C6DFF5E0E57950") @map("email_address") @db.VarChar(255)
+  phone      String       @unique(map: "UQ__users__A1936A6BBE0D0FB3") @map("phone_number") @db.VarChar(50)
+  password   String       @map("password_hash") @db.VarChar(Max)
+  faydaId   String   @unique // Add this line
+  createdAt  DateTime?    @default(now(), map: "DF__users__account_c__6E01572D") @map("account_created_at") @db.DateTime
+  user_roles user_roles[]
+  address    Address?     @relation(fields: [addressId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Users_Addresses")
+
+  @@map("users")
+}
+
+model roles {
+  role_id    Int          @id(map: "PK__roles__760965CC3D9EF01F") @default(autoincrement())
+  role_name  String       @unique(map: "UQ__roles__783254B107AC82B7") @db.VarChar(100)
+  user_roles user_roles[]
+}
+
+model user_roles {
+  user_id Int
+  role_id Int
+  roles   roles @relation(fields: [role_id], references: [role_id], onDelete: Cascade, onUpdate: NoAction, map: "FK_UserRoles_Roles")
+  users   User  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_UserRoles_Users")
+
+  @@id([user_id, role_id], map: "PK_UserRoles")
+}

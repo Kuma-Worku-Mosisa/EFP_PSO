@@ -1,16 +1,29 @@
-import React, { useState } from 'react';
-import { useLanguage } from '../context/LanguageContext';
-import { useAuth } from '../context/AuthContext';
-import { Shield, Lock, User, ArrowRight, AlertCircle, Mail, MessageSquare, Smartphone, Eye, EyeOff } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import React, { useState } from "react";
+import { useLanguage } from "../../../context/LanguageContext";
+import { useAuth } from "../../../context/AuthContext";
+import {
+  Shield,
+  Lock,
+  User,
+  ArrowRight,
+  AlertCircle,
+  Mail,
+  MessageSquare,
+  Smartphone,
+  Eye,
+  EyeOff,
+} from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { Link, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+
+import { apiRequest } from "../../../lib/api";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 
 const loginSchema = z.object({
-  identifier: z.string().min(3, 'Required field must be at least 3 characters'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  identifier: z.string().min(1, "Required field"),
+  password: z.string().min(1, "Required field"),
   otpCode: z.string().optional(),
 });
 
@@ -21,7 +34,7 @@ export const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [otpMethod, setOtpMethod] = useState<'email' | 'sms'>('email');
+  const [otpMethod, setOtpMethod] = useState<"email" | "sms">("email");
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -35,51 +48,38 @@ export const Login = () => {
     resolver: zodResolver(loginSchema),
   });
 
-  const otpCodeValue = watch('otpCode');
+  const otpCodeValue = watch("otpCode");
 
   const handleSendOtp = async () => {
     setOtpLoading(true);
     // Simulate sending OTP
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     setIsOtpSent(true);
     setOtpLoading(false);
   };
 
   const onSubmit = async (data: LoginFormValues) => {
     setLoginError(null);
-
-    if (isOtpSent && !data.otpCode) {
-      setLoginError(t.auth.otpPlaceholder);
-      return;
-    }
-
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      if (isOtpSent && data.otpCode !== '123456') {
-        setLoginError(t.auth.otpError);
-        return;
-      }
+      const res = await apiRequest("/users/login", {
+        method: "POST",
+        body: JSON.stringify({
+          username: data.identifier,
+          password: data.password,
+        }),
+      });
 
-      console.log('Login attempt:', { ...data, otpMethod });
-      
-      // Role-based routing based on demo identifiers
-      const identifier = data.identifier.toLowerCase();
-      
-      if (identifier === 'admin_root' || identifier === 'sa_control') {
-        login('super_admin');
-        navigate('/super-admin/dashboard');
-      } else if (identifier.includes('admin') || identifier.includes('police')) {
-        login('admin');
-        navigate('/admin');
-      } else {
-        // Default to agency dashboard
-        login('agency');
-        navigate('/dashboard');
-      }
-    } catch (err) {
-      setLoginError('Invalid credentials. Please try again.');
+      // Save token and user info as needed
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("fp_user", JSON.stringify(res.data.user));
+
+      // Optionally update AuthContext here if needed
+      // login(res.data.user.role); // If your AuthContext supports this
+
+      // Redirect to dashboard or appropriate page
+      navigate("/dashboard");
+    } catch (err: any) {
+      setLoginError(err.message || "Login failed");
     }
   };
 
@@ -88,18 +88,18 @@ export const Login = () => {
       <div className="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-2 bg-white rounded-[40px] shadow-2xl overflow-hidden border border-gray-100">
         {/* Left Side - Visual */}
         <div className="hidden lg:block relative">
-          <img 
-            src="https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=1000" 
-            alt="Police" 
+          <img
+            src="https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=1000"
+            alt="Police"
             className="absolute inset-0 w-full h-full object-cover"
             referrerPolicy="no-referrer"
           />
           <div className="absolute inset-0 bg-primary/80 backdrop-blur-sm flex flex-col justify-center p-12 text-white space-y-8">
             <Shield className="w-16 h-16 text-secondary" />
-            <h2 className="text-4xl font-bold leading-tight">Secure Access Portal</h2>
-            <p className="text-gray-300 text-lg">
-              {t.footer.desc}
-            </p>
+            <h2 className="text-4xl font-bold leading-tight">
+              Secure Access Portal
+            </h2>
+            <p className="text-gray-300 text-lg">{t.footer.desc}</p>
             <div className="space-y-4">
               {t.fayda.features.slice(0, 3).map((item: string, i: number) => (
                 <div key={i} className="flex items-center space-x-3 text-sm">
@@ -115,15 +115,17 @@ export const Login = () => {
         <div className="p-8 md:p-16 space-y-8">
           <div className="flex flex-col items-center space-y-6">
             <div className="w-20 h-20 flex items-center justify-center overflow-hidden">
-              <img 
-                src="https://upload.wikimedia.org/wikipedia/commons/3/30/Federal_Police_Commission_of_Ethiopia_Coat_of_Arms_and_Logo.png" 
-                alt="Ethiopian Federal Police Logo" 
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/3/30/Federal_Police_Commission_of_Ethiopia_Coat_of_Arms_and_Logo.png"
+                alt="Ethiopian Federal Police Logo"
                 className="w-20 h-20 object-contain"
                 referrerPolicy="no-referrer"
               />
             </div>
             <div className="text-center space-y-2">
-              <h1 className="text-3xl font-bold text-primary">{t.auth.userLogin}</h1>
+              <h1 className="text-3xl font-bold text-primary">
+                {t.auth.userLogin}
+              </h1>
               <p className="text-gray-500">{t.auth.signIn}</p>
             </div>
           </div>
@@ -137,17 +139,19 @@ export const Login = () => {
             )}
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700 ml-1">{t.auth.username}</label>
+              <label className="text-sm font-bold text-gray-700 ml-1">
+                {t.auth.username}
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <User className="text-gray-400 w-5 h-5" />
                 </div>
-                <input 
-                  {...register('identifier')}
-                  type="text" 
+                <input
+                  {...register("identifier")}
+                  type="text"
                   placeholder={t.auth.username}
                   className={`w-full pl-12 pr-4 py-4 bg-gray-50 border rounded-2xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all ${
-                    errors.identifier ? 'border-red-500' : 'border-gray-200'
+                    errors.identifier ? "border-red-500" : "border-gray-200"
                   }`}
                 />
               </div>
@@ -161,19 +165,23 @@ export const Login = () => {
 
             <div className="space-y-2">
               <div className="flex justify-between items-center px-1">
-                <label className="text-sm font-bold text-gray-700">{t.auth.password}</label>
-                <a href="#" className="text-xs text-accent hover:underline">Forgot Password?</a>
+                <label className="text-sm font-bold text-gray-700">
+                  {t.auth.password}
+                </label>
+                <a href="#" className="text-xs text-accent hover:underline">
+                  Forgot Password?
+                </a>
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <Lock className="text-gray-400 w-5 h-5" />
                 </div>
-                <input 
-                  {...register('password')}
-                  type={showPassword ? "text" : "password"} 
+                <input
+                  {...register("password")}
+                  type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   className={`w-full pl-12 pr-12 py-4 bg-gray-50 border rounded-2xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all ${
-                    errors.password ? 'border-red-500' : 'border-gray-200'
+                    errors.password ? "border-red-500" : "border-gray-200"
                   }`}
                 />
                 <button
@@ -181,28 +189,38 @@ export const Login = () => {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-primary transition-colors"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
 
-              {watch('password') && (
+              {watch("password") && (
                 <div className="space-y-1.5 px-1">
                   <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden flex gap-0.5">
                     {[1, 2, 3, 4].map((step) => {
-                      const password = watch('password') || '';
+                      const password = watch("password") || "";
                       let strength = 0;
                       if (password.length >= 8) strength += 1;
                       if (/[A-Z]/.test(password)) strength += 1;
                       if (/[0-9]/.test(password)) strength += 1;
                       if (/[^A-Za-z0-9]/.test(password)) strength += 1;
-                      
-                      const colors = ['bg-gray-200', 'bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500'];
+
+                      const colors = [
+                        "bg-gray-200",
+                        "bg-red-500",
+                        "bg-orange-500",
+                        "bg-yellow-500",
+                        "bg-green-500",
+                      ];
                       return (
-                        <div 
-                          key={step} 
+                        <div
+                          key={step}
                           className={`h-full flex-1 transition-all duration-500 ${
-                            strength >= step ? colors[strength] : 'bg-gray-100'
-                          }`} 
+                            strength >= step ? colors[strength] : "bg-gray-100"
+                          }`}
                         />
                       );
                     })}
@@ -220,27 +238,37 @@ export const Login = () => {
 
             <div className="space-y-4">
               <div className="flex flex-col space-y-3">
-                <label className="text-sm font-bold text-gray-700 ml-1">{t.auth.otpOption}</label>
+                <label className="text-sm font-bold text-gray-700 ml-1">
+                  {t.auth.otpOption}
+                </label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
-                    onClick={() => setOtpMethod('email')}
+                    onClick={() => setOtpMethod("email")}
                     className={`flex items-center justify-center space-x-2 p-3 rounded-xl border transition-all ${
-                      otpMethod === 'email' ? 'border-primary bg-primary/5 text-primary' : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                      otpMethod === "email"
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-gray-200 text-gray-500 hover:border-gray-300"
                     }`}
                   >
                     <Mail className="w-4 h-4" />
-                    <span className="text-sm font-semibold">{t.auth.otpMethodEmail}</span>
+                    <span className="text-sm font-semibold">
+                      {t.auth.otpMethodEmail}
+                    </span>
                   </button>
                   <button
                     type="button"
-                    onClick={() => setOtpMethod('sms')}
+                    onClick={() => setOtpMethod("sms")}
                     className={`flex items-center justify-center space-x-2 p-3 rounded-xl border transition-all ${
-                      otpMethod === 'sms' ? 'border-primary bg-primary/5 text-primary' : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                      otpMethod === "sms"
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-gray-200 text-gray-500 hover:border-gray-300"
                     }`}
                   >
                     <MessageSquare className="w-4 h-4" />
-                    <span className="text-sm font-semibold">{t.auth.otpMethodSms}</span>
+                    <span className="text-sm font-semibold">
+                      {t.auth.otpMethodSms}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -272,7 +300,7 @@ export const Login = () => {
                       <Lock className="text-primary w-5 h-5" />
                     </div>
                     <input
-                      {...register('otpCode')}
+                      {...register("otpCode")}
                       type="text"
                       maxLength={6}
                       placeholder={t.auth.otpPlaceholder}
@@ -286,11 +314,11 @@ export const Login = () => {
               )}
             </div>
 
-            <button 
+            <button
               type="submit"
               disabled={isSubmitting}
               className={`w-full blue-gradient text-white font-bold py-4 rounded-2xl hover:shadow-xl hover:scale-[1.02] transition-all flex items-center justify-center space-x-2 ${
-                isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
+                isSubmitting ? "opacity-70 cursor-not-allowed" : ""
               }`}
             >
               <span>{isSubmitting ? t.common.loading : t.auth.signIn}</span>
@@ -300,7 +328,13 @@ export const Login = () => {
 
           <div className="text-center space-y-4">
             <p className="text-sm text-gray-500">
-              {t.auth.noAccount} <Link to="/register" className="text-accent font-bold hover:underline">{t.auth.register}</Link>
+              {t.auth.noAccount}{" "}
+              <Link
+                to="/register"
+                className="text-accent font-bold hover:underline"
+              >
+                {t.auth.register}
+              </Link>
             </p>
           </div>
         </div>
