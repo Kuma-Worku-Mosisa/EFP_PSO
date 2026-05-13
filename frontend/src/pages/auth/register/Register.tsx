@@ -1,3 +1,4 @@
+//frontend/src/pages/auth/register/Register.tsx
 import React from "react";
 import { useLanguage } from "../../../context/LanguageContext";
 import {
@@ -7,18 +8,21 @@ import {
   Phone,
   Fingerprint,
   ArrowRight,
-  AlertCircle,
   CheckCircle2,
   Eye,
   EyeOff,
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { apiRequest } from "../../../lib/api";
+import {
+  AutoDismissToast,
+  type ToastType,
+} from "../../../components/AutoDismissToast";
 
 const registerSchema = z
   .object({
@@ -40,21 +44,62 @@ const registerSchema = z
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
+const getSafeRegistrationErrorMessage = (error: unknown): string => {
+  const statusCode =
+    typeof error === "object" && error !== null && "statusCode" in error
+      ? (error as { statusCode?: number | null }).statusCode
+      : null;
+
+  if (statusCode === 400) {
+    return "Registration data is invalid. Please review your input and try again.";
+  }
+
+  if (statusCode === 409) {
+    return "An account with these details already exists.";
+  }
+
+  if (statusCode === 429) {
+    return "Too many requests. Please wait a moment and try again.";
+  }
+
+  if (typeof statusCode === "number" && statusCode >= 500) {
+    return "Service Unavailable: Please try again later.";
+  }
+
+  return "Service Unavailable: Please check your connection and try again.";
+};
+
 export const Register = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [isSuccess, setIsSuccess] = React.useState(false);
+  const [toast, setToast] = React.useState<{
+    isOpen: boolean;
+    type: ToastType;
+    message: string;
+  }>({
+    isOpen: false,
+    type: "success",
+    message: "",
+  });
   const [showOtpField, setShowOtpField] = React.useState(false);
   const [isOtpSent, setIsOtpSent] = React.useState(false);
   const [isOtpVerified, setIsOtpVerified] = React.useState(false);
   const [showPassword, setShowPassword] = React.useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
+  const showToast = React.useCallback((type: ToastType, message: string) => {
+    setToast({ isOpen: true, type, message });
+  }, []);
+
+  const closeToast = React.useCallback(() => {
+    setToast((prev) => ({ ...prev, isOpen: false }));
+  }, []);
+
   const {
     register,
     handleSubmit,
     watch,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -76,7 +121,6 @@ export const Register = () => {
   };
 
   const strength = getPasswordStrength(passwordValue);
-  const confirmStrength = getPasswordStrength(confirmPasswordValue);
 
   const getStrengthColor = (level: number) => {
     switch (level) {
@@ -115,16 +159,20 @@ export const Register = () => {
     if (!faydaIdValue || faydaIdValue.length < 5) return;
     setIsOtpSent(true);
     setShowOtpField(true);
-    // Simulate SMS sending
-    alert(
-      "SMS verification code sent to the phone number linked to your Fayda ID.",
+    showToast(
+      "success",
+      "Verification code sent to the phone number linked to your Fayda ID.",
     );
   };
 
   const handleVerifyOtp = async () => {
-    if (!otpCodeValue || otpCodeValue.length !== 6) return;
+    if (!otpCodeValue || otpCodeValue.length !== 6) {
+      showToast("error", "Please enter a valid 6-digit verification code.");
+      return;
+    }
     // Simulate verification
     setIsOtpVerified(true);
+    showToast("success", "Fayda ID verified successfully.");
   };
 
   const onSubmit = async (data: RegisterFormValues) => {
@@ -149,8 +197,8 @@ export const Register = () => {
       });
       setIsSuccess(true);
       setTimeout(() => navigate("/login"), 3000);
-    } catch (err: any) {
-      alert(err.message || "Registration failed");
+    } catch (err: unknown) {
+      showToast("error", getSafeRegistrationErrorMessage(err));
     }
   };
 
@@ -186,6 +234,13 @@ export const Register = () => {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
+      <AutoDismissToast
+        isOpen={toast.isOpen}
+        type={toast.type}
+        message={toast.message}
+        onClose={closeToast}
+        durationMs={5000}
+      />
       <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-5 bg-white rounded-[40px] shadow-2xl overflow-hidden border border-gray-100">
         {/* Left Side - Info */}
         <div className="lg:col-span-2 bg-primary p-12 text-white space-y-8 relative overflow-hidden">

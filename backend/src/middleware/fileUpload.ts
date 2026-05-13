@@ -1,0 +1,215 @@
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import crypto from "crypto";
+
+// Define the base upload directory
+const UPLOAD_BASE_DIR = path.join(process.cwd(), "uploads");
+
+// Ensure base upload directory exists
+if (!fs.existsSync(UPLOAD_BASE_DIR)) {
+  fs.mkdirSync(UPLOAD_BASE_DIR, { recursive: true });
+}
+
+// Valid roles for document organization
+export const VALID_ROLES = [
+  "organization",
+  "manager",
+  "operations",
+  "administrator",
+  "security_guard",
+];
+
+/**
+ * Creates the folder structure for an organization
+ * uploads/{organizationName}/{role}/
+ */
+export const ensureOrganizationFolders = (organizationName: string) => {
+  const orgDir = path.join(UPLOAD_BASE_DIR, organizationName);
+
+  // Create organization root folder
+  if (!fs.existsSync(orgDir)) {
+    fs.mkdirSync(orgDir, { recursive: true });
+  }
+
+  // Create role subfolders
+  VALID_ROLES.forEach((role) => {
+    const roleDir = path.join(orgDir, role);
+    if (!fs.existsSync(roleDir)) {
+      fs.mkdirSync(roleDir, { recursive: true });
+    }
+  });
+
+  return orgDir;
+};
+
+/**
+ * Custom storage configuration for Multer
+ * Stores files in: uploads/{organizationName}/{role}/{timestamp}-{filename}
+ */
+export const createMulterStorage = (organizationName: string, role: string) => {
+  const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      // Validate role
+      if (!VALID_ROLES.includes(role)) {
+        return cb(new Error(`Invalid role: ${role}`));
+      }
+
+      const uploadDir = path.join(UPLOAD_BASE_DIR, organizationName, role);
+
+      // Ensure directory exists
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+      // Create collision-resistant filename: {timestamp}-{random}-{sanitized-original-name}
+      const timestamp = Date.now();
+      const uniqueSuffix = crypto.randomUUID().replace(/-/g, "");
+      const sanitizedName = file.originalname
+        .replace(/[^a-zA-Z0-9.-]/g, "_")
+        .toLowerCase();
+      const filename = `${timestamp}-${uniqueSuffix}-${sanitizedName}`;
+      cb(null, filename);
+    },
+  });
+
+  return storage;
+};
+
+/**
+ * File filter: accept only specific document types
+ */
+export const fileFilter = (
+  req: Express.Request,
+  file: Express.Multer.File,
+  cb: multer.FileFilterCallback,
+) => {
+  // Allowed MIME types
+  const allowedMimes = [
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
+    "image/jpg",
+    "application/msword", // .doc
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+    "application/vnd.ms-excel", // .xls
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+  ];
+
+  if (allowedMimes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(
+      new Error(
+        `Invalid file type: ${file.mimetype}. Allowed: PDF, images, Word, Excel`,
+      ),
+    );
+  }
+};
+
+/**
+ * Create multer instance for organization document uploads
+ */
+export const createOrgDocumentUploader = (
+  organizationName: string,
+  role: string,
+) => {
+  const storage = createMulterStorage(organizationName, role);
+
+  return multer({
+    storage,
+    fileFilter,
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB max file size
+    },
+  });
+};
+
+/**
+ * Create multer instance for mixed organization uploads.
+ * Field names must start with a valid role prefix, e.g. organization_logo,
+ * manager_fingerprint_doc, operations_medical_doc.
+ */
+export const createOrganizationDocumentsUploader = () => {
+  const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      const organizationName = String(req.body?.organizationName || "").trim();
+
+      if (!organizationName) {
+        return cb(new Error("organizationName is required in form data"));
+      }
+
+      const role = String(file.fieldname || "")
+        .split("_")[0]
+        .toLowerCase();
+
+      if (!VALID_ROLES.includes(role)) {
+        return cb(
+          new Error(`Invalid document role: ${role || file.fieldname}`),
+        );
+      }
+
+      // Store mixed uploads in a temporary staging area first
+      const uploadDir = path.join(
+        UPLOAD_BASE_DIR,
+        "_tmp",
+        organizationName,
+        role,
+      );
+
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+      const timestamp = Date.now();
+      const uniqueSuffix = crypto.randomUUID().replace(/-/g, "");
+      const sanitizedName = file.originalname
+        .replace(/[^a-zA-Z0-9.-]/g, "_")
+        .toLowerCase();
+      cb(null, `${timestamp}-${uniqueSuffix}-${sanitizedName}`);
+    },
+  });
+
+  return multer({
+    storage,
+    fileFilter,
+    limits: {
+      fileSize: 10 * 1024 * 1024,
+    },
+  });
+};
+
+/**
+ * Get relative file path for database storage
+ */
+export const getRelativeFilePath = (
+  organizationName: string,
+  role: string,
+  filename: string,
+): string => {
+  return `uploads/${organizationName}/${role}/${filename}`;
+};
+
+/**
+ * Get relative file path for temporary staging
+ */
+export const getRelativeTempFilePath = (
+  organizationName: string,
+  role: string,
+  filename: string,
+): string => {
+  return `uploads/_tmp/${organizationName}/${role}/${filename}`;
+};
+
+/**
+ * Get full file path from database path
+ */
+export const getFullFilePath = (relativePath: string): string => {
+  return path.join(process.cwd(), relativePath);
+};

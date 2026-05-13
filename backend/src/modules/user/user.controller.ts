@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { validationResult } from "express-validator";
 import * as UserService from "./user.service";
 import { ApiResponse } from "../../utils/apiResponse"; // Import the utility
+import prisma from "../../lib/prisma";
+
 
 // src/modules/user/user.controller.ts
 import * as bcrypt from "bcryptjs"; // Fixes the UMD global error
@@ -50,6 +52,7 @@ export const registerHandler = async (req: Request, res: Response) => {
 };
 
 
+
 export const loginHandler = async (req: Request, res: Response) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -59,32 +62,54 @@ export const loginHandler = async (req: Request, res: Response) => {
   try {
     const { username, password } = req.body;
 
-    // 1. Find user by username
-    const user = await UserService.findUserByUsername(username);
+    // 1. Find user and INCLUDE the roles relationship
+  const user = await prisma.user.findUnique({
+    where: { username },
+    include: {
+      user_roles: {
+        include: {
+          roles: true,
+        },
+      },
+    },
+  });
+
     if (!user) {
       return ApiResponse.error(res, "Invalid username or password", 401);
     }
 
-    // // 2. Compare hashed password using namespaced bcrypt
-    // const isMatch = await bcrypt.compare(password, user.password);
-    // if (!isMatch) {
-    //   return ApiResponse.error(res, "Invalid username or password", 401);
-    // }
+    // 2. Compare hashed password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return ApiResponse.error(res, "Invalid username or password", 401);
+    }
 
-    // 3. Generate JWT Token
+    // 3. Flatten roles into a simple string array: ["admin", "agency"]
+    const roles = user.user_roles.map((ur) => ur.roles.role_name);
+
+    // 4. Generate JWT Token with Roles in the payload
     const token = jwt.sign(
-      { userId: user.id, username: user.username },
+      {
+        userId: user.id,
+        username: user.username,
+        roles: roles, // Added for the 'authorize' middleware
+      },
       process.env.JWT_SECRET || "fallback_secret",
       { expiresIn: "1d" },
     );
 
-    const { password: _, ...userWithoutPassword } = user;
+    // 5. Clean user object for response (Remove password and nested relations)
+    const { password: _, user_roles: __, ...userWithoutSensitiveInfo } = user;
 
     return ApiResponse.success(res, "Login successful", {
       token,
-      user: userWithoutPassword,
+      user: {
+        ...userWithoutSensitiveInfo,
+        roles: roles, // Send roles to frontend too
+      },
     });
   } catch (error: any) {
+    console.error("Login Error:", error);
     return ApiResponse.error(res, "Internal server error", 500, error.message);
   }
 };

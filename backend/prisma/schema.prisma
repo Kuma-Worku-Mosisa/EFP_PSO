@@ -46,28 +46,37 @@ model Kebele {
 }
 
 model Address {
-  id              Int     @id(map: "PK__addresse__CAA247C865086651") @default(autoincrement()) @map("address_id")
-  kebeleId        Int     @map("kebele_id")
-  houseNumber     String? @map("house_number") @db.VarChar(50)
-  specialLocation String? @map("special_location") @db.VarChar(Max)
-  kebele          Kebele  @relation(fields: [kebeleId], references: [id], onUpdate: NoAction, map: "FK_Addresses_Kebeles")
-  users           User[]
+  id              Int            @id(map: "PK__addresse__CAA247C865086651") @default(autoincrement()) @map("address_id")
+  kebeleId        Int            @map("kebele_id")
+  houseNumber     String?        @map("house_number") @db.VarChar(50)
+  specialLocation String?        @map("special_location") @db.VarChar(Max)
+  kebele          Kebele         @relation(fields: [kebeleId], references: [id], onUpdate: NoAction, map: "FK_Addresses_Kebeles")
+  organizations   Organization[]
+  employees       Employee[]
 
   @@map("addresses")
 }
 
 model User {
   id         Int          @id(map: "PK__users__B9BE370FAA48DD8D") @default(autoincrement()) @map("user_id")
-  addressId  Int?         @map("address_id")
   username   String       @unique(map: "UQ__users__F3DBC572ABE5C56B") @db.VarChar(100)
   fullName   String       @map("full_name") @db.VarChar(255)
   email      String       @unique(map: "UQ__users__20C6DFF5E0E57950") @map("email_address") @db.VarChar(255)
   phone      String       @unique(map: "UQ__users__A1936A6BBE0D0FB3") @map("phone_number") @db.VarChar(50)
   password   String       @map("password_hash") @db.VarChar(Max)
-  faydaId   String   @unique // Add this line
+  faydaId    String       @unique // Add this line
   createdAt  DateTime?    @default(now(), map: "DF__users__account_c__6E01572D") @map("account_created_at") @db.DateTime
   user_roles user_roles[]
-  address    Address?     @relation(fields: [addressId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Users_Addresses")
+
+  // Add these back-relation fields:
+   formalRequests  FormalRequest[]
+  auditLogs       AuditLog[]                   @relation("UserAuditLogs")
+  employee        Employee?
+  inspections     Inspection[]                 @relation("LeadInspector")
+  incidentReports IncidentReport[]             @relation("IncidentReporter")
+  issuedPenalties IncidentPenalty[]            @relation("PenaltyIssuer")
+  historyLogs     ApplicationTrackingHistory[]
+  createdFaqs     Faq[]                        @relation("FaqCreator")
 
   @@map("users")
 }
@@ -85,4 +94,422 @@ model user_roles {
   users   User  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_UserRoles_Users")
 
   @@id([user_id, role_id], map: "PK_UserRoles")
+}
+
+model FormalRequest {
+  id                Int       @id @default(autoincrement())
+  userId            Int      
+  user              User      @relation(fields: [userId], references: [id])
+  requestLetterUrl  String    
+  status            String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  adminFeedback     String?   @db.VarChar(Max)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@map("formal_requests")
+}
+
+model Organization {
+  id               Int     @id @default(autoincrement()) @map("organization_id")
+  name             String  @unique @map("organization_name") @db.VarChar(255)
+  headOfficeName   String  @map("head_office_name") @db.VarChar(255)
+  branchOfficeName String? @map("branch_office_name") @db.VarChar(255)
+  parentOrgId      Int?    @map("parent_org_id")
+  email            String  @unique @map("email_address") @db.VarChar(255)
+  phone            String  @map("phone_number") @db.VarChar(50)
+  faxNumber        String? @map("fax_number") @db.VarChar(50)
+  tradeName        String? @map("trade_name") @db.VarChar(255)
+  tinNumber        String  @unique @map("tin_number") @db.VarChar(50)
+  //licenseNumber     String?  @unique @map("license_number") @db.VarChar(100)
+  addressId        Int?    @map("address_id")
+
+  // Resource Tracking (Step 3)
+  numberOfOffices   Int?     @map("number_of_offices")
+  numberOfVehicles  Int?     @map("number_of_vehicles")
+  numberOfComputers Int?     @map("number_of_computers")
+  hasStoreHouse     Boolean  @default(false) @map("has_store_house")
+  capitalAmount     Decimal? @map("capital_amount") @db.Decimal(18, 2)
+
+  // Personnel Names (Step 5) - ADD THESE FIELDS
+  managerName          String? @map("manager_name") @db.VarChar(255)
+  operationHeadName    String? @map("ops_head_name") @db.VarChar(255)
+  adminFinanceHeadName String? @map("admin_head_name") @db.VarChar(255)
+
+  // Assets/Media
+  logoUrl          String? @map("logo_url") @db.VarChar(Max)
+  uniformSampleUrl String? @map("uniform_sample_url") @db.VarChar(Max)
+  idCardSampleUrl  String? @map("id_card_sample_url") @db.VarChar(Max)
+
+  // Status & Metadata
+  status    String?  @default("Pending") @map("organization_status") @db.VarChar(50)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime
+
+  // Relations
+  address        Address?               @relation(fields: [addressId], references: [id], onUpdate: NoAction, map: "FK_Organizations_Addresses")
+  parentOrg      Organization?          @relation("OrgHierarchy", fields: [parentOrgId], references: [id], onUpdate: NoAction, onDelete: NoAction, map: "FK_Organizations_Parent")
+  childOrgs      Organization[]         @relation("OrgHierarchy")
+  documents      OrganizationDocument[]
+  employees      Employee[]
+  applications   Application[]
+  certifications Certification[]
+  incidents      IncidentReport[]
+
+  @@map("organizations")
+}
+
+// DELETE the 'enum OrgDocumentType' block entirely from your file.
+
+model OrganizationDocument {
+  id             Int       @id @default(autoincrement()) @map("org_doc_id")
+  organizationId Int       @map("organization_id")
+  // Change this from OrgDocumentType to String
+  documentType   String    @map("document_type") @db.VarChar(50)
+  fileUrl        String    @map("file_url") @db.VarChar(Max)
+  expiryDate     DateTime? @map("expiry_date") @db.Date
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, map: "FK_OrgDocs_Organizations")
+
+  @@map("organization_documents")
+}
+
+// ==========================================
+// 3. HRMS: EMPLOYEES, POSITIONS & DOCS
+// ==========================================
+
+model Employee {
+  id              Int     @id @default(autoincrement()) @map("employee_id")
+  userId          Int     @unique @map("user_id")
+  organizationId  Int     @map("organization_id")
+  addressId       Int?    @map("address_id")
+  gender          String? @db.VarChar(20)
+  //faydaIdNumber         String    @unique @map("fayda_id_number") @db.VarChar(100)
+  citizenship     String? @db.VarChar(100)
+  age             Int?
+  educationLevel  String? @map("education_level") @db.VarChar(100)
+  defenseExpYears Int     @default(0) @map("defense_exp_years")
+  policeExpYears  Int     @default(0) @map("police_exp_years")
+  othersExpYears  Int     @default(0) @map("others_exp_years")
+
+  isBlacklisted       Boolean   @default(false) @map("is_blacklisted")
+  employmentStatus    String?   @map("employment_status") @db.VarChar(50)
+  employmentStartDate DateTime? @map("employment_start_date") @db.Date
+
+  // Core Relations
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade, map: "FK_Employees_Users")
+  organization Organization @relation(fields: [organizationId], references: [id], onUpdate: NoAction, map: "FK_Employees_Organizations")
+  address      Address?     @relation(fields: [addressId], references: [id], onUpdate: NoAction, map: "FK_Employees_Addresses")
+
+  // Existing Module Relations
+  positions     EmployeePosition[]
+  educationDocs EmployeeEducationDocument[]
+  documents     EmployeeDocument[]
+
+  // Application Tracking Roles
+  managedApplications    Application[] @relation("ManagerRole")
+  operationsApplications Application[] @relation("OperationsHeadRole")
+  adminApplications      Application[] @relation("AdminHeadRole")
+
+  // ADDED: Required back-relations for Incident and Manager Change modules
+  incidentReports IncidentReport[]
+
+  @@map("employees")
+}
+
+model Position {
+  id   Int    @id @default(autoincrement()) @map("position_id")
+  name String @unique @map("position_name") @db.VarChar(100)
+
+  employees    EmployeePosition[]
+  requirements PositionRequirement?
+
+  @@map("positions")
+}
+
+model EmployeePosition {
+  employeeId Int @map("employee_id")
+  positionId Int @map("position_id")
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade, map: "FK_EmpPos_Employees")
+  position Position @relation(fields: [positionId], references: [id], onDelete: Cascade, map: "FK_EmpPos_Positions")
+
+  @@id([employeeId, positionId], map: "PK_EmployeePositions")
+  @@map("employee_positions")
+}
+
+model PositionRequirement {
+  positionId              Int     @id @map("position_id")
+  minimumExperienceYears  Int?    @map("minimum_experience_years")
+  requiredEducationLevel  String? @map("required_education_level") @db.VarChar(100)
+  requiredExperienceField String? @map("required_experience_field") @db.VarChar(255)
+
+  position Position @relation(fields: [positionId], references: [id], onDelete: Cascade, map: "FK_PosReq_Positions")
+
+  @@map("position_requirements")
+}
+
+// ==========================================
+// DOCUMENTATION MODELS
+// ==========================================
+
+model EmployeeEducationDocument {
+  id                    Int      @id @default(autoincrement()) @map("education_documents_id")
+  employeeId            Int      @map("employee_id")
+  educationDocumentType String   @map("education_document_type") @db.VarChar(100)
+  fileUrl               String   @map("education_document_file_url") @db.VarChar(Max)
+  isVerified            Boolean  @default(false) @map("is_verified")
+  uploadedAt            DateTime @default(now()) @map("uploaded_at") @db.DateTime
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade, map: "FK_EduDocs_Employees")
+
+  @@map("employee_education_documents")
+}
+
+model EmployeeDocument {
+  id           Int      @id @default(autoincrement()) @map("document_id")
+  employeeId   Int      @map("employee_id")
+  documentType String   @map("document_type") @db.VarChar(100)
+  fileUrl      String   @map("document_file_url") @db.VarChar(Max)
+  isVerified   Boolean  @default(false) @map("is_verified")
+  uploadedAt   DateTime @default(now()) @map("uploaded_at") @db.DateTime
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade, map: "FK_EmpDocs_Employees")
+
+  @@map("employee_documents")
+}
+
+// ==========================================
+// 4. APPLICATIONS & TRACKING
+// ==========================================
+
+model Application {
+  id             Int     @id @default(autoincrement()) @map("application_id")
+  organizationId Int     @map("organization_id")
+  type           String? @map("application_type") @db.VarChar(50)
+  status         String? @map("application_status") @db.VarChar(50)
+
+  managerId        Int? @map("manager_id")
+  operationsHeadId Int? @map("operations_head_id")
+  adminHeadId      Int? @map("admin_head_id")
+
+  applicationDate DateTime @default(now()) @map("application_date") @db.DateTime
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onUpdate: NoAction, map: "FK_Apps_Orgs")
+
+  // Updated with onDelete: NoAction to prevent SQL Server Cyclic Dependency errors
+  manager        Employee? @relation("ManagerRole", fields: [managerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Apps_Manager")
+  operationsHead Employee? @relation("OperationsHeadRole", fields: [operationsHeadId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Apps_OpsHead")
+  adminHead      Employee? @relation("AdminHeadRole", fields: [adminHeadId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Apps_AdminHead")
+
+  // Tracking & Modules
+  history         ApplicationTrackingHistory[]
+  trainingDetails OrganizationTrainingDetail[]
+  inspections     Inspection[]
+  payments        Payment[]
+  certifications  Certification[]
+
+  @@map("applications")
+}
+
+model ApplicationTrackingHistory {
+  id            Int      @id @default(autoincrement()) @map("tracking_id")
+  applicationId Int      @map("application_id")
+  statusState   String?  @map("status_state") @db.VarChar(100)
+  remarks       String?  @db.VarChar(Max)
+  changedBy     Int      @map("changed_by_user_id")
+  changedAt     DateTime @default(now()) @map("changed_at") @db.DateTime
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade, map: "FK_AppHist_Apps")
+  user        User        @relation(fields: [changedBy], references: [id], onUpdate: NoAction, map: "FK_AppHist_Users")
+
+  @@map("application_tracking_history")
+}
+
+// ==========================================
+// 5. TRAINING & EVALUATION
+// ==========================================
+
+model OrganizationTrainingDetail {
+  id                     Int      @id @default(autoincrement()) @map("training_id")
+  applicationId          Int?     @map("application_id")
+  trainingBodyName       String?  @map("training_body_name") @db.VarChar(255)
+  trainingAddress        String?  @map("training_address") @db.VarChar(Max)
+  trainingStartDate      DateTime @map("training_start_date") @db.Date
+  trainingEndDate        DateTime @map("training_end_date") @db.Date
+  trainingDurationDays   Int?     @map("training_duration_days")
+  trainingManualUrl      String?  @map("training_manual_url") @db.VarChar(Max)
+  trainingCertificateUrl String?  @map("training_certificate_url") @db.VarChar(Max)
+  totalTraineesMale      Int      @default(0) @map("total_trainees_male")
+  totalTraineesFemale    Int      @default(0) @map("total_trainees_female")
+  createdAt              DateTime @default(now()) @map("created_at") @db.DateTime
+
+  application Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade, map: "FK_Training_Apps")
+
+  @@map("organization_training_details")
+}
+
+model Inspection {
+  id                    Int      @id @default(autoincrement()) @map("inspection_id")
+  applicationId         Int?     @map("application_id")
+  leadInspectorId       Int?     @map("lead_inspector_id")
+  scheduledDate         DateTime @map("scheduled_date") @db.DateTime
+  status                String?  @map("inspection_status") @db.VarChar(50)
+  isLocationValid       Boolean  @default(false) @map("is_location_valid")
+  isInfrastructureValid Boolean  @default(false) @map("is_infrastructure_valid")
+  isTrainingValid       Boolean  @default(false) @map("is_training_valid")
+  findingsSummary       String?  @map("findings_summary") @db.VarChar(Max)
+  expertOpinion         String?  @map("expert_opinion") @db.VarChar(Max)
+  finalReportUrl        String?  @map("final_report_url") @db.VarChar(Max)
+  createdAt             DateTime @default(now()) @map("created_at") @db.DateTime
+  updatedAt             DateTime @default(now()) @map("updated_at") @db.DateTime
+
+  application      Application?          @relation(fields: [applicationId], references: [id], onDelete: Cascade, map: "FK_Inspections_Apps")
+  leadInspector    User?                 @relation("LeadInspector", fields: [leadInspectorId], references: [id], onUpdate: NoAction, map: "FK_Inspections_Users")
+  committeeMembers InspectionCommittee[]
+
+  @@map("inspections")
+}
+
+model InspectionCommittee {
+  id           Int     @id @default(autoincrement()) @map("committee_id")
+  inspectionId Int     @map("inspection_id")
+  expertName   String  @map("expert_name") @db.VarChar(255)
+  expertRole   String? @map("expert_role") @db.VarChar(100)
+  signatureUrl String  @map("signature_url") @db.VarChar(Max)
+
+  inspection Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade, map: "FK_Committee_Inspections")
+
+  @@map("inspection_committee")
+}
+
+// ==========================================
+// 6. PAYMENTS & CERTIFICATIONS
+// ==========================================
+
+model Payment {
+  id                   Int       @id @default(autoincrement()) @map("payment_id")
+  applicationId        Int?      @map("application_id")
+  amount               Decimal   @db.Decimal(18, 2)
+  transactionReference String    @unique @map("transaction_reference") @db.VarChar(100)
+  status               String?   @map("payment_status") @db.VarChar(50)
+  paymentDate          DateTime? @map("payment_date") @db.DateTime
+
+  application Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "FK_Payments_Apps")
+
+  @@map("payments")
+}
+
+model Certification {
+  id                      Int      @id @default(autoincrement()) @map("certification_id")
+  organizationId          Int?     @map("organization_id")
+  applicationId           Int?     @map("application_id")
+  certificateSerialNumber String?  @unique @map("certificate_serial_number") @db.VarChar(100)
+  level                   String?  @map("certification_level") @db.VarChar(50)
+  issueDate               DateTime @map("issue_date") @db.Date
+  expiryDate              DateTime @map("expiry_date") @db.Date
+  qrCodeValue             String?  @unique @map("qr_code_value") @db.VarChar(255)
+  status                  String?  @map("certification_status") @db.VarChar(50)
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onUpdate: NoAction, map: "FK_Certs_Orgs")
+  application  Application?  @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "FK_Certs_Apps")
+
+  @@map("certifications")
+}
+
+// ==========================================
+// 7. INCIDENT REPORTING & PENALTIES
+// ==========================================
+
+model IncidentReport {
+  id                   Int      @id @default(autoincrement()) @map("report_id")
+  organizationId       Int?     @map("organization_id")
+  employeeId           Int?     @map("employee_id")
+  crimeCategory        String   @map("crime_category") @db.VarChar(100)
+  incidentDate         DateTime @map("incident_date") @db.DateTime
+  locationOfIncident   String   @map("location_of_incident") @db.VarChar(Max)
+  incidentDescription  String   @map("incident_description") @db.VarChar(Max)
+  reportedAt           DateTime @default(now()) @map("reported_at") @db.DateTime
+  isReportedWithin24h  Boolean? @map("is_reported_within_24h")
+  localPoliceStation   String?  @map("local_police_station_name") @db.VarChar(255)
+  localPoliceRefNumber String?  @map("local_police_reference_number") @db.VarChar(100)
+  reportDocumentUrl    String?  @map("report_document_url") @db.VarChar(Max)
+  federalPoliceStatus  String?  @default("Pending Review") @map("federal_police_status") @db.VarChar(50)
+  reportedByUserId     Int?     @map("reported_by_user_id")
+
+  // Relations
+  organization Organization?     @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Incidents_Orgs")
+  employee     Employee?         @relation(fields: [employeeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Incidents_Emps")
+  reporter     User?             @relation("IncidentReporter", fields: [reportedByUserId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Incidents_Users")
+  penalties    IncidentPenalty[]
+
+  @@map("incident_reports")
+}
+
+model IncidentPenalty {
+  id             Int      @id @default(autoincrement()) @map("penalty_id")
+  reportId       Int      @map("report_id")
+  issuedByUserId Int?     @map("issued_by_user_id")
+  penaltyType    String?  @map("penalty_type") @db.VarChar(100)
+  amount         Decimal? @db.Decimal(18, 2)
+  description    String?  @db.VarChar(Max)
+  issuedDate     DateTime @default(now()) @map("issued_date")
+
+  // Relations
+  report IncidentReport @relation(fields: [reportId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Penalties_Reports")
+  issuer User?          @relation("PenaltyIssuer", fields: [issuedByUserId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Penalties_Users")
+
+  @@map("incident_penalties")
+}
+
+// ==========================================
+// 8. NOTIFICATIONS & FAQ
+// ==========================================
+
+model Faq {
+  id              Int      @id @default(autoincrement()) @map("faq_id")
+  categoryType    String   @map("category_type") @db.VarChar(100)
+  questionText    String   @map("question_text") @db.VarChar(Max)
+  answerText      String   @map("answer_text") @db.VarChar(Max)
+  isPublished     Boolean  @default(true) @map("is_published")
+  displayOrder    Int      @default(0) @map("display_order")
+  createdByUserId Int?     @map("created_by_user_id")
+  createdAt       DateTime @default(now()) @map("created_at") @db.DateTime
+  updatedAt       DateTime @default(now()) @map("updated_at") @db.DateTime
+
+  creator User? @relation("FaqCreator", fields: [createdByUserId], references: [id], onUpdate: NoAction, map: "FK_Faq_Users")
+
+  @@map("faqs")
+}
+
+model AuditLog {
+  id Int @id @default(autoincrement()) @map("audit_log_id")
+
+  // Who did it?
+  userId Int? @map("user_id")
+
+  // What action was taken? (e.g., "CREATE", "UPDATE", "DELETE", "LOGIN")
+  action String @db.VarChar(50)
+
+  // Which table/model was affected? (e.g., "Employee", "IncidentReport")
+  entityName String @map("entity_name") @db.VarChar(100)
+
+  // The ID of the specific record changed
+  entityId Int? @map("entity_id")
+
+  // Data changes stored as JSON (SQL Server supports this in VarChar(Max))
+  // Values before the change
+  oldValue String? @map("old_value") @db.VarChar(Max)
+  // Values after the change
+  newValue String? @map("new_value") @db.VarChar(Max)
+
+  // Metadata for tracking
+  ipAddress String?  @map("ip_address") @db.VarChar(50)
+  userAgent String?  @map("user_agent") @db.VarChar(Max)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime
+
+  // Relations
+  // Use NoAction to ensure logs remain even if a user is deleted (Audit Integrity)
+  user User? @relation("UserAuditLogs", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_AuditLogs_Users")
+
+  @@map("audit_logs")
 }

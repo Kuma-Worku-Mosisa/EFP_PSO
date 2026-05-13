@@ -1,79 +1,107 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+} from "react";
 
+// 1. Interface matching your Prisma User model exactly
 interface User {
-  name: string;
+  id: number;
+  fullName: string;
   email: string;
-  username?: string;
-  role: 'admin' | 'agency' | 'super_admin';
+  username: string;
+  roles: string[]; // Array of role names from your join table
   initials: string;
-  agencyName?: string;
   avatar?: string;
+  agencyName?: string;
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (role: 'admin' | 'agency' | 'super_admin') => void;
+  token: string | null;
+  login: (userData: any, token: string) => void; // Accepts real API response
   updateAvatar: (url: string) => void;
   logout: () => void;
+  isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    // Check if user is in localStorage (for simulation)
-    const savedUser = localStorage.getItem('fp_user');
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const login = (role: 'admin' | 'agency' | 'super_admin') => {
-    let mockUser: User;
-    if (role === 'agency') {
-      mockUser = {
-        name: 'Abenezer Kassa',
-        email: 'abenezer.manager@abyssinia.com',
-        username: 'abenezer_k',
-        role: 'agency',
-        initials: 'AK',
-        agencyName: 'Abyssinia Security Services'
-      };
-    } else if (role === 'super_admin') {
-      mockUser = {
-        name: 'Super Admin',
-        email: 'super.admin@fedpolice.gov.et',
-        username: 'super_admin',
-        role: 'super_admin',
-        initials: 'SA'
-      };
-    } else {
-      mockUser = {
-        name: 'Admin User',
-        email: 'admin.verify@fedpolice.gov.et',
-        username: 'admin_verify',
-        role: 'admin',
-        initials: 'AU'
-      };
+  // 2. Load session from localStorage on startup
+  useEffect(() => {
+    const savedUser = localStorage.getItem("efp_user");
+    const savedToken = localStorage.getItem("efp_token");
+
+    if (savedUser && savedToken) {
+      setUser(JSON.parse(savedUser));
+      setToken(savedToken);
     }
-    setUser(mockUser);
-    localStorage.setItem('fp_user', JSON.stringify(mockUser));
+    setLoading(false);
+  }, []);
+
+  // 3. Real Login: Now takes the user object and token from your backend
+  const login = (userData: any, authToken: string) => {
+    // Generate initials automatically from the real fullName
+    const initials = userData.fullName
+      ? userData.fullName
+          .split(" ")
+          .map((n: string) => n[0])
+          .join("")
+          .toUpperCase()
+      : "U";
+
+    const cleanUser: User = {
+      id: userData.id,
+      fullName: userData.fullName,
+      email: userData.email,
+      username: userData.username,
+      roles: userData.roles || [],
+      initials: initials,
+      avatar: userData.avatar,
+      agencyName: userData.agencyName,
+    };
+
+    setUser(cleanUser);
+    setToken(authToken);
+
+    localStorage.setItem("efp_user", JSON.stringify(cleanUser));
+    localStorage.setItem("efp_token", authToken);
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('fp_user');
+    setToken(null);
+    localStorage.removeItem("efp_user");
+    localStorage.removeItem("efp_token");
   };
 
   const updateAvatar = (url: string) => {
     if (user) {
       const updatedUser = { ...user, avatar: url };
       setUser(updatedUser);
-      localStorage.setItem('fp_user', JSON.stringify(updatedUser));
+      localStorage.setItem("efp_user", JSON.stringify(updatedUser));
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, updateAvatar, logout }}>
-      {children}
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        login,
+        updateAvatar,
+        logout,
+        isAuthenticated: !!token,
+      }}
+    >
+      {!loading && children}
     </AuthContext.Provider>
   );
 };
@@ -81,7 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

@@ -1,134 +1,4 @@
-// --- LocationFields Component ---
-type Kebele = { id: number; name: string; woredaId: number };
-function LocationFields({
-  register,
-  errors,
-  watch,
-  isFormLocked,
-  openedFields,
-}: any) {
-  const {
-    regions,
-    zones,
-    woredas,
-    kebeles,
-    setRegionId,
-    setZoneId,
-    setWoredaId,
-    regionId,
-    zoneId,
-    woredaId,
-  } = useLocationData();
-
-  // Watch form values
-  const selectedRegion = watch("region");
-  const selectedZone = watch("zone");
-  const selectedWoreda = watch("woreda");
-  const selectedKebele = watch("kebele");
-
-  // Find regionId by name or id
-  React.useEffect(() => {
-    if (selectedRegion) {
-      const region = regions.find(
-        (r) => r.id === Number(selectedRegion) || r.name === selectedRegion,
-      );
-      if (region) setRegionId(region.id);
-    }
-  }, [selectedRegion, regions, setRegionId]);
-
-  React.useEffect(() => {
-    if (selectedZone) {
-      const zone = zones.find(
-        (z) => z.id === Number(selectedZone) || z.name === selectedZone,
-      );
-      if (zone) setZoneId(zone.id);
-    }
-  }, [selectedZone, zones, setZoneId]);
-
-  React.useEffect(() => {
-    if (selectedWoreda) {
-      const woreda = woredas.find(
-        (w) => w.id === Number(selectedWoreda) || w.name === selectedWoreda,
-      );
-      if (woreda) setWoredaId(woreda.id);
-    }
-  }, [selectedWoreda, woredas, setWoredaId]);
-
-  return (
-    <div className="md:col-span-2 grid grid-cols-2 md:grid-cols-5 gap-4">
-      <FormSelect
-        label="Region"
-        name="region"
-        register={register}
-        value={selectedRegion}
-        onChange={(val) => {
-          register("region").onChange({
-            target: { value: val, name: "region" },
-          });
-          setRegionId(Number(val));
-        }}
-        options={regions.map((r) => ({ value: r.id, label: r.name }))}
-        error={errors.region}
-        disabled={isFormLocked}
-        placeholder="Select Region"
-      />
-      <FormSelect
-        label="Zone"
-        name="zone"
-        register={register}
-        value={selectedZone}
-        onChange={(val) => {
-          register("zone").onChange({ target: { value: val, name: "zone" } });
-          setZoneId(Number(val));
-        }}
-        options={zones.map((z) => ({ value: z.id, label: z.name }))}
-        error={errors.zone}
-        disabled={isFormLocked || !regionId}
-        placeholder="Select Zone"
-      />
-      <FormSelect
-        label="Woreda"
-        name="woreda"
-        register={register}
-        value={selectedWoreda}
-        onChange={(val) => {
-          register("woreda").onChange({
-            target: { value: val, name: "woreda" },
-          });
-          setWoredaId(Number(val));
-        }}
-        options={woredas.map((w) => ({ value: w.id, label: w.name }))}
-        error={errors.woreda}
-        disabled={isFormLocked || !zoneId}
-        placeholder="Select Woreda"
-      />
-      <FormSelect
-        label="Kebele"
-        name="kebele"
-        register={register}
-        value={selectedKebele}
-        onChange={(val) =>
-          register("kebele").onChange({
-            target: { value: val, name: "kebele" },
-          })
-        }
-        options={kebeles.map((k) => ({ value: k.id, label: k.name }))}
-        error={errors.kebele}
-        disabled={isFormLocked || !woredaId}
-        placeholder="Select Kebele"
-      />
-      <FormInput
-        label="House No"
-        name="houseNumber"
-        register={register}
-        value={watch("houseNumber")}
-        error={errors.houseNumber}
-        disabled={isFormLocked}
-        isOpenedForEdit={openedFields.includes("houseNumber")}
-      />
-    </div>
-  );
-}
+//frontend/src/pages/NewApplication.tsx
 import React from "react";
 import { useLanguage } from "../context/LanguageContext";
 import {
@@ -145,6 +15,7 @@ import {
   RefreshCw,
   X,
   Trash2,
+  ShieldCheck,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useForm } from "react-hook-form";
@@ -154,35 +25,90 @@ import * as z from "zod";
 import { cn } from "../lib/utils";
 
 import { apiRequest } from "../lib/api";
+import { uploadOrganizationDocuments } from "../lib/fileUploadHelper";
 
-const applicationSchema = z.object({
+// 1. Define a reusable schema for Personnel (Manager, Ops, Admin)
+const personnelSchema = z.object({
+  fullName: z.string().min(3, "Full name is required"),
+  gender: z.string().min(1, "Gender is required"),
+  citizenship: z.string().min(2, "Citizenship is required"),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().min(10, "Invalid phone number"),
+  faydaId: z.string().min(1, "Fayda ID is required"),
+  otp: z.string().optional(),
+  region: z.string().min(1, "Region is required"),
+  zone: z.string().min(1, "Zone is required"),
+  woreda: z.string().min(1, "Woreda is required"),
+  kebele: z.string().min(1, "Kebele is required"),
+  houseNo: z.string().min(1, "House number is required"),
+  specialLocation: z.string().optional(),
+});
+
+export const applicationSchema = z.object({
   // Step 1: Agency Info
   agencyName: z.string().min(3, "Agency name is required"),
   headOfficeName: z.string().min(3, "Head office name is required"),
   branchOfficeName: z.string().optional(),
+  tradeName: z.string().min(4, "Trade name must be at least 4 characters"),
+
+  // Agency Location
   region: z.string().min(1, "Region is required"),
   zone: z.string().min(1, "Zone is required"),
   woreda: z.string().min(1, "Woreda is required"),
   kebele: z.string().min(1, "Kebele is required"),
   houseNumber: z.string().min(1, "House number is required"),
-  phone: z.string().min(10, "Invalid phone number"),
-  fax: z.string().optional(),
-  email: z.string().email("Invalid email address"),
   specialLocation: z.string().optional(),
 
-  // Step 3 & 4: Assets
-  officesCount: z.string().optional(),
-  computersCount: z.string().optional(),
-  vehiclesCount: z.string().optional(),
-  hasStoreHouse: z.boolean().optional(),
+  // Contact Info
+  agencyphone: z.string().min(10, "Invalid phone number"),
+  faxNumber: z.string().min(1, "Fax number is required"),
+  email: z.string().email("Invalid email address"),
+  tinNumber: z.string().min(2, "TIN number is required"),
 
-  // Step 5: Personnel (Simplified for schema, but UI will have all)
-  managerName: z.string().min(3, "Manager name is required"),
-  opsHeadName: z.string().min(3, "Operations head name is required"),
-  adminHeadName: z.string().min(3, "Administration head name is required"),
+  // Step 2: Documents
+
+  // Step 3 & 4: Assets (Preprocessing strings to numbers for Prisma)
+  officesCount: z.preprocess(
+    (val) => Number(val),
+    z.number().min(1, "At least 1 office required"),
+  ),
+  computersCount: z.preprocess(
+    (val) => Number(val),
+    z.number().min(1, "Must be 1 or more"),
+  ),
+  vehiclesCount: z.preprocess(
+    (val) => Number(val),
+    z.number().min(1, "Must be 1 or more"),
+  ),
+  hasStoreHouse: z.preprocess(
+    (val) => val === true || val === "true",
+    z.boolean().default(false),
+  ),
+  capitalAmount: z.preprocess(
+    (val) => Number(val),
+    z.number().min(300, "Capital amount must be at least 300"),
+  ),
+
+  // Step 4: Training
+  trainingAddress: z.string().optional(),
+  trainingProvider: z.string().optional(),
+  trainingDays: z.preprocess((val) => Number(val || 0), z.number()),
+  totalTraineesMale: z.preprocess((val) => Number(val || 0), z.number()),
+  totalTraineesFemale: z.preprocess((val) => Number(val || 0), z.number()),
+
+  // Step 5: Personnel (Nested Objects)
+  // These match the 'prefix' prop you passed to PersonnelSection
+  manager: personnelSchema,
+  ops: personnelSchema,
+  admin: personnelSchema,
+
+  // Flat fields for legacy or UI tracking
+  managerName: z.string().optional(),
+  opsHeadName: z.string().optional(),
+  adminHeadName: z.string().optional(),
 });
 
-type ApplicationFormValues = z.infer<typeof applicationSchema>;
+export type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
 const ViewerModal = ({
   isOpen,
@@ -367,6 +293,8 @@ const FormInput = ({
     </div>
   );
 };
+
+type Kebele = { id: number; name: string; woredaId: number };
 
 // --- Dynamic Location Data ---
 type Region = { id: number; name: string };
@@ -667,6 +595,145 @@ const FileUpload = ({
   );
 };
 
+function LocationFields({
+  register,
+  errors,
+  watch,
+  isFormLocked,
+  openedFields,
+  setValue,
+}: any) {
+  const {
+    regions,
+    zones,
+    woredas,
+    kebeles,
+    setRegionId,
+    setZoneId,
+    setWoredaId,
+    regionId,
+    zoneId,
+    woredaId,
+  } = useLocationData();
+
+  const selectedRegion = watch("region");
+  const selectedZone = watch("zone");
+  const selectedWoreda = watch("woreda");
+  const selectedKebele = watch("kebele");
+
+  React.useEffect(() => {
+    if (selectedRegion) {
+      const region = regions.find(
+        (r) => r.id === Number(selectedRegion) || r.name === selectedRegion,
+      );
+      if (region) setRegionId(region.id);
+    }
+  }, [selectedRegion, regions, setRegionId]);
+
+  React.useEffect(() => {
+    if (selectedZone) {
+      const zone = zones.find(
+        (z) => z.id === Number(selectedZone) || z.name === selectedZone,
+      );
+      if (zone) setZoneId(zone.id);
+    }
+  }, [selectedZone, zones, setZoneId]);
+
+  React.useEffect(() => {
+    if (selectedWoreda) {
+      const woreda = woredas.find(
+        (w) => w.id === Number(selectedWoreda) || w.name === selectedWoreda,
+      );
+      if (woreda) setWoredaId(woreda.id);
+    }
+  }, [selectedWoreda, woredas, setWoredaId]);
+
+  return (
+    <div className="md:col-span-2 grid grid-cols-2 md:grid-cols-5 gap-4">
+      <FormSelect
+        label="Region"
+        name="region"
+        register={register}
+        value={selectedRegion}
+        options={regions.map((r) => ({ value: r.id, label: r.name }))}
+        onChange={(val) => {
+          setValue?.("region", val);
+          setRegionId(Number(val));
+          try {
+            setValue?.("zone", "");
+            setValue?.("woreda", "");
+            setValue?.("kebele", "");
+          } catch (e) {
+            /* ignore */
+          }
+        }}
+        error={errors.region}
+        disabled={isFormLocked}
+        placeholder="Select Region"
+      />
+      <FormSelect
+        label="Zone"
+        name="zone"
+        register={register}
+        value={selectedZone}
+        options={zones.map((z) => ({ value: z.id, label: z.name }))}
+        onChange={(val) => {
+          setValue?.("zone", val);
+          setZoneId(Number(val));
+          try {
+            setValue?.("woreda", "");
+            setValue?.("kebele", "");
+          } catch (e) {
+            /* ignore */
+          }
+        }}
+        error={errors.zone}
+        disabled={isFormLocked || !regionId}
+        placeholder="Select Zone"
+      />
+      <FormSelect
+        label="Woreda"
+        name="woreda"
+        register={register}
+        value={selectedWoreda}
+        options={woredas.map((w) => ({ value: w.id, label: w.name }))}
+        onChange={(val) => {
+          setValue?.("woreda", val);
+          setWoredaId(Number(val));
+          try {
+            setValue?.("kebele", "");
+          } catch (e) {
+            /* ignore */
+          }
+        }}
+        error={errors.woreda}
+        disabled={isFormLocked || !zoneId}
+        placeholder="Select Woreda"
+      />
+      <FormSelect
+        label="Kebele"
+        name="kebele"
+        register={register}
+        value={selectedKebele}
+        options={kebeles.map((k) => ({ value: k.id, label: k.name }))}
+        onChange={(val) => setValue?.("kebele", val)}
+        error={errors.kebele}
+        disabled={isFormLocked || !woredaId}
+        placeholder="Select Kebele"
+      />
+      <FormInput
+        label="House No"
+        name="houseNumber"
+        register={register}
+        value={watch("houseNumber")}
+        error={errors.houseNumber}
+        disabled={isFormLocked}
+        isOpenedForEdit={openedFields.includes("houseNumber")}
+      />
+    </div>
+  );
+}
+
 const PersonnelSection = ({
   title,
   prefix,
@@ -675,6 +742,11 @@ const PersonnelSection = ({
   onDelete,
   onView,
   curT,
+  register,
+  errors,
+  isFormLocked,
+  watch,
+  setValue,
 }: {
   title: string;
   prefix: string;
@@ -683,169 +755,303 @@ const PersonnelSection = ({
   onDelete: (key: string) => void;
   onView: (file: File, url: string | null) => void;
   curT: any;
+  register: any;
+  errors: any;
+  isFormLocked?: boolean;
+  setValue?: any;
+  watch?: any;
 }) => {
   const personnelDocs = [
-    { label: "Fingerprint from Police", key: "fingerprint" },
-    { label: "Medical Result", key: "medical" },
-    { label: "Training Certificate", key: "training" },
-    { label: "Support Letter (Kebele)", key: "support" },
-    { label: "Proof of Collateral", key: "collateral" },
-    { label: "Work Experience", key: "experience" },
-    { label: "Resignation Record", key: "resignation" },
-    { label: "Educational Cert (Degree)", key: "education" },
-    { label: "National ID", key: "nationalId" },
-    { label: "Renewed Kebele ID/Passport", key: "idPassport" },
-    { label: "Org Identification", key: "orgId" },
+    { label: "Fingerprint from Police", key: "fingerprint_doc" },
+    { label: "Medical Result", key: "medical_doc" },
+    { label: "Training Certificate", key: "training_doc" },
+    { label: "Support Letter (Kebele)", key: "support_doc" },
+    { label: "Proof of Collateral", key: "collateral_doc" },
+    { label: "Work Experience", key: "experience_doc" },
+    { label: "Resignation Record", key: "resignation_letter_doc" },
+    { label: "Educational Cert (Degree)", key: "education_doc" },
+    { label: "National ID", key: "national_id_doc" },
+    { label: "Renewed Kebele ID/Passport", key: "passport_or_kabele_doc" },
+    { label: "Org Identification", key: "organization_Id_doc" },
   ];
 
-  return (
-    <div className="space-y-6 bg-gray-50/50 p-6 rounded-3xl border border-gray-100">
-      <h4 className="text-lg font-bold text-primary flex items-center space-x-2">
-        <Users className="w-5 h-5" />
-        <span>{title}</span>
-      </h4>
+  const {
+    regions,
+    zones,
+    woredas,
+    kebeles,
+    setRegionId,
+    setZoneId,
+    setWoredaId,
+    regionId,
+    zoneId,
+    woredaId,
+  } = useLocationData();
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-1">
-          <label className="text-xs font-bold text-gray-500 ml-1">
-            Full Name
-          </label>
-          <input
-            type="text"
-            className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm"
-            placeholder="Full Name"
-          />
+  const selectedRegion = watch?.(`${prefix}.region`);
+  const selectedZone = watch?.(`${prefix}.zone`);
+  const selectedWoreda = watch?.(`${prefix}.woreda`);
+  const selectedKebele = watch?.(`${prefix}.kebele`);
+
+  // Find regionId by name or id and trigger zone fetch
+  React.useEffect(() => {
+    if (selectedRegion) {
+      const region = regions.find(
+        (r) => r.id === Number(selectedRegion) || r.name === selectedRegion,
+      );
+      if (region) setRegionId(region.id);
+    }
+  }, [selectedRegion, regions, setRegionId]);
+
+  // Find zoneId by name or id and trigger woreda fetch
+  React.useEffect(() => {
+    if (selectedZone) {
+      const zone = zones.find(
+        (z) => z.id === Number(selectedZone) || z.name === selectedZone,
+      );
+      if (zone) setZoneId(zone.id);
+    }
+  }, [selectedZone, zones, setZoneId]);
+
+  // Find woredaId by name or id and trigger kebele fetch
+  React.useEffect(() => {
+    if (selectedWoreda) {
+      const woreda = woredas.find(
+        (w) => w.id === Number(selectedWoreda) || w.name === selectedWoreda,
+      );
+      if (woreda) setWoredaId(woreda.id);
+    }
+  }, [selectedWoreda, woredas, setWoredaId]);
+
+  // Helper to get nested error messages safely
+  const getError = (fieldName: string) => {
+    return errors[prefix]?.[fieldName]?.message;
+  };
+
+  return (
+    <div className="space-y-6 bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm transition-all hover:shadow-md">
+      {/* Section Header */}
+      <div className="flex items-center space-x-4 border-b border-gray-50 pb-5">
+        <div className="w-12 h-12 bg-primary/5 rounded-2xl flex items-center justify-center text-primary">
+          <Users className="w-6 h-6" />
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-500 ml-1">
-              Gender
-            </label>
-            <select className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm">
-              <option>Male</option>
-              <option>Female</option>
-            </select>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-500 ml-1">
-              Citizenship
-            </label>
-            <input
-              type="text"
-              className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm"
-              placeholder="Ethiopian"
-            />
-          </div>
+        <div>
+          <h4 className="text-xl font-black text-primary uppercase tracking-tight">
+            {title}
+          </h4>
+          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
+            Personnel Identification & Documentation
+          </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-100 pt-6">
-        <div className="space-y-1 text-left">
-          <label className="text-xs font-bold text-gray-500 ml-1">
-            {curT.faydaId}
+      {/* Basic Info Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <FormInput
+          label="Full Name"
+          name={`${prefix}.fullName`}
+          value={watch("fullName")}
+          register={register}
+          placeholder="Enter legal full name"
+          error={errors[prefix]?.fullName}
+          disabled={isFormLocked}
+        />
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2.5">
+            <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest px-1">
+              Gender
+            </label>
+            <select
+              {...register(`${prefix}.gender`)}
+              disabled={isFormLocked}
+              className={cn(
+                "w-full p-4 bg-gray-50/50 border-2 border-dashed border-gray-200 rounded-2xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold text-primary text-sm appearance-none",
+                isFormLocked && "opacity-75 grayscale cursor-not-allowed",
+              )}
+            >
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+          <FormInput
+            label="Citizenship"
+            name={`${prefix}.citizenship`}
+            register={register}
+            placeholder="Ethiopian"
+            value={watch("citizenship")}
+            error={errors[prefix]?.citizenship}
+            disabled={isFormLocked}
+          />
+        </div>
+      </div>
+
+      {/* Identity & Contact Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border-t border-gray-50 pt-6">
+        <div className="md:col-span-1 space-y-2.5">
+          <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest px-1">
+            {curT.faydaId || "Fayda ID & OTP"}
           </label>
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex gap-2">
             <input
               type="text"
-              className="flex-1 p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm"
+              {...register(`${prefix}.faydaId`)}
+              disabled={isFormLocked}
               placeholder="FAYDA-XXXXX"
+              value={watch("faydaId")}
+              className="flex-1 p-4 bg-white border-2 border-gray-100 rounded-2xl outline-none focus:border-primary text-sm font-bold text-primary shadow-sm"
             />
-            <div className="flex items-center space-x-2 px-4 py-2 bg-white rounded-xl border border-gray-200 w-full sm:w-40">
-              <Shield className="w-4 h-4 text-primary shrink-0" />
+            <div className="flex items-center space-x-2 px-3 bg-primary/5 rounded-2xl border border-primary/10 w-32">
+              <Shield className="w-3.5 h-3.5 text-primary shrink-0" />
               <input
                 type="text"
-                placeholder={curT.otp}
-                className="w-full bg-transparent border-none outline-none text-xs font-bold text-primary"
+                {...register(`${prefix}.otp`)}
+                disabled={isFormLocked}
+                placeholder={curT.otp || "OTP"}
+                className="w-full bg-transparent border-none outline-none text-[10px] font-black text-primary placeholder:text-primary/40"
               />
             </div>
           </div>
+          {getError("faydaId") && (
+            <p className="text-[10px] text-red-500 font-bold uppercase ml-2">
+              {getError("faydaId")}
+            </p>
+          )}
         </div>
-        <div className="space-y-1">
-          <label className="text-xs font-bold text-gray-500 ml-1">
-            {curT.email}
-          </label>
-          <input
-            type="email"
-            className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm"
-            placeholder="email@example.com"
+
+        <FormInput
+          label={curT.email || "Email"}
+          name={`${prefix}.email`}
+          value={watch("email")}
+          type="email"
+          register={register}
+          placeholder="email@example.com"
+          error={errors[prefix]?.email}
+          disabled={isFormLocked}
+        />
+        <FormInput
+          label={curT.phone || "Phone Number"}
+          name={`${prefix}.phone`}
+          type="tel"
+          register={register}
+          placeholder="+251..."
+          value={watch("phone")}
+          error={errors[prefix]?.phone}
+          disabled={isFormLocked}
+        />
+      </div>
+
+      {/* Location Section */}
+      <div className="bg-gray-50/50 p-6 rounded-[32px] border-2 border-dashed border-gray-200 space-y-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <FormSelect
+            label="Region"
+            name={`${prefix}.region`}
+            register={register}
+            value={selectedRegion}
+            options={regions.map((r) => ({ value: r.id, label: r.name }))}
+            onChange={(val) => {
+              setValue?.(`${prefix}.region`, val);
+              setRegionId(Number(val));
+              try {
+                setValue?.(`${prefix}.zone`, "");
+                setValue?.(`${prefix}.woreda`, "");
+                setValue?.(`${prefix}.kebele`, "");
+              } catch (e) {
+                /* ignore */
+              }
+            }}
+            error={errors[prefix]?.region}
+            disabled={isFormLocked}
+          />
+          <FormSelect
+            label="Zone"
+            name={`${prefix}.zone`}
+            register={register}
+            value={selectedZone}
+            options={zones.map((z) => ({ value: z.id, label: z.name }))}
+            onChange={(val) => {
+              setValue?.(`${prefix}.zone`, val);
+              setZoneId(Number(val));
+              try {
+                setValue?.(`${prefix}.woreda`, "");
+                setValue?.(`${prefix}.kebele`, "");
+              } catch (e) {
+                /* ignore */
+              }
+            }}
+            error={errors[prefix]?.zone}
+            disabled={!regionId || isFormLocked}
+          />
+          <FormSelect
+            label="Woreda"
+            name={`${prefix}.woreda`}
+            register={register}
+            value={selectedWoreda}
+            options={woredas.map((w) => ({ value: w.id, label: w.name }))}
+            onChange={(val) => {
+              setValue?.(`${prefix}.woreda`, val);
+              setWoredaId(Number(val));
+              try {
+                setValue?.(`${prefix}.kebele`, "");
+              } catch (e) {
+                /* ignore */
+              }
+            }}
+            error={errors[prefix]?.woreda}
+            disabled={!zoneId || isFormLocked}
+          />
+          <FormSelect
+            label="Kebele"
+            name={`${prefix}.kebele`}
+            register={register}
+            value={selectedKebele}
+            options={kebeles.map((k) => ({ value: k.id, label: k.name }))}
+            onChange={(val) => {
+              setValue?.(`${prefix}.kebele`, val);
+            }}
+            error={errors[prefix]?.kebele}
+            disabled={!woredaId || isFormLocked}
           />
         </div>
-        <div className="space-y-1">
-          <label className="text-xs font-bold text-gray-500 ml-1">
-            {curT.phone}
-          </label>
-          <input
-            type="tel"
-            className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm"
-            placeholder="+251..."
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormInput
+            label={curT.houseNo || "House No"}
+            name={`${prefix}.houseNo`}
+            register={register}
+            error={errors[prefix]?.houseNo}
+            disabled={isFormLocked}
+          />
+          <FormInput
+            label={curT.specialLocation || "Special Location"}
+            name={`${prefix}.specialLocation`}
+            register={register}
+            value={watch("specialLocation")}
+            error={errors[prefix]?.specialLocation}
+            disabled={isFormLocked}
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {/* Region/Zone/Woreda fields are now handled by LocationFields in the main form. If needed for personnel, implement similar logic here. */}
-        <div className="space-y-1">
-          <label className="text-xs font-bold text-gray-500 ml-1">
-            {curT.zone}
-          </label>
-          <input
-            type="text"
-            className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm"
-          />
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-bold text-gray-500 ml-1">
-            {curT.woreda}
-          </label>
-          <input
-            type="text"
-            className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm"
-          />
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-bold text-gray-500 ml-1">
-            {curT.kebele}
-          </label>
-          <input
-            type="text"
-            className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-1">
-          <label className="text-xs font-bold text-gray-500 ml-1">
-            {curT.houseNo}
-          </label>
-          <input
-            type="text"
-            className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm"
-          />
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-bold text-gray-500 ml-1">
-            {curT.specialLocation}
-          </label>
-          <input
-            type="text"
-            className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-100 pt-6">
-        {personnelDocs.map((doc) => (
-          <div key={doc.key} className="space-y-2">
+      {/* File Uploads Grid */}
+      <div className="space-y-4 border-t border-gray-50 pt-6">
+        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest px-1 block mb-2">
+          Required Documents
+        </label>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {personnelDocs.map((doc) => (
             <FileUpload
+              key={doc.key}
               label={doc.label}
               file={files[`${prefix}_${doc.key}`]}
               onUpload={(file) => onUpload(`${prefix}_${doc.key}`, file)}
               onDelete={() => onDelete(`${prefix}_${doc.key}`)}
               onView={onView}
+              disabled={isFormLocked}
             />
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -886,14 +1092,16 @@ export const NewApplication = () => {
       orgName: "Organization Name",
       headOffice: "Head Office Name",
       branchOffice: "Branch Office Name (Optional)",
-      fax: "Fax Number",
+      faxNumber: "Fax Number",
       region: "Region",
       zone: "Zone",
       woreda: "Woreda",
       kebele: "Kebele",
       houseNo: "House No.",
-      phone: "Phone Number",
+      agencyphone: "Phone Number",
+      tinNumber: "TIN Number",
       email: "Email Address",
+      tradeName: "Trade Name",
       specialLocation: "Special Location Name (Optional)",
       faydaId: "Fayda ID Number",
       otp: "OTP Code",
@@ -901,10 +1109,10 @@ export const NewApplication = () => {
       step2Desc: "Upload mandatory legal and organizational documents.",
       step3Title: "Assets & Facilities",
       step3Desc: "Provide details about your physical assets and branding.",
-      offices: "No. of Offices",
+      offices: "Number of Offices",
       storeHouse: "Has Store House?",
-      computers: "No. of Computers",
-      vehicles: "No. of Vehicles",
+      computers: "Number of Computers",
+      vehicles: "Number of Vehicles",
       step4Title: "Training Status",
       step4Desc: "Details about the organization's training program.",
       step5Title: "Key Personnel Requirements",
@@ -927,14 +1135,16 @@ export const NewApplication = () => {
       orgName: "የተቋሙ ስም",
       headOffice: "የዋና መስሪያ ቤት ስም",
       branchOffice: "የቅርንጫፍ መስሪያ ቤት ስም (አማራጭ)",
-      fax: "የፋክስ ቁጥር",
+      faxNumber: "የፋክስ ቁጥር",
       region: "ክልል",
       zone: "ዞን",
       woreda: "ወረዳ",
       kebele: "ቀበሌ",
       houseNo: "የቤት ቁጥር",
-      phone: "ስልክ ቁጥር",
+      agencyphone: "ስልክ ቁጥር",
+      tinNumber: "የቲን ቁጥር",
       email: "ኢሜል አድራሻ",
+      tradeName: "የንግድ ስም",
       specialLocation: "የልዩ ቦታ ስም (አማራጭ)",
       faydaId: "የፋይዳ መለያ ቁጥር",
       otp: "የኦቲፒ ኮድ",
@@ -991,44 +1201,258 @@ export const NewApplication = () => {
   const {
     register,
     handleSubmit,
-    trigger,
     watch,
+    setValue, // Added this to handle location resets
     formState: { errors, isSubmitting },
-  } = useForm<ApplicationFormValues>({
+  } = useForm<any>({
     resolver: zodResolver(applicationSchema),
+    defaultValues: {
+      // It's good practice to initialize nested objects
+      manager: { gender: "Male", citizenship: "Ethiopian" },
+      ops: { gender: "Male", citizenship: "Ethiopian" },
+      admin: { gender: "Male", citizenship: "Ethiopian" },
+    },
   });
 
-  const nextStep = async (e?: React.MouseEvent) => {
+  const nextStep = (e?: React.MouseEvent) => {
     if (e) e.preventDefault();
-    if (step === 1) {
-      let fieldsToValidate: (keyof ApplicationFormValues)[] = [
-        "agencyName",
-        "headOfficeName",
-        "region",
-        "zone",
-        "woreda",
-        "kebele",
-        "houseNumber",
-        "phone",
-        "email",
-      ];
-      const isValid = await trigger(fieldsToValidate);
-      if (!isValid) return;
-    }
-
     if (step < 6) {
       setStep(step + 1);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
-  const onSubmit = async () => {
-    if (step !== 6) {
-      nextStep();
-      return;
+  const mapSubmissionKeyToUploadField = (key: string) => {
+    if (key.startsWith("manager_")) {
+      return key;
     }
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsSubmitted(true);
+
+    if (key.startsWith("ops_")) {
+      return `operations_${key.slice(4)}`;
+    }
+
+    if (key.startsWith("admin_")) {
+      return `administrator_${key.slice(6)}`;
+    }
+
+    if (key === "capital") {
+      return "organization_bank_statement_capital";
+    }
+
+    return `organization_${key}`;
+  };
+
+  const mapUploadFieldToSubmissionKey = (fieldName: string) => {
+    if (fieldName.startsWith("operations_")) {
+      return `ops_${fieldName.slice("operations_".length)}`;
+    }
+
+    if (fieldName.startsWith("administrator_")) {
+      return `admin_${fieldName.slice("administrator_".length)}`;
+    }
+
+    if (fieldName === "organization_bank_statement_capital") {
+      return "bank_statement_capital";
+    }
+
+    if (fieldName.startsWith("organization_")) {
+      return fieldName.replace(/^organization_/, "");
+    }
+
+    return fieldName;
+  };
+
+  const buildUploadPayload = () => {
+    const files: Record<string, File> = {};
+
+    Object.entries(uploadedFiles).forEach(([key, file]) => {
+      if (!file) return;
+      files[mapSubmissionKeyToUploadField(key)] = file;
+    });
+
+    return files;
+  };
+
+  const uploadApplicationFiles = async () => {
+    const files = buildUploadPayload();
+
+    if (Object.keys(files).length === 0) {
+      return {};
+    }
+
+    const result = await uploadOrganizationDocuments(
+      String(watch("agencyName") || ""),
+      files,
+    );
+
+    if (!result.success || !result.data?.uploadedFiles) {
+      throw new Error(result.error || "File upload failed");
+    }
+
+    return Object.fromEntries(
+      Object.entries(result.data.uploadedFiles).map(([fieldName, fileUrl]) => [
+        mapUploadFieldToSubmissionKey(fieldName),
+        fileUrl,
+      ]),
+    );
+  };
+
+  const onSubmit = async (data: any) => {
+    // if (step !== 6) {
+    //   nextStep();
+    //   return;
+    // }
+    try {
+      console.groupCollapsed("[DEBUG] Submitting Application - start");
+      console.debug("Form values (raw):", data);
+      console.debug("Uploaded files (keys):", Object.keys(uploadedFiles));
+      try {
+        // show basic info about files
+        Object.entries(uploadedFiles).forEach(([k, f]) =>
+          console.debug(
+            `file:${k}`,
+            f ? { name: f.name, size: f.size, type: f.type } : null,
+          ),
+        );
+      } catch (e) {
+        console.debug("Uploaded files debug error", e);
+      }
+      console.groupEnd();
+      // 1. Gather form data
+      const formData = {
+        agencyName: data.agencyName,
+        headOfficeName: data.headOfficeName,
+        branchOfficeName: data.branchOfficeName,
+        email: data.email,
+        phone: data.agencyphone,
+        faxNumber: data.faxNumber,
+        tinNumber: data.tinNumber,
+        tradeName: data.tradeName,
+        kebele: data.kebele,
+        houseNumber: data.houseNumber,
+        numberOfOffices: Number(data.officesCount),
+        numberOfComputers: Number(data.computersCount),
+        numberOfVehicles: Number(data.vehiclesCount),
+        hasStoreHouse:
+          data.hasStoreHouse === true || data.hasStoreHouse === "true",
+        capitalAmount: Number(data.capitalAmount),
+        trainingAddress: data.trainingAddress,
+        trainingDays: Number(data.trainingDays || 0),
+        trainingProvider: data.trainingProvider,
+        totalTraineesMale: Number(data.totalTraineesMale || 0),
+        totalTraineesFemale: Number(data.totalTraineesFemale || 0),
+        managerName:
+          data.managerName || data.manager?.fullName || "manager name missing",
+        opsHeadName:
+          data.opsHeadName || data.ops?.fullName || "ops head name missing",
+        adminHeadName:
+          data.adminHeadName ||
+          data.admin?.fullName ||
+          "admin head name missing",
+        manager: data.manager,
+        ops: data.ops,
+        admin: data.admin,
+      };
+
+      // 2. Upload files to backend storage and remap returned URLs back to submission keys
+      console.groupCollapsed("[DEBUG] Uploading files to backend");
+      const uploadedFilesUrls = await uploadApplicationFiles();
+      console.debug("Uploaded file URLs:", uploadedFilesUrls);
+      console.groupEnd();
+
+      // 3. Get JWT token (replace with your auth logic)
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("User not authenticated");
+
+      // 4. Send POST request
+      const payload = {
+        formData,
+        uploadedFiles: uploadedFilesUrls,
+      };
+      console.groupCollapsed("[DEBUG] Final submission payload");
+      console.debug("Token present?", !!token);
+      console.debug("Payload:", payload);
+      console.groupEnd();
+
+      await apiRequest("/applications/submit", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      setIsSubmitted(true);
+      console.info("[DEBUG] Submission completed — isSubmitted=true");
+    } catch (err: any) {
+      console.error("[DEBUG] Submission error:", err);
+      alert(err.message || "Failed to submit application.");
+    }
+  };
+
+  const onInvalid = (formErrors: any) => {
+    console.warn("[DEBUG] Submission validation failed:", formErrors);
+
+    const errorPaths = Object.keys(formErrors);
+    const hasStep1Error = errorPaths.some((key) =>
+      [
+        "agencyName",
+        "headOfficeName",
+        "branchOfficeName",
+        "tradeName",
+        "region",
+        "zone",
+        "woreda",
+        "kebele",
+        "houseNumber",
+        "specialLocation",
+        "agencyphone",
+        "faxNumber",
+        "email",
+        "tinNumber",
+      ].includes(key),
+    );
+    const hasStep3Error = errorPaths.some((key) =>
+      [
+        "capitalAmount",
+        "officesCount",
+        "computersCount",
+        "vehiclesCount",
+        "hasStoreHouse",
+      ].includes(key),
+    );
+    const hasStep4Error = errorPaths.some((key) =>
+      [
+        "trainingAddress",
+        "trainingProvider",
+        "trainingDays",
+        "totalTraineesMale",
+        "totalTraineesFemale",
+      ].includes(key),
+    );
+    const hasStep5Error = errorPaths.some((key) =>
+      ["manager", "ops", "admin"].some((prefix) => key.startsWith(prefix)),
+    );
+
+    if (hasStep1Error) {
+      setStep(1);
+    } else if (hasStep3Error) {
+      setStep(3);
+    } else if (hasStep4Error) {
+      setStep(4);
+    } else if (hasStep5Error) {
+      setStep(5);
+    }
+
+    const firstError = Object.values(formErrors)?.[0];
+    const firstMessage =
+      typeof firstError === "object" &&
+      firstError !== null &&
+      "message" in firstError &&
+      typeof (firstError as { message?: unknown }).message === "string"
+        ? (firstError as { message: string }).message
+        : "Please complete the required fields before submitting.";
+    alert(String(firstMessage));
   };
 
   const steps = [
@@ -1080,8 +1504,13 @@ export const NewApplication = () => {
                   {[
                     { label: curT.orgName, value: watch("agencyName") },
                     { label: curT.headOffice, value: watch("headOfficeName") },
-                    { label: curT.phone, value: watch("phone") },
+
+                    {
+                      label: curT.agencyphone,
+                      value: watch("agencyphone"),
+                    },
                     { label: curT.email, value: watch("email") },
+                    { label: curT.tinNumber, value: watch("tinNumber") },
                     {
                       label: "Location",
                       value: `${watch("region")}, ${watch("zone")}`,
@@ -1235,7 +1664,7 @@ export const NewApplication = () => {
       </div>
 
       <form
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={handleSubmit(onSubmit, onInvalid)}
         className="bg-white rounded-[40px] shadow-xl p-6 md:p-12 border border-gray-100 min-h-[600px] flex flex-col"
       >
         <AnimatePresence mode="wait">
@@ -1290,26 +1719,37 @@ export const NewApplication = () => {
                   watch={watch}
                   isFormLocked={isFormLocked}
                   openedFields={openedFields}
+                  setValue={setValue}
                 />
 
                 <FormInput
-                  label={curT.phone}
-                  name="phone"
+                  label={curT.agencyphone}
+                  name="agencyphone"
                   register={register}
-                  value={watch("phone")}
-                  error={errors.phone}
+                  value={watch("agencyphone")}
+                  error={errors.agencyphone}
                   disabled={isFormLocked}
-                  isOpenedForEdit={openedFields.includes("phone")}
+                  isOpenedForEdit={openedFields.includes("agencyphone")}
                 />
                 <FormInput
-                  label={curT.fax}
-                  name="fax"
+                  label={curT.faxNumber}
+                  name="faxNumber"
                   register={register}
-                  value={watch("fax")}
-                  error={errors.fax}
+                  value={watch("faxNumber")}
+                  error={errors.faxNumber}
                   disabled={isFormLocked}
-                  isOpenedForEdit={openedFields.includes("fax")}
+                  isOpenedForEdit={openedFields.includes("faxNumber")}
                 />
+                <FormInput
+                  label={curT.tradeName}
+                  name="tradeName"
+                  register={register}
+                  value={watch("tradeName")}
+                  error={errors.tradeName}
+                  disabled={isFormLocked}
+                  isOpenedForEdit={openedFields.includes("tradeName")}
+                />
+
                 <FormInput
                   label={curT.specialLocation}
                   name="specialLocation"
@@ -1319,6 +1759,7 @@ export const NewApplication = () => {
                   disabled={isFormLocked}
                   isOpenedForEdit={openedFields.includes("specialLocation")}
                 />
+
                 <div className="md:col-span-2">
                   <FormInput
                     label={curT.email}
@@ -1330,6 +1771,16 @@ export const NewApplication = () => {
                     isOpenedForEdit={openedFields.includes("email")}
                   />
                 </div>
+
+                <FormInput
+                  label={curT.tinNumber}
+                  name="tinNumber"
+                  register={register}
+                  value={watch("tinNumber")}
+                  error={errors.tinNumber}
+                  disabled={isFormLocked}
+                  isOpenedForEdit={openedFields.includes("tinNumber")}
+                />
               </div>
             </motion.div>
           )}
@@ -1350,20 +1801,44 @@ export const NewApplication = () => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
-                  { label: "Trade name designation", key: "trade_name" },
-                  { label: "Trade pre-registration", key: "trade_pre" },
-                  { label: "Renewed Trade license", key: "trade_license" },
+                  {
+                    label: "Trade name designation",
+                    key: "trade_name_designation",
+                  },
+                  {
+                    label: "Trade pre-registration",
+                    key: "trade_pre_registration",
+                  },
+                  {
+                    label: "Renewed Trade license",
+                    key: "renewed_trade_license",
+                  },
                   {
                     label: "Labor and Skill Bureau registration",
-                    key: "labor_skill",
+                    key: "labor_and_skill_bureau",
                   },
-                  { label: "TIN number", key: "tin" },
-                  { label: "Trademark", key: "trademark" },
+                  { label: "TIN number paper", key: "tin_number_paper" },
+                  {
+                    label: "Organizational Trademark",
+                    key: "organizational_trademark",
+                  },
                   { label: "Organizational structure", key: "org_structure" },
-                  { label: "Articles of incorporation", key: "articles" },
-                  { label: "Internal regulations", key: "regulations" },
-                  { label: "Lists of technologies used", key: "tech_list" },
-                  { label: "Capital (Bank statement)", key: "capital" },
+                  {
+                    label: "Articles of incorporation",
+                    key: "articles_of_incorporation",
+                  },
+                  {
+                    label: "Internal regulations",
+                    key: "internal_regulations",
+                  },
+                  {
+                    label: "Lists of technologies used",
+                    key: "tech_list_used",
+                  },
+                  {
+                    label: "Capital (Bank statement)",
+                    key: "capital",
+                  },
                 ].map((doc) => (
                   <FileUpload
                     key={doc.key}
@@ -1396,39 +1871,84 @@ export const NewApplication = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-500">
+                    Capital Amount
+                  </label>
+                  <input
+                    type="number"
+                    {...register("capitalAmount")}
+                    disabled={isFormLocked}
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  {errors.capitalAmount && (
+                    <p className="text-red-500 text-[10px]">
+                      {String(errors.capitalAmount?.message)}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500">
                     {curT.offices}
                   </label>
                   <input
                     type="number"
+                    {...register("officesCount")}
+                    disabled={isFormLocked}
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
                   />
+                  {errors.officesCount && (
+                    <p className="text-red-500 text-[10px]">
+                      {String(errors.officesCount?.message)}
+                    </p>
+                  )}
                 </div>
+
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-500">
                     {curT.storeHouse}
                   </label>
-                  <select className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary">
-                    <option>Yes</option>
-                    <option>No</option>
+                  <select
+                    {...register("hasStoreHouse")}
+                    disabled={isFormLocked}
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="true">Yes</option>
+                    <option value="false">No</option>
                   </select>
                 </div>
+
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-500">
                     {curT.computers}
                   </label>
                   <input
                     type="number"
+                    {...register("computersCount")}
+                    disabled={isFormLocked}
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
                   />
+                  {errors.computersCount && (
+                    <p className="text-red-500 text-[10px]">
+                      {String(errors.computersCount?.message)}
+                    </p>
+                  )}
                 </div>
+
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-500">
                     {curT.vehicles}
                   </label>
                   <input
                     type="number"
+                    {...register("vehiclesCount")}
+                    disabled={isFormLocked}
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
                   />
+                  {errors.vehiclesCount && (
+                    <p className="text-red-500 text-[10px]">
+                      {String(errors.vehiclesCount?.message)}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -1461,7 +1981,7 @@ export const NewApplication = () => {
                     onView={handleView}
                   />
                   <FileUpload
-                    label="Employee ID Sample (Front & Back)"
+                    label=" Organization Employee ID Sample (Front & Back)"
                     type="photo"
                     file={uploadedFiles.id_sample}
                     onUpload={(file) => handleUpload("id_sample", file)}
@@ -1511,28 +2031,66 @@ export const NewApplication = () => {
                 </h3>
                 <p className="text-sm text-gray-500">{curT.step4Desc}</p>
               </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700">
                     Training Address
                   </label>
-                  <input className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">
-                    No. of Days Trained
-                  </label>
                   <input
-                    type="number"
+                    {...register("trainingAddress")}
+                    disabled={isFormLocked}
                     className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-700">
+                    Number of Days Trained
+                  </label>
+                  <input
+                    type="number"
+                    {...register("trainingDays")}
+                    disabled={isFormLocked}
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-700">
+                    Number of Males Trained
+                  </label>
+                  <input
+                    type="number"
+                    {...register("totalTraineesMale")}
+                    disabled={isFormLocked}
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-700">
+                    Number of Females Trained
+                  </label>
+                  <input
+                    type="number"
+                    {...register("totalTraineesFemale")}
+                    disabled={isFormLocked}
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700">
                     Training Provider Body
                   </label>
-                  <input className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary" />
+                  <input
+                    {...register("trainingProvider")}
+                    disabled={isFormLocked}
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
+                  />
                 </div>
+
                 <div className="space-y-2">
                   <FileUpload
                     label="Training Manual"
@@ -1561,36 +2119,82 @@ export const NewApplication = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="space-y-8"
+              className="space-y-10"
             >
-              <div className="space-y-2">
-                <h3 className="text-2xl font-bold text-primary">
-                  {curT.step5Title}
-                </h3>
-                <p className="text-sm text-gray-500">{curT.step5Desc}</p>
+              {/* Step Header */}
+              <div className="bg-primary/5 p-8 rounded-[32px] border border-primary/10 relative overflow-hidden">
+                <div className="relative z-10">
+                  <h3 className="text-3xl font-black text-primary uppercase tracking-tight">
+                    {curT.step5Title || "Personnel Details"}
+                  </h3>
+                  <p className="text-sm text-gray-500 font-medium mt-2 max-w-2xl">
+                    {curT.step5Desc ||
+                      "Please provide the identification and required documentation for the key management personnel."}
+                  </p>
+                </div>
+                <Users className="absolute right-[-20px] bottom-[-20px] w-48 h-48 text-primary/5 -rotate-12" />
               </div>
-              <div className="space-y-12">
+
+              <div className="space-y-16">
+                {/* 1. Manager Section */}
                 <PersonnelSection
-                  title="Manager of Organization"
+                  title="General Manager"
                   prefix="manager"
+                  register={register}
+                  errors={errors}
+                  setValue={setValue} // Passing setValue for location resets
+                  watch={watch}
+                  isFormLocked={isFormLocked}
                   files={uploadedFiles}
                   onUpload={handleUpload}
                   onDelete={handleDelete}
                   onView={handleView}
                   curT={curT}
                 />
+
+                {/* 2. Operations Head Section */}
+                <div className="relative py-4">
+                  <div
+                    className="absolute inset-0 flex items-center"
+                    aria-hidden="true"
+                  >
+                    <div className="w-full border-t border-dashed border-gray-200"></div>
+                  </div>
+                </div>
+
                 <PersonnelSection
                   title="Operations Head"
                   prefix="ops"
+                  register={register}
+                  errors={errors}
+                  setValue={setValue}
+                  watch={watch}
+                  isFormLocked={isFormLocked}
                   files={uploadedFiles}
                   onUpload={handleUpload}
                   onDelete={handleDelete}
                   onView={handleView}
                   curT={curT}
                 />
+
+                {/* 3. Administration Head Section */}
+                <div className="relative py-4">
+                  <div
+                    className="absolute inset-0 flex items-center"
+                    aria-hidden="true"
+                  >
+                    <div className="w-full border-t border-dashed border-gray-200"></div>
+                  </div>
+                </div>
+
                 <PersonnelSection
                   title="Administration Head"
                   prefix="admin"
+                  register={register}
+                  errors={errors}
+                  setValue={setValue}
+                  watch={watch}
+                  isFormLocked={isFormLocked}
                   files={uploadedFiles}
                   onUpload={handleUpload}
                   onDelete={handleDelete}
@@ -1598,6 +2202,18 @@ export const NewApplication = () => {
                   curT={curT}
                 />
               </div>
+
+              {/* Form Navigation/Status Hint */}
+              {!isFormLocked && (
+                <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl flex items-start space-x-3">
+                  <ShieldCheck className="w-5 h-5 text-amber-600 mt-0.5" />
+                  <p className="text-xs text-amber-700 leading-relaxed">
+                    <strong>Note:</strong> Ensure all uploaded documents are
+                    clear and legible. The Fayda ID and Phone number must be
+                    active for verification purposes.
+                  </p>
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -1653,13 +2269,14 @@ export const NewApplication = () => {
                         label: curT.branchOffice,
                         value: watch("branchOfficeName") || "-",
                       },
-                      { label: curT.phone, value: watch("phone") },
+                      { label: curT.agencyphone, value: watch("agencyphone") },
                       { label: curT.email, value: watch("email") },
                       { label: curT.region, value: watch("region") },
                       { label: curT.zone, value: watch("zone") },
                       { label: curT.woreda, value: watch("woreda") },
                       { label: curT.kebele, value: watch("kebele") },
                       { label: curT.houseNo, value: watch("houseNumber") },
+                      { label: curT.tradeName, value: watch("tradeName") },
                       {
                         label: "Special Location",
                         value: watch("specialLocation") || "-",
@@ -1770,7 +2387,33 @@ export const NewApplication = () => {
                         { label: "Vehicles", value: watch("vehiclesCount") },
                         {
                           label: "Store House",
-                          value: watch("hasStoreHouse") ? "Yes" : "No",
+                          value:
+                            watch("hasStoreHouse") === true ||
+                            watch("hasStoreHouse") === "true"
+                              ? "Yes"
+                              : "No",
+                        },
+
+                        {
+                          label: "Training Address",
+                          value: watch("trainingAddress"),
+                        },
+                        {
+                          label: "Number of Days Trained",
+                          value: watch("trainingDays"),
+                        },
+                        {
+                          label: "Number of Males Trained",
+                          value: watch("totalTraineesMale"),
+                        },
+                        {
+                          label: "Number of Females Trained",
+                          value: watch("totalTraineesFemale"),
+                        },
+
+                        {
+                          label: "Training Provider Body",
+                          value: watch("trainingProvider"),
                         },
                       ].map((item, i) => (
                         <div key={i} className="space-y-1">
@@ -1845,38 +2488,156 @@ export const NewApplication = () => {
                     </button>
                   </div>
                   <div className="p-8">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                      {[
-                        {
-                          label: "General Manager",
-                          value: watch("managerName"),
-                        },
-                        {
-                          label: "Operations Head",
-                          value: watch("opsHeadName"),
-                        },
-                        { label: "Admin Head", value: watch("adminHeadName") },
-                      ].map((item, i) => (
-                        <div
-                          key={i}
-                          className="space-y-4 p-6 bg-white rounded-3xl border border-gray-50 shadow-sm"
-                        >
-                          <div>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-tight mb-1">
-                              {item.label}
-                            </p>
-                            <p className="text-sm font-black text-primary uppercase">
-                              {item.value || "NOT PROVIDED"}
-                            </p>
+                    <div className="grid grid-cols-1 gap-8">
+                      {["manager", "ops", "admin"].map((prefix) => {
+                        const titles: Record<string, string> = {
+                          manager: "General Manager",
+                          ops: "Operations Head",
+                          admin: "Admin Head",
+                        };
+                        const personnelData = watch(prefix);
+                        return (
+                          <div
+                            key={prefix}
+                            className="space-y-4 p-6 bg-white rounded-3xl border border-gray-100 shadow-sm"
+                          >
+                            {/* Header with Name and Title */}
+                            <div className="pb-4 border-b border-gray-100">
+                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">
+                                {titles[prefix]}
+                              </p>
+                              <p className="text-lg font-black text-primary uppercase">
+                                {personnelData?.fullName || "NOT PROVIDED"}
+                              </p>
+                            </div>
+
+                            {/* Personnel Details Grid */}
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                              {[
+                                { label: "Email", value: personnelData?.email },
+                                { label: "Phone", value: personnelData?.phone },
+                                {
+                                  label: "Fayda ID",
+                                  value: personnelData?.faydaId,
+                                },
+                                {
+                                  label: "Gender",
+                                  value: personnelData?.gender,
+                                },
+                                {
+                                  label: "Citizenship",
+                                  value: personnelData?.citizenship,
+                                },
+                              ].map((item, i) => (
+                                <div key={i}>
+                                  <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1">
+                                    {item.label}
+                                  </p>
+                                  <p className="text-sm font-bold text-primary">
+                                    {item.value || "-"}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Location Details */}
+                            <div className="pt-4 border-t border-gray-100">
+                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-3">
+                                Residential Address
+                              </p>
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                {[
+                                  {
+                                    label: "Region",
+                                    value: personnelData?.region,
+                                  },
+                                  { label: "Zone", value: personnelData?.zone },
+                                  {
+                                    label: "Woreda",
+                                    value: personnelData?.woreda,
+                                  },
+                                  {
+                                    label: "Kebele",
+                                    value: personnelData?.kebele,
+                                  },
+                                  {
+                                    label: "House No",
+                                    value: personnelData?.houseNo,
+                                  },
+                                ].map((item, i) => (
+                                  <div key={i}>
+                                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1">
+                                      {item.label}
+                                    </p>
+                                    <p className="text-sm font-bold text-primary">
+                                      {item.value || "-"}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Documents Section */}
+                            <div className="pt-4 border-t border-gray-100">
+                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-3">
+                                Documents
+                              </p>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {[
+                                  `${prefix}fingerprint_doc`,
+                                  `${prefix}medical_doc`,
+                                  `${prefix}training_doc`,
+                                  `${prefix}support_doc`,
+                                  `${prefix}collateral_doc`,
+                                  `${prefix}experience_doc`,
+                                  `${prefix}resignation_letter_doc`,
+                                  `${prefix}education_doc`,
+                                  `${prefix}id_passport_or_kabele_doc`,
+                                  `${prefix}organization_Id_doc`,
+                                ].map((key) =>
+                                  uploadedFiles[key] ? (
+                                    <div
+                                      key={key}
+                                      className="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-lg"
+                                    >
+                                      <div className="flex items-center space-x-2 min-w-0">
+                                        <div className="p-1 bg-purple-50 text-purple-500 rounded">
+                                          <FileText className="w-3 h-3" />
+                                        </div>
+                                        <div className="min-w-0">
+                                          <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest truncate">
+                                            {key.replace(/_/g, " ")}
+                                          </p>
+                                          <p className="text-[9px] font-bold text-primary truncate">
+                                            {uploadedFiles[key]?.name}
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          uploadedFiles[key] &&
+                                          handleView(uploadedFiles[key]!, null)
+                                        }
+                                        className="p-1 bg-gray-100 text-gray-400 rounded hover:bg-purple-600 hover:text-white transition-all flex-shrink-0"
+                                      >
+                                        <Eye className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div
+                                      key={key}
+                                      className="text-[9px] text-gray-400"
+                                    >
+                                      {key.replace(/_/g, " ")} - Not uploaded
+                                    </div>
+                                  ),
+                                )}
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
-                              Verification Documents Provided
-                            </span>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 </section>

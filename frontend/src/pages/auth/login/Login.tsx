@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useLanguage } from "../../../context/LanguageContext";
 import { useAuth } from "../../../context/AuthContext";
 import {
@@ -9,11 +9,9 @@ import {
   AlertCircle,
   Mail,
   MessageSquare,
-  Smartphone,
   Eye,
   EyeOff,
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 
@@ -42,17 +40,13 @@ export const Login = () => {
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
   });
 
-  const otpCodeValue = watch("otpCode");
-
   const handleSendOtp = async () => {
     setOtpLoading(true);
-    // Simulate sending OTP
     await new Promise((resolve) => setTimeout(resolve, 1000));
     setIsOtpSent(true);
     setOtpLoading(false);
@@ -69,15 +63,17 @@ export const Login = () => {
         }),
       });
 
-      // Save token and user info as needed
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("fp_user", JSON.stringify(res.data.user));
+      const { user, token } = res.data;
+      login(user, token);
 
-      // Optionally update AuthContext here if needed
-      // login(res.data.user.role); // If your AuthContext supports this
-
-      // Redirect to dashboard or appropriate page
-      navigate("/dashboard");
+      // Dynamic Role-Based Navigation
+      if (user.roles?.includes("super_admin")) {
+        navigate("/super-admin/dashboard");
+      } else if (user.roles?.includes("admin")) {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err: any) {
       setLoginError(err.message || "Login failed");
     }
@@ -86,13 +82,12 @@ export const Login = () => {
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
       <div className="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-2 bg-white rounded-[40px] shadow-2xl overflow-hidden border border-gray-100">
-        {/* Left Side - Visual */}
+        {/* Left Side Visual */}
         <div className="hidden lg:block relative">
           <img
             src="https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=1000"
-            alt="Police"
+            alt="Security"
             className="absolute inset-0 w-full h-full object-cover"
-            referrerPolicy="no-referrer"
           />
           <div className="absolute inset-0 bg-primary/80 backdrop-blur-sm flex flex-col justify-center p-12 text-white space-y-8">
             <Shield className="w-16 h-16 text-secondary" />
@@ -100,28 +95,17 @@ export const Login = () => {
               Secure Access Portal
             </h2>
             <p className="text-gray-300 text-lg">{t.footer.desc}</p>
-            <div className="space-y-4">
-              {t.fayda.features.slice(0, 3).map((item: string, i: number) => (
-                <div key={i} className="flex items-center space-x-3 text-sm">
-                  <div className="w-2 h-2 bg-secondary rounded-full" />
-                  <span>{item}</span>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
 
-        {/* Right Side - Form */}
+        {/* Right Side Form */}
         <div className="p-8 md:p-16 space-y-8">
           <div className="flex flex-col items-center space-y-6">
-            <div className="w-20 h-20 flex items-center justify-center overflow-hidden">
-              <img
-                src="https://upload.wikimedia.org/wikipedia/commons/3/30/Federal_Police_Commission_of_Ethiopia_Coat_of_Arms_and_Logo.png"
-                alt="Ethiopian Federal Police Logo"
-                className="w-20 h-20 object-contain"
-                referrerPolicy="no-referrer"
-              />
-            </div>
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/3/30/Federal_Police_Commission_of_Ethiopia_Coat_of_Arms_and_Logo.png"
+              alt="Logo"
+              className="w-20 h-20 object-contain"
+            />
             <div className="text-center space-y-2">
               <h1 className="text-3xl font-bold text-primary">
                 {t.auth.userLogin}
@@ -143,24 +127,15 @@ export const Login = () => {
                 {t.auth.username}
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <User className="text-gray-400 w-5 h-5" />
-                </div>
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                   {...register("identifier")}
-                  type="text"
-                  placeholder={t.auth.username}
-                  className={`w-full pl-12 pr-4 py-4 bg-gray-50 border rounded-2xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all ${
+                  className={`w-full pl-12 pr-4 py-4 bg-gray-50 border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all ${
                     errors.identifier ? "border-red-500" : "border-gray-200"
                   }`}
+                  placeholder={t.auth.username}
                 />
               </div>
-              {errors.identifier && (
-                <p className="text-xs text-red-500 flex items-center mt-1 ml-1">
-                  <AlertCircle className="w-3 h-3 mr-1" />
-                  {errors.identifier.message}
-                </p>
-              )}
             </div>
 
             <div className="space-y-2">
@@ -168,26 +143,27 @@ export const Login = () => {
                 <label className="text-sm font-bold text-gray-700">
                   {t.auth.password}
                 </label>
-                <a href="#" className="text-xs text-accent hover:underline">
+                <Link
+                  to="/forgot-password"
+                  className="text-[10px] text-accent hover:underline"
+                >
                   Forgot Password?
-                </a>
+                </Link>
               </div>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="text-gray-400 w-5 h-5" />
-                </div>
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                   {...register("password")}
                   type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  className={`w-full pl-12 pr-12 py-4 bg-gray-50 border rounded-2xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all ${
+                  className={`w-full pl-12 pr-12 py-4 bg-gray-50 border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all ${
                     errors.password ? "border-red-500" : "border-gray-200"
                   }`}
+                  placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-primary transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
                 >
                   {showPassword ? (
                     <EyeOff className="w-5 h-5" />
@@ -196,147 +172,76 @@ export const Login = () => {
                   )}
                 </button>
               </div>
-
-              {watch("password") && (
-                <div className="space-y-1.5 px-1">
-                  <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden flex gap-0.5">
-                    {[1, 2, 3, 4].map((step) => {
-                      const password = watch("password") || "";
-                      let strength = 0;
-                      if (password.length >= 8) strength += 1;
-                      if (/[A-Z]/.test(password)) strength += 1;
-                      if (/[0-9]/.test(password)) strength += 1;
-                      if (/[^A-Za-z0-9]/.test(password)) strength += 1;
-
-                      const colors = [
-                        "bg-gray-200",
-                        "bg-red-500",
-                        "bg-orange-500",
-                        "bg-yellow-500",
-                        "bg-green-500",
-                      ];
-                      return (
-                        <div
-                          key={step}
-                          className={`h-full flex-1 transition-all duration-500 ${
-                            strength >= step ? colors[strength] : "bg-gray-100"
-                          }`}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {errors.password && (
-                <p className="text-xs text-red-500 flex items-center mt-1 ml-1">
-                  <AlertCircle className="w-3 h-3 mr-1" />
-                  {errors.password.message}
-                </p>
-              )}
             </div>
 
             <div className="space-y-4">
-              <div className="flex flex-col space-y-3">
-                <label className="text-sm font-bold text-gray-700 ml-1">
-                  {t.auth.otpOption}
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setOtpMethod("email")}
-                    className={`flex items-center justify-center space-x-2 p-3 rounded-xl border transition-all ${
-                      otpMethod === "email"
-                        ? "border-primary bg-primary/5 text-primary"
-                        : "border-gray-200 text-gray-500 hover:border-gray-300"
-                    }`}
-                  >
-                    <Mail className="w-4 h-4" />
-                    <span className="text-sm font-semibold">
-                      {t.auth.otpMethodEmail}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setOtpMethod("sms")}
-                    className={`flex items-center justify-center space-x-2 p-3 rounded-xl border transition-all ${
-                      otpMethod === "sms"
-                        ? "border-primary bg-primary/5 text-primary"
-                        : "border-gray-200 text-gray-500 hover:border-gray-300"
-                    }`}
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                    <span className="text-sm font-semibold">
-                      {t.auth.otpMethodSms}
-                    </span>
-                  </button>
-                </div>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setOtpMethod("email")}
+                  className={`p-3 rounded-xl border flex items-center justify-center space-x-2 transition-all ${
+                    otpMethod === "email"
+                      ? "border-primary bg-primary/5 text-primary font-bold"
+                      : "border-gray-200 text-gray-500"
+                  }`}
+                >
+                  <Mail className="w-4 h-4" />
+                  <span className="text-sm">Email</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOtpMethod("sms")}
+                  className={`p-3 rounded-xl border flex items-center justify-center space-x-2 transition-all ${
+                    otpMethod === "sms"
+                      ? "border-primary bg-primary/5 text-primary font-bold"
+                      : "border-gray-200 text-gray-500"
+                  }`}
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span className="text-sm">SMS</span>
+                </button>
               </div>
 
               {!isOtpSent ? (
                 <button
                   type="button"
                   onClick={handleSendOtp}
-                  disabled={otpLoading}
-                  className="w-full py-3 bg-gray-100 text-primary font-bold rounded-xl hover:bg-gray-200 transition-all flex items-center justify-center space-x-2 outline-none"
+                  className="w-full py-3 bg-gray-100 text-primary font-bold rounded-xl hover:bg-gray-200"
                 >
-                  {otpLoading ? (
-                    <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <Smartphone className="w-4 h-4" />
-                      <span>{t.auth.sendOtp}</span>
-                    </>
-                  )}
+                  {otpLoading ? "Sending..." : t.auth.sendOtp}
                 </button>
               ) : (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-2"
-                >
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <Lock className="text-primary w-5 h-5" />
-                    </div>
-                    <input
-                      {...register("otpCode")}
-                      type="text"
-                      maxLength={6}
-                      placeholder={t.auth.otpPlaceholder}
-                      className="w-full pl-12 pr-4 py-4 bg-primary/5 border border-primary/20 rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-mono tracking-[0.5em] text-center text-lg font-bold"
-                    />
-                  </div>
-                  <p className="text-[10px] text-primary/60 text-center uppercase tracking-wider font-bold">
-                    Code sent via {otpMethod.toUpperCase()} (Simulated: 123456)
-                  </p>
-                </motion.div>
+                <input
+                  {...register("otpCode")}
+                  placeholder="OTP Code"
+                  className="w-full py-4 bg-primary/5 border border-primary/20 rounded-2xl text-center font-bold tracking-[0.5em]"
+                />
               )}
             </div>
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`w-full blue-gradient text-white font-bold py-4 rounded-2xl hover:shadow-xl hover:scale-[1.02] transition-all flex items-center justify-center space-x-2 ${
-                isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+              className={`w-full bg-primary text-white font-bold py-4 rounded-2xl flex items-center justify-center space-x-2 transition-all ${
+                isSubmitting
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:shadow-lg active:scale-95"
               }`}
             >
-              <span>{isSubmitting ? t.common.loading : t.auth.signIn}</span>
-              {!isSubmitting && <ArrowRight className="w-5 h-5" />}
+              <span>{isSubmitting ? "Logging in..." : t.auth.signIn}</span>
+              <ArrowRight className="w-5 h-5" />
             </button>
           </form>
 
-          <div className="text-center space-y-4">
-            <p className="text-sm text-gray-500">
-              {t.auth.noAccount}{" "}
-              <Link
-                to="/register"
-                className="text-accent font-bold hover:underline"
-              >
-                {t.auth.register}
-              </Link>
-            </p>
-          </div>
+          <p className="text-center text-sm text-gray-500">
+            {t.auth.noAccount}{" "}
+            <Link
+              to="/register"
+              className="text-accent font-bold hover:underline"
+            >
+              {t.auth.register}
+            </Link>
+          </p>
         </div>
       </div>
     </div>
