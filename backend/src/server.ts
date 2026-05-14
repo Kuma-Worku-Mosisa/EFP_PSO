@@ -11,6 +11,7 @@ import userRoutes from "./modules/user/user.routes";
 import locationRoutes from "./modules/location/location.routes";
 import applicationRoutes from "./modules/application/application.routes"; // Linked to your new module
 import formalRequestRoutes from "./modules/formalRequest/formalRequest.routes";
+import positionRoutes from "./modules/position/position.routes";
 
 const app = express();
 
@@ -54,6 +55,7 @@ app.use("/api/location", locationRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/applications", applicationRoutes); // Now active
 app.use("/api/formal-requests", formalRequestRoutes);
+app.use("/api/positions", positionRoutes);
 
 // 6. Health Check / Root Route
 app.get("/", (req, res) => {
@@ -84,7 +86,7 @@ app.listen(port, () => {
   console.log(`-----------------------------------------------`);
   console.log(` Backend running on http://localhost:${port}`);
   console.log(
-    ` Endpoints: /api/users, /api/location, /api/applications, /api/formal-requests`,
+    ` Endpoints: /api/users, /api/location, /api/applications, /api/formal-requests, /api/positions`,
   );
   console.log(`-----------------------------------------------`);
 });

@@ -1,5 +1,5 @@
 //frontend/src/pages/AdminDashboard.tsx
-import React, { useState, cloneElement, ReactElement } from "react";
+import { useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import { DashboardLayout } from "../components/DashboardLayout";
 import {
@@ -16,6 +16,7 @@ import {
   Clock,
   CheckCircle,
   XCircle,
+  Briefcase,
   Search,
   Newspaper,
   Files,
@@ -54,6 +55,7 @@ import { ManagePublicContent } from "./ManagePublicContent";
 import { ManageFAQ } from "./ManageFAQ";
 import { Communications } from "./Communications";
 import { Notifications } from "./Notifications";
+import PositionManagement from "./PositionManagement";
 import FormalRequestManager from "../components/FormalRequestManager";
 
 const Overview = () => {
@@ -221,7 +223,7 @@ const Overview = () => {
                   paddingAngle={5}
                   dataKey="value"
                 >
-                  {pieData.map((entry, index) => (
+                  {pieData.map((_, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
@@ -322,7 +324,7 @@ const Overview = () => {
             </thead>
             <tbody className="divide-y divide-gray-100">
               <AnimatePresence mode="popLayout">
-                {filteredApps.map((app, i) => (
+                {filteredApps.map((app) => (
                   <motion.tr
                     layout
                     initial={{ opacity: 0 }}
@@ -399,8 +401,7 @@ export const AdminDashboard = () => {
   const { t, language } = useLanguage();
   const { user } = useAuth();
   const isAm = language === "am";
-
-  const userRole = user?.role || "admin";
+  const isSuperAdmin = user?.roles?.includes("super_admin") ?? false;
 
   const sidebarItems = [
     {
@@ -432,6 +433,11 @@ export const AdminDashboard = () => {
       icon: <BarChart3 className="w-5 h-5" />,
       label: t.dashboard.reports,
       path: "/admin/reports",
+    },
+    {
+      icon: <Briefcase className="w-5 h-5" />,
+      label: isAm ? "የቦታ አስተዳደር" : "Position Management",
+      path: "/admin/positions",
     },
     {
       icon: <FileCheck className="w-5 h-5" />,
@@ -471,7 +477,7 @@ export const AdminDashboard = () => {
       label: t.dashboard.settings,
       path: "/admin/settings",
     },
-    ...(userRole === "super_admin"
+    ...(isSuperAdmin
       ? [
           {
             icon: <Database className="w-5 h-5" />,
@@ -504,6 +510,7 @@ export const AdminDashboard = () => {
         <Route path="licenses" element={<LicenseManagement />} />
         <Route path="gps" element={<GPSTracking />} />
         <Route path="reports" element={<AdminReports />} />
+        <Route path="positions" element={<PositionManagement />} />
         <Route path="hrms-reports" element={<HRMSReports />} />
         <Route path="settings" element={<AdminSettings />} />
         <Route path="news" element={<ManageNews />} />
@@ -514,7 +521,7 @@ export const AdminDashboard = () => {
         <Route path="notifications" element={<Notifications />} />
 
         {/* Strictly Super Admin internal tools */}
-        {userRole === "super_admin" && (
+        {isSuperAdmin && (
           <>
             <Route path="backups" element={<BackupRecovery />} />
             <Route path="permissions" element={<PermissionsManagement />} />

@@ -4,6 +4,8 @@ import {
   createPosition,
   getAllPositions,
   assignEmployee,
+  updatePosition,
+  deletePosition,
 } from "./position.controller";
 
 const router = Router();
@@ -11,6 +13,8 @@ const router = Router();
 // Position Management
 router.post("/", createPosition);
 router.get("/", getAllPositions);
+router.put("/:id", updatePosition);
+router.delete("/:id", deletePosition);
 
 // Employee-Position Assignments
 router.post("/assign", assignEmployee);

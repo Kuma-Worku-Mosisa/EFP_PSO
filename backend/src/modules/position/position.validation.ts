@@ -8,12 +8,15 @@ export const createPositionSchema = z.object({
     .max(100),
   requirements: z
     .object({
-      minimumExperienceYears: z.number().nonnegative().optional(),
-      requiredEducationLevel: z.string().max(100).optional(),
-      requiredExperienceField: z.string().max(255).optional(),
+      minimumExperienceYears: z.number().nonnegative().nullable().optional(),
+      requiredEducationLevel: z.string().max(100).nullable().optional(),
+      requiredExperienceField: z.string().max(255).nullable().optional(),
     })
+    .nullable()
     .optional(), // Requirements are optional based on your schema
 });
+
+export const updatePositionSchema = createPositionSchema;
 
 export const assignEmployeeSchema = z.object({
   employeeId: z.number().int().positive(),
