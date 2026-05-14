@@ -19,6 +19,7 @@ interface ConfirmDialogProps {
   message: string;
   type?: ActionType;
   isLoading?: boolean;
+  isConfirmDisabled?: boolean;
 }
 
 const actionConfig = {
@@ -62,6 +63,7 @@ export const ConfirmDialog = ({
   message,
   type = "default",
   isLoading,
+  isConfirmDisabled = false,
 }: ConfirmDialogProps) => {
   const config = actionConfig[type];
 
@@ -137,11 +139,12 @@ export const ConfirmDialog = ({
                   </button>
                   <button
                     onClick={onConfirm}
-                    disabled={isLoading}
+                    disabled={isLoading || isConfirmDisabled}
                     className={cn(
                       "flex-[1.5] px-4 py-4 rounded-2xl text-sm font-extrabold text-white shadow-lg transition-all active:scale-[0.97] focus:ring-4 focus:ring-offset-2 flex items-center justify-center",
                       config.btnClass,
-                      isLoading && "opacity-80 cursor-not-allowed",
+                      (isLoading || isConfirmDisabled) &&
+                        "opacity-80 cursor-not-allowed",
                     )}
                   >
                     {isLoading ? (

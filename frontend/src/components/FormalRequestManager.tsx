@@ -170,6 +170,10 @@ const UserRequestDropdown = ({
   const [toastOpen, setToastOpen] = useState(false);
   const [toastType, setToastType] = useState<"success" | "error">("success");
   const [toastMessage, setToastMessage] = useState("");
+  const [feedbackByRequest, setFeedbackByRequest] = useState<
+    Record<number, string>
+  >({});
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
 
   const getFileTypeFromUrl = (url: string) => {
     const cleanPath = url.split("?")[0].split("#")[0];
@@ -194,18 +198,46 @@ const UserRequestDropdown = ({
     return `${base}${url.startsWith("/") ? "" : "/"}${url}`;
   };
 
+  const currentFeedback = activeRequest
+    ? feedbackByRequest[activeRequest.id] || ""
+    : "";
+  const trimmedFeedbackLength = currentFeedback.trim().length;
+  const isFinalStatus =
+    activeRequest?.status === "APPROVED" ||
+    activeRequest?.status === "REJECTED";
+  const isFeedbackValid =
+    statusSelection !== "REJECTED" || trimmedFeedbackLength >= 30;
+
+  const handleFeedbackChange = (value: string) => {
+    if (!activeRequest) return;
+    setFeedbackByRequest((prev) => ({ ...prev, [activeRequest.id]: value }));
+    if (feedbackError) {
+      setFeedbackError(null);
+    }
+  };
+
   const handleOpenViewer = (request: Request) => {
     setActiveRequest(request);
     setIsViewerOpen(true);
     setStatusSelection(request.status === "REJECTED" ? "REJECTED" : "APPROVED");
     setUpdateError(null);
+    setFeedbackError(null);
   };
 
   const handleUpdateStatus = async () => {
     if (!activeRequest) return;
+    if (isFinalStatus) return;
+
+    if (statusSelection === "REJECTED") {
+      if (trimmedFeedbackLength < 30) {
+        setFeedbackError("Please provide at least 30 characters of feedback.");
+        return;
+      }
+    }
 
     setIsUpdating(true);
     setUpdateError(null);
+    setFeedbackError(null);
 
     try {
       const endpoint =
@@ -216,7 +248,10 @@ const UserRequestDropdown = ({
       await apiRequest(endpoint, {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: JSON.stringify({ adminFeedback: "" }),
+        body: JSON.stringify({
+          adminFeedback:
+            statusSelection === "REJECTED" ? currentFeedback.trim() : "",
+        }),
       });
 
       onStatusUpdate(user.id, activeRequest.id, statusSelection);
@@ -241,6 +276,13 @@ const UserRequestDropdown = ({
 
   const handleRequestStatusUpdate = () => {
     if (!activeRequest) return;
+    if (isFinalStatus) return;
+    if (statusSelection === "REJECTED") {
+      if (trimmedFeedbackLength < 30) {
+        setFeedbackError("Please provide at least 30 characters of feedback.");
+        return;
+      }
+    }
     setIsConfirmOpen(true);
   };
 
@@ -407,29 +449,80 @@ const UserRequestDropdown = ({
             </div>
 
             <div className="sm:hidden border-b px-5 py-4 space-y-3">
-              <p className="text-xs font-black text-gray-400 uppercase tracking-widest">
-                Status Action
-              </p>
-              <select
-                value={statusSelection}
-                onChange={(e) =>
-                  setStatusSelection(e.target.value as "APPROVED" | "REJECTED")
-                }
-                className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm font-bold text-[#0C2A4C]"
-              >
-                <option value="APPROVED">Approve</option>
-                <option value="REJECTED">Reject</option>
-              </select>
-              <button
-                type="button"
-                onClick={handleRequestStatusUpdate}
-                disabled={isUpdating}
-                className="w-full rounded-xl bg-[#0C2A4C] text-white text-xs font-black uppercase tracking-widest py-3 disabled:opacity-60"
-              >
-                {isUpdating ? "Updating..." : "Apply Status"}
-              </button>
-              {updateError && (
-                <p className="text-xs text-red-500 font-bold">{updateError}</p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-black text-gray-400 uppercase tracking-widest">
+                  Status Action
+                </p>
+                {isFinalStatus && (
+                  <span
+                    title="This request is finalized and cannot be changed."
+                    className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-full"
+                  >
+                    Finalized
+                  </span>
+                )}
+              </div>
+              {!isFinalStatus && (
+                <>
+                  <select
+                    value={statusSelection}
+                    onChange={(e) => {
+                      setStatusSelection(
+                        e.target.value as "APPROVED" | "REJECTED",
+                      );
+                      setFeedbackError(null);
+                    }}
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm font-bold text-[#0C2A4C]"
+                  >
+                    <option value="APPROVED">Approve</option>
+                    <option value="REJECTED">Reject</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleRequestStatusUpdate}
+                    disabled={isUpdating || !isFeedbackValid}
+                    className="w-full rounded-xl bg-[#0C2A4C] text-white text-xs font-black uppercase tracking-widest py-3 disabled:opacity-60"
+                  >
+                    {isUpdating ? "Updating..." : "Apply Status"}
+                  </button>
+                  {statusSelection === "REJECTED" && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                          Rejection Feedback
+                        </label>
+                        <span
+                          className={`text-[10px] font-black uppercase tracking-widest ${
+                            trimmedFeedbackLength < 30
+                              ? "text-rose-500"
+                              : "text-emerald-500"
+                          }`}
+                        >
+                          {trimmedFeedbackLength}/30
+                        </span>
+                      </div>
+                      <textarea
+                        value={currentFeedback}
+                        onChange={(event) =>
+                          handleFeedbackChange(event.target.value)
+                        }
+                        rows={4}
+                        className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm text-[#0C2A4C] focus:outline-none focus:ring-2 focus:ring-[#0C2A4C]/20"
+                        placeholder="Provide reason for rejection..."
+                      />
+                      {feedbackError && (
+                        <p className="text-xs text-red-500 font-bold">
+                          {feedbackError}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {updateError && (
+                    <p className="text-xs text-red-500 font-bold">
+                      {updateError}
+                    </p>
+                  )}
+                </>
               )}
             </div>
 
@@ -463,33 +556,80 @@ const UserRequestDropdown = ({
 
                 <div className="p-4 sm:p-6 space-y-6 overflow-y-auto bg-white">
                   <div className="hidden sm:block space-y-2">
-                    <p className="text-xs font-black text-gray-400 uppercase tracking-widest">
-                      Status Action
-                    </p>
-                    <select
-                      value={statusSelection}
-                      onChange={(e) =>
-                        setStatusSelection(
-                          e.target.value as "APPROVED" | "REJECTED",
-                        )
-                      }
-                      className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm font-bold text-[#0C2A4C]"
-                    >
-                      <option value="APPROVED">Approve</option>
-                      <option value="REJECTED">Reject</option>
-                    </select>
-                    <button
-                      type="button"
-                      onClick={handleRequestStatusUpdate}
-                      disabled={isUpdating}
-                      className="w-full rounded-xl bg-[#0C2A4C] text-white text-xs font-black uppercase tracking-widest py-3 disabled:opacity-60"
-                    >
-                      {isUpdating ? "Updating..." : "Apply Status"}
-                    </button>
-                    {updateError && (
-                      <p className="text-xs text-red-500 font-bold">
-                        {updateError}
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-black text-gray-400 uppercase tracking-widest">
+                        Status Action
                       </p>
+                      {isFinalStatus && (
+                        <span
+                          title="This request is finalized and cannot be changed."
+                          className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-full"
+                        >
+                          Finalized
+                        </span>
+                      )}
+                    </div>
+                    {!isFinalStatus && (
+                      <>
+                        <select
+                          value={statusSelection}
+                          onChange={(e) => {
+                            setStatusSelection(
+                              e.target.value as "APPROVED" | "REJECTED",
+                            );
+                            setFeedbackError(null);
+                          }}
+                          className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm font-bold text-[#0C2A4C]"
+                        >
+                          <option value="APPROVED">Approve</option>
+                          <option value="REJECTED">Reject</option>
+                        </select>
+                        <button
+                          type="button"
+                          onClick={handleRequestStatusUpdate}
+                          disabled={isUpdating || !isFeedbackValid}
+                          className="w-full rounded-xl bg-[#0C2A4C] text-white text-xs font-black uppercase tracking-widest py-3 disabled:opacity-60"
+                        >
+                          {isUpdating ? "Updating..." : "Apply Status"}
+                        </button>
+                        {statusSelection === "REJECTED" && (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                Rejection Feedback
+                              </label>
+                              <span
+                                className={`text-[10px] font-black uppercase tracking-widest ${
+                                  trimmedFeedbackLength < 30
+                                    ? "text-rose-500"
+                                    : "text-emerald-500"
+                                }`}
+                              >
+                                {trimmedFeedbackLength}/30
+                              </span>
+                            </div>
+                            <textarea
+                              value={currentFeedback}
+                              onChange={(event) =>
+                                handleFeedbackChange(event.target.value)
+                              }
+                              rows={4}
+                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm text-[#0C2A4C] focus:outline-none focus:ring-2 focus:ring-[#0C2A4C]/20"
+                              placeholder="Provide reason for rejection..."
+                            />
+                            {feedbackError && (
+                              <p className="text-xs text-red-500 font-bold">
+                                {feedbackError}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                        {updateError && (
+                          <p className="text-xs text-red-500 font-bold">
+                            {updateError}
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
 
@@ -523,6 +663,7 @@ const UserRequestDropdown = ({
           await handleUpdateStatus();
           setIsConfirmOpen(false);
         }}
+        isConfirmDisabled={!isFeedbackValid || isFinalStatus}
         title={
           statusSelection === "APPROVED"
             ? "Approve request?"
