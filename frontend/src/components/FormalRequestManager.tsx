@@ -10,6 +10,8 @@ import {
   ExternalLink,
   User as UserIcon,
   X,
+  Check,
+  XCircle,
 } from "lucide-react";
 import { apiRequest, API_BASE } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
@@ -191,6 +193,12 @@ const UserRequestDropdown = ({
     return cleanPath.split("/").pop() || "formal_request";
   };
 
+  const getDownloadFileName = (url: string) => {
+    const fileName = getFileNameFromUrl(url);
+    const prefix = "FormalRequest_";
+    return `${prefix}${fileName}`;
+  };
+
   const resolveFileUrl = (url: string) => {
     if (!url) return url;
     if (url.startsWith("http://") || url.startsWith("https://")) return url;
@@ -288,13 +296,36 @@ const UserRequestDropdown = ({
 
   const handleDownload = (url: string) => {
     const resolvedUrl = resolveFileUrl(url);
-    const link = document.createElement("a");
-    link.href = resolvedUrl;
-    link.download = getFileNameFromUrl(url);
-    link.rel = "noreferrer";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const fileName = getDownloadFileName(url);
+    
+    // For PDFs and other files, fetch and create blob for reliable download
+    fetch(resolvedUrl, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return response.blob();
+      })
+      .then((blob) => {
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+      })
+      .catch((error) => {
+        console.error("Download failed:", error);
+        // Fallback to direct download
+        const link = document.createElement("a");
+        link.href = resolvedUrl;
+        link.download = fileName;
+        link.rel = "noreferrer";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
   };
 
   // LOGIC: Group requests by year calculated from 'createdAt'
@@ -411,8 +442,8 @@ const UserRequestDropdown = ({
         </div>
       )}
       {isViewerOpen && activeRequest && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 p-4 sm:p-6">
-          <div className="bg-white w-full max-w-5xl max-h-[88vh] sm:max-h-[92vh] rounded-[28px] shadow-2xl overflow-hidden flex flex-col">
+        <div className="fixed inset-0 z-[120] overflow-y-auto bg-black/60 p-4 sm:p-6">
+          <div className="mx-auto my-8 bg-white w-full max-w-5xl max-h-[calc(100vh-3rem)] rounded-[28px] shadow-2xl flex flex-col overflow-visible">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b px-5 py-4 sm:px-6">
               <div className="min-w-0">
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">
@@ -433,7 +464,7 @@ const UserRequestDropdown = ({
                 <button
                   type="button"
                   onClick={() => handleDownload(activeRequest.requestLetterUrl)}
-                  className="inline-flex items-center justify-center rounded-xl border border-gray-200 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-[#0C2A4C] hover:bg-gray-50"
+                  className="inline-flex items-center justify-center rounded-xl border-2 border-blue-500 bg-blue-50 px-4 py-2 text-xs font-black uppercase tracking-widest text-blue-600 hover:bg-blue-500 hover:text-white transition-all transform hover:scale-105 shadow-md hover:shadow-lg"
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Download
@@ -441,7 +472,7 @@ const UserRequestDropdown = ({
                 <button
                   type="button"
                   onClick={() => setIsViewerOpen(false)}
-                  className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full"
+                  className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -449,149 +480,64 @@ const UserRequestDropdown = ({
             </div>
 
             <div className="sm:hidden border-b px-5 py-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-black text-gray-400 uppercase tracking-widest">
+              <div className="flex flex-col items-center gap-2">
+                <p className="text-xs font-black text-gray-400 uppercase tracking-widest text-center">
                   Status Action
                 </p>
                 {isFinalStatus && (
                   <span
                     title="This request is finalized and cannot be changed."
-                    className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-full"
+                    className="text-[10px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-100 px-2 py-1 rounded-full"
                   >
                     Finalized
                   </span>
                 )}
               </div>
-              {!isFinalStatus && (
-                <>
-                  <select
-                    value={statusSelection}
-                    onChange={(e) => {
-                      setStatusSelection(
-                        e.target.value as "APPROVED" | "REJECTED",
-                      );
-                      setFeedbackError(null);
-                    }}
-                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm font-bold text-[#0C2A4C]"
-                  >
-                    <option value="APPROVED">Approve</option>
-                    <option value="REJECTED">Reject</option>
-                  </select>
-                  <button
-                    type="button"
-                    onClick={handleRequestStatusUpdate}
-                    disabled={isUpdating || !isFeedbackValid}
-                    className="w-full rounded-xl bg-[#0C2A4C] text-white text-xs font-black uppercase tracking-widest py-3 disabled:opacity-60"
-                  >
-                    {isUpdating ? "Updating..." : "Apply Status"}
-                  </button>
-                  {statusSelection === "REJECTED" && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                          Rejection Feedback
-                        </label>
-                        <span
-                          className={`text-[10px] font-black uppercase tracking-widest ${
-                            trimmedFeedbackLength < 30
-                              ? "text-rose-500"
-                              : "text-emerald-500"
-                          }`}
-                        >
-                          {trimmedFeedbackLength}/30
-                        </span>
-                      </div>
-                      <textarea
-                        value={currentFeedback}
-                        onChange={(event) =>
-                          handleFeedbackChange(event.target.value)
-                        }
-                        rows={4}
-                        className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm text-[#0C2A4C] focus:outline-none focus:ring-2 focus:ring-[#0C2A4C]/20"
-                        placeholder="Provide reason for rejection..."
-                      />
-                      {feedbackError && (
-                        <p className="text-xs text-red-500 font-bold">
-                          {feedbackError}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                  {updateError && (
-                    <p className="text-xs text-red-500 font-bold">
-                      {updateError}
-                    </p>
-                  )}
-                </>
-              )}
-            </div>
-
-            <div className="flex-1 overflow-hidden">
-              <div className="grid grid-cols-1 lg:grid-cols-[1.6fr,1fr] h-full">
-                <div className="bg-gray-50 p-4 sm:p-6 flex items-center justify-center overflow-auto">
-                  {getFileTypeFromUrl(
-                    activeRequest.requestLetterUrl,
-                  ).startsWith("image/") ? (
-                    <img
-                      src={resolveFileUrl(activeRequest.requestLetterUrl)}
-                      alt="Formal request"
-                      className="max-h-[50vh] sm:max-h-[55vh] max-w-full rounded-2xl shadow-lg bg-white"
-                    />
-                  ) : getFileTypeFromUrl(activeRequest.requestLetterUrl) ===
-                    "application/pdf" ? (
-                    <iframe
-                      src={`${resolveFileUrl(activeRequest.requestLetterUrl)}#toolbar=0`}
-                      title="Formal request"
-                      className="w-full h-[50vh] sm:h-[55vh] min-h-[280px] rounded-2xl border-0 bg-white shadow-lg"
-                    />
-                  ) : (
-                    <div className="bg-white rounded-2xl p-8 shadow-lg text-center">
-                      <FileText className="w-10 h-10 text-gray-300 mx-auto" />
-                      <p className="mt-3 text-sm text-gray-500">
-                        Preview not available.
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="p-4 sm:p-6 space-y-6 overflow-y-auto bg-white">
-                  <div className="hidden sm:block space-y-2">
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs font-black text-gray-400 uppercase tracking-widest">
-                        Status Action
-                      </p>
-                      {isFinalStatus && (
-                        <span
-                          title="This request is finalized and cannot be changed."
-                          className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-full"
-                        >
-                          Finalized
-                        </span>
-                      )}
-                    </div>
-                    {!isFinalStatus && (
+                                 {!isFinalStatus && (
                       <>
-                        <select
-                          value={statusSelection}
-                          onChange={(e) => {
-                            setStatusSelection(
-                              e.target.value as "APPROVED" | "REJECTED",
-                            );
-                            setFeedbackError(null);
-                          }}
-                          className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm font-bold text-[#0C2A4C]"
-                        >
-                          <option value="APPROVED">Approve</option>
-                          <option value="REJECTED">Reject</option>
-                        </select>
-                        <button
-                          type="button"
-                          onClick={handleRequestStatusUpdate}
-                          disabled={isUpdating || !isFeedbackValid}
-                          className="w-full rounded-xl bg-[#0C2A4C] text-white text-xs font-black uppercase tracking-widest py-3 disabled:opacity-60"
-                        >
-                          {isUpdating ? "Updating..." : "Apply Status"}
-                        </button>
+                  
+    <div className="flex justify-end items-center gap-20 mt-4">
+  <button
+    type="button"
+    onClick={() => {
+      setStatusSelection("APPROVED");
+      setFeedbackError(null);
+    }}
+    className={`flex items-center justify-center rounded-xl px-10 py-3 text-xs font-black uppercase tracking-widest border-2 transition-all ${
+      statusSelection === "APPROVED"
+        ? "bg-white text-green-600 border-green-600 shadow-lg shadow-green-200"
+        : "bg-white text-green-600 border-green-200"
+    }`}
+  >
+    ✓ APPROVE
+  </button>
+
+  <button
+    type="button"
+    onClick={() => {
+      setStatusSelection("REJECTED");
+      setFeedbackError(null);
+    }}
+    className={`flex items-center justify-center rounded-xl px-10 py-3 text-xs font-black uppercase tracking-widest border-2 transition-all ${
+      statusSelection === "REJECTED"
+        ? "bg-white text-red-600 border-red-600 shadow-lg shadow-red-200"
+        : "bg-white text-red-600 border-red-200"
+    }`}
+  >
+    <XCircle className="w-3 h-3 mr-1.5" />
+    REJECT
+  </button>
+</div>
+                        <div className="flex justify-center">
+                          <button
+                            type="button"
+                            onClick={handleRequestStatusUpdate}
+                            disabled={isUpdating}
+                            className="inline-flex items-center justify-center rounded-xl bg-[#0C2A4C] text-[#DCC380] text-xs font-black uppercase tracking-widest px-24 py-4 transition-all transform hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed shadow-lg hover:bg-[#0C2A4C]/90 w-96"
+                          >
+                            {isUpdating ? "Updating..." : `Apply ${statusSelection}`}
+                          </button>
+                        </div>
                         {statusSelection === "REJECTED" && (
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
@@ -601,8 +547,8 @@ const UserRequestDropdown = ({
                               <span
                                 className={`text-[10px] font-black uppercase tracking-widest ${
                                   trimmedFeedbackLength < 30
-                                    ? "text-rose-500"
-                                    : "text-emerald-500"
+                                    ? "text-yellow-600"
+                                    : "text-blue-600"
                                 }`}
                               >
                                 {trimmedFeedbackLength}/30
@@ -613,8 +559,8 @@ const UserRequestDropdown = ({
                               onChange={(event) =>
                                 handleFeedbackChange(event.target.value)
                               }
-                              rows={4}
-                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm text-[#0C2A4C] focus:outline-none focus:ring-2 focus:ring-[#0C2A4C]/20"
+                              rows={5}
+                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm text-[#0C2A4C] focus:outline-none focus:ring-2 focus:ring-yellow-300/20"
                               placeholder="Provide reason for rejection..."
                             />
                             {feedbackError && (
@@ -631,24 +577,157 @@ const UserRequestDropdown = ({
                         )}
                       </>
                     )}
-                  </div>
+            </div>
 
-                  <div className="space-y-2">
-                    <p className="text-xs font-black text-gray-400 uppercase tracking-widest">
-                      File Actions
-                    </p>
-                    {getFileTypeFromUrl(activeRequest.requestLetterUrl) ===
-                      "application/pdf" && (
-                      <a
-                        href={resolveFileUrl(activeRequest.requestLetterUrl)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center justify-center w-full rounded-xl bg-[#0C2A4C] px-3 py-2 text-xs font-black uppercase tracking-widest text-white hover:bg-[#123A6B]"
-                      >
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        View Fullscreen
-                      </a>
+            <div className="min-h-0">
+              <div className="grid grid-cols-1 lg:grid-cols-[1.6fr,1fr] min-h-0">
+                <div className="bg-gray-50 p-4 sm:p-6 min-h-0 flex items-center justify-center overflow-hidden">
+                  {getFileTypeFromUrl(
+                    activeRequest.requestLetterUrl,
+                  ).startsWith("image/") ? (
+                    <img
+                      src={resolveFileUrl(activeRequest.requestLetterUrl)}
+                      alt="Formal request"
+                      className="max-h-[35vh] sm:max-h-[40vh] max-w-full rounded-2xl shadow-lg bg-white"
+                    />
+                  ) : getFileTypeFromUrl(activeRequest.requestLetterUrl) ===
+                    "application/pdf" ? (
+                    <iframe
+                      src={`${resolveFileUrl(activeRequest.requestLetterUrl)}#toolbar=0`}
+                      title="Formal request"
+                      className="w-full h-[35vh] sm:h-[40vh] min-h-[250px] rounded-2xl border-0 bg-white shadow-lg"
+                    />
+                  ) : (
+                    <div className="bg-white rounded-2xl p-8 shadow-lg text-center">
+                      <FileText className="w-10 h-10 text-gray-300 mx-auto" />
+                      <p className="mt-3 text-sm text-gray-500">
+                        Preview not available.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                  <div className="lg:flex lg:flex-col min-h-0 bg-white">
+                    <div className="hidden sm:block space-y-3 p-4 sm:p-6 border-b border-gray-100">
+                    <div className="flex flex-col items-center gap-2">
+                      <p className="text-xs font-black text-gray-400 uppercase tracking-widest text-center">
+                        Status Action
+                      </p>
+                      {isFinalStatus && (
+                        <span
+                          title="This request is finalized and cannot be changed."
+                          className="text-[10px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-100 px-2 py-1 rounded-full"
+                        >
+                          Finalized
+                        </span>
+                      )}
+                    </div>
+                    {!isFinalStatus && (
+                      <>
+                        <div className="flex justify-center items-center gap-20">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setStatusSelection("APPROVED");
+                              setFeedbackError(null);
+                            }}
+                            className={`inline-flex items-center justify-center rounded-xl px-1 py-3 text-xs font-black uppercase tracking-widest transition-all transform hover:scale-105 border-2 w-64 ${
+                              statusSelection === "APPROVED"
+                                ? "bg-white text-green-600 border-green-600 shadow-lg shadow-green-200"
+                                : "bg-white text-green-600 border-green-200 hover:border-green-600"
+                            }`}
+                          >
+                            <Check className="w-3 h-3 mr-1.5" />
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setStatusSelection("REJECTED");
+                              setFeedbackError(null);
+                            }}
+                            className={`inline-flex items-center justify-center rounded-xl px-1 py-3 text-xs font-black uppercase tracking-widest transition-all transform hover:scale-105 border-2 w-64 ${
+                              statusSelection === "REJECTED"
+                                ? "bg-white text-red-600 border-red-600 shadow-lg shadow-red-200"
+                                : "bg-white text-red-600 border-red-200 hover:border-red-600"
+                            }`}
+                          >
+                            <XCircle className="w-3 h-3 mr-1.5" />
+                            Reject
+                          </button>
+                        </div>
+                        <div className="flex justify-center">
+                          <button
+                            type="button"
+                            onClick={handleRequestStatusUpdate}
+                            disabled={isUpdating}
+                            className="inline-flex items-center justify-center rounded-xl bg-[#0C2A4C] text-[#DCC380] text-xs font-black uppercase tracking-widest px-24 py-4 transition-all transform hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed shadow-lg hover:bg-[#0C2A4C]/90 w-96"
+                          >
+                            {isUpdating ? "Updating..." : `Apply ${statusSelection}`}
+                          </button>
+                        </div>
+                      </>
                     )}
+                  </div>
+                  <div className="flex-1 p-4 sm:p-6 space-y-6">
+                    {statusSelection === "REJECTED" && !isFinalStatus && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                            Rejection Feedback
+                          </label>
+                          <span
+                            className={`text-[10px] font-black uppercase tracking-widest ${
+                              trimmedFeedbackLength < 30
+                                ? "text-yellow-600"
+                                : "text-blue-600"
+                            }`}
+                          >
+                            {trimmedFeedbackLength}/30
+                          </span>
+                        </div>
+                        <textarea
+                          value={currentFeedback}
+                          onChange={(event) =>
+                            handleFeedbackChange(event.target.value)
+                          }
+                          rows={6}
+                          className="w-full rounded-xl border border-gray-200 px-1.5 py-3 text-sm text-[#0C2A4C] focus:outline-none focus:ring-2 focus:ring-yellow-300/20"
+                          placeholder="Provide reason for rejection..."
+                        />
+                        {feedbackError && (
+                          <p className="text-xs text-red-500 font-bold">
+                            {feedbackError}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    {updateError && !isFinalStatus && (
+                      <div>
+                        <p className="text-xs text-red-500 font-bold">
+                          {updateError}
+                        </p>
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <p className="text-xs font-black text-gray-400 uppercase tracking-widest text-center">
+                        File Actions
+                      </p>
+                      {getFileTypeFromUrl(activeRequest.requestLetterUrl) ===
+                        "application/pdf" && (
+                        <div className="flex justify-center">
+                          <a
+                            href={resolveFileUrl(activeRequest.requestLetterUrl)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center justify-center rounded-xl bg-[#0C2A4C] px-24 py-3 text-xs font-black uppercase tracking-widest text-white hover:bg-[#123A6B] w-96"
+                          >
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            View Fullscreen
+                          </a>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -656,33 +735,29 @@ const UserRequestDropdown = ({
           </div>
         </div>
       )}
-      <ConfirmDialog
-        isOpen={isConfirmOpen}
-        onClose={() => setIsConfirmOpen(false)}
-        onConfirm={async () => {
-          await handleUpdateStatus();
-          setIsConfirmOpen(false);
-        }}
-        isConfirmDisabled={!isFeedbackValid || isFinalStatus}
-        title={
-          statusSelection === "APPROVED"
+      <>
+        <ConfirmDialog
+          isOpen={isConfirmOpen}
+          onClose={() => setIsConfirmOpen(false)}
+          onConfirm={async () => {
+            await handleUpdateStatus();
+            setIsConfirmOpen(false);
+          }}
+          isConfirmDisabled={!isFeedbackValid || isFinalStatus}
+          title={statusSelection === "APPROVED"
             ? "Approve request?"
-            : "Reject request?"
-        }
-        message={
-          statusSelection === "APPROVED"
+            : "Reject request?"}
+          message={statusSelection === "APPROVED"
             ? "This will mark the request as approved and notify the user."
-            : "This will mark the request as rejected and notify the user."
-        }
-        type={statusSelection === "APPROVED" ? "approve" : "reject"}
-        isLoading={isUpdating}
-      />
-      <AutoDismissToast
-        isOpen={toastOpen}
-        type={toastType}
-        message={toastMessage}
-        onClose={() => setToastOpen(false)}
-      />
+            : "This will mark the request as rejected and notify the user."}
+          type={statusSelection === "APPROVED" ? "approve" : "reject"}
+          isLoading={isUpdating} />
+        <AutoDismissToast
+          isOpen={toastOpen}
+          type={toastType}
+          message={toastMessage}
+          onClose={() => setToastOpen(false)} />
+      </>
     </div>
   );
 };
