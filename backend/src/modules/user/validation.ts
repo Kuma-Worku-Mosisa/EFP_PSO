@@ -48,12 +48,54 @@ export const registerValidation = [
   */
 ];
 
-
 export const loginValidation = [
+  body("username").notEmpty().withMessage("Username is required"),
+  body("password").notEmpty().withMessage("Password is required"),
+];
+
+export const profileValidation = [
   body("username")
+    .optional()
+    .isString()
+    .withMessage("Username must be a string")
+    .trim(),
+  body("fullName")
+    .optional()
+    .isString()
+    .withMessage("Full name must be a string")
+    .trim(),
+  body("phone")
+    .optional()
+    .isString()
+    .withMessage("Phone must be a string")
+    .matches(/^[0-9+]+$/)
+    .withMessage("Invalid phone number format"),
+  body("faydaId")
+    .optional()
+    .isString()
+    .withMessage("Fayda ID must be a string")
+    .isLength({ min: 12 })
+    .withMessage("Fayda ID must be at least 12 characters"),
+  body("photoUrl")
+    .optional()
+    .custom((value) => {
+      if (typeof value !== "string") return false;
+      // Allow data URL images (base64) or regular http(s) URLs
+      if (value.startsWith("data:image/")) return true;
+      // basic http(s) URL check
+      return /^(https?:)?\/\//.test(value);
+    })
+    .withMessage("photoUrl must be a valid URL or a data:image base64 string"),
+];
+
+export const changePasswordValidation = [
+  body("currentPassword")
     .notEmpty()
-    .withMessage("Username is required"),
-  body("password")
-    .notEmpty()
-    .withMessage("Password is required"),
+    .withMessage("Current password is required"),
+  body("newPassword")
+    .isLength({ min: 8 })
+    .withMessage("New password must be at least 8 characters"),
+  body("confirmNewPassword")
+    .custom((value, { req }) => value === req.body.newPassword)
+    .withMessage("Confirm password must match new password"),
 ];

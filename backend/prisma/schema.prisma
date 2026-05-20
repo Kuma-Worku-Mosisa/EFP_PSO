@@ -7,6 +7,9 @@ datasource db {
   provider = "sqlserver"
 }
 
+// Note: SQL Server connector does not support Prisma enums.
+// Using a string `status` column with a default value instead.
+
 model Region {
   id    Int    @id(map: "PK__regions__01146BAEBE221DD1") @default(autoincrement()) @map("region_id")
   name  String @unique(map: "UQ__regions__4BB31B03F2BF7603") @map("region_name") @db.VarChar(100)
@@ -53,8 +56,20 @@ model Address {
   kebele          Kebele         @relation(fields: [kebeleId], references: [id], onUpdate: NoAction, map: "FK_Addresses_Kebeles")
   organizations   Organization[]
   employees       Employee[]
+  branchAddresses OrganizationBranchAddress[]
 
   @@map("addresses")
+}
+
+
+// Global Authority Identity (Singleton)
+model SystemSettings {
+  id               Int     @id @default(1)
+  governmentName   String  @default("Ethiopian Federal Police")
+  efpLogoUrl       String  @map("efp_logo_url") @db.VarChar(Max)
+  issuingAuthority String  @default("Private Security Agency Management Directorate") @map("issuing_authority")
+
+  @@map("system_settings")
 }
 
 model User {
@@ -65,11 +80,14 @@ model User {
   phone      String       @unique(map: "UQ__users__A1936A6BBE0D0FB3") @map("phone_number") @db.VarChar(50)
   password   String       @map("password_hash") @db.VarChar(Max)
   faydaId    String       @unique // Add this line
+  photoUrl  String?  @map("photo_url") @db.VarChar(Max)
   createdAt  DateTime?    @default(now(), map: "DF__users__account_c__6E01572D") @map("account_created_at") @db.DateTime
+  status     String       @default("ACTIVE") @map("status") @db.VarChar(20)
   user_roles user_roles[]
 
   // Add these back-relation fields:
-   formalRequests  FormalRequest[]
+  applications     Application[]               // Fixes the missing opposite relation error
+  formalRequests  FormalRequest[]
   auditLogs       AuditLog[]                   @relation("UserAuditLogs")
   employee        Employee?
   inspections     Inspection[]                 @relation("LeadInspector")
@@ -112,15 +130,12 @@ model FormalRequest {
 model Organization {
   id               Int     @id @default(autoincrement()) @map("organization_id")
   name             String  @unique @map("organization_name") @db.VarChar(255)
-  headOfficeName   String  @map("head_office_name") @db.VarChar(255)
-  branchOfficeName String? @map("branch_office_name") @db.VarChar(255)
   parentOrgId      Int?    @map("parent_org_id")
   email            String  @unique @map("email_address") @db.VarChar(255)
   phone            String  @map("phone_number") @db.VarChar(50)
   faxNumber        String? @map("fax_number") @db.VarChar(50)
   tradeName        String? @map("trade_name") @db.VarChar(255)
   tinNumber        String  @unique @map("tin_number") @db.VarChar(50)
-  //licenseNumber     String?  @unique @map("license_number") @db.VarChar(100)
   addressId        Int?    @map("address_id")
 
   // Resource Tracking (Step 3)
@@ -153,8 +168,48 @@ model Organization {
   applications   Application[]
   certifications Certification[]
   incidents      IncidentReport[]
+  // agreements now relate through applications
+  // Tracks multiple secondary branch physical locations
+  branchAddresses OrganizationBranchAddress[]
 
   @@map("organizations")
+}
+
+
+model OrganizationBranchAddress {
+  id             Int          @id @default(autoincrement()) @map("branch_address_id")
+  organizationId Int          @map("organization_id")
+  addressId      Int          @map("address_id")
+  createdAt      DateTime     @default(now()) @map("created_at") @db.DateTime
+
+  // Relational mappings
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_OrgBranchAddresses_Organizations")
+  address        Address      @relation(fields: [addressId], references: [id], onUpdate: NoAction, map: "FK_OrgBranchAddresses_Addresses")
+
+  @@map("organization_branch_addresses")
+}
+
+
+model Agreement {
+  id                  Int      @id @default(autoincrement()) @map("agreement_id")
+  agreementNumber     String   @unique @map("agreement_number") @db.VarChar(100) 
+  applicationId       Int?     @map("application_id")
+  status              String   @default("Pending") @map("agreement_status") @db.VarChar(50) 
+  
+  // FIXED: Changed from Json to VarChar(Max) for SQL Server stringified compatibility
+  snapshotData        String   @map("snapshot_data") @db.VarChar(Max) 
+  
+  recruitmentDeadline DateTime @map("recruitment_deadline") @db.DateTime
+  issuedDate          DateTime @default(now()) @map("issued_date") @db.DateTime
+  expiryDate          DateTime @map("expiry_date") @db.DateTime
+  createdAt           DateTime @default(now()) @map("created_at") @db.DateTime
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.DateTime
+
+  // FIXED: Changed onDelete from Restrict to NoAction for SQL Server compatibility
+  application         Application? @relation(fields: [applicationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Agreements_Applications")
+
+  @@index([applicationId, issuedDate]) 
+  @@map("agreements")
 }
 
 // DELETE the 'enum OrgDocumentType' block entirely from your file.
@@ -283,6 +338,7 @@ model EmployeeDocument {
 
 model Application {
   id             Int     @id @default(autoincrement()) @map("application_id")
+  userId         Int     @map("user_id")
   organizationId Int     @map("organization_id")
   type           String? @map("application_type") @db.VarChar(50)
   status         String? @map("application_status") @db.VarChar(50)
@@ -294,6 +350,7 @@ model Application {
   applicationDate DateTime @default(now()) @map("application_date") @db.DateTime
 
   // Relations
+  user         User         @relation(fields: [userId], references: [id], onUpdate: NoAction, map: "FK_Apps_Users")
   organization Organization @relation(fields: [organizationId], references: [id], onUpdate: NoAction, map: "FK_Apps_Orgs")
 
   // Updated with onDelete: NoAction to prevent SQL Server Cyclic Dependency errors
@@ -307,6 +364,7 @@ model Application {
   inspections     Inspection[]
   payments        Payment[]
   certifications  Certification[]
+  agreements      Agreement[]
 
   @@map("applications")
 }

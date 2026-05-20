@@ -5,14 +5,21 @@ export const createApplicationSchema = z.object({
   formData: z.object({
     // Steps 1 & 2: Agency & Location
     agencyName: z.string().min(3, "Agency name must be at least 3 characters"),
-    headOfficeName: z.string().min(3, "Head office name is required"),
-    branchOfficeName: z.string().optional().nullable(),
     email: z.string().email("Invalid email address"),
     phone: z.string().min(10, "Valid phone number is required"),
     tinNumber: z.string().min(5, "TIN number is required"),
     kebele: z.string().min(1, "Kebele is required"),
     houseNumber: z.string().min(1, "House number is required"),
     specialLocation: z.string().optional().nullable(),
+    branchAddresses: z
+      .array(
+        z.object({
+          kebeleId: z.union([z.string(), z.number()]),
+          houseNumber: z.string().optional().nullable(),
+          specialLocation: z.string().optional().nullable(),
+        }),
+      )
+      .optional(),
 
     // Step 3: Resource Tracking
     numberOfOffices: z.preprocess(

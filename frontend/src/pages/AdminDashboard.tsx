@@ -17,6 +17,7 @@ import {
   CheckCircle,
   XCircle,
   Briefcase,
+  FileText,
   Search,
   Newspaper,
   Files,
@@ -43,8 +44,9 @@ import { GPSTracking } from "./GPSTracking";
 import { AgenciesManagement } from "./AgenciesManagement";
 import { ApplicationsReview } from "./ApplicationsReview";
 import { AdminReports } from "./AdminReports";
-import { AdminSettings } from "./AdminSettings";
+import SystemSettings from "./admin/system-settings";
 import { LicenseManagement } from "./LicenseManagement";
+import { LicenseViewer } from "./LicenseViewer";
 import { HRMSReports } from "./HRMSReports";
 import { UserManagement } from "./UserManagement";
 import { BackupRecovery } from "./BackupRecovery";
@@ -57,6 +59,8 @@ import { Communications } from "./Communications";
 import { Notifications } from "./Notifications";
 import PositionManagement from "./PositionManagement";
 import FormalRequestManager from "../components/FormalRequestManager";
+import AdminAgreementManager from "./admin/AdminAgreementManager";
+import AdminAgreementDetail from "./admin/AdminAgreementDetail";
 
 const Overview = () => {
   const { language } = useLanguage();
@@ -444,6 +448,11 @@ export const AdminDashboard = () => {
       label: t.dashboard.hrmsReports,
       path: "/admin/hrms-reports",
     },
+    {
+      icon: <FileText className="w-5 h-5" />,
+      label: isAm ? "ውሎች" : "Agreements",
+      path: "/admin/agreements",
+    },
 
     // Content Management Section (Grouped logically)
     {
@@ -508,11 +517,17 @@ export const AdminDashboard = () => {
         <Route path="agencies" element={<AgenciesManagement />} />
         <Route path="applications" element={<ApplicationsReview />} />
         <Route path="licenses" element={<LicenseManagement />} />
+        <Route path="licenses/:certificateId?" element={<LicenseViewer />} />
         <Route path="gps" element={<GPSTracking />} />
         <Route path="reports" element={<AdminReports />} />
         <Route path="positions" element={<PositionManagement />} />
         <Route path="hrms-reports" element={<HRMSReports />} />
-        <Route path="settings" element={<AdminSettings />} />
+        <Route path="agreements" element={<AdminAgreementManager />} />
+        <Route
+          path="agreements/:agreementId"
+          element={<AdminAgreementDetail />}
+        />
+        <Route path="settings" element={<SystemSettings />} />
         <Route path="news" element={<ManageNews />} />
         <Route path="content" element={<ManagePublicContent />} />
         <Route path="formal-requests" element={<FormalRequestsPage />} />

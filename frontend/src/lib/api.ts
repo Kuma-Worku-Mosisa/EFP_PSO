@@ -75,6 +75,18 @@ export async function apiRequest<T = any>(
   try {
     const { headers: requestHeaders, ...restOptions } = options || {};
     const url = `${API_BASE}${endpoint}`;
+    const savedToken = localStorage.getItem("efp_token");
+    const hasBody = typeof restOptions.body !== "undefined";
+    const isFormData =
+      typeof FormData !== "undefined" && restOptions.body instanceof FormData;
+
+    const headers = new Headers(requestHeaders || {});
+    if (hasBody && !isFormData && !headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json");
+    }
+    if (savedToken && !headers.has("Authorization")) {
+      headers.set("Authorization", `Bearer ${savedToken}`);
+    }
 
     if (IS_DEV) {
       console.log(` API Request: ${options?.method || "GET"} ${endpoint}`);
@@ -83,10 +95,7 @@ export async function apiRequest<T = any>(
     const res = await fetch(url, {
       ...restOptions,
       signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        ...(requestHeaders || {}),
-      },
+      headers,
     });
 
     let data: ApiErrorResponse | null = null;

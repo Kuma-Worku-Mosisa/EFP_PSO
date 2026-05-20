@@ -12,6 +12,10 @@ import locationRoutes from "./modules/location/location.routes";
 import applicationRoutes from "./modules/application/application.routes"; // Linked to your new module
 import formalRequestRoutes from "./modules/formalRequest/formalRequest.routes";
 import positionRoutes from "./modules/position/position.routes";
+import certificationRoutes from "./modules/certification/certification.routes";
+import settingsRoutes from "./modules/settings/system-settings.routes";
+import adminRoutes from "./modules/admin/audit.routes";
+import agreementRouter from "./modules/agreement/agreement.routes";
 
 const app = express();
 
@@ -56,6 +60,10 @@ app.use("/api/users", userRoutes);
 app.use("/api/applications", applicationRoutes); // Now active
 app.use("/api/formal-requests", formalRequestRoutes);
 app.use("/api/positions", positionRoutes);
+app.use("/api/certifications", certificationRoutes);
+app.use("/api/system-settings", settingsRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/agreements", agreementRouter);
 
 // 6. Health Check / Root Route
 app.get("/", (req, res) => {
@@ -86,7 +94,7 @@ app.listen(port, () => {
   console.log(`-----------------------------------------------`);
   console.log(` Backend running on http://localhost:${port}`);
   console.log(
-    ` Endpoints: /api/users, /api/location, /api/applications, /api/formal-requests, /api/positions`,
+    ` Endpoints: /api/users, /api/location, /api/applications, /api/formal-requests, /api/positions, /api/certifications, /api/system-settings`,
   );
   console.log(`-----------------------------------------------`);
 });

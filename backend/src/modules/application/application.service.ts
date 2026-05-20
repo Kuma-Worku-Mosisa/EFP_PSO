@@ -13,6 +13,60 @@ import {
 import { createAuditLog } from "../../utils/auditLogger";
 
 export class ApplicationService {
+  private static normalizeBranchAddressInputs(formData: any): Array<{
+    kebeleId: number;
+    houseNumber: string | null;
+    specialLocation: string | null;
+  }> {
+    const branchInputs = Array.isArray(formData?.branchAddresses)
+      ? formData.branchAddresses
+      : [];
+
+    const normalized = branchInputs
+      .map((branch: any) => {
+        const kebeleRaw =
+          branch?.kebeleId ?? branch?.kebele ?? branch?.kebele_id ?? null;
+        const kebeleId = Number(kebeleRaw);
+        if (!Number.isFinite(kebeleId) || kebeleId <= 0) {
+          return null;
+        }
+
+        return {
+          kebeleId,
+          houseNumber:
+            branch?.houseNumber ??
+            branch?.houseNo ??
+            branch?.house_number ??
+            null,
+          specialLocation:
+            branch?.specialLocation ?? branch?.locationDescription ?? null,
+        };
+      })
+      .filter(Boolean) as Array<{
+      kebeleId: number;
+      houseNumber: string | null;
+      specialLocation: string | null;
+    }>;
+
+    // Backward compatibility for old frontend payloads that only send branchOfficeName.
+    if (
+      normalized.length === 0 &&
+      typeof formData?.branchOfficeName === "string" &&
+      formData.branchOfficeName.trim()
+    ) {
+      const fallbackKebeleId = Number(formData?.kebele);
+      if (Number.isFinite(fallbackKebeleId) && fallbackKebeleId > 0) {
+        normalized.push({
+          kebeleId: fallbackKebeleId,
+          houseNumber: null,
+          specialLocation: formData.branchOfficeName.trim(),
+        });
+      }
+    }
+
+    return normalized;
+  }
+
   /**
    * Helper: Extract and organize files by role from uploadedFiles map
    * Expected format: {role}_{documentType} -> filePath
@@ -75,6 +129,20 @@ export class ApplicationService {
       }
 
       console.log("[DEBUG] Kebele validation passed");
+
+      const normalizedBranchAddresses =
+        this.normalizeBranchAddressInputs(formData);
+
+      for (const branch of normalizedBranchAddresses) {
+        const branchKebeleExists = await prisma.kebele.findUnique({
+          where: { id: branch.kebeleId },
+        });
+        if (!branchKebeleExists) {
+          throw new Error(
+            `Branch address kebele with ID ${branch.kebeleId} not found in database`,
+          );
+        }
+      }
 
       const parseBooleanFromInput = (value: unknown): boolean => {
         if (typeof value === "boolean") return value;
@@ -166,8 +234,6 @@ export class ApplicationService {
           const organization = await tx.organization.create({
             data: {
               name: formData.agencyName,
-              headOfficeName: formData.headOfficeName,
-              branchOfficeName: formData.branchOfficeName || null,
               email: formData.email,
               phone: formData.phone,
               faxNumber: formData.faxNumber || null,
@@ -198,6 +264,29 @@ export class ApplicationService {
               status: "Pending",
             },
           });
+
+          if (normalizedBranchAddresses.length > 0) {
+            const createdBranchAddressIds: number[] = [];
+
+            for (const branch of normalizedBranchAddresses) {
+              const branchAddress = await tx.address.create({
+                data: {
+                  kebeleId: branch.kebeleId,
+                  houseNumber: branch.houseNumber,
+                  specialLocation: branch.specialLocation,
+                },
+              });
+              createdBranchAddressIds.push(branchAddress.id);
+            }
+
+            await tx.organizationBranchAddress.createMany({
+              data: createdBranchAddressIds.map((addressId) => ({
+                organizationId: organization.id,
+                addressId,
+              })),
+            });
+          }
+
           // Audit: organization creation
           try {
             await createAuditLog(tx, {
@@ -388,6 +477,7 @@ export class ApplicationService {
           });
           const application = await tx.application.create({
             data: {
+              userId: userId,
               organizationId: organization.id,
               type: "NEW_LICENSE",
               status: "Pending",
@@ -671,6 +761,27 @@ export class ApplicationService {
                   },
                 },
               },
+              branchAddresses: {
+                include: {
+                  address: {
+                    include: {
+                      kebele: {
+                        include: {
+                          woreda: {
+                            include: {
+                              zone: {
+                                include: {
+                                  region: true,
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
               documents: true,
             },
           },
@@ -820,8 +931,13 @@ export class ApplicationService {
             ? {
                 id: organization.id,
                 name: organization.name,
-                headOfficeName: organization.headOfficeName,
-                branchOfficeName: organization.branchOfficeName,
+                // Keep compatibility for older frontend fields.
+                headOfficeName: organization.name,
+                branchOfficeName:
+                  organization.branchAddresses
+                    ?.map((ba: any) => ba?.address?.specialLocation)
+                    .filter(Boolean)
+                    .join(", ") || null,
                 email: organization.email,
                 phone: organization.phone,
                 faxNumber: organization.faxNumber,
@@ -864,6 +980,48 @@ export class ApplicationService {
                         : null,
                     }
                   : null,
+                branchAddresses: (organization.branchAddresses || []).map(
+                  (branch: any) => ({
+                    id: branch.id,
+                    addressId: branch.addressId,
+                    createdAt: branch.createdAt,
+                    address: branch.address
+                      ? {
+                          houseNumber: branch.address.houseNumber,
+                          specialLocation: branch.address.specialLocation,
+                          kebele: branch.address.kebele
+                            ? {
+                                id: branch.address.kebele.id,
+                                name: branch.address.kebele.name,
+                                woreda: branch.address.kebele.woreda
+                                  ? {
+                                      id: branch.address.kebele.woreda.id,
+                                      name: branch.address.kebele.woreda.name,
+                                      zone: branch.address.kebele.woreda.zone
+                                        ? {
+                                            id: branch.address.kebele.woreda
+                                              .zone.id,
+                                            name: branch.address.kebele.woreda
+                                              .zone.name,
+                                            region: branch.address.kebele.woreda
+                                              .zone.region
+                                              ? {
+                                                  id: branch.address.kebele
+                                                    .woreda.zone.region.id,
+                                                  name: branch.address.kebele
+                                                    .woreda.zone.region.name,
+                                                }
+                                              : null,
+                                          }
+                                        : null,
+                                    }
+                                  : null,
+                              }
+                            : null,
+                        }
+                      : null,
+                  }),
+                ),
                 documents: toFileList(organization.documents || []),
               }
             : null,
@@ -897,5 +1055,63 @@ export class ApplicationService {
       console.error("[ERROR] listApplications failed", error?.message || error);
       throw error;
     }
+  }
+
+  static async getLatestApplicationByUser(userId: number) {
+    const application = await prisma.application.findFirst({
+      where: { userId },
+      orderBy: { applicationDate: "desc" },
+      include: {
+        user: {
+          select: { id: true, fullName: true, phone: true, email: true },
+        },
+        organization: {
+          include: {
+            address: {
+              include: {
+                kebele: {
+                  include: {
+                    woreda: {
+                      include: {
+                        zone: {
+                          include: {
+                            region: true,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            branchAddresses: {
+              include: {
+                address: {
+                  include: {
+                    kebele: {
+                      include: {
+                        woreda: {
+                          include: {
+                            zone: {
+                              include: {
+                                region: true,
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!application) throw new Error("Application not found");
+
+    return application;
   }
 }

@@ -1,4 +1,5 @@
 // frontend/src/components/ConfirmDialog.tsx
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AlertTriangle,
@@ -6,6 +7,8 @@ import {
   XCircle,
   RefreshCw,
   X,
+  Check,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,35 +25,52 @@ interface ConfirmDialogProps {
   isConfirmDisabled?: boolean;
 }
 
-const actionConfig = {
+interface ActionConfigItem {
+  icon: React.ReactElement;
+  iconColor?: string;
+  btnClass: string;
+  iconBg?: string;
+  btnIcon?: React.ReactElement;
+  confirmText: string;
+}
+
+const actionConfig: Record<ActionType, ActionConfigItem> = {
   delete: {
-    icon: <AlertTriangle className="w-6 h-6 text-red-600" />,
+    icon: <AlertTriangle className="w-6 h-6" />,
+    iconColor: "#FFD700",
     btnClass: "bg-red-600 hover:bg-red-700 focus:ring-red-500",
-    iconBg: "bg-red-50",
+    iconBg: "#003366",
+    btnIcon: <Trash2 className="w-4 h-4 mr-2" />,
     confirmText: "Delete",
   },
   approve: {
-    icon: <CheckCircle className="w-6 h-6 text-emerald-600" />,
+    icon: <CheckCircle className="w-6 h-6" />,
+    iconColor: "#003366",
     btnClass: "bg-emerald-600 hover:bg-emerald-700 focus:ring-emerald-500",
-    iconBg: "bg-emerald-50",
+    iconBg: "#FFD700",
     confirmText: "Approve",
   },
   reject: {
-    icon: <XCircle className="w-6 h-6 text-rose-600" />,
+    icon: <XCircle className="w-6 h-6" />,
+    iconColor: "#FFD700",
     btnClass: "bg-rose-600 hover:bg-rose-700 focus:ring-rose-500",
-    iconBg: "bg-rose-50",
+    iconBg: "#003366",
     confirmText: "Reject",
   },
   update: {
-    icon: <RefreshCw className="w-6 h-6 text-blue-600" />,
+    icon: <RefreshCw className="w-6 h-6" />,
+    iconColor: "#003366",
     btnClass: "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500",
-    iconBg: "bg-blue-50",
+    iconBg: "#FFD700",
+    btnIcon: <RefreshCw className="w-4 h-4 mr-2" />,
     confirmText: "Update",
   },
   default: {
-    icon: <AlertTriangle className="w-6 h-6 text-primary" />,
-    btnClass: "bg-primary hover:bg-primary/90 focus:ring-primary",
-    iconBg: "bg-primary/10",
+    icon: <AlertTriangle className="w-6 h-6" />,
+    iconColor: "#003366",
+    btnClass: "bg-[#003366] hover:bg-[#002244] focus:ring-[#003366]",
+    iconBg: "#FFD700",
+    btnIcon: <Check className="w-4 h-4 mr-2" />,
     confirmText: "Confirm",
   },
 };
@@ -89,23 +109,32 @@ export const ConfirmDialog = ({
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className={cn(
                 "bg-white w-full max-w-md rounded-[32px] shadow-2xl overflow-hidden relative p-1.5",
-                "ring-4 ring-[#DCC380]/30", // Outer Goldish Border (Soft Ring)
+                "ring-4",
               )}
-              style={{ backgroundColor: "#DCC380" }} // Using as the outer layer color
+              style={{
+                backgroundColor: "#FFD700",
+                boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
+              }}
             >
               <div
-                className="bg-white rounded-[26px] border-[2.5px] p-7 overflow-hidden"
-                style={{ borderColor: "#0C2A4C" }} // Inner Deep Blue Border
+                className="bg-white rounded-[26px] border-[2.5px] p-7 overflow-hidden confirm-dialog"
+                style={{ borderColor: "#003366" }}
               >
+                <style>{`
+                  .confirm-dialog ::selection { background: #FFD700; color: #003366; }
+                  .confirm-dialog { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; font-size: 14px; }
+                  .confirm-dialog h3 { font-size: 20px; font-weight: 800; }
+                  .confirm-dialog p { font-size: 14px; }
+                `}</style>
                 {/* Header Section */}
                 <div className="flex items-start justify-between mb-6">
                   <div
-                    className={cn(
-                      "p-3.5 rounded-2xl shadow-inner",
-                      config.iconBg,
-                    )}
+                    className="p-3.5 rounded-2xl shadow-inner"
+                    style={{ backgroundColor: config.iconBg || "#FFD700" }}
                   >
-                    {config.icon}
+                    {React.cloneElement(config.icon as any, {
+                      style: { color: config.iconColor || "#003366" },
+                    })}
                   </div>
                   <button
                     onClick={onClose}
@@ -119,7 +148,7 @@ export const ConfirmDialog = ({
                 <div className="space-y-3">
                   <h3
                     className="text-2xl font-black tracking-tight leading-tight"
-                    style={{ color: "#0C2A4C" }}
+                    style={{ color: "#003366" }}
                   >
                     {title}
                   </h3>
@@ -150,7 +179,10 @@ export const ConfirmDialog = ({
                     {isLoading ? (
                       <RefreshCw className="w-5 h-5 animate-spin" />
                     ) : (
-                      config.confirmText
+                      <>
+                        {config.btnIcon}
+                        {config.confirmText}
+                      </>
                     )}
                   </button>
                 </div>

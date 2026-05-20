@@ -10,9 +10,12 @@ import {
   ArrowLeft,
   PanelLeftClose,
   PanelLeft,
+  Key,
 } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 import { useAuth } from "../context/AuthContext";
+import ChangePasswordModal from "./ChangePasswordModal";
+import { AutoDismissToast, ToastType } from "./AutoDismissToast";
 
 interface SidebarItem {
   icon?: React.ReactNode;
@@ -39,6 +42,12 @@ export const DashboardLayout = ({
   const navigate = useNavigate();
   const { language, setLanguage } = useLanguage();
   const { user, logout } = useAuth();
+  const [isChangeOpen, setIsChangeOpen] = useState(false);
+  const [toast, setToast] = useState<{
+    isOpen: boolean;
+    type: ToastType;
+    message: string;
+  }>({ isOpen: false, type: "success", message: "" });
 
   // 1. Logic to determine the primary role for UI display
   const isSuperAdmin = user?.roles.includes("super_admin");
@@ -109,11 +118,11 @@ export const DashboardLayout = ({
   };
 
   return (
-    <div className="h-screen bg-gray-50 flex overflow-hidden">
+    <div className="h-screen bg-gray-50 flex overflow-hidden print:block print:bg-white">
       {/* Sidebar */}
       <aside
         className={cn(
-          "bg-[#001835] text-white transition-all duration-300 flex flex-col z-50 h-full",
+          "bg-[#001835] text-white transition-all duration-300 flex flex-col z-50 h-full print:hidden",
           isSidebarOpen ? "w-72" : "w-20",
         )}
       >
@@ -184,7 +193,7 @@ export const DashboardLayout = ({
 
       {/* Main Content */}
       <div className="flex-grow flex flex-col overflow-hidden">
-        <header className="h-20 bg-white border-b flex items-center justify-between px-8 z-40 flex-shrink-0">
+        <header className="h-20 bg-white border-b flex items-center justify-between px-8 z-40 flex-shrink-0 print:hidden">
           <div className="flex items-center space-x-4">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -299,6 +308,20 @@ export const DashboardLayout = ({
                         </span>
                       </Link>
                       <button
+                        onClick={() => {
+                          setShowProfile(false);
+                          setIsChangeOpen(true);
+                        }}
+                        className="w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 text-sm text-gray-600"
+                      >
+                        <Key className="w-4 h-4" />
+                        <span>
+                          {language === "am"
+                            ? "የይለፍ ቃል ቀይር"
+                            : "Change Password"}
+                        </span>
+                      </button>
+                      <button
                         onClick={handleLogout}
                         className="w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-red-50 text-sm text-red-600 font-bold"
                       >
@@ -313,8 +336,30 @@ export const DashboardLayout = ({
           </div>
         </header>
 
-        <main className="flex-grow overflow-y-auto flex flex-col custom-scrollbar bg-slate-50/50">
-          <div className="flex-grow p-8">
+        <ChangePasswordModal
+          isOpen={isChangeOpen}
+          onClose={() => setIsChangeOpen(false)}
+          onSuccess={() =>
+            setToast({
+              isOpen: true,
+              type: "success",
+              message:
+                language === "am"
+                  ? "የይለፍ ቃል ቀይር ተደርጓል"
+                  : "Password changed successfully",
+            })
+          }
+        />
+
+        <AutoDismissToast
+          isOpen={toast.isOpen}
+          type={toast.type}
+          message={toast.message}
+          onClose={() => setToast({ ...toast, isOpen: false })}
+        />
+
+        <main className="flex-grow overflow-y-auto flex flex-col custom-scrollbar bg-slate-50/50 print:bg-white print:overflow-visible">
+          <div className="flex-grow p-8 print:p-0">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -323,7 +368,7 @@ export const DashboardLayout = ({
             </motion.div>
           </div>
 
-          <footer className="p-8 pt-0 mt-auto">
+          <footer className="p-8 pt-0 mt-auto print:hidden">
             <div className="border-t border-gray-100 pt-8 flex items-center justify-between">
               <button
                 onClick={() => navigate(-1)}

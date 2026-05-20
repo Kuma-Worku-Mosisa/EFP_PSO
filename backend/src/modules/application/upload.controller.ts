@@ -34,11 +34,11 @@ export const uploadDocuments = async (req: Request, res: Response) => {
       `[DEBUG] Number of files: ${(req.files as Express.Multer.File[]).length}`,
     );
 
-    // Organize files into staging structure (they are uploaded into uploads/_tmp/... by multer)
+    // Organize files into final folder structure (files are uploaded directly into uploads/{org}/{role})
     const filePathMap = organizeUploadedFiles(
       organizationName,
       req.files as Express.Multer.File[],
-      true,
+      false,
     );
 
     // Convert relative paths to URLs for frontend

@@ -16,9 +16,10 @@ import {
   X,
   Trash2,
   ShieldCheck,
+  Plus,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
@@ -44,12 +45,20 @@ const personnelSchema = z.object({
   specialLocation: z.string().optional(),
 });
 
+const branchAddressSchema = z.object({
+  region: z.string().optional(),
+  zone: z.string().optional(),
+  woreda: z.string().optional(),
+  kebeleId: z.string().min(1, "Branch kebele is required"),
+  houseNumber: z.string().optional(),
+  specialLocation: z.string().optional(),
+});
+
 export const applicationSchema = z.object({
   // Step 1: Agency Info
   agencyName: z.string().min(3, "Agency name is required"),
-  headOfficeName: z.string().min(3, "Head office name is required"),
-  branchOfficeName: z.string().optional(),
   tradeName: z.string().min(4, "Trade name must be at least 4 characters"),
+  branchAddresses: z.array(branchAddressSchema).optional().default([]),
 
   // Agency Location
   region: z.string().min(1, "Region is required"),
@@ -220,6 +229,7 @@ const FormInput = ({
   placeholder,
   type = "text",
   error,
+  required = true,
   disabled = false,
   isOpenedForEdit = false,
 }: {
@@ -230,16 +240,36 @@ const FormInput = ({
   placeholder?: string;
   type?: string;
   error?: any;
+  required?: boolean;
   disabled?: boolean;
   isOpenedForEdit?: boolean;
 }) => {
   const isFilled = value && value.length > 0;
+  const autoPlaceholder =
+    placeholder ||
+    (type === "email"
+      ? "name@example.com"
+      : type === "number"
+        ? "Enter a number"
+        : type === "tel"
+          ? "Enter phone number"
+          : `Enter ${label.toLowerCase()}`);
 
   return (
     <div className="space-y-2.5 relative group">
       <div className="flex justify-between items-center px-1">
-        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
-          {label}
+        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center space-x-1.5">
+          <span>{label}</span>
+          <span
+            className={cn(
+              "text-[9px] font-black rounded-md px-1.5 py-0.5",
+              required
+                ? "text-red-600 bg-red-50"
+                : "text-amber-700 bg-amber-50",
+            )}
+          >
+            {required ? "*" : "Optional"}
+          </span>
         </label>
         {isFilled && !error && (
           <motion.div
@@ -260,7 +290,7 @@ const FormInput = ({
           className={cn(
             "w-full p-4 transition-all duration-300 outline-none border-2 text-primary font-bold shadow-sm",
             !isFilled
-              ? "bg-gray-50/50 border-dashed border-gray-200 hover:border-gray-300 focus:bg-white"
+              ? "bg-gray-50/50 border-solid border-gray-200 hover:border-gray-300 focus:bg-white"
               : "bg-white border-solid border-green-200 shadow-green-500/5",
             error
               ? "border-red-300 ring-4 ring-red-50 bg-red-50/10"
@@ -269,9 +299,9 @@ const FormInput = ({
               ? "bg-gray-100/80 border-gray-100 cursor-not-allowed opacity-75 grayscale"
               : "rounded-2xl",
             isOpenedForEdit &&
-              "border-amber-400 ring-4 ring-amber-50 animate-pulse border-dashed bg-amber-50/20",
+              "border-amber-400 ring-4 ring-amber-50 animate-pulse border-solid bg-amber-50/20",
           )}
-          placeholder={placeholder}
+          placeholder={autoPlaceholder}
         />
         {isOpenedForEdit && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-2 text-amber-600 bg-white px-2 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-tighter shadow-sm border border-amber-100">
@@ -378,6 +408,7 @@ const FormSelect = ({
   register,
   name,
   error,
+  required = true,
   disabled = false,
   onChange,
   value,
@@ -388,16 +419,31 @@ const FormSelect = ({
   register: any;
   name: string;
   error?: any;
+  required?: boolean;
   disabled?: boolean;
   onChange?: (value: string | number) => void;
   value?: string | number;
   placeholder?: string;
 }) => {
+  const computedPlaceholder = required
+    ? placeholder
+    : `${placeholder} (optional)`;
+
   return (
     <div className="space-y-2.5 relative group">
       <div className="flex justify-between items-center px-1">
-        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
-          {label}
+        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center space-x-1.5">
+          <span>{label}</span>
+          <span
+            className={cn(
+              "text-[9px] font-black rounded-md px-1.5 py-0.5",
+              required
+                ? "text-red-600 bg-red-50"
+                : "text-amber-700 bg-amber-50",
+            )}
+          >
+            {required ? "*" : "Optional"}
+          </span>
         </label>
       </div>
       <div className="relative">
@@ -410,13 +456,13 @@ const FormSelect = ({
             "w-full p-4 transition-all duration-300 outline-none border-2 text-primary font-bold shadow-sm bg-gray-50/50 rounded-2xl appearance-none",
             error
               ? "border-red-300 ring-4 ring-red-50 bg-red-50/10"
-              : "focus:border-primary focus:ring-4 focus:ring-primary/10 border-dashed border-gray-200 hover:border-gray-300",
+              : "focus:border-primary focus:ring-4 focus:ring-primary/10 border-solid border-gray-200 hover:border-gray-300",
             disabled
               ? "bg-gray-100/80 border-gray-100 cursor-not-allowed opacity-75 grayscale"
               : "bg-white",
           )}
         >
-          <option value="">{placeholder}</option>
+          <option value="">{computedPlaceholder}</option>
           {options.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
@@ -554,7 +600,7 @@ const FileUpload = ({
               </span>
               {required && !file && (
                 <span className="text-[10px] text-amber-500 font-black uppercase tracking-widest bg-amber-50 px-1.5 rounded-md">
-                  Required
+                  *
                 </span>
               )}
             </div>
@@ -734,6 +780,165 @@ function LocationFields({
   );
 }
 
+function BranchAddressRow({
+  index,
+  register,
+  errors,
+  watch,
+  setValue,
+  onRemove,
+  isFormLocked,
+}: any) {
+  const {
+    regions,
+    zones,
+    woredas,
+    kebeles,
+    setRegionId,
+    setZoneId,
+    setWoredaId,
+    regionId,
+    zoneId,
+    woredaId,
+  } = useLocationData();
+
+  const selectedRegion = watch(`branchAddresses.${index}.region`);
+  const selectedZone = watch(`branchAddresses.${index}.zone`);
+  const selectedWoreda = watch(`branchAddresses.${index}.woreda`);
+  const selectedKebeleId = watch(`branchAddresses.${index}.kebeleId`);
+
+  React.useEffect(() => {
+    if (selectedRegion) {
+      const region = regions.find(
+        (r) => r.id === Number(selectedRegion) || r.name === selectedRegion,
+      );
+      if (region) setRegionId(region.id);
+    }
+  }, [selectedRegion, regions, setRegionId]);
+
+  React.useEffect(() => {
+    if (selectedZone) {
+      const zone = zones.find(
+        (z) => z.id === Number(selectedZone) || z.name === selectedZone,
+      );
+      if (zone) setZoneId(zone.id);
+    }
+  }, [selectedZone, zones, setZoneId]);
+
+  React.useEffect(() => {
+    if (selectedWoreda) {
+      const woreda = woredas.find(
+        (w) => w.id === Number(selectedWoreda) || w.name === selectedWoreda,
+      );
+      if (woreda) setWoredaId(woreda.id);
+    }
+  }, [selectedWoreda, woredas, setWoredaId]);
+
+  const branchErrors = errors?.branchAddresses?.[index] || {};
+
+  return (
+    <div className="space-y-4 rounded-[28px] border border-dashed border-gray-200 p-5 bg-gray-50/50">
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest">
+          Branch Address #{index + 1}
+        </p>
+        <button
+          type="button"
+          onClick={onRemove}
+          disabled={isFormLocked}
+          className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all disabled:opacity-50"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+          <span>Remove</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <FormSelect
+          label="Region"
+          name={`branchAddresses.${index}.region`}
+          register={register}
+          value={selectedRegion}
+          options={regions.map((r) => ({ value: r.id, label: r.name }))}
+          onChange={(val) => {
+            setValue(`branchAddresses.${index}.region`, val);
+            setRegionId(Number(val));
+            setValue(`branchAddresses.${index}.zone`, "");
+            setValue(`branchAddresses.${index}.woreda`, "");
+            setValue(`branchAddresses.${index}.kebeleId`, "");
+          }}
+          required={false}
+          disabled={isFormLocked}
+          placeholder="Select Region"
+        />
+        <FormSelect
+          label="Zone"
+          name={`branchAddresses.${index}.zone`}
+          register={register}
+          value={selectedZone}
+          options={zones.map((z) => ({ value: z.id, label: z.name }))}
+          onChange={(val) => {
+            setValue(`branchAddresses.${index}.zone`, val);
+            setZoneId(Number(val));
+            setValue(`branchAddresses.${index}.woreda`, "");
+            setValue(`branchAddresses.${index}.kebeleId`, "");
+          }}
+          required={false}
+          disabled={isFormLocked || !regionId}
+          placeholder="Select Zone"
+        />
+        <FormSelect
+          label="Woreda"
+          name={`branchAddresses.${index}.woreda`}
+          register={register}
+          value={selectedWoreda}
+          options={woredas.map((w) => ({ value: w.id, label: w.name }))}
+          onChange={(val) => {
+            setValue(`branchAddresses.${index}.woreda`, val);
+            setWoredaId(Number(val));
+            setValue(`branchAddresses.${index}.kebeleId`, "");
+          }}
+          required={false}
+          disabled={isFormLocked || !zoneId}
+          placeholder="Select Woreda"
+        />
+        <FormSelect
+          label="Kebele"
+          name={`branchAddresses.${index}.kebeleId`}
+          register={register}
+          value={selectedKebeleId}
+          options={kebeles.map((k) => ({ value: k.id, label: k.name }))}
+          onChange={(val) => setValue(`branchAddresses.${index}.kebeleId`, val)}
+          error={branchErrors.kebeleId}
+          disabled={isFormLocked || !woredaId}
+          placeholder="Select Kebele"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <FormInput
+          label="House No. (Optional)"
+          name={`branchAddresses.${index}.houseNumber`}
+          register={register}
+          value={watch(`branchAddresses.${index}.houseNumber`) || ""}
+          error={branchErrors.houseNumber}
+          required={false}
+          disabled={isFormLocked}
+        />
+        <FormInput
+          label="Special Location (Optional)"
+          name={`branchAddresses.${index}.specialLocation`}
+          register={register}
+          value={watch(`branchAddresses.${index}.specialLocation`) || ""}
+          error={branchErrors.specialLocation}
+          required={false}
+          disabled={isFormLocked}
+        />
+      </div>
+    </div>
+  );
+}
+
 const PersonnelSection = ({
   title,
   prefix,
@@ -792,6 +997,10 @@ const PersonnelSection = ({
   const selectedZone = watch?.(`${prefix}.zone`);
   const selectedWoreda = watch?.(`${prefix}.woreda`);
   const selectedKebele = watch?.(`${prefix}.kebele`);
+
+  React.useEffect(() => {
+    setValue?.(`${prefix}.citizenship`, "ETHIOPIAN");
+  }, [prefix, setValue]);
 
   // Find regionId by name or id and trigger zone fetch
   React.useEffect(() => {
@@ -859,17 +1068,21 @@ const PersonnelSection = ({
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2.5">
-            <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest px-1">
-              Gender
+            <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest px-1 flex items-center space-x-1.5">
+              <span>Gender</span>
+              <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                *
+              </span>
             </label>
             <select
               {...register(`${prefix}.gender`)}
               disabled={isFormLocked}
               className={cn(
-                "w-full p-4 bg-gray-50/50 border-2 border-dashed border-gray-200 rounded-2xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold text-primary text-sm appearance-none",
+                "w-full p-4 bg-gray-50/50 border-2 border-solid border-gray-200 rounded-2xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold text-primary text-sm appearance-none",
                 isFormLocked && "opacity-75 grayscale cursor-not-allowed",
               )}
             >
+              <option value="">Select gender</option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
             </select>
@@ -878,10 +1091,10 @@ const PersonnelSection = ({
             label="Citizenship"
             name={`${prefix}.citizenship`}
             register={register}
-            placeholder="Ethiopian"
-            value={watch("citizenship")}
+            placeholder="ETHIOPIAN"
+            value={watch?.(`${prefix}.citizenship`) || "ETHIOPIAN"}
             error={errors[prefix]?.citizenship}
-            disabled={isFormLocked}
+            disabled={true}
           />
         </div>
       </div>
@@ -1029,6 +1242,7 @@ const PersonnelSection = ({
             register={register}
             value={watch("specialLocation")}
             error={errors[prefix]?.specialLocation}
+            required={false}
             disabled={isFormLocked}
           />
         </div>
@@ -1090,6 +1304,7 @@ export const NewApplication = () => {
         "Your application for a new private security agency license has been successfully submitted. The Federal Police will review your documents and contact you for the next steps.",
       step1Title: "Agency & Office Information",
       orgName: "Organization Name",
+      headOfficeAddress: "Head Office Address",
       headOffice: "Head Office Name",
       branchOffice: "Branch Office Name (Optional)",
       faxNumber: "Fax Number",
@@ -1133,6 +1348,7 @@ export const NewApplication = () => {
         "ለአዲስ የግል ጥበቃ ተቋም ፈቃድ ያቀረቡት ማመልከቻ በተሳካ ሁኔታ ገብቷል። ፌዴራል ፖሊስ ሰነዶችዎን ገምግሞ ለቀጣይ እርምጃዎች ያገኝዎታል።",
       step1Title: "የተቋም እና የቢሮ መረጃ",
       orgName: "የተቋሙ ስም",
+      headOfficeAddress: "የዋና መስሪያ ቤት አድራሻ",
       headOffice: "የዋና መስሪያ ቤት ስም",
       branchOffice: "የቅርንጫፍ መስሪያ ቤት ስም (አማራጭ)",
       faxNumber: "የፋክስ ቁጥር",
@@ -1202,16 +1418,27 @@ export const NewApplication = () => {
     register,
     handleSubmit,
     watch,
+    control,
     setValue, // Added this to handle location resets
     formState: { errors, isSubmitting },
   } = useForm<any>({
     resolver: zodResolver(applicationSchema),
     defaultValues: {
       // It's good practice to initialize nested objects
-      manager: { gender: "Male", citizenship: "Ethiopian" },
-      ops: { gender: "Male", citizenship: "Ethiopian" },
-      admin: { gender: "Male", citizenship: "Ethiopian" },
+      manager: { gender: "Male", citizenship: "ETHIOPIAN" },
+      ops: { gender: "Male", citizenship: "ETHIOPIAN" },
+      admin: { gender: "Male", citizenship: "ETHIOPIAN" },
+      branchAddresses: [],
     },
+  });
+
+  const {
+    fields: branchAddressFields,
+    append: appendBranchAddress,
+    remove: removeBranchAddress,
+  } = useFieldArray({
+    control,
+    name: "branchAddresses",
   });
 
   const nextStep = (e?: React.MouseEvent) => {
@@ -1318,11 +1545,18 @@ export const NewApplication = () => {
         console.debug("Uploaded files debug error", e);
       }
       console.groupEnd();
+
+      const normalizedBranchAddresses = (data.branchAddresses || [])
+        .filter((branch: any) => branch?.kebeleId)
+        .map((branch: any) => ({
+          kebeleId: Number(branch.kebeleId),
+          houseNumber: branch.houseNumber?.trim() || null,
+          specialLocation: branch.specialLocation?.trim() || null,
+        }));
+
       // 1. Gather form data
       const formData = {
         agencyName: data.agencyName,
-        headOfficeName: data.headOfficeName,
-        branchOfficeName: data.branchOfficeName,
         email: data.email,
         phone: data.agencyphone,
         faxNumber: data.faxNumber,
@@ -1330,6 +1564,8 @@ export const NewApplication = () => {
         tradeName: data.tradeName,
         kebele: data.kebele,
         houseNumber: data.houseNumber,
+        specialLocation: data.specialLocation,
+        branchAddresses: normalizedBranchAddresses,
         numberOfOffices: Number(data.officesCount),
         numberOfComputers: Number(data.computersCount),
         numberOfVehicles: Number(data.vehiclesCount),
@@ -1397,8 +1633,7 @@ export const NewApplication = () => {
     const hasStep1Error = errorPaths.some((key) =>
       [
         "agencyName",
-        "headOfficeName",
-        "branchOfficeName",
+        "branchAddresses",
         "tradeName",
         "region",
         "zone",
@@ -1503,7 +1738,6 @@ export const NewApplication = () => {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-8 bg-gray-50/50 p-8 rounded-[32px] border border-gray-100">
                   {[
                     { label: curT.orgName, value: watch("agencyName") },
-                    { label: curT.headOffice, value: watch("headOfficeName") },
 
                     {
                       label: curT.agencyphone,
@@ -1530,6 +1764,40 @@ export const NewApplication = () => {
                       </p>
                     </div>
                   ))}
+                </div>
+                <div className="bg-gray-50/50 p-6 rounded-[28px] border border-gray-100 space-y-3">
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                    Branch Addresses
+                  </p>
+                  {(watch("branchAddresses") || []).length === 0 ? (
+                    <p className="text-sm font-bold text-primary">
+                      No branches added
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {(watch("branchAddresses") || []).map(
+                        (branch: any, index: number) => (
+                          <div
+                            key={index}
+                            className="p-4 bg-white rounded-2xl border border-gray-100"
+                          >
+                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
+                              Branch #{index + 1}
+                            </p>
+                            <p className="text-sm font-bold text-primary">
+                              Kebele ID: {branch?.kebeleId || "-"}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              {branch?.houseNumber || "No house no"}
+                              {branch?.specialLocation
+                                ? `, ${branch.specialLocation}`
+                                : ""}
+                            </p>
+                          </div>
+                        ),
+                      )}
+                    </div>
+                  )}
                 </div>
               </section>
 
@@ -1609,7 +1877,9 @@ export const NewApplication = () => {
                       Branch Profile
                     </p>
                     <p className="text-sm font-black truncate">
-                      {watch("branchOfficeName") || "Initiated"}
+                      {(watch("branchAddresses") || []).length > 0
+                        ? `${(watch("branchAddresses") || []).length} Branch(es)`
+                        : "No Branches"}
                     </p>
                   </div>
                 </div>
@@ -1693,34 +1963,74 @@ export const NewApplication = () => {
                     disabled={isFormLocked}
                     isOpenedForEdit={openedFields.includes("agencyName")}
                   />
-                  <FormInput
-                    label={curT.headOffice}
-                    name="headOfficeName"
-                    register={register}
-                    value={watch("headOfficeName")}
-                    error={errors.headOfficeName}
-                    disabled={isFormLocked}
-                    isOpenedForEdit={openedFields.includes("headOfficeName")}
-                  />
-                  <FormInput
-                    label={curT.branchOffice}
-                    name="branchOfficeName"
-                    register={register}
-                    value={watch("branchOfficeName")}
-                    error={errors.branchOfficeName}
-                    disabled={isFormLocked}
-                    isOpenedForEdit={openedFields.includes("branchOfficeName")}
-                  />
                 </div>
 
-                <LocationFields
-                  register={register}
-                  errors={errors}
-                  watch={watch}
-                  isFormLocked={isFormLocked}
-                  openedFields={openedFields}
-                  setValue={setValue}
-                />
+                <div className="md:col-span-2 space-y-4 p-5 rounded-[28px] border border-dashed border-primary/20 bg-primary/5">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h4 className="text-sm font-black text-primary uppercase tracking-widest">
+                        Branch Addresses (Optional)
+                      </h4>
+                      <p className="text-xs text-gray-500">
+                        Add none, one, or multiple branch locations.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={isFormLocked}
+                      onClick={() =>
+                        appendBranchAddress({
+                          region: "",
+                          zone: "",
+                          woreda: "",
+                          kebeleId: "",
+                          houseNumber: "",
+                          specialLocation: "",
+                        })
+                      }
+                      className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-primary text-white text-[11px] font-black uppercase tracking-widest hover:shadow-lg transition-all disabled:opacity-50"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add Address</span>
+                    </button>
+                  </div>
+
+                  {branchAddressFields.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-4 text-xs text-gray-500">
+                      No branch address added. You can submit with only the head
+                      office address.
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {branchAddressFields.map((field, index) => (
+                        <BranchAddressRow
+                          key={field.id}
+                          index={index}
+                          register={register}
+                          errors={errors}
+                          watch={watch}
+                          setValue={setValue}
+                          isFormLocked={isFormLocked}
+                          onRemove={() => removeBranchAddress(index)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="md:col-span-2 space-y-3">
+                  <h4 className="text-sm font-black text-primary uppercase tracking-widest">
+                    {curT.headOfficeAddress || "Head Office Address"}
+                  </h4>
+                  <LocationFields
+                    register={register}
+                    errors={errors}
+                    watch={watch}
+                    isFormLocked={isFormLocked}
+                    openedFields={openedFields}
+                    setValue={setValue}
+                  />
+                </div>
 
                 <FormInput
                   label={curT.agencyphone}
@@ -1756,6 +2066,7 @@ export const NewApplication = () => {
                   register={register}
                   value={watch("specialLocation")}
                   error={errors.specialLocation}
+                  required={false}
                   disabled={isFormLocked}
                   isOpenedForEdit={openedFields.includes("specialLocation")}
                 />
@@ -1870,13 +2181,17 @@ export const NewApplication = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500">
-                    Capital Amount
+                  <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
+                    <span>Capital Amount</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                      *
+                    </span>
                   </label>
                   <input
                     type="number"
                     {...register("capitalAmount")}
                     disabled={isFormLocked}
+                    placeholder="Enter capital amount"
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
                   />
                   {errors.capitalAmount && (
@@ -1887,13 +2202,17 @@ export const NewApplication = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500">
-                    {curT.offices}
+                  <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
+                    <span>{curT.offices}</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                      *
+                    </span>
                   </label>
                   <input
                     type="number"
                     {...register("officesCount")}
                     disabled={isFormLocked}
+                    placeholder="Enter number of offices"
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
                   />
                   {errors.officesCount && (
@@ -1904,27 +2223,35 @@ export const NewApplication = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500">
-                    {curT.storeHouse}
+                  <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
+                    <span>{curT.storeHouse}</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                      *
+                    </span>
                   </label>
                   <select
                     {...register("hasStoreHouse")}
                     disabled={isFormLocked}
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
                   >
+                    <option value="">Select option</option>
                     <option value="true">Yes</option>
                     <option value="false">No</option>
                   </select>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500">
-                    {curT.computers}
+                  <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
+                    <span>{curT.computers}</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                      *
+                    </span>
                   </label>
                   <input
                     type="number"
                     {...register("computersCount")}
                     disabled={isFormLocked}
+                    placeholder="Enter number of computers"
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
                   />
                   {errors.computersCount && (
@@ -1935,13 +2262,17 @@ export const NewApplication = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500">
-                    {curT.vehicles}
+                  <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
+                    <span>{curT.vehicles}</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                      *
+                    </span>
                   </label>
                   <input
                     type="number"
                     {...register("vehiclesCount")}
                     disabled={isFormLocked}
+                    placeholder="Enter number of vehicles"
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
                   />
                   {errors.vehiclesCount && (
@@ -2034,59 +2365,79 @@ export const NewApplication = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">
-                    Training Address
+                  <label className="text-sm font-bold text-gray-700 flex items-center space-x-1.5">
+                    <span>Training Address</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-amber-700 bg-amber-50">
+                      Optional
+                    </span>
                   </label>
                   <input
                     {...register("trainingAddress")}
                     disabled={isFormLocked}
+                    placeholder="Enter training address"
                     className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">
-                    Number of Days Trained
+                  <label className="text-sm font-bold text-gray-700 flex items-center space-x-1.5">
+                    <span>Number of Days Trained</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                      *
+                    </span>
                   </label>
                   <input
                     type="number"
                     {...register("trainingDays")}
                     disabled={isFormLocked}
+                    placeholder="Enter number of days"
                     className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">
-                    Number of Males Trained
+                  <label className="text-sm font-bold text-gray-700 flex items-center space-x-1.5">
+                    <span>Number of Males Trained</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                      *
+                    </span>
                   </label>
                   <input
                     type="number"
                     {...register("totalTraineesMale")}
                     disabled={isFormLocked}
+                    placeholder="Enter number of males"
                     className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">
-                    Number of Females Trained
+                  <label className="text-sm font-bold text-gray-700 flex items-center space-x-1.5">
+                    <span>Number of Females Trained</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                      *
+                    </span>
                   </label>
                   <input
                     type="number"
                     {...register("totalTraineesFemale")}
                     disabled={isFormLocked}
+                    placeholder="Enter number of females"
                     className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">
-                    Training Provider Body
+                  <label className="text-sm font-bold text-gray-700 flex items-center space-x-1.5">
+                    <span>Training Provider Body</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-amber-700 bg-amber-50">
+                      Optional
+                    </span>
                   </label>
                   <input
                     {...register("trainingProvider")}
                     disabled={isFormLocked}
+                    placeholder="Enter training provider"
                     className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
@@ -2262,12 +2613,11 @@ export const NewApplication = () => {
                     {[
                       { label: curT.orgName, value: watch("agencyName") },
                       {
-                        label: curT.headOffice,
-                        value: watch("headOfficeName"),
-                      },
-                      {
                         label: curT.branchOffice,
-                        value: watch("branchOfficeName") || "-",
+                        value:
+                          (watch("branchAddresses") || []).length > 0
+                            ? `${(watch("branchAddresses") || []).length} Branch(es) Added`
+                            : "-",
                       },
                       { label: curT.agencyphone, value: watch("agencyphone") },
                       { label: curT.email, value: watch("email") },

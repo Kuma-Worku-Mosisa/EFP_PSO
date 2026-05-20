@@ -1,56 +1,84 @@
-import React, { useState } from 'react';
-import { 
-  Search, 
-  Filter, 
-  FileText, 
-  Send, 
-  Edit, 
-  CheckCircle, 
-  Clock, 
-  XCircle, 
-  Shield, 
-  RotateCw, 
-  AlertTriangle, 
-  Eye, 
-  X, 
+//frontend/src/pages/LicenseManagement.tsx
+import React, { useState } from "react";
+import {
+  Search,
+  Filter,
+  FileText,
+  Send,
+  Edit,
+  Shield,
+  RotateCw,
+  AlertTriangle,
+  Eye,
+  X,
   Download,
   Plus,
   History,
   Trash2,
-  ExternalLink,
-  ChevronRight,
   Camera,
   Upload,
   QrCode,
-  User
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import { useLanguage } from '../context/LanguageContext';
+  User,
+} from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { useLanguage } from "../context/LanguageContext";
+import { apiRequest } from "../lib/api";
+import { Link, useLocation } from "react-router-dom";
+
+type LicenseRow = {
+  id: number;
+  agency: string;
+  ownership: string;
+  licenseNo: string;
+  status: string;
+  issued: string;
+  expiry: string;
+  type: string;
+  personnel: number;
+  region: string;
+  history: Array<{ year: string; no: string; status: string }>;
+  source?: any;
+};
 
 export const LicenseManagement = () => {
   const { language } = useLanguage();
-  const isAm = language === 'am';
-  const [searchQuery, setSearchQuery] = useState('');
+  const location = useLocation();
+  const isAm = language === "am";
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedLic, setSelectedLic] = useState<any>(null);
-  const [actionType, setActionType] = useState<'none' | 'renew' | 'revoke' | 'view' | 'edit' | 'create' | 'send' | 'history'>('none');
+  const [actionType, setActionType] = useState<
+    | "none"
+    | "renew"
+    | "revoke"
+    | "view"
+    | "edit"
+    | "create"
+    | "send"
+    | "history"
+  >("none");
+  const [licenses, setLicenses] = useState<LicenseRow[]>([]);
+  const [loadingLicenses, setLoadingLicenses] = useState(false);
 
   // Certificate State for Editor
   const [certData, setCertData] = useState({
-    agencyLogo: '',
-    applicantPhoto: '',
-    qrCode: '',
-    agencyName: '',
-    address: '',
-    level: 'LEVEL - ONE (1)',
-    issuedDate: '',
-    expiryDate: '',
-    licenseNo: '',
-    status: 'Active'
+    agencyLogo: "",
+    applicantPhoto: "",
+    qrCode: "",
+    agencyName: "",
+    address: "",
+    level: "LEVEL - ONE (1)",
+    issuedDate: "",
+    expiryDate: "",
+    licenseNo: "",
+    status: "Active",
   });
 
-  const [sendType, setSendType] = useState<'photo' | 'pdf'>('pdf');
-  const [targetUser, setTargetUser] = useState('Agency Admin');
-  const [historyPreview, setHistoryPreview] = useState<{type: 'pdf' | 'photo', data: any} | null>(null);
+  const [historyPreview, setHistoryPreview] = useState<{
+    type: "pdf" | "photo";
+    data: any;
+  } | null>(null);
+
+  const licenseBasePath = location.pathname.replace(/\/$/, "");
 
   const t = {
     title: isAm ? "የፈቃድ አስተዳደር" : "License Management",
@@ -59,17 +87,18 @@ export const LicenseManagement = () => {
     create: isAm ? "አዲስ ፈቃድ ጨምር" : "Add New License",
     table: {
       agency: isAm ? "የኤጀንሲ ስም" : "Agency Name",
+      ownership: isAm ? "ባለቤትነት" : "Ownership",
       licenseNo: isAm ? "የፈቃድ ቁጥር" : "License No",
       status: isAm ? "ሁኔታ" : "Status",
       issued: isAm ? "የተሰጠበት" : "Issued Date",
       expiry: isAm ? "የሚያበቃበት" : "Expiry Date",
-      actions: isAm ? "እርምጃዎች" : "Actions"
+      actions: isAm ? "እርምጃዎች" : "Actions",
     },
     status: {
       active: isAm ? "ንቁ" : "Active",
       expired: isAm ? "ጊዜው ያለፈበት" : "Expired",
       pending: isAm ? "በመጠባበቅ ላይ" : "Pending Approval",
-      suspended: isAm ? "የታገደ" : "Suspended"
+      suspended: isAm ? "የታገደ" : "Suspended",
     },
     actions: {
       edit: isAm ? "አስተካክል" : "Edit",
@@ -77,120 +106,134 @@ export const LicenseManagement = () => {
       view: isAm ? "ተመልከት" : "Preview",
       history: isAm ? "ታሪክ" : "History",
       renew: isAm ? "እድሳት" : "Renew",
-      revoke: isAm ? "ሰርዝ" : "Revoke"
-    }
+      revoke: isAm ? "ሰርዝ" : "Revoke",
+    },
   };
 
-  const licenses = [
-    { 
-      id: 1, 
-      agency: "Abyssinia Security", 
-      licenseNo: "FP-PSA-2025-0892", 
-      status: "Active", 
-      issued: "2025-09-22", 
-      expiry: "2026-09-21", 
-      type: "Grade A", 
-      personnel: 450, 
-      region: "Addis Ababa",
-      history: [
-        { year: "2024", no: "FP-PSA-2024-0012", status: "Expired" },
-        { year: "2023", no: "FP-PSA-2023-9982", status: "Expired" },
-        { year: "2022", no: "FP-PSA-2022-7712", status: "Expired" }
-      ]
-    },
-    { 
-      id: 2, 
-      agency: "Lion Guard Services", 
-      licenseNo: "FP-PSA-2024-1102", 
-      status: "Active", 
-      issued: "2024-11-15", 
-      expiry: "2025-11-14", 
-      type: "Grade B", 
-      personnel: 280, 
-      region: "Oromia",
-      history: [
-        { year: "2023", no: "FP-PSA-2023-1102", status: "Expired" }
-      ]
-    },
-    { 
-      id: 3, 
-      agency: "Nile Protection", 
-      licenseNo: "PENDING", 
-      status: "Pending Approval", 
-      issued: "-", 
-      expiry: "-", 
-      type: "Grade C", 
-      personnel: 120, 
-      region: "Amhara",
-      history: []
-    },
-    { 
-      id: 4, 
-      agency: "Eagle Eye Security", 
-      licenseNo: "FP-PSA-2023-0541", 
-      status: "Expired", 
-      issued: "2023-05-10", 
-      expiry: "2024-05-09", 
-      type: "Grade A", 
-      personnel: 600, 
-      region: "Oromia",
-      history: [
-        { year: "2022", no: "FP-PSA-2022-0541", status: "Expired" }
-      ]
-    },
-  ];
+  React.useEffect(() => {
+    let active = true;
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'photo' | 'qr') => {
+    const loadLicenses = async () => {
+      try {
+        setLoadingLicenses(true);
+        const response = await apiRequest("/certifications");
+        const records = Array.isArray((response as any)?.data)
+          ? (response as any).data
+          : Array.isArray(response)
+            ? response
+            : [];
+
+        if (!active) return;
+
+        setLicenses(
+          records.map((record: any) => ({
+            id: record.id,
+            agency: record.organization?.name || "Unknown Agency",
+            ownership:
+              record.application?.user?.fullName ||
+              record.application?.user?.username ||
+              `User #${record.application?.userId ?? "-"}`,
+            licenseNo: record.certificateSerialNumber || "PENDING",
+            status: record.status || "Pending Approval",
+            issued: record.issueDate
+              ? new Date(record.issueDate).toISOString().slice(0, 10)
+              : "-",
+            expiry: record.expiryDate
+              ? new Date(record.expiryDate).toISOString().slice(0, 10)
+              : "-",
+            type: record.level || record.application?.type || "License",
+            personnel: 0,
+            region:
+              record.organization?.address?.specialLocation ||
+              record.organization?.address?.houseNumber ||
+              "-",
+            history: [],
+            source: record,
+          })),
+        );
+      } catch (error) {
+        console.error("Failed to load certifications", error);
+        if (active) setLicenses([]);
+      } finally {
+        if (active) setLoadingLicenses(false);
+      }
+    };
+
+    loadLicenses();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleImageUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: "logo" | "photo" | "qr",
+  ) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setCertData(prev => ({
+        setCertData((prev) => ({
           ...prev,
-          [type === 'logo' ? 'agencyLogo' : type === 'photo' ? 'applicantPhoto' : 'qrCode']: reader.result as string
+          [type === "logo"
+            ? "agencyLogo"
+            : type === "photo"
+              ? "applicantPhoto"
+              : "qrCode"]: reader.result as string,
         }));
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const openEditor = (lic: any = null, type: 'edit' | 'create' | 'renew' = 'edit') => {
+  const openEditor = (
+    lic: any = null,
+    type: "edit" | "create" | "renew" = "edit",
+  ) => {
     if (lic) {
       setCertData({
-        agencyLogo: '',
-        applicantPhoto: '',
-        qrCode: '',
+        agencyLogo: "",
+        applicantPhoto: "",
+        qrCode: "",
         agencyName: lic.agency,
-        address: lic.region || 'Addis Ababa, Ethiopia',
-        level: lic.type === 'Grade A' ? 'LEVEL - ONE (1)' : lic.type === 'Grade B' ? 'LEVEL - TWO (2)' : 'LEVEL - THREE (3)',
+        address: lic.region || "Addis Ababa, Ethiopia",
+        level:
+          lic.type === "LEVEL - TWO (2)"
+            ? "LEVEL - TWO (2)"
+            : lic.type === "LEVEL - THREE (3)"
+              ? "LEVEL - THREE (3)"
+              : "LEVEL - ONE (1)",
         issuedDate: lic.issued,
         expiryDate: lic.expiry,
         licenseNo: lic.licenseNo,
-        status: lic.status
+        status: lic.status,
       });
       setSelectedLic(lic);
       setActionType(type);
     } else {
       setCertData({
-        agencyLogo: '',
-        applicantPhoto: '',
-        qrCode: '',
-        agencyName: '',
-        address: '',
-        level: 'LEVEL - ONE (1)',
-        issuedDate: '',
-        expiryDate: '',
-        licenseNo: '',
-        status: 'Active'
+        agencyLogo: "",
+        applicantPhoto: "",
+        qrCode: "",
+        agencyName: "",
+        address: "",
+        level: "LEVEL - ONE (1)",
+        issuedDate: "",
+        expiryDate: "",
+        licenseNo: "",
+        status: "Active",
       });
       setSelectedLic({});
-      setActionType('create');
+      setActionType("create");
     }
   };
 
-  const filteredLicenses = licenses.filter(lic => 
-    lic.agency.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    lic.licenseNo.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredLicenses = licenses.filter(
+    (lic) =>
+      lic.agency.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lic.ownership.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lic.licenseNo.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -198,7 +241,7 @@ export const LicenseManagement = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <h3 className="text-2xl font-bold text-primary">{t.title}</h3>
         <div className="flex flex-wrap gap-4">
-          <button 
+          <button
             onClick={() => openEditor()}
             className="flex items-center space-x-2 px-6 py-4 bg-gradient-to-br from-secondary to-secondary/80 text-primary rounded-[20px] text-sm font-black shadow-[0_10px_30px_-10px_rgba(var(--safe-secondary-rgb),0.5)] hover:scale-105 hover:shadow-secondary/40 transition-all border border-secondary/20 active:scale-95 group"
           >
@@ -209,12 +252,12 @@ export const LicenseManagement = () => {
           </button>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input 
-              type="text" 
-              placeholder={t.search} 
+            <input
+              type="text"
+              placeholder={t.search}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary w-64 shadow-sm" 
+              className="pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary w-64 shadow-sm"
             />
           </div>
           <button className="flex items-center space-x-2 px-6 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 shadow-sm transition-all">
@@ -230,6 +273,7 @@ export const LicenseManagement = () => {
             <thead className="bg-gray-50 text-gray-400 text-[10px] uppercase tracking-[0.2em] font-black">
               <tr>
                 <th className="px-8 py-6">{t.table.agency}</th>
+                <th className="px-8 py-6">{t.table.ownership}</th>
                 <th className="px-8 py-6">{t.table.licenseNo}</th>
                 <th className="px-8 py-6">{t.table.status}</th>
                 <th className="px-8 py-6">{t.table.issued}</th>
@@ -238,61 +282,127 @@ export const LicenseManagement = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
+              {!loadingLicenses && filteredLicenses.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="px-8 py-16 text-center text-sm text-gray-500"
+                  >
+                    No certifications found.
+                  </td>
+                </tr>
+              )}
+              {loadingLicenses && (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="px-8 py-16 text-center text-sm text-gray-500"
+                  >
+                    Loading certifications...
+                  </td>
+                </tr>
+              )}
               {filteredLicenses.map((lic) => (
-                <tr key={lic.id} className="hover:bg-gray-50/50 transition-colors group">
+                <tr
+                  key={lic.id}
+                  className="hover:bg-gray-50/50 transition-colors group"
+                >
                   <td className="px-8 py-6">
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
                         <Shield className="w-5 h-5" />
                       </div>
-                      <span className="font-bold text-primary text-sm">{lic.agency}</span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-6 text-sm text-gray-400 font-mono font-bold tracking-tight">{lic.licenseNo}</td>
-                  <td className="px-8 py-6">
-                    <div className="flex items-center space-x-2">
-                       <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                        lic.status === 'Active' ? 'bg-green-100 text-green-700' : 
-                        lic.status === 'Pending Approval' ? 'bg-amber-100 text-amber-700' : 
-                        'bg-red-100 text-red-700'
-                      }`}>
-                        {lic.status === 'Active' ? t.status.active : 
-                         lic.status === 'Pending Approval' ? t.status.pending : 
-                         lic.status === 'Expired' ? t.status.expired : lic.status}
+                      <span className="font-bold text-primary text-sm">
+                        {lic.agency}
                       </span>
                     </div>
                   </td>
-                  <td className="px-8 py-6 text-sm text-gray-500 font-medium">{lic.issued}</td>
-                  <td className="px-8 py-6 text-sm text-gray-500 font-medium">{lic.expiry}</td>
+                  <td className="px-8 py-6 text-sm text-gray-500 font-medium">
+                    {lic.ownership}
+                  </td>
+                  <td className="px-8 py-6 text-sm text-gray-400 font-mono font-bold tracking-tight">
+                    {lic.licenseNo}
+                  </td>
+                  <td className="px-8 py-6">
+                    <div className="flex items-center space-x-2">
+                      <span
+                        className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                          lic.status === "Active"
+                            ? "bg-green-100 text-green-700"
+                            : lic.status === "Pending Approval"
+                              ? "bg-amber-100 text-amber-700"
+                              : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {lic.status === "Active"
+                          ? t.status.active
+                          : lic.status === "Pending Approval"
+                            ? t.status.pending
+                            : lic.status === "Expired"
+                              ? t.status.expired
+                              : lic.status}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-8 py-6 text-sm text-gray-500 font-medium">
+                    {lic.issued}
+                  </td>
+                  <td className="px-8 py-6 text-sm text-gray-500 font-medium">
+                    {lic.expiry}
+                  </td>
                   <td className="px-8 py-6 text-right">
                     <div className="flex justify-end gap-3 items-center">
-                      <button 
-                        onClick={() => { setSelectedLic(lic); setActionType('history'); }}
-                        className="flex items-center space-x-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm group/btn" 
+                      <Link
+                        to={`${licenseBasePath}/${lic.id}`}
+                        state={{ certificate: lic.source }}
+                        className="flex items-center space-x-2 px-3 py-2 bg-white text-gray-600 rounded-xl hover:bg-gray-600 hover:text-white transition-all shadow-sm group/btn"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span className="text-[10px] font-black uppercase tracking-wider">
+                          {t.actions.view}
+                        </span>
+                      </Link>
+                      <button
+                        onClick={() => {
+                          setSelectedLic(lic);
+                          setActionType("history");
+                        }}
+                        className="flex items-center space-x-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm group/btn"
                       >
                         <History className="w-3.5 h-3.5" />
-                        <span className="text-[10px] font-black uppercase tracking-wider">{t.actions.history}</span>
+                        <span className="text-[10px] font-black uppercase tracking-wider">
+                          {t.actions.history}
+                        </span>
                       </button>
-                      <button 
-                        onClick={() => openEditor(lic, 'edit')}
-                        className="flex items-center space-x-2 px-3 py-2 bg-gray-50 text-gray-600 rounded-xl hover:bg-gray-600 hover:text-white transition-all shadow-sm group/btn" 
+                      <Link
+                        to={`${licenseBasePath}/${lic.id}?action=edit`}
+                        className="flex items-center space-x-2 px-3 py-2 bg-gray-50 text-gray-600 rounded-xl hover:bg-gray-600 hover:text-white transition-all shadow-sm group/btn"
                       >
                         <Edit className="w-3.5 h-3.5" />
-                        <span className="text-[10px] font-black uppercase tracking-wider">{t.actions.edit}</span>
-                      </button>
-                      <button 
-                        onClick={() => openEditor(lic, 'renew')}
-                        className="flex items-center space-x-2 px-3 py-2 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white transition-all shadow-sm group/btn" 
+                        <span className="text-[10px] font-black uppercase tracking-wider">
+                          {t.actions.edit}
+                        </span>
+                      </Link>
+                      <button
+                        onClick={() => openEditor(lic, "renew")}
+                        className="flex items-center space-x-2 px-3 py-2 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white transition-all shadow-sm group/btn"
                       >
                         <RotateCw className="w-3.5 h-3.5" />
-                        <span className="text-[10px] font-black uppercase tracking-wider">{t.actions.renew}</span>
+                        <span className="text-[10px] font-black uppercase tracking-wider">
+                          {t.actions.renew}
+                        </span>
                       </button>
-                      <button 
-                        onClick={() => { setSelectedLic(lic); setActionType('revoke'); }}
-                        className="flex items-center space-x-2 px-3 py-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn" 
+                      <button
+                        onClick={() => {
+                          setSelectedLic(lic);
+                          setActionType("revoke");
+                        }}
+                        className="flex items-center space-x-2 px-3 py-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
-                        <span className="text-[10px] font-black uppercase tracking-wider">{t.actions.revoke}</span>
+                        <span className="text-[10px] font-black uppercase tracking-wider">
+                          {t.actions.revoke}
+                        </span>
                       </button>
                     </div>
                   </td>
@@ -307,128 +417,182 @@ export const LicenseManagement = () => {
       <AnimatePresence>
         {selectedLic && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-primary/60 backdrop-blur-md overflow-hidden">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className={`bg-white rounded-[40px] shadow-2xl w-full ${['edit', 'create', 'renew'].includes(actionType) ? 'max-w-4xl' : 'max-w-2xl'} p-10 space-y-8 relative overflow-hidden`}
+              className={`bg-white rounded-[40px] shadow-2xl w-full ${["edit", "create", "renew"].includes(actionType) ? "max-w-4xl" : "max-w-2xl"} p-10 space-y-8 relative overflow-hidden`}
             >
               <div className="flex justify-between items-center relative z-10">
                 <div className="flex items-center space-x-4">
-                  <div className={`p-4 rounded-2xl ${
-                    ['view', 'history'].includes(actionType) ? 'bg-blue-50 text-blue-600' : 
-                    actionType === 'renew' ? 'bg-green-50 text-green-600' : 
-                    actionType === 'send' ? 'bg-secondary/20 text-primary' :
-                    actionType === 'revoke' ? 'bg-red-50 text-red-600' : 'bg-gray-50 text-gray-600'
-                  }`}>
-                    {actionType === 'view' ? <Eye className="w-6 h-6" /> : 
-                     actionType === 'history' ? <History className="w-6 h-6" /> :
-                     actionType === 'send' ? <Send className="w-6 h-6" /> :
-                     actionType === 'renew' ? <RotateCw className="w-6 h-6" /> : 
-                     actionType === 'revoke' ? <Trash2 className="w-6 h-6" /> : <Edit className="w-6 h-6" />}
+                  <div
+                    className={`p-4 rounded-2xl ${
+                      ["view", "history"].includes(actionType)
+                        ? "bg-blue-50 text-blue-600"
+                        : actionType === "renew"
+                          ? "bg-green-50 text-green-600"
+                          : actionType === "send"
+                            ? "bg-secondary/20 text-primary"
+                            : actionType === "revoke"
+                              ? "bg-red-50 text-red-600"
+                              : "bg-gray-50 text-gray-600"
+                    }`}
+                  >
+                    {actionType === "view" ? (
+                      <Eye className="w-6 h-6" />
+                    ) : actionType === "history" ? (
+                      <History className="w-6 h-6" />
+                    ) : actionType === "send" ? (
+                      <Send className="w-6 h-6" />
+                    ) : actionType === "renew" ? (
+                      <RotateCw className="w-6 h-6" />
+                    ) : actionType === "revoke" ? (
+                      <Trash2 className="w-6 h-6" />
+                    ) : (
+                      <Edit className="w-6 h-6" />
+                    )}
                   </div>
                   <div>
                     <h4 className="text-2xl font-black text-primary uppercase tracking-tighter">
-                      {actionType === 'view' ? 'License Preview' : 
-                       actionType === 'history' ? 'License History Tracker' :
-                       actionType === 'send' ? 'Dispatch License' :
-                       actionType === 'renew' ? 'License Renewal Unit' : 
-                       actionType === 'revoke' ? 'License Revocation System' : 
-                       actionType === 'create' ? 'Add New Agency License' : 'Update Credentials'}
+                      {actionType === "view"
+                        ? "License Preview"
+                        : actionType === "history"
+                          ? "License History Tracker"
+                          : actionType === "send"
+                            ? "Dispatch License"
+                            : actionType === "renew"
+                              ? "License Renewal Unit"
+                              : actionType === "revoke"
+                                ? "License Revocation System"
+                                : actionType === "create"
+                                  ? "Add New Agency License"
+                                  : "Update Credentials"}
                     </h4>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.3em]">{selectedLic.agency || "New Issuance"}</p>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.3em]">
+                      {selectedLic.agency || "New Issuance"}
+                    </p>
                   </div>
                 </div>
-                <button onClick={() => setSelectedLic(null)} className="p-3 hover:bg-gray-100 rounded-full text-gray-400 transition-colors">
+                <button
+                  onClick={() => setSelectedLic(null)}
+                  className="p-3 hover:bg-gray-100 rounded-full text-gray-400 transition-colors"
+                >
                   <X className="w-6 h-6" />
                 </button>
               </div>
 
               <div className="max-h-[70vh] overflow-y-auto px-2 space-y-8 no-scrollbar">
-                {actionType === 'history' && (
+                {actionType === "history" && (
                   <div className="space-y-6">
                     <div className="grid grid-cols-1 gap-4">
                       {selectedLic.history?.length > 0 ? (
                         selectedLic.history.map((h: any, idx: number) => (
-                          <div key={idx} className="flex items-center justify-between p-6 bg-gray-50 rounded-[32px] border border-gray-100 hover:border-blue-200 transition-all group">
-                             <div className="flex items-center space-x-4">
-                               <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-blue-600 font-black text-sm shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-all">
-                                 {h.year}
-                               </div>
-                               <div>
-                                 <p className="text-sm font-black text-primary font-mono">{h.no}</p>
-                                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Commission Cycle {h.year}</p>
-                               </div>
-                             </div>
-                             <div className="flex items-center space-x-3">
-                               <button 
-                                 title="Download PDF"
-                                 onClick={() => setHistoryPreview({ type: 'pdf', data: h })}
-                                 className="flex items-center space-x-2 px-4 py-2.5 bg-white text-blue-600 rounded-xl shadow-sm hover:bg-blue-600 hover:text-white transition-all border border-blue-100"
-                               >
-                                 <Download className="w-4 h-4" />
-                                 <span className="text-[9px] font-black uppercase">PDF</span>
-                               </button>
-                               <button 
-                                 title="Preview Photo"
-                                 onClick={() => setHistoryPreview({ type: 'photo', data: h })}
-                                 className="flex items-center space-x-2 px-4 py-2.5 bg-white text-gray-600 rounded-xl shadow-sm hover:bg-gray-100 transition-all border border-gray-100"
-                               >
-                                 <Eye className="w-4 h-4" />
-                                 <span className="text-[9px] font-black uppercase">Preview</span>
-                               </button>
-                             </div>
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between p-6 bg-gray-50 rounded-[32px] border border-gray-100 hover:border-blue-200 transition-all group"
+                          >
+                            <div className="flex items-center space-x-4">
+                              <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-blue-600 font-black text-sm shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                {h.year}
+                              </div>
+                              <div>
+                                <p className="text-sm font-black text-primary font-mono">
+                                  {h.no}
+                                </p>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                                  Commission Cycle {h.year}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                              <button
+                                title="Download PDF"
+                                onClick={() =>
+                                  setHistoryPreview({ type: "pdf", data: h })
+                                }
+                                className="flex items-center space-x-2 px-4 py-2.5 bg-white text-blue-600 rounded-xl shadow-sm hover:bg-blue-600 hover:text-white transition-all border border-blue-100"
+                              >
+                                <Download className="w-4 h-4" />
+                                <span className="text-[9px] font-black uppercase">
+                                  PDF
+                                </span>
+                              </button>
+                              <button
+                                title="Preview Photo"
+                                onClick={() =>
+                                  setHistoryPreview({ type: "photo", data: h })
+                                }
+                                className="flex items-center space-x-2 px-4 py-2.5 bg-white text-gray-600 rounded-xl shadow-sm hover:bg-gray-100 transition-all border border-gray-100"
+                              >
+                                <Eye className="w-4 h-4" />
+                                <span className="text-[9px] font-black uppercase">
+                                  Preview
+                                </span>
+                              </button>
+                            </div>
                           </div>
                         ))
                       ) : (
                         <div className="p-10 text-center bg-gray-50 rounded-[32px] border-2 border-dashed border-gray-200">
                           <History className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                          <p className="text-sm font-bold text-gray-400">No prior license cycles found for this agency.</p>
+                          <p className="text-sm font-bold text-gray-400">
+                            No prior license cycles found for this agency.
+                          </p>
                         </div>
                       )}
                     </div>
                   </div>
                 )}
 
-                {['edit', 'create', 'renew'].includes(actionType) && (
+                {["edit", "create", "renew"].includes(actionType) && (
                   <div className="flex flex-col space-y-10">
                     <p className="text-xs text-amber-600 font-black uppercase tracking-widest bg-amber-50 p-4 rounded-xl text-center">
-                      {actionType === 'renew' 
-                        ? 'Renewal Cycle: Only Issued/Expiry dates are configurable in this mode' 
-                        : 'Visual Certificate Editor: Field edits update the real document format'}
+                      {actionType === "renew"
+                        ? "Renewal Cycle: Only Issued/Expiry dates are configurable in this mode"
+                        : "Visual Certificate Editor: Field edits update the real document format"}
                     </p>
-                    
+
                     {/* Visual License Editor matching the image */}
                     <div className="relative mx-auto bg-white border-[12px] border-double border-[var(--safe-secondary-30)] rounded-sm p-10 aspect-[1/1.414] w-[600px] shadow-2xl">
                       <div className="absolute inset-4 border-2 border-[var(--safe-secondary-10)] pointer-events-none" />
-                      
+
                       <div className="relative z-10 flex flex-col h-full space-y-6">
                         {/* Logos & Photo */}
                         <div className="flex justify-between items-start">
                           {/* Fed Police Logo (Static) */}
                           <div className="w-16 h-16 bg-white rounded-full border-2 border-[var(--safe-secondary-20)] flex items-center justify-center overflow-hidden">
-                             <img src="https://i.ibb.co/Vv8B0Xz/ethiopian-federal-police-logo.png" className="w-full h-full object-contain" />
+                            <img
+                              src="https://i.ibb.co/Vv8B0Xz/ethiopian-federal-police-logo.png"
+                              className="w-full h-full object-contain"
+                            />
                           </div>
 
                           {/* Agency Logo Upload */}
                           <div className="relative group">
-                            <input 
-                              type="file" 
-                              className="hidden" 
-                              id="logoUpload" 
-                              onChange={(e) => handleImageUpload(e, 'logo')} 
-                              disabled={actionType === 'renew'}
+                            <input
+                              type="file"
+                              className="hidden"
+                              id="logoUpload"
+                              onChange={(e) => handleImageUpload(e, "logo")}
+                              disabled={actionType === "renew"}
                             />
-                            <label 
-                              htmlFor={actionType === 'renew' ? "" : "logoUpload"} 
-                              className={`w-16 h-16 border-2 border-dashed border-[var(--safe-secondary-30)] rounded-xl flex flex-col items-center justify-center bg-[var(--safe-secondary-10)] transition-all overflow-hidden ${actionType === 'renew' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-[var(--safe-secondary-20)]'}`}
+                            <label
+                              htmlFor={
+                                actionType === "renew" ? "" : "logoUpload"
+                              }
+                              className={`w-16 h-16 border-2 border-dashed border-[var(--safe-secondary-30)] rounded-xl flex flex-col items-center justify-center bg-[var(--safe-secondary-10)] transition-all overflow-hidden ${actionType === "renew" ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-[var(--safe-secondary-20)]"}`}
                             >
                               {certData.agencyLogo ? (
-                                <img src={certData.agencyLogo} className="w-full h-full object-contain" />
+                                <img
+                                  src={certData.agencyLogo}
+                                  className="w-full h-full object-contain"
+                                />
                               ) : (
                                 <>
                                   <Upload className="w-4 h-4 text-[var(--safe-secondary-30)]" />
-                                  <span className="text-[6px] font-bold uppercase mt-1">Logo</span>
+                                  <span className="text-[6px] font-bold uppercase mt-1">
+                                    Logo
+                                  </span>
                                 </>
                               )}
                             </label>
@@ -436,23 +600,30 @@ export const LicenseManagement = () => {
 
                           {/* Applicant Photo Upload */}
                           <div className="relative group">
-                            <input 
-                              type="file" 
-                              className="hidden" 
-                              id="photoUpload" 
-                              onChange={(e) => handleImageUpload(e, 'photo')} 
-                              disabled={actionType === 'renew'}
+                            <input
+                              type="file"
+                              className="hidden"
+                              id="photoUpload"
+                              onChange={(e) => handleImageUpload(e, "photo")}
+                              disabled={actionType === "renew"}
                             />
-                            <label 
-                              htmlFor={actionType === 'renew' ? "" : "photoUpload"} 
-                              className={`w-20 h-24 border-2 border-dashed border-[var(--safe-secondary-30)] rounded-lg flex flex-col items-center justify-center bg-[var(--safe-secondary-10)] transition-all overflow-hidden ${actionType === 'renew' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-[var(--safe-secondary-20)]'}`}
+                            <label
+                              htmlFor={
+                                actionType === "renew" ? "" : "photoUpload"
+                              }
+                              className={`w-20 h-24 border-2 border-dashed border-[var(--safe-secondary-30)] rounded-lg flex flex-col items-center justify-center bg-[var(--safe-secondary-10)] transition-all overflow-hidden ${actionType === "renew" ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-[var(--safe-secondary-20)]"}`}
                             >
                               {certData.applicantPhoto ? (
-                                <img src={certData.applicantPhoto} className="w-full h-full object-cover" />
+                                <img
+                                  src={certData.applicantPhoto}
+                                  className="w-full h-full object-cover"
+                                />
                               ) : (
                                 <>
                                   <Camera className="w-6 h-6 text-[var(--safe-secondary-30)]" />
-                                  <span className="text-[8px] font-bold uppercase mt-1">Photo</span>
+                                  <span className="text-[8px] font-bold uppercase mt-1">
+                                    Photo
+                                  </span>
                                 </>
                               )}
                             </label>
@@ -461,45 +632,76 @@ export const LicenseManagement = () => {
 
                         {/* Title Section */}
                         <div className="text-center space-y-1">
-                          <h5 className="text-[10px] font-black text-[#003366]">በኢትዮጵያ ፌዴራላዊ ዲሞክራሲያዊ ሪፐብሊክ የፌዴራል ፖሊስ</h5>
-                          <h5 className="text-[10px] font-black text-[#001F3F] uppercase">The Federal Democratic Republic of Ethiopia Federal police</h5>
+                          <h5 className="text-[10px] font-black text-[#003366]">
+                            በኢትዮጵያ ፌዴራላዊ ዲሞክራሲያዊ ሪፐብሊክ የፌዴራል ፖሊስ
+                          </h5>
+                          <h5 className="text-[10px] font-black text-[#001F3F] uppercase">
+                            The Federal Democratic Republic of Ethiopia Federal
+                            police
+                          </h5>
                           <div className="py-2 border-y border-[var(--safe-secondary-20)] mt-2">
-                             <h6 className="text-sm font-black text-[#003366]">የግል የጥበቃ ተቋማት የብቃት ማረጋገጫ የምስክር ወረቀት</h6>
-                             <h6 className="text-xs font-bold text-[#C5A022] italic">Private Security Agencies Quality Assurance Certificate</h6>
+                            <h6 className="text-sm font-black text-[#003366]">
+                              የግል የጥበቃ ተቋማት የብቃት ማረጋገጫ የምስክር ወረቀት
+                            </h6>
+                            <h6 className="text-xs font-bold text-[#C5A022] italic">
+                              Private Security Agencies Quality Assurance
+                              Certificate
+                            </h6>
                           </div>
                         </div>
 
                         {/* Editable Fields Area */}
                         <div className="space-y-4 pt-4">
                           <div className="flex items-center space-x-2 border-b border-[var(--safe-secondary-10)] pb-1">
-                            <span className="text-[10px] font-bold text-[var(--safe-gray-500)] shrink-0 w-32">Name of the Agency:</span>
-                            <input 
+                            <span className="text-[10px] font-bold text-[var(--safe-gray-500)] shrink-0 w-32">
+                              Name of the Agency:
+                            </span>
+                            <input
                               placeholder="ABYSSINIA SECURITY SERVICES PLC"
                               value={certData.agencyName}
-                              onChange={(e) => setCertData(prev => ({ ...prev, agencyName: e.target.value.toUpperCase() }))}
-                              disabled={actionType === 'renew'}
-                              className={`text-sm font-black text-primary outline-none bg-transparent w-full border-none ${actionType === 'renew' ? 'cursor-not-allowed text-gray-500' : ''}`}
+                              onChange={(e) =>
+                                setCertData((prev) => ({
+                                  ...prev,
+                                  agencyName: e.target.value.toUpperCase(),
+                                }))
+                              }
+                              disabled={actionType === "renew"}
+                              className={`text-sm font-black text-primary outline-none bg-transparent w-full border-none ${actionType === "renew" ? "cursor-not-allowed text-gray-500" : ""}`}
                             />
                           </div>
 
                           <div className="flex items-center space-x-2 border-b border-[var(--safe-secondary-10)] pb-1">
-                            <span className="text-[10px] font-bold text-[var(--safe-gray-500)] shrink-0 w-32">Address:</span>
-                            <input 
+                            <span className="text-[10px] font-bold text-[var(--safe-gray-500)] shrink-0 w-32">
+                              Address:
+                            </span>
+                            <input
                               placeholder="Addis Ababa, Bole Sub-City, Ethiopia"
                               value={certData.address}
-                              onChange={(e) => setCertData(prev => ({ ...prev, address: e.target.value }))}
-                              disabled={actionType === 'renew'}
-                              className={`text-xs font-bold text-primary outline-none bg-transparent w-full border-none ${actionType === 'renew' ? 'cursor-not-allowed text-gray-500' : ''}`}
+                              onChange={(e) =>
+                                setCertData((prev) => ({
+                                  ...prev,
+                                  address: e.target.value,
+                                }))
+                              }
+                              disabled={actionType === "renew"}
+                              className={`text-xs font-bold text-primary outline-none bg-transparent w-full border-none ${actionType === "renew" ? "cursor-not-allowed text-gray-500" : ""}`}
                             />
                           </div>
 
                           <div className="flex items-center space-x-2 border-b border-[var(--safe-secondary-10)] pb-1">
-                            <span className="text-[10px] font-bold text-[var(--safe-gray-500)] shrink-0 w-32">Level:</span>
-                            <select 
+                            <span className="text-[10px] font-bold text-[var(--safe-gray-500)] shrink-0 w-32">
+                              Level:
+                            </span>
+                            <select
                               value={certData.level}
-                              onChange={(e) => setCertData(prev => ({ ...prev, level: e.target.value }))}
-                              disabled={actionType === 'renew'}
-                              className={`text-xs font-bold text-primary outline-none bg-transparent w-full border-none ${actionType === 'renew' ? 'cursor-not-allowed text-gray-500' : 'cursor-pointer'}`}
+                              onChange={(e) =>
+                                setCertData((prev) => ({
+                                  ...prev,
+                                  level: e.target.value,
+                                }))
+                              }
+                              disabled={actionType === "renew"}
+                              className={`text-xs font-bold text-primary outline-none bg-transparent w-full border-none ${actionType === "renew" ? "cursor-not-allowed text-gray-500" : "cursor-pointer"}`}
                             >
                               <option>LEVEL - ONE (1)</option>
                               <option>LEVEL - TWO (2)</option>
@@ -508,63 +710,96 @@ export const LicenseManagement = () => {
                           </div>
 
                           <div className="flex items-center space-x-2 border-b border-[var(--safe-secondary-10)] pb-1 ring-2 ring-green-400/20 bg-green-50/30 px-2 rounded-lg">
-                            <span className="text-[10px] font-bold text-[var(--safe-gray-500)] shrink-0 w-32">Date of Issued:</span>
-                            <input 
+                            <span className="text-[10px] font-bold text-[var(--safe-gray-500)] shrink-0 w-32">
+                              Date of Issued:
+                            </span>
+                            <input
                               type="date"
                               value={certData.issuedDate}
-                              onChange={(e) => setCertData(prev => ({ ...prev, issuedDate: e.target.value }))}
+                              onChange={(e) =>
+                                setCertData((prev) => ({
+                                  ...prev,
+                                  issuedDate: e.target.value,
+                                }))
+                              }
                               className="text-xs font-bold text-primary outline-none bg-transparent w-full border-none cursor-pointer"
                             />
                           </div>
 
                           <div className="flex items-center space-x-2 border-b border-[var(--safe-secondary-10)] pb-1 ring-2 ring-green-400/20 bg-green-50/30 px-2 rounded-lg">
-                            <span className="text-[10px] font-bold text-[var(--safe-gray-500)] shrink-0 w-32">Date of Expired:</span>
-                            <input 
+                            <span className="text-[10px] font-bold text-[var(--safe-gray-500)] shrink-0 w-32">
+                              Date of Expired:
+                            </span>
+                            <input
                               type="date"
                               value={certData.expiryDate}
-                              onChange={(e) => setCertData(prev => ({ ...prev, expiryDate: e.target.value }))}
+                              onChange={(e) =>
+                                setCertData((prev) => ({
+                                  ...prev,
+                                  expiryDate: e.target.value,
+                                }))
+                              }
                               className="text-xs font-bold text-primary outline-none bg-transparent w-full border-none cursor-pointer"
                             />
                           </div>
 
                           <div className="flex items-center space-x-2 border-b border-[var(--safe-secondary-10)] pb-1">
-                            <span className="text-[10px] font-bold text-[var(--safe-gray-500)] shrink-0 w-32">License No:</span>
-                            <input 
+                            <span className="text-[10px] font-bold text-[var(--safe-gray-500)] shrink-0 w-32">
+                              License No:
+                            </span>
+                            <input
                               placeholder="FP-PSA-2025-XXXX"
                               value={certData.licenseNo}
-                              onChange={(e) => setCertData(prev => ({ ...prev, licenseNo: e.target.value.toUpperCase() }))}
-                              disabled={actionType === 'renew'}
-                              className={`text-sm font-black text-[#C5A022] outline-none bg-transparent w-full border-none tracking-widest ${actionType === 'renew' ? 'cursor-not-allowed opacity-70' : ''}`}
+                              onChange={(e) =>
+                                setCertData((prev) => ({
+                                  ...prev,
+                                  licenseNo: e.target.value.toUpperCase(),
+                                }))
+                              }
+                              disabled={actionType === "renew"}
+                              className={`text-sm font-black text-[#C5A022] outline-none bg-transparent w-full border-none tracking-widest ${actionType === "renew" ? "cursor-not-allowed opacity-70" : ""}`}
                             />
                           </div>
                         </div>
 
                         {/* Signature & QR Bottom */}
                         <div className="mt-auto flex justify-between items-end pb-4">
-                           <div className="text-center">
-                              <div className="w-32 border-b border-[var(--safe-secondary-30)] pb-1 mb-1">
-                                 <p className="text-[8px] font-serif italic text-[var(--safe-gray-300)]">Signature Space</p>
-                              </div>
-                              <p className="text-[8px] font-black text-primary uppercase">Commissioner of Federal Police</p>
-                           </div>
-                           
-                           <div className="relative group">
-                              <input 
-                                type="file" 
-                                className="hidden" 
-                                id="qrUpload" 
-                                onChange={(e) => handleImageUpload(e, 'qr')} 
-                                disabled={actionType === 'renew'}
-                              />
-                              <label htmlFor={actionType === 'renew' ? "" : "qrUpload"} className={`p-2 border-2 border-dashed border-[var(--safe-secondary-30)] rounded-xl flex flex-col items-center bg-[var(--safe-secondary-10)] transition-all ${actionType === 'renew' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-[var(--safe-secondary-20)]'}`}>
-                                {certData.qrCode ? (
-                                  <img src={certData.qrCode} className="w-12 h-12 object-contain" />
-                                ) : (
-                                  <QrCode className="w-12 h-12 text-primary" />
-                                )}
-                                <span className="text-[6px] font-black uppercase mt-1">Edit QR</span>
-                              </label>
-                           </div>
+                          <div className="text-center">
+                            <div className="w-32 border-b border-[var(--safe-secondary-30)] pb-1 mb-1">
+                              <p className="text-[8px] font-serif italic text-[var(--safe-gray-300)]">
+                                Signature Space
+                              </p>
+                            </div>
+                            <p className="text-[8px] font-black text-primary uppercase">
+                              Commissioner of Federal Police
+                            </p>
+                          </div>
+
+                          <div className="relative group">
+                            <input
+                              type="file"
+                              className="hidden"
+                              id="qrUpload"
+                              onChange={(e) => handleImageUpload(e, "qr")}
+                              disabled={actionType === "renew"}
+                            />
+                            <label
+                              htmlFor={actionType === "renew" ? "" : "qrUpload"}
+                              className={`p-2 border-2 border-dashed border-[var(--safe-secondary-30)] rounded-xl flex flex-col items-center bg-[var(--safe-secondary-10)] transition-all ${actionType === "renew" ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-[var(--safe-secondary-20)]"}`}
+                            >
+                              {certData.qrCode ? (
+                                <img
+                                  src={certData.qrCode}
+                                  className="w-12 h-12 object-contain"
+                                />
+                              ) : (
+                                <QrCode className="w-12 h-12 text-primary" />
+                              )}
+                              <span className="text-[6px] font-black uppercase mt-1">
+                                Edit QR
+                              </span>
+                            </label>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -572,70 +807,120 @@ export const LicenseManagement = () => {
                     <div className="flex flex-col space-y-6 bg-gray-50 p-8 rounded-[40px] border border-gray-100">
                       <div className="space-y-4">
                         <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
-                           <div className="flex items-center space-x-3">
-                              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                                 <User className="w-5 h-5" />
-                              </div>
-                              <div>
-                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Recipient Applicant</p>
-                                 <p className="text-sm font-black text-primary">{selectedLic.agency || "Awaiting Agency Info"}</p>
-                              </div>
-                           </div>
-                           <span className="px-3 py-1 bg-green-100 text-green-700 text-[10px] font-black rounded-full uppercase">Verified User</span>
+                          <div className="flex items-center space-x-3">
+                            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                              <User className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                Recipient Applicant
+                              </p>
+                              <p className="text-sm font-black text-primary">
+                                {selectedLic.agency || "Awaiting Agency Info"}
+                              </p>
+                            </div>
+                          </div>
+                          <span className="px-3 py-1 bg-green-100 text-green-700 text-[10px] font-black rounded-full uppercase">
+                            Verified User
+                          </span>
                         </div>
-                        
+
                         <div className="grid grid-cols-2 gap-4">
-                           <button 
-                             onClick={() => { alert(`License Dispatched ${actionType === 'renew' ? 'Renewal' : ''} to Applicant as PDF Successfully!`); setSelectedLic(null); }}
-                             className="py-5 bg-primary text-white rounded-3xl font-black uppercase tracking-widest shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center space-x-2"
-                           >
-                              <FileText className="w-5 h-5" />
-                              <span>{actionType === 'renew' ? 'Renew & Send PDF' : 'Send as PDF'}</span>
-                           </button>
-                           <button 
-                             onClick={() => { alert(`License Dispatched ${actionType === 'renew' ? 'Renewal' : ''} to Applicant as Photo Successfully!`); setSelectedLic(null); }}
-                             className="py-5 bg-secondary text-primary rounded-3xl font-black uppercase tracking-widest shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center space-x-2"
-                           >
-                              <Camera className="w-5 h-5" />
-                              <span>{actionType === 'renew' ? 'Renew & Send Photo' : 'Send as Photo'}</span>
-                           </button>
+                          <button
+                            onClick={() => {
+                              alert(
+                                `License Dispatched ${actionType === "renew" ? "Renewal" : ""} to Applicant as PDF Successfully!`,
+                              );
+                              setSelectedLic(null);
+                            }}
+                            className="py-5 bg-primary text-white rounded-3xl font-black uppercase tracking-widest shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center space-x-2"
+                          >
+                            <FileText className="w-5 h-5" />
+                            <span>
+                              {actionType === "renew"
+                                ? "Renew & Send PDF"
+                                : "Send as PDF"}
+                            </span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              alert(
+                                `License Dispatched ${actionType === "renew" ? "Renewal" : ""} to Applicant as Photo Successfully!`,
+                              );
+                              setSelectedLic(null);
+                            }}
+                            className="py-5 bg-secondary text-primary rounded-3xl font-black uppercase tracking-widest shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center space-x-2"
+                          >
+                            <Camera className="w-5 h-5" />
+                            <span>
+                              {actionType === "renew"
+                                ? "Renew & Send Photo"
+                                : "Send as Photo"}
+                            </span>
+                          </button>
                         </div>
                       </div>
 
-                      <button 
-                         onClick={() => setSelectedLic(null)}
-                         className="w-full py-5 bg-gray-100 text-gray-500 rounded-3xl font-black uppercase tracking-[0.2em] hover:bg-gray-200 transition-all font-mono"
+                      <button
+                        onClick={() => setSelectedLic(null)}
+                        className="w-full py-5 bg-gray-100 text-gray-500 rounded-3xl font-black uppercase tracking-[0.2em] hover:bg-gray-200 transition-all font-mono"
                       >
-                         CANCEL {actionType === 'renew' ? 'RENEWAL' : 'DISPATCH'}
+                        CANCEL {actionType === "renew" ? "RENEWAL" : "DISPATCH"}
                       </button>
                     </div>
                   </div>
                 )}
 
-                {actionType === 'renew' && (
+                {actionType === "renew" && (
                   <div className="space-y-6 text-center pt-4">
                     <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
                       <RotateCw className="w-12 h-12" />
                     </div>
                     <div className="space-y-2">
-                       <h5 className="text-xl font-black text-green-800">12-Month Extension Active</h5>
-                       <p className="text-sm text-green-600/80 font-medium">Automatic verification cycle completed. Do you verify this agency remains in full compliance with Federal Police PSA Standards?</p>
+                      <h5 className="text-xl font-black text-green-800">
+                        12-Month Extension Active
+                      </h5>
+                      <p className="text-sm text-green-600/80 font-medium">
+                        Automatic verification cycle completed. Do you verify
+                        this agency remains in full compliance with Federal
+                        Police PSA Standards?
+                      </p>
                     </div>
                     <div className="flex gap-4">
-                      <button className="flex-1 py-5 bg-green-600 text-white rounded-3xl font-black uppercase tracking-widest" onClick={() => setSelectedLic(null)}>Confirm & Extend</button>
-                      <button className="flex-1 py-5 bg-gray-100 text-gray-500 rounded-3xl font-black uppercase tracking-widest" onClick={() => setSelectedLic(null)}>Cancel</button>
+                      <button
+                        className="flex-1 py-5 bg-green-600 text-white rounded-3xl font-black uppercase tracking-widest"
+                        onClick={() => setSelectedLic(null)}
+                      >
+                        Confirm & Extend
+                      </button>
+                      <button
+                        className="flex-1 py-5 bg-gray-100 text-gray-500 rounded-3xl font-black uppercase tracking-widest"
+                        onClick={() => setSelectedLic(null)}
+                      >
+                        Cancel
+                      </button>
                     </div>
                   </div>
                 )}
 
-                {actionType === 'revoke' && (
+                {actionType === "revoke" && (
                   <div className="space-y-8 pt-4">
                     <div className="p-8 bg-red-50 rounded-[40px] border-2 border-red-100 text-center space-y-4">
                       <AlertTriangle className="w-16 h-16 text-red-600 mx-auto" />
-                      <h5 className="text-2xl font-black text-red-700 uppercase tracking-tighter">Immediate Revocation Only</h5>
-                      <p className="text-sm text-red-600 font-medium">This command is IRREVERSIBLE. It will terminate all operational rights and flag the agency in the national database.</p>
+                      <h5 className="text-2xl font-black text-red-700 uppercase tracking-tighter">
+                        Immediate Revocation Only
+                      </h5>
+                      <p className="text-sm text-red-600 font-medium">
+                        This command is IRREVERSIBLE. It will terminate all
+                        operational rights and flag the agency in the national
+                        database.
+                      </p>
                     </div>
-                    <textarea rows={4} className="w-full p-6 bg-gray-50 border border-gray-100 rounded-3xl outline-none focus:ring-2 focus:ring-red-500 font-medium italic" placeholder="State official reason for revocation..." />
+                    <textarea
+                      rows={4}
+                      className="w-full p-6 bg-gray-50 border border-gray-100 rounded-3xl outline-none focus:ring-2 focus:ring-red-500 font-medium italic"
+                      placeholder="State official reason for revocation..."
+                    />
                     <button className="w-full py-6 bg-red-600 text-white rounded-3xl font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-black transition-all">
                       EXECUTE REVOKE PROTOCOL
                     </button>
@@ -651,13 +936,13 @@ export const LicenseManagement = () => {
       <AnimatePresence>
         {historyPreview && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-hidden">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               className="bg-white rounded-[40px] shadow-2xl max-w-2xl w-full p-8 space-y-6 relative"
             >
-              <button 
+              <button
                 onClick={() => setHistoryPreview(null)}
                 className="absolute top-6 right-6 p-2 bg-gray-100 hover:bg-red-50 hover:text-red-600 rounded-full transition-all z-10"
               >
@@ -666,57 +951,80 @@ export const LicenseManagement = () => {
 
               <div className="max-h-[85vh] overflow-y-auto pr-2 no-scrollbar space-y-6">
                 <div className="flex items-center space-x-4 border-b border-gray-100 pb-6">
-                  <div className={`p-3 rounded-xl ${historyPreview.type === 'pdf' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'}`}>
-                    {historyPreview.type === 'pdf' ? <FileText className="w-6 h-6" /> : <Camera className="w-6 h-6" />}
+                  <div
+                    className={`p-3 rounded-xl ${historyPreview.type === "pdf" ? "bg-blue-50 text-blue-600" : "bg-purple-50 text-purple-600"}`}
+                  >
+                    {historyPreview.type === "pdf" ? (
+                      <FileText className="w-6 h-6" />
+                    ) : (
+                      <Camera className="w-6 h-6" />
+                    )}
                   </div>
                   <div>
-                    <h5 className="text-xl font-black text-primary uppercase tracking-tight">Archive: {historyPreview.data.year}</h5>
-                    <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">{historyPreview.type === 'pdf' ? 'Official Document Format' : 'Photo Evidence Record'}</p>
+                    <h5 className="text-xl font-black text-primary uppercase tracking-tight">
+                      Archive: {historyPreview.data.year}
+                    </h5>
+                    <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
+                      {historyPreview.type === "pdf"
+                        ? "Official Document Format"
+                        : "Photo Evidence Record"}
+                    </p>
                   </div>
                 </div>
 
                 <div className="aspect-[1/1.414] bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200 overflow-hidden relative flex items-center justify-center min-h-[400px]">
-                  {historyPreview.type === 'photo' ? (
+                  {historyPreview.type === "photo" ? (
                     <div className="relative w-full h-full p-8 flex flex-col items-center justify-center group">
                       <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1557683316-973673baf926?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80')] opacity-10 grayscale" />
                       <div className="relative bg-white p-6 shadow-2xl border-[10px] border-white rounded-sm rotate-2 transform hover:rotate-0 transition-transform duration-500 max-w-[80%]">
-                         <Shield className="w-32 h-32 text-primary opacity-5 mb-4 mx-auto" />
-                         <div className="space-y-2 text-center">
-                           <p className="text-[10px] font-black text-primary font-mono">{historyPreview.data.no}</p>
-                           <p className="text-[6px] text-gray-400 font-bold uppercase">Issued: {historyPreview.data.year}-09-22</p>
-                         </div>
+                        <Shield className="w-32 h-32 text-primary opacity-5 mb-4 mx-auto" />
+                        <div className="space-y-2 text-center">
+                          <p className="text-[10px] font-black text-primary font-mono">
+                            {historyPreview.data.no}
+                          </p>
+                          <p className="text-[6px] text-gray-400 font-bold uppercase">
+                            Issued: {historyPreview.data.year}-09-22
+                          </p>
+                        </div>
                       </div>
                       <div className="absolute bottom-10 flex flex-col items-center text-gray-400">
-                         <Camera className="w-8 h-8 mb-2 opacity-20" />
-                         <p className="text-[8px] font-black uppercase tracking-[0.3em]">Historical Photo Record</p>
+                        <Camera className="w-8 h-8 mb-2 opacity-20" />
+                        <p className="text-[8px] font-black uppercase tracking-[0.3em]">
+                          Historical Photo Record
+                        </p>
                       </div>
                     </div>
                   ) : (
                     <div className="w-full h-full p-10 flex flex-col items-center justify-center space-y-8 bg-white">
                       <div className="w-full max-w-sm space-y-4">
-                         <div className="h-4 bg-blue-50 rounded-full w-3/4 animate-pulse" />
-                         <div className="h-4 bg-gray-50 rounded-full w-full animate-pulse" />
-                         <div className="h-4 bg-gray-50 rounded-full w-5/6 animate-pulse" />
-                         <div className="h-40 bg-blue-50/30 rounded-2xl animate-pulse" />
-                         <div className="h-4 bg-gray-50 rounded-full w-2/3 animate-pulse" />
+                        <div className="h-4 bg-blue-50 rounded-full w-3/4 animate-pulse" />
+                        <div className="h-4 bg-gray-50 rounded-full w-full animate-pulse" />
+                        <div className="h-4 bg-gray-50 rounded-full w-5/6 animate-pulse" />
+                        <div className="h-40 bg-blue-50/30 rounded-2xl animate-pulse" />
+                        <div className="h-4 bg-gray-50 rounded-full w-2/3 animate-pulse" />
                       </div>
                       <div className="text-center">
-                         <FileText className="w-12 h-12 text-blue-600 opacity-20 mx-auto mb-4" />
-                         <p className="text-[10px] font-black text-blue-400 font-mono uppercase tracking-[0.2em]">Archived System PDF Document</p>
+                        <FileText className="w-12 h-12 text-blue-600 opacity-20 mx-auto mb-4" />
+                        <p className="text-[10px] font-black text-blue-400 font-mono uppercase tracking-[0.2em]">
+                          Archived System PDF Document
+                        </p>
                       </div>
                     </div>
                   )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 pt-4">
-                  <button 
-                    onClick={() => { alert('Downloading Archived Document...'); setHistoryPreview(null); }}
+                  <button
+                    onClick={() => {
+                      alert("Downloading Archived Document...");
+                      setHistoryPreview(null);
+                    }}
                     className="py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center space-x-2"
                   >
                     <Download className="w-4 h-4" />
                     <span>Download Archive</span>
                   </button>
-                  <button 
+                  <button
                     onClick={() => setHistoryPreview(null)}
                     className="py-4 bg-white border border-gray-200 text-gray-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-50 transition-all shadow-sm"
                   >

@@ -5,6 +5,7 @@ import {
   ReactNode,
   useEffect,
 } from "react";
+import { apiRequest } from "../lib/api";
 
 // 1. Interface matching your Prisma User model exactly
 interface User {
@@ -12,9 +13,11 @@ interface User {
   fullName: string;
   email: string;
   username: string;
+  phone?: string;
   roles: string[]; // Array of role names from your join table
   initials: string;
-  avatar?: string;
+  avatar?: string; // client-side field
+  photoUrl?: string; // backend field
   agencyName?: string;
 }
 
@@ -23,6 +26,7 @@ interface AuthContextType {
   token: string | null;
   login: (userData: any, token: string) => void; // Accepts real API response
   updateAvatar: (url: string) => void;
+  updateUserProfile: (profile: any) => Promise<User | null>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -64,7 +68,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       username: userData.username,
       roles: userData.roles || [],
       initials: initials,
-      avatar: userData.avatar,
+      avatar: userData.avatar ?? userData.photoUrl ?? userData.photo_url,
+      photoUrl: userData.photoUrl ?? userData.photo_url ?? userData.avatar,
+      phone: userData.phone,
       agencyName: userData.agencyName,
     };
 
@@ -82,11 +88,56 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem("efp_token");
   };
 
+  const updateUserProfile = async (profile: any) => {
+    const res = await apiRequest<{
+      success: boolean;
+      message: string;
+      data: any;
+    }>("/users/me", {
+      method: "PUT",
+      body: JSON.stringify(profile),
+    });
+
+    const updated = res.data;
+    if (!updated) return null;
+
+    const initials = updated.fullName
+      ? updated.fullName
+          .split(" ")
+          .map((n: string) => n[0])
+          .join("")
+          .toUpperCase()
+      : "U";
+
+    const cleanUser: User = {
+      id: updated.id,
+      fullName: updated.fullName,
+      email: updated.email,
+      username: updated.username,
+      roles: updated.roles || (user?.roles ?? []),
+      initials,
+      avatar: updated.photoUrl ?? updated.avatar ?? user?.avatar,
+      photoUrl: updated.photoUrl ?? updated.avatar ?? user?.photoUrl,
+      phone: updated.phone ?? user?.phone,
+      agencyName: updated.agencyName ?? user?.agencyName,
+    };
+
+    setUser(cleanUser);
+    localStorage.setItem("efp_user", JSON.stringify(cleanUser));
+
+    return cleanUser;
+  };
+
   const updateAvatar = (url: string) => {
+    // Persist avatar immediately to UI and then sync via API
     if (user) {
-      const updatedUser = { ...user, avatar: url };
-      setUser(updatedUser);
-      localStorage.setItem("efp_user", JSON.stringify(updatedUser));
+      const optimistic = { ...user, avatar: url };
+      setUser(optimistic);
+      localStorage.setItem("efp_user", JSON.stringify(optimistic));
+      // Fire-and-forget API call to persist
+      updateUserProfile({ photoUrl: url }).catch(() => {
+        // ignore errors here; user stays updated locally
+      });
     }
   };
 
@@ -97,6 +148,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         token,
         login,
         updateAvatar,
+        updateUserProfile,
         logout,
         isAuthenticated: !!token,
       }}

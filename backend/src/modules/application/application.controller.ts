@@ -162,3 +162,24 @@ export const rejectApplication = async (req: Request, res: Response) => {
     );
   }
 };
+
+export const getMyApplication = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.userId ?? (req as any).user?.id;
+    if (!userId) return ApiResponse.error(res, "Unauthorized request", 401);
+
+    const application = await ApplicationService.getLatestApplicationByUser(
+      Number(userId),
+    );
+    return ApiResponse.success(res, "Application fetched", application);
+  } catch (error: any) {
+    if (error.message.includes("not found"))
+      return ApiResponse.error(res, error.message, 404);
+    return ApiResponse.error(
+      res,
+      "Failed to fetch application.",
+      500,
+      error?.message,
+    );
+  }
+};

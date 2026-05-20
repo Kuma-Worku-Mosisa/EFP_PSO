@@ -152,13 +152,9 @@ export const createOrganizationDocumentsUploader = () => {
         );
       }
 
-      // Store mixed uploads in a temporary staging area first
-      const uploadDir = path.join(
-        UPLOAD_BASE_DIR,
-        "_tmp",
-        organizationName,
-        role,
-      );
+      // Store uploads directly in the final organization folder to save space
+      // and avoid double-moving files. Path: uploads/{organizationName}/{role}
+      const uploadDir = path.join(UPLOAD_BASE_DIR, organizationName, role);
 
       if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });

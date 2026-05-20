@@ -46,28 +46,28 @@ export const AutoDismissToast: React.FC<AutoDismissToastProps> = ({
     };
   }, [durationMs, isOpen, onClose]);
 
-  if (!isOpen) {
-    return null;
-  }
+  if (!isOpen) return null;
 
   const isSuccess = type === "success";
+
+  const borderColor = "#003366";
+  const accentColor = "#FFD700";
 
   return (
     <div className="fixed top-5 right-5 z-[100] w-[92vw] max-w-md">
       <div
-        className={`overflow-hidden rounded-2xl border bg-white shadow-2xl backdrop-blur-sm ${
-          isSuccess ? "border-emerald-200" : "border-rose-200"
-        }`}
+        style={{ borderColor }}
+        className={`overflow-hidden rounded-2xl border bg-white shadow-2xl backdrop-blur-sm`}
         role="status"
         aria-live="polite"
       >
         <div className="flex items-start gap-3 p-4">
           <div
-            className={`mt-0.5 flex h-9 w-9 items-center justify-center rounded-full ${
-              isSuccess
-                ? "bg-emerald-100 text-emerald-600"
-                : "bg-rose-100 text-rose-600"
-            }`}
+            className={`mt-0.5 flex h-9 w-9 items-center justify-center rounded-full`}
+            style={{
+              background: isSuccess ? accentColor : borderColor,
+              color: isSuccess ? borderColor : accentColor,
+            }}
           >
             {isSuccess ? (
               <CheckCircle2 className="h-5 w-5" />
@@ -95,10 +95,11 @@ export const AutoDismissToast: React.FC<AutoDismissToastProps> = ({
 
         <div className="h-1 w-full bg-gray-100">
           <div
-            className={`h-full transition-[width] duration-75 ease-linear ${
-              isSuccess ? "bg-emerald-500" : "bg-rose-500"
-            }`}
-            style={{ width: `${progress}%` }}
+            className={`h-full transition-[width] duration-75 ease-linear`}
+            style={{
+              width: `${progress}%`,
+              background: isSuccess ? borderColor : accentColor,
+            }}
           />
         </div>
       </div>

@@ -1,6 +1,6 @@
 // filepath: src/routes/application.routes.ts
 import { Router, Request, Response } from "express";
-import { submitApplication } from "./application.controller";
+import { submitApplication, getMyApplication } from "./application.controller";
 import { uploadDocuments, getOrganizationDocuments } from "./upload.controller";
 import { authenticate } from "../../middleware/auth"; // Ensure this matches your middleware file name
 import { getApplications } from "./application.controller";
@@ -44,6 +44,9 @@ router.post(
   // authenticate, // This populates req.user.id for the controller
   submitApplication,
 );
+
+// GET /api/applications/me - logged-in user's latest application
+router.get("/me", authenticate, getMyApplication);
 
 // GET /api/applications - list for admin review
 router.get(
