@@ -26,6 +26,11 @@ type PreviewFileInfo = {
   type: string;
 };
 
+type ApplicationPayload = {
+  status?: string | null;
+  applicationDate?: string | null;
+};
+
 const ViewerModal = ({
   isOpen,
   onClose,
@@ -127,6 +132,8 @@ export const FormalLetter = () => {
   const { language } = useLanguage();
   const { user, token } = useAuth();
   const [file, setFile] = React.useState<File | null>(null);
+  const [application, setApplication] =
+    React.useState<ApplicationPayload | null>(null);
   const [status, setStatus] = React.useState<
     "none" | "pending" | "approved" | "rejected" | "correction"
   >("none");
@@ -135,6 +142,9 @@ export const FormalLetter = () => {
   const [previewFileInfo, setPreviewFileInfo] =
     React.useState<PreviewFileInfo | null>(null);
   const [remoteUrl, setRemoteUrl] = React.useState<string | null>(null);
+  const [formalRequestDate, setFormalRequestDate] = React.useState<
+    string | null
+  >(null);
   const [loading, setLoading] = React.useState(false);
   const [toast, setToast] = React.useState<{
     isOpen: boolean;
@@ -171,6 +181,18 @@ export const FormalLetter = () => {
     return "none";
   };
 
+  const normalizeStatus = (value?: string | null) =>
+    String(value || "")
+      .trim()
+      .toLowerCase();
+
+  const safeYearFromDate = (value?: string | null) => {
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.getFullYear();
+  };
+
   React.useEffect(() => {
     if (file) {
       const url = URL.createObjectURL(file);
@@ -196,18 +218,38 @@ export const FormalLetter = () => {
 
       setLoading(true);
       try {
-        const response = await apiRequest<{ data: any }>(
+        const applicationRequest = apiRequest<{ data: ApplicationPayload }>(
+          "/applications/me",
+          {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          },
+        ).catch((error: any) => {
+          if (error?.statusCode === 404) {
+            return null;
+          }
+          throw error;
+        });
+
+        const formalRequest = apiRequest<{ data: any }>(
           `/formal-requests/user/${user.id}`,
           {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
           },
         );
 
+        const [applicationResponse, response] = await Promise.all([
+          applicationRequest,
+          formalRequest,
+        ]);
+
+        setApplication(applicationResponse?.data ?? null);
+
         const request = response?.data;
         if (request) {
           const mappedStatus = mapStatus(request.status);
           setStatus(mappedStatus);
           setRemoteUrl(request.requestLetterUrl || null);
+          setFormalRequestDate(request.updatedAt || request.createdAt || null);
           setOpenedForEdit(mappedStatus === "rejected");
         }
       } catch (error: any) {
@@ -277,6 +319,19 @@ export const FormalLetter = () => {
   };
 
   const curT = t_letter[language as keyof typeof t_letter] || t_letter.en;
+  const applicationStatus = normalizeStatus(application?.status);
+  const isApplicationApproved = applicationStatus === "approved";
+  const approvedFormalRequestYear = safeYearFromDate(formalRequestDate);
+  const currentYear = new Date().getFullYear();
+  const shouldShowWaitCard =
+    status === "approved" &&
+    isApplicationApproved &&
+    approvedFormalRequestYear === currentYear;
+
+  const waitCardMessage =
+    language === "am"
+      ? `የፈቃድ ደብዳቤ ጥያቄዎ እና ማመልከቻዎ ተፈቅደዋል። በዚህ ዓመት አዲስ የፈቃድ ደብዳቤ መላክ አይቻልም። እባክዎ 1 ዓመት እስኪሞላ ይጠብቁ።`
+      : `Your formal letter request and your application are both approved. You can submit a new formal letter request only after one year has passed, so please wait until then.`;
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -497,7 +552,24 @@ export const FormalLetter = () => {
           </div>
         )}
 
-        {status === "approved" && (
+        {shouldShowWaitCard ? (
+          <div className="p-12 text-center space-y-6">
+            <div className="w-20 h-20 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto">
+              <Clock className="w-10 h-10 animate-pulse" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-bold text-primary">
+                {language === "am"
+                  ? "አዲስ የፈቃድ ደብዳቤ ገና አይቻልም"
+                  : "New Formal Letter Request Is Temporarily Closed"}
+              </h3>
+              <p className="text-gray-500">{waitCardMessage}</p>
+            </div>
+            <div className="inline-block px-4 py-2 bg-amber-100 text-amber-700 rounded-full text-xs font-bold uppercase tracking-wider">
+              {language === "am" ? "እባክዎ 1 ዓመት ይጠብቁ" : "Please wait for 1 year"}
+            </div>
+          </div>
+        ) : status === "approved" ? (
           <div className="p-12 text-center space-y-6">
             <div className="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-10 h-10" />
@@ -515,7 +587,7 @@ export const FormalLetter = () => {
               {curT.approvedBtn}
             </button>
           </div>
-        )}
+        ) : null}
 
         {status === "rejected" && (
           <div className="p-12 text-center space-y-6">

@@ -1912,12 +1912,15 @@ export const NewApplication = () => {
     const currentYear = new Date().getFullYear();
 
     const normalizeStatus = (value: unknown) =>
-      String(value || "").trim().toLowerCase();
+      String(value || "")
+        .trim()
+        .toLowerCase();
 
     const getRequestYear = (request: any) => {
-      const fileName = String(request?.requestLetterUrl || "")
-        .split(/[\\/]/)
-        .pop() || "";
+      const fileName =
+        String(request?.requestLetterUrl || "")
+          .split(/[\\/]/)
+          .pop() || "";
       const fileYear = fileName.match(/^(20\d{2})-/)?.[1];
       if (fileYear) {
         return Number(fileYear);
@@ -1982,7 +1985,8 @@ export const NewApplication = () => {
           ? new Date(applicationDate).getFullYear()
           : null;
         const isBlockingApplication =
-          (applicationStatus === "pending" || applicationStatus === "approved") &&
+          (applicationStatus === "pending" ||
+            applicationStatus === "approved") &&
           (applicationYear === null || applicationYear === currentYear);
 
         if (!cancelled) {
