@@ -78,7 +78,7 @@ export const AutoDismissToast: React.FC<AutoDismissToastProps> = ({
 
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-gray-900">
-              {isSuccess ? "Success" : "Action Required"}
+              {isSuccess ? "Success" : "Error"}
             </p>
             <p className="mt-1 text-sm leading-5 text-gray-600">{message}</p>
           </div>

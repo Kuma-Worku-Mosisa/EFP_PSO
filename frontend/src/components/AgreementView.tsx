@@ -88,6 +88,11 @@ export const AgreementView: React.FC<AgreementViewProps> = ({
       .filter(Boolean)
       .join(", ") || "---";
 
+  const orgDisplayName =
+    language === "am"
+      ? org?.nameAmharic || org?.name || org?.nameEnglish || "---"
+      : org?.nameEnglish || org?.name || org?.nameAmharic || "---";
+
   // PDF Export Engine
   const handleDownloadPDF = async () => {
     if (!contentRef.current) return;
@@ -264,7 +269,7 @@ export const AgreementView: React.FC<AgreementViewProps> = ({
                     <p className="text-justify indent-8">
                       እኛ{" "}
                       <span className="font-semibold text-gray-900 underline px-1">
-                        {safeText(org?.name, "የተቋሙ ስም")}
+                        {orgDisplayName}
                       </span>{" "}
                       የግል ጥበቃ አገልግሎት ተቋማት ኃላ/የተ/የግ/ማህበር የከፈትነው ዋና መስሪያ ቤት አድራሻ፡
                       ክልል{" "}
@@ -357,7 +362,7 @@ export const AgreementView: React.FC<AgreementViewProps> = ({
                     <p className="text-justify indent-8">
                       We{" "}
                       <span className="font-semibold text-gray-900 underline px-1">
-                        {safeText(org?.name, "Agency Name")}
+                        {orgDisplayName}
                       </span>
                       , a Private Protection Service Institution, having our
                       main office address at: Region/City{" "}

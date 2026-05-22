@@ -2,10 +2,8 @@
 import React, { useState, useEffect } from "react";
 import {
   Briefcase,
-  GraduationCap,
   Award,
   Plus,
-  ChevronRight,
   UserPlus,
   Trash2,
   Edit3,
@@ -21,16 +19,20 @@ const API_BASE_URL = "http://localhost:5000/api/positions";
 
 // --- Type Interfaces ---
 interface PositionRequirement {
+  id?: number;
+  level?: number | null;
   minimumExperienceYears: number | null;
   requiredEducationLevel: string | null;
-  requiredExperienceField: string | null;
+  requiredWorkExperienceYears: number | null;
 }
+
+type PositionRequirementsValue = PositionRequirement[] | null;
 
 interface Position {
   id: number;
   name: string;
   _count: { employees: number };
-  requirements: PositionRequirement | null;
+  requirements: PositionRequirementsValue;
 }
 
 export default function PositionManagement() {
@@ -52,15 +54,40 @@ export default function PositionManagement() {
   } | null>(null);
 
   // Modal & Form States
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isNameModalOpen, setIsNameModalOpen] = useState(false);
+  const [isCriteriaModalOpen, setIsCriteriaModalOpen] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [criteriaTargetPosition, setCriteriaTargetPosition] =
+    useState<Position | null>(null);
   const [formName, setFormName] = useState("");
-  const [formExpYears, setFormExpYears] = useState<number | "">("");
-  const [formEduLevel, setFormEduLevel] = useState("");
-  const [formExpField, setFormExpField] = useState("");
+  const [criteriaDrafts, setCriteriaDrafts] = useState<PositionRequirement[]>([
+    {
+      level: 1,
+      minimumExperienceYears: null,
+      requiredEducationLevel: "",
+      requiredWorkExperienceYears: null,
+    },
+  ]);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Position | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isCriteriaConfirmOpen, setIsCriteriaConfirmOpen] = useState(false);
+  const [pendingCriteriaRequirements, setPendingCriteriaRequirements] =
+    useState<PositionRequirement[] | null>(null);
+  const [isCriteriaSaving, setIsCriteriaSaving] = useState(false);
+  // UI helpers
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const getRequirementsList = (
+    requirements: PositionRequirementsValue,
+  ): PositionRequirement[] => {
+    if (!requirements) return [];
+    return requirements;
+  };
+
+  const filteredPositions = positions.filter((p) =>
+    p.name.toLowerCase().includes(searchQuery.trim().toLowerCase()),
+  );
 
   // 1. Initial Load Hook
   useEffect(() => {
@@ -94,44 +121,72 @@ export default function PositionManagement() {
   };
 
   // 3. Open Modal Configuration Controller
-  const openModal = (pos: Position | null = null) => {
+  const openNameModal = (pos: Position | null = null) => {
     setErrorMessage(null);
     if (pos) {
-      setIsEditing(true);
       setFormName(pos.name);
-      setFormExpYears(pos.requirements?.minimumExperienceYears ?? "");
-      setFormEduLevel(pos.requirements?.requiredEducationLevel ?? "");
-      setFormExpField(pos.requirements?.requiredExperienceField ?? "");
+      setIsEditingName(true);
     } else {
-      setIsEditing(false);
       setFormName("");
-      setFormExpYears("");
-      setFormEduLevel("");
-      setFormExpField("");
+      setIsEditingName(false);
     }
-    setIsModalOpen(true);
+    setIsNameModalOpen(true);
   };
 
-  // 4. HTTP POST / PUT - Save handler
-  const handleSavePosition = async (e: React.FormEvent) => {
+  const resetCriteriaForm = () => {
+    setCriteriaDrafts([
+      {
+        level: 1,
+        minimumExperienceYears: null,
+        requiredEducationLevel: "",
+        requiredWorkExperienceYears: null,
+      },
+    ]);
+  };
+
+  const openCriteriaModal = (pos: Position | null = selectedPosition) => {
+    if (!pos) {
+      setErrorMessage("Select a position before adding criteria.");
+      return;
+    }
+
+    setErrorMessage(null);
+    setCriteriaTargetPosition(pos);
+    const requirementList = getRequirementsList(pos.requirements);
+    setCriteriaDrafts(
+      requirementList.length > 0
+        ? requirementList.map((requirement, index) => ({
+            id: requirement.id,
+            level: requirement.level ?? index + 1,
+            minimumExperienceYears: requirement.minimumExperienceYears,
+            requiredEducationLevel: requirement.requiredEducationLevel ?? "",
+            requiredWorkExperienceYears:
+              requirement.requiredWorkExperienceYears,
+          }))
+        : [
+            {
+              level: 1,
+              minimumExperienceYears: null,
+              requiredEducationLevel: "",
+              requiredWorkExperienceYears: null,
+            },
+          ],
+    );
+    setIsCriteriaModalOpen(true);
+  };
+
+  // 4. HTTP POST / PUT - Save handler for position name only
+  const handleSavePositionName = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
-    const payload = {
-      name: formName,
-      requirements: {
-        minimumExperienceYears:
-          formExpYears !== "" ? Number(formExpYears) : null,
-        requiredEducationLevel: formEduLevel.trim() || null,
-        requiredExperienceField: formExpField.trim() || null,
-      },
-    };
+    const payload = { name: formName };
 
     const url =
-      isEditing && selectedPosition
+      isEditingName && selectedPosition
         ? `${API_BASE_URL}/${selectedPosition.id}`
         : API_BASE_URL;
-    const method = isEditing ? "PUT" : "POST";
+    const method = isEditingName ? "PUT" : "POST";
 
     try {
       const response = await fetch(url, {
@@ -143,18 +198,13 @@ export default function PositionManagement() {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        setIsModalOpen(false);
-        // Refresh local memory indexes directly from the backend response tracking states
+        setIsNameModalOpen(false);
         await fetchPositions();
-
-        if (isEditing && selectedPosition) {
-          // Keep current target contextual selection in view
-          setSelectedPosition(result.data || result.data[0]);
-        }
+        setSelectedPosition(result.data || selectedPosition);
         setToast({
           isOpen: true,
           type: "success",
-          message: isEditing
+          message: isEditingName
             ? "Position updated successfully."
             : "Position created successfully.",
         });
@@ -169,6 +219,90 @@ export default function PositionManagement() {
       const message = "Failed to connect to transmission pathways.";
       setErrorMessage(message);
       setToast({ isOpen: true, type: "error", message });
+    }
+  };
+
+  // 5. HTTP POST / PUT - Save handler for requirement criteria only
+  const handleSaveCriteria = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!criteriaTargetPosition) {
+      setErrorMessage("Select a position before saving criteria.");
+      return;
+    }
+
+    setErrorMessage(null);
+
+    const normalizedRequirements = criteriaDrafts
+      .slice()
+      .sort((left, right) => (left.level ?? 0) - (right.level ?? 0))
+      .map((criteria) => ({
+        level: criteria.level,
+        minimumExperienceYears: criteria.minimumExperienceYears,
+        requiredEducationLevel: criteria.requiredEducationLevel?.trim() || null,
+        requiredWorkExperienceYears: criteria.requiredWorkExperienceYears,
+      }))
+      .filter(
+        (criteria) =>
+          criteria.minimumExperienceYears !== null ||
+          criteria.requiredEducationLevel !== null ||
+          criteria.requiredWorkExperienceYears !== null,
+      );
+
+    if (normalizedRequirements.length === 0) {
+      setErrorMessage("Add at least one criteria row before saving.");
+      return;
+    }
+
+    setPendingCriteriaRequirements(normalizedRequirements);
+    setIsCriteriaConfirmOpen(true);
+  };
+
+  const handleConfirmSaveCriteria = async () => {
+    if (!criteriaTargetPosition || !pendingCriteriaRequirements) return;
+
+    const payload = {
+      name: criteriaTargetPosition.name,
+      requirements: pendingCriteriaRequirements,
+    };
+
+    setIsCriteriaSaving(true);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/${criteriaTargetPosition.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setIsCriteriaConfirmOpen(false);
+        setIsCriteriaModalOpen(false);
+        setPendingCriteriaRequirements(null);
+        resetCriteriaForm();
+        await fetchPositions();
+        setSelectedPosition(result.data || criteriaTargetPosition);
+        setToast({
+          isOpen: true,
+          type: "success",
+          message: "Position criteria saved successfully.",
+        });
+      } else {
+        const message =
+          result.message || "Validation gate blocked criteria persistence.";
+        setErrorMessage(message);
+        setToast({ isOpen: true, type: "error", message });
+      }
+    } catch (err) {
+      const message = "Failed to connect to transmission pathways.";
+      setErrorMessage(message);
+      setToast({ isOpen: true, type: "error", message });
+    } finally {
+      setIsCriteriaSaving(false);
     }
   };
 
@@ -219,16 +353,38 @@ export default function PositionManagement() {
     <div className="max-w-7xl mx-auto p-6 flex flex-col md:flex-row gap-6 h-[calc(100vh-4rem)]">
       {/* LEFT PANEL: Master Directory */}
       <div className="w-full md:w-1/3 flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-black text-[#0C2A4C] uppercase tracking-tighter">
-            Positions Directory
-          </h2>
-          <button
-            onClick={() => openModal(null)}
-            className="bg-[#0C2A4C] text-[#DCC380] p-2 rounded-xl hover:bg-opacity-90 shadow-sm transition-all"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
+        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
+          <div className="flex flex-col gap-4">
+            <div className="min-w-0">
+              <h2 className="text-lg font-extrabold tracking-tight text-slate-900 md:text-xl">
+                Positions
+              </h2>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Directory of enterprise positions
+              </p>
+            </div>
+
+            <div className="min-w-0">
+              <label className="sr-only">Search positions</label>
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search positions..."
+                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-[#0C2A4C] focus:outline-none focus:ring-2 focus:ring-[#0C2A4C]/10"
+              />
+            </div>
+
+            <button
+              onClick={() => openNameModal(null)}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0C2A4C] px-4 py-2.5 text-[#DCC380] shadow-sm transition hover:bg-opacity-95"
+              aria-label="Create position"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="text-xs font-bold uppercase tracking-wider">
+                New Position
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* Global Inline Notifications Block */}
@@ -248,40 +404,72 @@ export default function PositionManagement() {
                 Syncing Database Matrix...
               </span>
             </div>
-          ) : positions.length === 0 ? (
-            <div className="text-center py-12 text-gray-400 text-xs font-medium border border-dashed border-gray-200 rounded-2xl">
-              No positions registered inside directory engine.
+          ) : filteredPositions.length === 0 ? (
+            <div className="text-center py-12 text-gray-400 text-sm font-medium border border-dashed border-gray-200 rounded-2xl">
+              {positions.length === 0
+                ? "No positions registered yet."
+                : "No positions match your search."}
             </div>
           ) : (
-            positions.map((pos) => (
+            filteredPositions.map((pos) => (
               <div
                 key={pos.id}
                 onClick={() => {
                   setSelectedPosition(pos);
                   setErrorMessage(null);
                 }}
-                className={`group flex items-center justify-between p-4 rounded-2xl cursor-pointer border-2 transition-all ${
+                className={`group flex items-center justify-between p-3 rounded-2xl cursor-pointer border transition-all hover:shadow-sm ${
                   selectedPosition?.id === pos.id
-                    ? "border-[#0C2A4C] bg-[#0C2A4C]/5 shadow-sm"
-                    : "border-gray-100 bg-white hover:border-gray-200"
+                    ? "border-[#0C2A4C] bg-[#0C2A4C]/6"
+                    : "border-gray-100 bg-white"
                 }`}
               >
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                   <div
-                    className={`p-3 rounded-xl ${selectedPosition?.id === pos.id ? "bg-[#0C2A4C] text-[#DCC380]" : "bg-gray-50 text-gray-400"}`}
+                    className={`p-2 rounded-lg flex items-center justify-center ${
+                      selectedPosition?.id === pos.id
+                        ? "bg-[#0C2A4C] text-[#DCC380]"
+                        : "bg-gray-50 text-gray-500"
+                    }`}
                   >
-                    <Briefcase className="w-5 h-5" />
+                    <Briefcase className="w-4 h-4" />
                   </div>
-                  <div>
-                    <h3 className="font-bold text-sm text-gray-700">
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-sm text-slate-900 truncate">
                       {pos.name}
                     </h3>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                      {pos._count?.employees || 0} Staff Members
-                    </p>
+                    <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                      <span className="uppercase tracking-wide">
+                        {pos._count?.employees || 0} staff
+                      </span>
+                      <span className="px-2 py-0.5 bg-slate-100 rounded-full text-[11px] text-slate-700">
+                        {getRequirementsList(pos.requirements).length} criteria
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-gray-300" />
+                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openNameModal(pos);
+                    }}
+                    title="Edit"
+                    className="p-2 rounded-md text-slate-600 hover:bg-gray-50"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      requestDeletePosition(pos);
+                    }}
+                    title="Delete"
+                    className="p-2 rounded-md text-red-500 hover:bg-red-50"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             ))
           )}
@@ -289,116 +477,147 @@ export default function PositionManagement() {
       </div>
 
       {/* RIGHT PANEL: Command Center View */}
-      <div className="w-full md:w-2/3 bg-white border-2 border-gray-100 rounded-[32px] flex flex-col overflow-hidden shadow-sm">
+      <div className="w-full md:w-2/3 bg-white border border-gray-100 rounded-2xl flex flex-col overflow-hidden shadow">
         {selectedPosition ? (
           <>
-            <div className="p-8 border-b border-gray-100 bg-gray-50/50 flex justify-between items-start">
+            <div className="p-6 border-b border-gray-100 bg-white flex justify-between items-center">
               <div>
-                <h2 className="text-3xl font-black text-[#0C2A4C] uppercase tracking-tighter mb-2">
+                <h2 className="text-2xl font-bold text-slate-900 leading-tight">
                   {selectedPosition.name}
                 </h2>
-                <span className="inline-flex items-center gap-1.5 bg-[#0C2A4C]/10 text-[#0C2A4C] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest">
-                  ID Node: {selectedPosition.id}
-                </span>
+                <p className="text-xs text-slate-500 mt-1">
+                  ID • {selectedPosition.id} •{" "}
+                  {selectedPosition._count?.employees || 0} staff
+                </p>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={() => openModal(selectedPosition)}
-                  className="p-2 border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-colors"
+                  onClick={() => openCriteriaModal(selectedPosition)}
+                  className="inline-flex items-center gap-2 px-3 py-2 border border-[#DCC380]/30 rounded-lg text-[#0C2A4C] hover:bg-[#DCC380]/10"
+                >
+                  <Award className="w-4 h-4" />
+                  <span className="text-sm font-semibold">Edit Criteria</span>
+                </button>
+                <button
+                  onClick={() => openNameModal(selectedPosition)}
+                  className="inline-flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-slate-700 hover:bg-gray-50"
                 >
                   <Edit3 className="w-4 h-4" />
+                  <span className="text-sm">Rename</span>
                 </button>
                 <button
                   onClick={() => requestDeletePosition(selectedPosition)}
-                  className="p-2 border border-red-100 text-red-500 rounded-xl hover:bg-red-50 transition-colors"
+                  className="inline-flex items-center gap-2 px-3 py-2 border border-red-100 rounded-lg text-red-600 hover:bg-red-50"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
-            <div className="flex px-8 border-b border-gray-100 mt-4">
-              <button
-                onClick={() => setActiveTab("details")}
-                className={`pb-4 px-4 text-xs font-black uppercase tracking-widest border-b-2 ${activeTab === "details" ? "border-[#0C2A4C] text-[#0C2A4C]" : "border-transparent text-gray-400"}`}
-              >
-                Requirements Matrix
-              </button>
-              <button
-                onClick={() => setActiveTab("employees")}
-                className={`pb-4 px-4 text-xs font-black uppercase tracking-widest border-b-2 ${activeTab === "employees" ? "border-[#0C2A4C] text-[#0C2A4C]" : "border-transparent text-gray-400"}`}
-              >
-                Manage Allocated Staff
-              </button>
+            <div className="px-6 border-b border-gray-100">
+              <nav className="flex gap-4">
+                <button
+                  onClick={() => setActiveTab("details")}
+                  className={`py-3 px-4 text-sm font-semibold rounded-t-lg ${
+                    activeTab === "details"
+                      ? "bg-[#0C2A4C]/6 text-[#0C2A4C]"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  Requirements
+                </button>
+                <button
+                  onClick={() => setActiveTab("employees")}
+                  className={`py-3 px-4 text-sm font-semibold rounded-t-lg ${
+                    activeTab === "employees"
+                      ? "bg-[#0C2A4C]/6 text-[#0C2A4C]"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  Allocated Staff
+                </button>
+              </nav>
             </div>
 
-            <div className="p-8 flex-1 overflow-y-auto">
+            <div className="p-6 flex-1 overflow-y-auto">
               {activeTab === "details" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-                    <div className="flex items-center gap-3 mb-4">
-                      <Award className="w-5 h-5 text-[#DCC380]" />
-                      <h4 className="font-bold text-[#0C2A4C] text-sm uppercase tracking-wider">
-                        Experience Controls
-                      </h4>
-                    </div>
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                          Minimum Record Barrier
-                        </p>
-                        <p className="text-gray-800 font-semibold">
-                          {selectedPosition.requirements
-                            ?.minimumExperienceYears ?? "0"}{" "}
-                          Years Required
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                          Target Field Domain
-                        </p>
-                        <p className="text-gray-800 font-semibold">
-                          {selectedPosition.requirements
-                            ?.requiredExperienceField ||
-                            "No Structural Constraints"}
-                        </p>
-                      </div>
-                    </div>
+                <div className="bg-slate-50 rounded-lg p-4 border border-gray-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-semibold text-slate-900">
+                      Requirement Criteria
+                    </h4>
+                    <button
+                      onClick={() => openCriteriaModal(selectedPosition)}
+                      className="text-sm text-[#0C2A4C] font-semibold"
+                    >
+                      Edit
+                    </button>
                   </div>
-
-                  <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-                    <div className="flex items-center gap-3 mb-4">
-                      <GraduationCap className="w-5 h-5 text-[#DCC380]" />
-                      <h4 className="font-bold text-[#0C2A4C] text-sm uppercase tracking-wider">
-                        Academic Education
-                      </h4>
+                  {getRequirementsList(selectedPosition.requirements).length >
+                  0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-xs text-slate-500 uppercase">
+                            <th className="px-3 py-2">#</th>
+                            <th className="px-3 py-2">For Certificate Level</th>
+                            <th className="px-3 py-2">Minimum Experence</th>
+                            <th className="px-3 py-2">Education Level</th>
+                            <th className="px-3 py-2">Work Experience</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {getRequirementsList(
+                            selectedPosition.requirements,
+                          ).map((requirement, index) => (
+                            <tr
+                              key={requirement.id ?? index}
+                              className="bg-white"
+                            >
+                              <td className="px-3 py-3 font-medium text-slate-800">
+                                {index + 1}
+                              </td>
+                              <td className="px-3 py-3 text-slate-700">
+                                Level {requirement.level ?? index + 1}
+                              </td>
+                              <td className="px-3 py-3 text-slate-700">
+                                {requirement.minimumExperienceYears ?? 0} yrs
+                              </td>
+                              <td className="px-3 py-3 text-slate-700">
+                                {requirement.requiredEducationLevel || "Open"}
+                              </td>
+                              <td className="px-3 py-3 text-slate-700">
+                                {requirement.requiredWorkExperienceYears ?? 0}{" "}
+                                yrs
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                      Required Accreditation Matrix
+                  ) : (
+                    <p className="text-sm text-slate-500">
+                      No criteria configured yet.
                     </p>
-                    <p className="text-gray-800 font-semibold mt-1">
-                      {selectedPosition.requirements?.requiredEducationLevel ||
-                        "Open Parameters / Non-restricted"}
-                    </p>
-                  </div>
+                  )}
                 </div>
               )}
 
               {activeTab === "employees" && (
-                <div className="flex flex-col items-center justify-center text-center h-full py-12">
-                  <div className="w-14 h-14 bg-[#0C2A4C]/5 text-[#0C2A4C] rounded-full flex items-center justify-center mb-3">
-                    <UserPlus className="w-6 Sec h-6" />
-                  </div>
-                  <h3 className="text-base font-black text-[#0C2A4C] uppercase tracking-tight">
-                    Allocate Workforce Nodes
+                <div className="p-6">
+                  <h3 className="text-sm font-semibold text-slate-900 mb-2">
+                    Manage Allocated Staff
                   </h3>
-                  <p className="text-xs text-gray-500 max-w-xs mt-1 mb-4">
-                    Bridge staff entities to the {selectedPosition.name}{" "}
-                    directory structure layer.
+                  <p className="text-sm text-slate-500 mb-4">
+                    Bridge staff entities to the{" "}
+                    <strong>{selectedPosition.name}</strong> directory layer.
                   </p>
-                  <button className="bg-[#0C2A4C] text-[#DCC380] px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-opacity-90 transition-all">
-                    Initialize Router Bridge
+                  <button className="inline-flex items-center gap-2 bg-[#0C2A4C] text-[#DCC380] px-4 py-2 rounded-lg">
+                    <UserPlus className="w-4 h-4" />
+                    <span className="text-sm font-semibold">
+                      Initialize Bridge
+                    </span>
                   </button>
                 </div>
               )}
@@ -414,107 +633,271 @@ export default function PositionManagement() {
         )}
       </div>
 
-      {/* --- CRUD MODAL COMPONENT OVERLAY --- */}
-      {isModalOpen && (
+      {/* --- POSITION NAME MODAL --- */}
+      {isNameModalOpen && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-[24px] max-w-md w-full p-6 shadow-2xl relative border border-gray-100">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-lg relative border border-gray-100">
             <button
-              onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              onClick={() => setIsNameModalOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+              aria-label="close"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="text-lg font-black text-[#0C2A4C] uppercase tracking-tight mb-4">
-              {isEditing
-                ? "Modify Position Parameters"
-                : "Register New Enterprise Position"}
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">
+              {isEditingName ? "Rename Position" : "Create Position"}
             </h3>
+            <p className="text-xs text-slate-500 mb-4">
+              Provide a clear position name.
+            </p>
 
-            <form onSubmit={handleSavePosition} className="space-y-4">
+            <form onSubmit={handleSavePositionName} className="space-y-4">
               <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">
-                  Position Profile Name *
+                <label className="block text-xs text-slate-500 mb-1">
+                  Position Name *
                 </label>
                 <input
                   type="text"
                   required
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-[#0C2A4C]"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:ring-1 focus:ring-[#0C2A4C]"
                   placeholder="e.g. System Security Architect"
                 />
-              </div>
-
-              <div className="border-t border-gray-100 pt-3">
-                <h4 className="text-xs font-bold text-[#DCC380] uppercase tracking-wide mb-3">
-                  Linked Parameters & Requirements
-                </h4>
-
-                <div className="grid grid-cols-3 gap-3 mb-3">
-                  <div className="col-span-1">
-                    <label className="block text-[9px] font-bold text-gray-400 uppercase mb-1">
-                      Min Exp (Yrs)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={formExpYears}
-                      onChange={(e) =>
-                        setFormExpYears(
-                          e.target.value !== "" ? Number(e.target.value) : "",
-                        )
-                      }
-                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-[#0C2A4C]"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="block text-[9px] font-bold text-gray-400 uppercase mb-1">
-                      Education Level Track
-                    </label>
-                    <input
-                      type="text"
-                      value={formEduLevel}
-                      onChange={(e) => setFormEduLevel(e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-[#0C2A4C]"
-                      placeholder="e.g. B.Sc. Software Engineering"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[9px] font-bold text-gray-400 uppercase mb-1">
-                    Specialization Field Scope
-                  </label>
-                  <input
-                    type="text"
-                    value={formExpField}
-                    onChange={(e) => setFormExpField(e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-[#0C2A4C]"
-                    placeholder="e.g. Backend Systems Security"
-                  />
-                </div>
               </div>
 
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="w-1/3 py-2.5 border border-gray-200 rounded-xl text-xs font-black uppercase text-gray-500 hover:bg-gray-50"
+                  onClick={() => setIsNameModalOpen(false)}
+                  className="flex-1 py-2 rounded-lg border border-gray-200 text-sm text-slate-600 hover:bg-gray-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="w-2/3 py-2.5 bg-[#0C2A4C] text-[#DCC380] rounded-xl text-xs font-black uppercase tracking-wider hover:bg-opacity-95"
+                  className="flex-1 py-2 rounded-lg bg-[#0C2A4C] text-[#DCC380] text-sm font-semibold"
                 >
-                  Save Structural Parameters
+                  Save
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* --- POSITION CRITERIA MODAL --- */}
+      {isCriteriaModalOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-lg relative border border-gray-100 max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => {
+                setIsCriteriaModalOpen(false);
+                resetCriteriaForm();
+              }}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+              aria-label="close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-1">
+              Manage Requirement Criteria
+            </h3>
+            <p className="text-sm text-slate-500 mb-4">
+              {criteriaTargetPosition
+                ? criteriaTargetPosition.name
+                : "Select a position"}
+            </p>
+
+            <form onSubmit={handleSaveCriteria} className="space-y-4">
+              {criteriaDrafts.map((criteria, index) => (
+                <div
+                  key={criteria.id ?? index}
+                  className="rounded-lg border border-gray-100 bg-slate-50 p-4"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium text-slate-900">
+                      Criteria {index + 1}
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCriteriaDrafts((current) =>
+                          current.length === 1
+                            ? current
+                            : current.filter((_, i) => i !== index),
+                        )
+                      }
+                      className="text-sm text-red-500"
+                      disabled={criteriaDrafts.length === 1}
+                    >
+                      Remove
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1">
+                        Level
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={criteria.level ?? ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setCriteriaDrafts((current) =>
+                            current.map((item, i) =>
+                              i === index
+                                ? {
+                                    ...item,
+                                    level: value !== "" ? Number(value) : null,
+                                  }
+                                : item,
+                            ),
+                          );
+                        }}
+                        className="w-full px-3 py-2 rounded-md border border-gray-200 text-sm"
+                        placeholder="e.g. 1"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1">
+                        Min Exp (yrs)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={criteria.minimumExperienceYears ?? ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setCriteriaDrafts((current) =>
+                            current.map((item, i) =>
+                              i === index
+                                ? {
+                                    ...item,
+                                    minimumExperienceYears:
+                                      value !== "" ? Number(value) : null,
+                                  }
+                                : item,
+                            ),
+                          );
+                        }}
+                        className="w-full px-3 py-2 rounded-md border border-gray-200 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1">
+                        Education Level
+                      </label>
+                      <input
+                        type="text"
+                        value={criteria.requiredEducationLevel ?? ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setCriteriaDrafts((current) =>
+                            current.map((item, i) =>
+                              i === index
+                                ? { ...item, requiredEducationLevel: value }
+                                : item,
+                            ),
+                          );
+                        }}
+                        className="w-full px-3 py-2 rounded-md border border-gray-200 text-sm"
+                        placeholder="e.g. B.Sc. Software Engineering"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1">
+                        Work Exp (yrs)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={criteria.requiredWorkExperienceYears ?? ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setCriteriaDrafts((current) =>
+                            current.map((item, i) =>
+                              i === index
+                                ? {
+                                    ...item,
+                                    requiredWorkExperienceYears:
+                                      value !== "" ? Number(value) : null,
+                                  }
+                                : item,
+                            ),
+                          );
+                        }}
+                        className="w-full px-3 py-2 rounded-md border border-gray-200 text-sm"
+                        placeholder="e.g. 3"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={() =>
+                  setCriteriaDrafts((current) => [
+                    ...current,
+                    {
+                      level: current.length + 1,
+                      minimumExperienceYears: null,
+                      requiredEducationLevel: "",
+                      requiredWorkExperienceYears: null,
+                    },
+                  ])
+                }
+                className="w-full py-2 rounded-md border border-dashed border-[#0C2A4C]/30 text-[#0C2A4C] text-sm"
+              >
+                Add Criteria
+              </button>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCriteriaModalOpen(false);
+                    resetCriteriaForm();
+                  }}
+                  className="flex-1 py-2 rounded-md border border-gray-200 text-sm text-slate-600 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2 rounded-md bg-[#0C2A4C] text-[#DCC380] text-sm font-semibold"
+                >
+                  Save Criteria
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <ConfirmDialog
+        isOpen={isCriteriaConfirmOpen}
+        onClose={() => {
+          if (isCriteriaSaving) return;
+          setIsCriteriaConfirmOpen(false);
+          setPendingCriteriaRequirements(null);
+        }}
+        onConfirm={handleConfirmSaveCriteria}
+        title="Save Criteria"
+        message={
+          criteriaTargetPosition
+            ? `Save the updated requirement criteria for ${criteriaTargetPosition.name}?`
+            : "Save the updated requirement criteria?"
+        }
+        type="update"
+        isLoading={isCriteriaSaving}
+        isConfirmDisabled={!pendingCriteriaRequirements}
+      />
 
       <ConfirmDialog
         isOpen={isConfirmOpen}

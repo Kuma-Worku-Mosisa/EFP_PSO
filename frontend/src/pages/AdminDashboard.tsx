@@ -420,6 +420,11 @@ export const AdminDashboard = () => {
     },
     {
       icon: <FileCheck className="w-5 h-5" />,
+      label: isAm ? "መደበኛ ደብዳቤዎች" : "Formal Requests",
+      path: "/admin/formal-requests",
+    },
+    {
+      icon: <FileCheck className="w-5 h-5" />,
       label: t.dashboard.applications,
       path: "/admin/applications",
     },
@@ -464,11 +469,6 @@ export const AdminDashboard = () => {
       icon: <Files className="w-5 h-5" />,
       label: isAm ? "የህዝብ ሰነዶች" : "Public Documents",
       path: "/admin/content",
-    },
-    {
-      icon: <FileCheck className="w-5 h-5" />,
-      label: isAm ? "መደበኛ ደብዳቤዎች" : "Formal Requests",
-      path: "/admin/formal-requests",
     },
     {
       icon: <HelpCircle className="w-5 h-5" />,

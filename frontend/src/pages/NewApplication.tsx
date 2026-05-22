@@ -1,6 +1,7 @@
 //frontend/src/pages/NewApplication.tsx
 import React from "react";
 import { useLanguage } from "../context/LanguageContext";
+import { useAuth } from "../context/AuthContext";
 import {
   CheckCircle2,
   FileText,
@@ -19,11 +20,12 @@ import {
   Plus,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
 import { cn } from "../lib/utils";
+import { mapLocalizedLocationRows } from "../lib/locationLabels";
 
 import { apiRequest } from "../lib/api";
 import { uploadOrganizationDocuments } from "../lib/fileUploadHelper";
@@ -37,6 +39,22 @@ const personnelSchema = z.object({
   phone: z.string().min(10, "Invalid phone number"),
   faydaId: z.string().min(1, "Fayda ID is required"),
   otp: z.string().optional(),
+  positionId: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? undefined : Number(val),
+    z.number().optional(),
+  ),
+  educationLevel: z.string().optional(),
+  workExpYears: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? undefined : Number(val),
+    z.number().optional(),
+  ),
+  TotalExpYears: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? undefined : Number(val),
+    z.number().optional(),
+  ),
   region: z.string().min(1, "Region is required"),
   zone: z.string().min(1, "Zone is required"),
   woreda: z.string().min(1, "Woreda is required"),
@@ -54,68 +72,110 @@ const branchAddressSchema = z.object({
   specialLocation: z.string().optional(),
 });
 
-export const applicationSchema = z.object({
-  // Step 1: Agency Info
-  agencyName: z.string().min(3, "Agency name is required"),
-  tradeName: z.string().min(4, "Trade name must be at least 4 characters"),
-  branchAddresses: z.array(branchAddressSchema).optional().default([]),
+export const applicationSchema = z
+  .object({
+    // Step 1: Agency Info
+    agencyName: z.string().min(3, "Agency name is required"),
+    agencyNameEnglish: z
+      .string()
+      .min(3, "Agency name (English) is required")
+      .optional(),
+    agencyNameAmharic: z
+      .string()
+      .min(3, "Agency name (Amharic) is required")
+      .optional(),
+    tradeName: z.string().min(4, "Trade name must be at least 4 characters"),
+    branchAddresses: z.array(branchAddressSchema).optional().default([]),
 
-  // Agency Location
-  region: z.string().min(1, "Region is required"),
-  zone: z.string().min(1, "Zone is required"),
-  woreda: z.string().min(1, "Woreda is required"),
-  kebele: z.string().min(1, "Kebele is required"),
-  houseNumber: z.string().min(1, "House number is required"),
-  specialLocation: z.string().optional(),
+    // Agency Location
+    region: z.string().min(1, "Region is required"),
+    zone: z.string().min(1, "Zone is required"),
+    woreda: z.string().min(1, "Woreda is required"),
+    kebele: z.string().min(1, "Kebele is required"),
+    houseNumber: z.string().min(1, "House number is required"),
+    specialLocation: z.string().optional(),
 
-  // Contact Info
-  agencyphone: z.string().min(10, "Invalid phone number"),
-  faxNumber: z.string().min(1, "Fax number is required"),
-  email: z.string().email("Invalid email address"),
-  tinNumber: z.string().min(2, "TIN number is required"),
+    // Contact Info
+    agencyphone: z.string().min(10, "Invalid phone number"),
+    faxNumber: z.string().min(1, "Fax number is required"),
+    email: z.string().email("Invalid email address"),
+    tinNumber: z.string().min(2, "TIN number is required"),
 
-  // Step 2: Documents
+    // Step 2: Documents
 
-  // Step 3 & 4: Assets (Preprocessing strings to numbers for Prisma)
-  officesCount: z.preprocess(
-    (val) => Number(val),
-    z.number().min(1, "At least 1 office required"),
-  ),
-  computersCount: z.preprocess(
-    (val) => Number(val),
-    z.number().min(1, "Must be 1 or more"),
-  ),
-  vehiclesCount: z.preprocess(
-    (val) => Number(val),
-    z.number().min(1, "Must be 1 or more"),
-  ),
-  hasStoreHouse: z.preprocess(
-    (val) => val === true || val === "true",
-    z.boolean().default(false),
-  ),
-  capitalAmount: z.preprocess(
-    (val) => Number(val),
-    z.number().min(300, "Capital amount must be at least 300"),
-  ),
+    // Step 3 & 4: Assets (Preprocessing strings to numbers for Prisma)
+    officesCount: z.preprocess(
+      (val) => Number(val),
+      z.number().min(1, "At least 1 office required"),
+    ),
+    computersCount: z.preprocess(
+      (val) => Number(val),
+      z.number().min(1, "Must be 1 or more"),
+    ),
+    vehiclesCount: z.preprocess(
+      (val) => Number(val),
+      z.number().min(1, "Must be 1 or more"),
+    ),
+    hasStoreHouse: z.preprocess(
+      (val) => val === true || val === "true",
+      z.boolean().default(false),
+    ),
+    capitalAmount: z.preprocess(
+      (val) => Number(val),
+      z.number().min(300, "Capital amount must be at least 300"),
+    ),
 
-  // Step 4: Training
-  trainingAddress: z.string().optional(),
-  trainingProvider: z.string().optional(),
-  trainingDays: z.preprocess((val) => Number(val || 0), z.number()),
-  totalTraineesMale: z.preprocess((val) => Number(val || 0), z.number()),
-  totalTraineesFemale: z.preprocess((val) => Number(val || 0), z.number()),
+    // Step 4: Training
+    trainingAddress: z.string().optional(),
+    trainingProvider: z.string().optional(),
+    trainingDays: z.preprocess(
+      (val) =>
+        val === "" || val === null || val === undefined
+          ? undefined
+          : Number(val),
+      z.number().optional(),
+    ),
+    totalTraineesMale: z.preprocess(
+      (val) =>
+        val === "" || val === null || val === undefined
+          ? undefined
+          : Number(val),
+      z.number().optional(),
+    ),
+    totalTraineesFemale: z.preprocess(
+      (val) =>
+        val === "" || val === null || val === undefined
+          ? undefined
+          : Number(val),
+      z.number().optional(),
+    ),
 
-  // Step 5: Personnel (Nested Objects)
-  // These match the 'prefix' prop you passed to PersonnelSection
-  manager: personnelSchema,
-  ops: personnelSchema,
-  admin: personnelSchema,
+    // Step 5: Personnel (Nested Objects)
+    // These match the 'prefix' prop you passed to PersonnelSection
+    manager: personnelSchema,
+    ops: personnelSchema,
+    admin: personnelSchema,
 
-  // Flat fields for legacy or UI tracking
-  managerName: z.string().optional(),
-  opsHeadName: z.string().optional(),
-  adminHeadName: z.string().optional(),
-});
+    // Flat fields for legacy or UI tracking
+    managerName: z.string().optional(),
+    opsHeadName: z.string().optional(),
+    adminHeadName: z.string().optional(),
+  })
+  .refine(
+    (val) => {
+      const branches = val.branchAddresses || [];
+      // If any branch addresses are present, each must have a kebeleId
+      if (branches.length === 0) return true;
+      return branches.every((b: any) => {
+        const id = b?.kebeleId;
+        return id !== undefined && id !== null && String(id).trim().length > 0;
+      });
+    },
+    {
+      path: ["branchAddresses"],
+      message: "Each branch address must have a kebele selected",
+    },
+  );
 
 export type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
@@ -131,15 +191,36 @@ const ViewerModal = ({
   previewUrl: string | null;
 }) => {
   const [rotation, setRotation] = React.useState(0);
+  const [internalPreviewUrl, setInternalPreviewUrl] = React.useState<
+    string | null
+  >(null);
 
   React.useEffect(() => {
     if (!isOpen) setRotation(0);
   }, [isOpen]);
 
+  React.useEffect(() => {
+    // If caller didn't provide a previewUrl but we have a File, create one
+    if (isOpen && file && !previewUrl) {
+      try {
+        const url = URL.createObjectURL(file);
+        setInternalPreviewUrl(url);
+        return () => {
+          URL.revokeObjectURL(url);
+          setInternalPreviewUrl(null);
+        };
+      } catch (e) {
+        // ignore
+      }
+    }
+    return;
+  }, [isOpen, file, previewUrl]);
+
   if (!isOpen || !file) return null;
 
-  const isImage = file.type.startsWith("image/");
+  const isImage = file.type?.startsWith?.("image/") ?? false;
   const isPDF = file.type === "application/pdf";
+  const effectivePreviewUrl = previewUrl || internalPreviewUrl;
 
   const handleRotate = () => {
     setRotation((prev) => (prev + 90) % 360);
@@ -180,18 +261,18 @@ const ViewerModal = ({
         </div>
 
         <div className="flex-1 overflow-auto p-4 md:p-8 bg-gray-100 flex items-center justify-center">
-          {isImage && previewUrl ? (
+          {isImage && effectivePreviewUrl ? (
             <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
               <img
-                src={previewUrl}
+                src={effectivePreviewUrl}
                 alt="Preview"
                 className="max-w-full max-h-full object-contain rounded-xl shadow-lg transition-transform duration-300"
                 style={{ transform: `rotate(${rotation}deg)` }}
               />
             </div>
-          ) : isPDF && previewUrl ? (
+          ) : isPDF && effectivePreviewUrl ? (
             <iframe
-              src={`${previewUrl}#toolbar=0`}
+              src={`${effectivePreviewUrl}#toolbar=0`}
               className="w-full h-full rounded-xl border-0 bg-white shadow-lg"
               title="PDF Preview"
             />
@@ -324,12 +405,36 @@ const FormInput = ({
   );
 };
 
-type Kebele = { id: number; name: string; woredaId: number };
+type Kebele = {
+  id: number;
+  name: string;
+  nameEnglish?: string;
+  nameAmharic?: string;
+  woredaId: number;
+};
 
 // --- Dynamic Location Data ---
-type Region = { id: number; name: string };
-type Zone = { id: number; name: string; regionId: number };
-type Woreda = { id: number; name: string; zoneId: number };
+type Region = {
+  id: number;
+  name: string;
+  nameEnglish?: string;
+  nameAmharic?: string;
+};
+type Zone = {
+  id: number;
+  name: string;
+  nameEnglish?: string;
+  nameAmharic?: string;
+  regionId: number;
+};
+type Woreda = {
+  id: number;
+  name: string;
+  nameEnglish?: string;
+  nameAmharic?: string;
+  zoneId: number;
+};
+type PositionOption = { id: number; name: string };
 
 function useLocationData() {
   const [regions, setRegions] = React.useState<Region[]>([]);
@@ -341,18 +446,34 @@ function useLocationData() {
   const [zoneId, setZoneId] = React.useState<number | null>(null);
   const [woredaId, setWoredaId] = React.useState<number | null>(null);
 
+  const { language } = useLanguage();
+
   React.useEffect(() => {
     setLoading(true);
-    apiRequest<{ data: Region[] }>("/location/regions")
-      .then((res) => setRegions(res.data))
+    apiRequest<any>("/location/regions")
+      .then((res) => {
+        const mapped = mapLocalizedLocationRows(
+          res.data || [],
+          language,
+        ) as Region[];
+        setRegions(mapped);
+      })
       .finally(() => setLoading(false));
-  }, []);
+  }, [language]);
 
   React.useEffect(() => {
     if (regionId) {
       setLoading(true);
-      apiRequest<{ data: Zone[] }>(`/location/regions/${regionId}/zones`)
-        .then((res) => setZones(res.data))
+      apiRequest<any>(`/location/regions/${regionId}/zones`)
+        .then((res) => {
+          const mapped = mapLocalizedLocationRows(res.data || [], language).map(
+            (row: any) => ({
+              ...row,
+              regionId: Number(row.regionId ?? row.region_id),
+            }),
+          ) as Zone[];
+          setZones(mapped);
+        })
         .finally(() => setLoading(false));
     } else {
       setZones([]);
@@ -361,31 +482,47 @@ function useLocationData() {
     setWoredas([]);
     setWoredaId(null);
     setKebeles([]);
-  }, [regionId]);
+  }, [language, regionId]);
 
   React.useEffect(() => {
     if (zoneId) {
       setLoading(true);
-      apiRequest<{ data: Woreda[] }>(`/location/zones/${zoneId}/woredas`)
-        .then((res) => setWoredas(res.data))
+      apiRequest<any>(`/location/zones/${zoneId}/woredas`)
+        .then((res) => {
+          const mapped = mapLocalizedLocationRows(res.data || [], language).map(
+            (row: any) => ({
+              ...row,
+              zoneId: Number(row.zoneId ?? row.zone_id),
+            }),
+          ) as Woreda[];
+          setWoredas(mapped);
+        })
         .finally(() => setLoading(false));
     } else {
       setWoredas([]);
     }
     setWoredaId(null);
     setKebeles([]);
-  }, [zoneId]);
+  }, [language, zoneId]);
 
   React.useEffect(() => {
     if (woredaId) {
       setLoading(true);
-      apiRequest<{ data: Kebele[] }>(`/location/woredas/${woredaId}/kebeles`)
-        .then((res) => setKebeles(res.data))
+      apiRequest<any>(`/location/woredas/${woredaId}/kebeles`)
+        .then((res) => {
+          const mapped = mapLocalizedLocationRows(res.data || [], language).map(
+            (row: any) => ({
+              ...row,
+              woredaId: Number(row.woredaId ?? row.woreda_id),
+            }),
+          ) as Kebele[];
+          setKebeles(mapped);
+        })
         .finally(() => setLoading(false));
     } else {
       setKebeles([]);
     }
-  }, [woredaId]);
+  }, [language, woredaId]);
 
   return {
     regions,
@@ -429,6 +566,9 @@ const FormSelect = ({
     ? placeholder
     : `${placeholder} (optional)`;
 
+  // Obtain register helpers once to support controlled selects
+  const reg = register ? register(name) : undefined;
+
   return (
     <div className="space-y-2.5 relative group">
       <div className="flex justify-between items-center px-1">
@@ -448,9 +588,15 @@ const FormSelect = ({
       </div>
       <div className="relative">
         <select
-          {...register(name)}
+          name={name}
+          ref={reg?.ref}
           value={value ?? ""}
-          onChange={(e) => onChange?.(e.target.value)}
+          onChange={(e) => {
+            // update react-hook-form state first
+            reg?.onChange?.(e as any);
+            // then call the local onChange callback with normalized value
+            onChange?.(e.target.value);
+          }}
           disabled={disabled}
           className={cn(
             "w-full p-4 transition-all duration-300 outline-none border-2 text-primary font-bold shadow-sm bg-gray-50/50 rounded-2xl appearance-none",
@@ -695,7 +841,7 @@ function LocationFields({
   }, [selectedWoreda, woredas, setWoredaId]);
 
   return (
-    <div className="md:col-span-2 grid grid-cols-2 md:grid-cols-5 gap-4">
+    <div className="w-full grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
       <FormSelect
         label="Region"
         name="region"
@@ -788,6 +934,7 @@ function BranchAddressRow({
   setValue,
   onRemove,
   isFormLocked,
+  isRequired = false,
 }: any) {
   const {
     regions,
@@ -867,7 +1014,7 @@ function BranchAddressRow({
             setValue(`branchAddresses.${index}.woreda`, "");
             setValue(`branchAddresses.${index}.kebeleId`, "");
           }}
-          required={false}
+          required={isRequired}
           disabled={isFormLocked}
           placeholder="Select Region"
         />
@@ -883,7 +1030,7 @@ function BranchAddressRow({
             setValue(`branchAddresses.${index}.woreda`, "");
             setValue(`branchAddresses.${index}.kebeleId`, "");
           }}
-          required={false}
+          required={isRequired}
           disabled={isFormLocked || !regionId}
           placeholder="Select Zone"
         />
@@ -898,7 +1045,7 @@ function BranchAddressRow({
             setWoredaId(Number(val));
             setValue(`branchAddresses.${index}.kebeleId`, "");
           }}
-          required={false}
+          required={isRequired}
           disabled={isFormLocked || !zoneId}
           placeholder="Select Woreda"
         />
@@ -911,22 +1058,23 @@ function BranchAddressRow({
           onChange={(val) => setValue(`branchAddresses.${index}.kebeleId`, val)}
           error={branchErrors.kebeleId}
           disabled={isFormLocked || !woredaId}
+          required={isRequired}
           placeholder="Select Kebele"
         />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormInput
-          label="House No. (Optional)"
+          label={isRequired ? "House No." : "House No. (Optional)"}
           name={`branchAddresses.${index}.houseNumber`}
           register={register}
           value={watch(`branchAddresses.${index}.houseNumber`) || ""}
           error={branchErrors.houseNumber}
-          required={false}
+          required={isRequired}
           disabled={isFormLocked}
         />
         <FormInput
-          label="Special Location (Optional)"
+          label={"Special Location (Optional)"}
           name={`branchAddresses.${index}.specialLocation`}
           register={register}
           value={watch(`branchAddresses.${index}.specialLocation`) || ""}
@@ -942,6 +1090,7 @@ function BranchAddressRow({
 const PersonnelSection = ({
   title,
   prefix,
+  currentUser,
   files,
   onUpload,
   onDelete,
@@ -950,11 +1099,20 @@ const PersonnelSection = ({
   register,
   errors,
   isFormLocked,
+  positions,
+  positionEducationOptions,
+  onPositionChange,
   watch,
   setValue,
 }: {
   title: string;
   prefix: string;
+  currentUser?: {
+    fullName?: string;
+    email?: string;
+    phone?: string;
+    faydaId?: string;
+  } | null;
   files: Record<string, File | null>;
   onUpload: (key: string, file: File) => void;
   onDelete: (key: string) => void;
@@ -963,9 +1121,13 @@ const PersonnelSection = ({
   register: any;
   errors: any;
   isFormLocked?: boolean;
+  positions: PositionOption[];
+  positionEducationOptions?: Record<number, string[]>;
+  onPositionChange?: (positionId: number) => void;
   setValue?: any;
   watch?: any;
 }) => {
+  const isManagerSection = prefix === "manager";
   const personnelDocs = [
     { label: "Fingerprint from Police", key: "fingerprint_doc" },
     { label: "Medical Result", key: "medical_doc" },
@@ -997,10 +1159,35 @@ const PersonnelSection = ({
   const selectedZone = watch?.(`${prefix}.zone`);
   const selectedWoreda = watch?.(`${prefix}.woreda`);
   const selectedKebele = watch?.(`${prefix}.kebele`);
+  const selectedPositionId = Number(watch?.(`${prefix}.positionId`));
+  const selectedEducationLevel = watch?.(`${prefix}.educationLevel`);
 
   React.useEffect(() => {
     setValue?.(`${prefix}.citizenship`, "ETHIOPIAN");
   }, [prefix, setValue]);
+
+  React.useEffect(() => {
+    if (!isManagerSection || !currentUser || !setValue) {
+      return;
+    }
+
+    setValue(`${prefix}.fullName`, currentUser.fullName ?? "", {
+      shouldDirty: false,
+      shouldTouch: false,
+    });
+    setValue(`${prefix}.email`, currentUser.email ?? "", {
+      shouldDirty: false,
+      shouldTouch: false,
+    });
+    setValue(`${prefix}.phone`, currentUser.phone ?? "", {
+      shouldDirty: false,
+      shouldTouch: false,
+    });
+    setValue(`${prefix}.faydaId`, currentUser.faydaId ?? "", {
+      shouldDirty: false,
+      shouldTouch: false,
+    });
+  }, [currentUser, isManagerSection, prefix, setValue]);
 
   // Find regionId by name or id and trigger zone fetch
   React.useEffect(() => {
@@ -1032,10 +1219,21 @@ const PersonnelSection = ({
     }
   }, [selectedWoreda, woredas, setWoredaId]);
 
+  React.useEffect(() => {
+    if (!selectedPositionId || Number.isNaN(selectedPositionId)) {
+      setValue?.(`${prefix}.educationLevel`, "", {
+        shouldDirty: false,
+        shouldTouch: false,
+      });
+    }
+  }, [prefix, selectedPositionId, setValue]);
+
   // Helper to get nested error messages safely
   const getError = (fieldName: string) => {
     return errors[prefix]?.[fieldName]?.message;
   };
+
+  const personnelErrors = (errors?.[prefix] || {}) as any;
 
   return (
     <div className="space-y-6 bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm transition-all hover:shadow-md">
@@ -1059,11 +1257,11 @@ const PersonnelSection = ({
         <FormInput
           label="Full Name"
           name={`${prefix}.fullName`}
-          value={watch("fullName")}
+          value={watch?.(`${prefix}.fullName`)}
           register={register}
           placeholder="Enter legal full name"
           error={errors[prefix]?.fullName}
-          disabled={isFormLocked}
+          disabled={isFormLocked || isManagerSection}
         />
 
         <div className="grid grid-cols-2 gap-4">
@@ -1074,18 +1272,26 @@ const PersonnelSection = ({
                 *
               </span>
             </label>
-            <select
-              {...register(`${prefix}.gender`)}
-              disabled={isFormLocked}
-              className={cn(
-                "w-full p-4 bg-gray-50/50 border-2 border-solid border-gray-200 rounded-2xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold text-primary text-sm appearance-none",
-                isFormLocked && "opacity-75 grayscale cursor-not-allowed",
-              )}
-            >
-              <option value="">Select gender</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-            </select>
+            <div className="relative">
+              <select
+                {...register(`${prefix}.gender`)}
+                disabled={isFormLocked}
+                className={cn(
+                  "w-full appearance-none p-4 pl-12 pr-12 bg-gray-50/50 border-2 border-solid border-gray-200 rounded-2xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold text-primary text-sm",
+                  isFormLocked && "opacity-75 grayscale cursor-not-allowed",
+                )}
+              >
+                <option value="">select gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+              <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-xl bg-primary/5 text-primary">
+                <Users className="h-4 w-4" />
+              </div>
+              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-xl bg-white text-gray-400 shadow-sm ring-1 ring-gray-100">
+                <ArrowRight className="h-4 w-4 rotate-90" />
+              </div>
+            </div>
           </div>
           <FormInput
             label="Citizenship"
@@ -1109,9 +1315,9 @@ const PersonnelSection = ({
             <input
               type="text"
               {...register(`${prefix}.faydaId`)}
-              disabled={isFormLocked}
+              disabled={isFormLocked || isManagerSection}
               placeholder="FAYDA-XXXXX"
-              value={watch("faydaId")}
+              value={watch?.(`${prefix}.faydaId`)}
               className="flex-1 p-4 bg-white border-2 border-gray-100 rounded-2xl outline-none focus:border-primary text-sm font-bold text-primary shadow-sm"
             />
             <div className="flex items-center space-x-2 px-3 bg-primary/5 rounded-2xl border border-primary/10 w-32">
@@ -1119,7 +1325,7 @@ const PersonnelSection = ({
               <input
                 type="text"
                 {...register(`${prefix}.otp`)}
-                disabled={isFormLocked}
+                disabled={isFormLocked || isManagerSection}
                 placeholder={curT.otp || "OTP"}
                 className="w-full bg-transparent border-none outline-none text-[10px] font-black text-primary placeholder:text-primary/40"
               />
@@ -1135,12 +1341,12 @@ const PersonnelSection = ({
         <FormInput
           label={curT.email || "Email"}
           name={`${prefix}.email`}
-          value={watch("email")}
+          value={watch?.(`${prefix}.email`)}
           type="email"
           register={register}
           placeholder="email@example.com"
           error={errors[prefix]?.email}
-          disabled={isFormLocked}
+          disabled={isFormLocked || isManagerSection}
         />
         <FormInput
           label={curT.phone || "Phone Number"}
@@ -1148,10 +1354,98 @@ const PersonnelSection = ({
           type="tel"
           register={register}
           placeholder="+251..."
-          value={watch("phone")}
+          value={watch?.(`${prefix}.phone`)}
           error={errors[prefix]?.phone}
-          disabled={isFormLocked}
+          disabled={isFormLocked || isManagerSection}
         />
+      </div>
+
+      {/* Position & Experience */}
+      <div className="bg-gray-50/60 p-5 rounded-[28px] border border-dashed border-gray-200 space-y-5">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <FormSelect
+            label="Position"
+            name={`${prefix}.positionId`}
+            register={register}
+            value={watch?.(`${prefix}.positionId`)}
+            options={positions.map((position) => ({
+              value: position.id,
+              label: position.name,
+            }))}
+            onChange={(val) => {
+              const nextPositionId = Number(val);
+              setValue?.(`${prefix}.positionId`, val);
+              setValue?.(`${prefix}.educationLevel`, "", {
+                shouldDirty: false,
+                shouldTouch: false,
+              });
+
+              if (Number.isFinite(nextPositionId) && nextPositionId > 0) {
+                onPositionChange?.(nextPositionId);
+              }
+            }}
+            required={false}
+            disabled={isFormLocked}
+            placeholder="Select Position"
+          />
+
+          <FormSelect
+            label="Education Level"
+            name={`${prefix}.educationLevel`}
+            register={register}
+            value={watch?.(`${prefix}.educationLevel`)}
+            options={(() => {
+              const pid = selectedPositionId;
+              const fromPosition =
+                pid && typeof positionEducationOptions !== "undefined"
+                  ? positionEducationOptions[pid] || []
+                  : [];
+              const uniqueLevels = new Set(fromPosition);
+
+              if (
+                selectedEducationLevel &&
+                !uniqueLevels.has(String(selectedEducationLevel))
+              ) {
+                uniqueLevels.add(String(selectedEducationLevel));
+              }
+
+              return Array.from(uniqueLevels).map((level) => ({
+                value: level,
+                label: level,
+              }));
+            })()}
+            onChange={(val) => setValue?.(`${prefix}.educationLevel`, val)}
+            required={false}
+            disabled={isFormLocked || !selectedPositionId}
+            placeholder={
+              selectedPositionId
+                ? "Select Education Level"
+                : "Select Position First"
+            }
+          />
+
+          <FormInput
+            label="Work Experience Years"
+            name={`${prefix}.workExpYears`}
+            type="number"
+            register={register}
+            value={watch?.(`${prefix}.workExpYears`)}
+            error={personnelErrors.workExpYears}
+            required={false}
+            disabled={isFormLocked}
+          />
+
+          <FormInput
+            label="Total Experience Years"
+            name={`${prefix}.TotalExpYears`}
+            type="number"
+            register={register}
+            value={watch?.(`${prefix}.TotalExpYears`)}
+            error={personnelErrors.TotalExpYears}
+            required={false}
+            disabled={isFormLocked}
+          />
+        </div>
       </div>
 
       {/* Location Section */}
@@ -1272,12 +1566,34 @@ const PersonnelSection = ({
 };
 
 export const NewApplication = () => {
+  const { user: currentUser } = useAuth();
   const { language } = useLanguage();
+  const locationLookup = useLocationData();
+  const [positions, setPositions] = React.useState<PositionOption[]>([]);
+  // Map of positionId -> unique education level strings derived from position requirements
+  const [positionEducationOptions, setPositionEducationOptions] =
+    React.useState<Record<number, string[]>>({});
+  const [serverUserProfile, setServerUserProfile] = React.useState<any>(null);
   const [step, setStep] = React.useState(1);
   const [isSubmitted, setIsSubmitted] = React.useState(false);
-  const [appStatus] = React.useState<
-    "draft" | "pending" | "reviewing" | "correction"
-  >("draft");
+  const [eligibilityLoading, setEligibilityLoading] = React.useState(true);
+  const [eligibilityError, setEligibilityError] = React.useState<string | null>(
+    null,
+  );
+  const [approvedFormalYear, setApprovedFormalYear] = React.useState<
+    number | null
+  >(null);
+  const [latestApplicationStatus, setLatestApplicationStatus] = React.useState<
+    string | null
+  >(null);
+  const [latestApplicationDate, setLatestApplicationDate] = React.useState<
+    string | null
+  >(null);
+  const [accessBlockedReason, setAccessBlockedReason] = React.useState<
+    "formal" | "application" | null
+  >(null);
+  const [accessBlockedTitle, setAccessBlockedTitle] = React.useState("");
+  const [accessBlockedMessage, setAccessBlockedMessage] = React.useState("");
   const [openedFields] = React.useState<string[]>([
     "trade_license",
     "kebele_id_m_2024",
@@ -1285,9 +1601,60 @@ export const NewApplication = () => {
   const [uploadedFiles, setUploadedFiles] = React.useState<
     Record<string, File | null>
   >({});
+  const [reviewLocationLabels, setReviewLocationLabels] = React.useState<
+    Record<string, string>
+  >({});
 
-  const isFormLocked =
-    isSubmitted || appStatus === "pending" || appStatus === "reviewing";
+  // Fetch position requirements and extract unique `requiredEducationLevel` values
+  const fetchPositionRequirements = async (positionId: number) => {
+    if (!positionId || positionEducationOptions[positionId]) return;
+    try {
+      // Try common endpoints: /positions/:id and /positions/:id/requirements
+      let res: any = null;
+      try {
+        res = await apiRequest(`/positions/${positionId}`);
+      } catch (e) {
+        // ignore and try fallback
+      }
+
+      let requirements: any[] | undefined;
+      if (res) {
+        requirements =
+          res.data?.requirements ||
+          res.requirements ||
+          res.data?.positionRequirements ||
+          res.positionRequirements;
+      }
+
+      if (!requirements) {
+        try {
+          const r2 = await apiRequest(`/positions/${positionId}/requirements`);
+          requirements = r2.data || r2;
+        } catch (e) {
+          // final fallback: empty
+          requirements = [];
+        }
+      }
+
+      const eduSet = new Set<string>();
+      (requirements || []).forEach((req: any) => {
+        const v = req?.requiredEducationLevel;
+        if (v && String(v).trim().length > 0) eduSet.add(String(v).trim());
+      });
+
+      const arr = Array.from(eduSet);
+      if (arr.length > 0) {
+        setPositionEducationOptions((prev) => ({ ...prev, [positionId]: arr }));
+      } else {
+        // store empty array to avoid re-fetch attempts
+        setPositionEducationOptions((prev) => ({ ...prev, [positionId]: [] }));
+      }
+    } catch (err) {
+      // non-fatal
+      console.warn("Failed to load requirements for position", positionId, err);
+      setPositionEducationOptions((prev) => ({ ...prev, [positionId]: [] }));
+    }
+  };
 
   const t_new = {
     en: {
@@ -1306,7 +1673,6 @@ export const NewApplication = () => {
       orgName: "Organization Name",
       headOfficeAddress: "Head Office Address",
       headOffice: "Head Office Name",
-      branchOffice: "Branch Office Name (Optional)",
       faxNumber: "Fax Number",
       region: "Region",
       zone: "Zone",
@@ -1350,7 +1716,6 @@ export const NewApplication = () => {
       orgName: "የተቋሙ ስም",
       headOfficeAddress: "የዋና መስሪያ ቤት አድራሻ",
       headOffice: "የዋና መስሪያ ቤት ስም",
-      branchOffice: "የቅርንጫፍ መስሪያ ቤት ስም (አማራጭ)",
       faxNumber: "የፋክስ ቁጥር",
       region: "ክልል",
       zone: "ዞን",
@@ -1414,6 +1779,45 @@ export const NewApplication = () => {
     });
   };
 
+  const normalizeText = (value: unknown) => {
+    if (typeof value !== "string") return "";
+    return value.trim();
+  };
+
+  const getLocationLabel = (
+    items: Array<{ id: number; name: string }>,
+    value: unknown,
+  ) => {
+    const id = Number(value);
+    if (!Number.isFinite(id)) {
+      return normalizeText(value) || "-";
+    }
+
+    return items.find((item) => item.id === id)?.name || String(value || "-");
+  };
+
+  const getCachedLocationLabel = (
+    items: Array<{ id: number; name: string }>,
+    value: unknown,
+    cacheKey: string,
+  ) => {
+    const cached = reviewLocationLabels[cacheKey];
+    if (cached) return cached;
+    const fallback = getLocationLabel(items, value);
+    return fallback;
+  };
+
+  const hasApprovedFormalLetterThisYear =
+    approvedFormalYear === new Date().getFullYear();
+  const isApplicationBlockingStatus =
+    latestApplicationStatus === "pending" ||
+    latestApplicationStatus === "approved";
+  const canOpenNewApplicationPage =
+    !eligibilityLoading &&
+    !eligibilityError &&
+    hasApprovedFormalLetterThisYear &&
+    accessBlockedReason === null;
+
   const {
     register,
     handleSubmit,
@@ -1425,12 +1829,406 @@ export const NewApplication = () => {
     resolver: zodResolver(applicationSchema),
     defaultValues: {
       // It's good practice to initialize nested objects
-      manager: { gender: "Male", citizenship: "ETHIOPIAN" },
-      ops: { gender: "Male", citizenship: "ETHIOPIAN" },
-      admin: { gender: "Male", citizenship: "ETHIOPIAN" },
+      manager: { gender: "", citizenship: "ETHIOPIAN" },
+      ops: { gender: "", citizenship: "ETHIOPIAN" },
+      admin: { gender: "", citizenship: "ETHIOPIAN" },
       branchAddresses: [],
     },
   });
+
+  const watchedRegion = watch("region");
+  const watchedZone = watch("zone");
+  const watchedWoreda = watch("woreda");
+  const watchedManager = useWatch({ control, name: "manager" });
+  const watchedOps = useWatch({ control, name: "ops" });
+  const watchedAdmin = useWatch({ control, name: "admin" });
+  const watchedBranchAddresses = useWatch({ control, name: "branchAddresses" });
+
+  React.useEffect(() => {
+    if (!currentUser) {
+      return;
+    }
+
+    setValue("manager.fullName", currentUser.fullName ?? "", {
+      shouldDirty: false,
+      shouldTouch: false,
+    });
+    setValue("manager.email", currentUser.email ?? "", {
+      shouldDirty: false,
+      shouldTouch: false,
+    });
+    setValue("manager.phone", currentUser.phone ?? "", {
+      shouldDirty: false,
+      shouldTouch: false,
+    });
+    setValue("manager.faydaId", currentUser.faydaId ?? "", {
+      shouldDirty: false,
+      shouldTouch: false,
+    });
+    setValue("managerName", currentUser.fullName ?? "", {
+      shouldDirty: false,
+      shouldTouch: false,
+    });
+  }, [currentUser, setValue]);
+
+  React.useEffect(() => {
+    if (watchedRegion) {
+      locationLookup.setRegionId(Number(watchedRegion));
+    }
+  }, [locationLookup, watchedRegion]);
+
+  React.useEffect(() => {
+    if (watchedZone) {
+      locationLookup.setZoneId(Number(watchedZone));
+    }
+  }, [locationLookup, watchedZone]);
+
+  React.useEffect(() => {
+    if (watchedWoreda) {
+      locationLookup.setWoredaId(Number(watchedWoreda));
+    }
+  }, [locationLookup, watchedWoreda]);
+
+  React.useEffect(() => {
+    let isMounted = true;
+
+    apiRequest<{ data: any }>("/users/me")
+      .then((res) => {
+        if (!isMounted) return;
+        setServerUserProfile(res.data ?? null);
+      })
+      .catch(() => {
+        // Fall back to the locally cached auth profile if the server profile is unavailable.
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    const currentYear = new Date().getFullYear();
+
+    const normalizeStatus = (value: unknown) =>
+      String(value || "").trim().toLowerCase();
+
+    const getRequestYear = (request: any) => {
+      const fileName = String(request?.requestLetterUrl || "")
+        .split(/[\\/]/)
+        .pop() || "";
+      const fileYear = fileName.match(/^(20\d{2})-/)?.[1];
+      if (fileYear) {
+        return Number(fileYear);
+      }
+
+      const createdAt = request?.createdAt ? new Date(request.createdAt) : null;
+      return createdAt && !Number.isNaN(createdAt.getTime())
+        ? createdAt.getFullYear()
+        : null;
+    };
+
+    const loadEligibility = async () => {
+      if (!currentUser?.id) {
+        if (!cancelled) {
+          setEligibilityLoading(false);
+          setEligibilityError("Sign in to check application eligibility.");
+          setAccessBlockedReason("formal");
+          setAccessBlockedTitle("Sign in required");
+          setAccessBlockedMessage(
+            "You need an authenticated account before you can open the new application page.",
+          );
+        }
+        return;
+      }
+
+      try {
+        if (!cancelled) {
+          setEligibilityLoading(true);
+          setEligibilityError(null);
+        }
+
+        const applicationPromise = apiRequest<any>("/applications/me").catch(
+          (error: any) => {
+            if (error?.statusCode === 404) {
+              return null;
+            }
+            throw error;
+          },
+        );
+
+        const [formalRes, applicationRes] = await Promise.all([
+          apiRequest<any>(`/formal-requests/user/${currentUser.id}/all`),
+          applicationPromise,
+        ]);
+
+        const formalRequests = Array.isArray(formalRes.data)
+          ? formalRes.data
+          : [];
+        const approvedFormalRequest = formalRequests.find((request: any) => {
+          return (
+            normalizeStatus(request?.status) === "approved" &&
+            getRequestYear(request) === currentYear
+          );
+        });
+
+        const application = applicationRes?.data ?? null;
+        const applicationStatus = normalizeStatus(application?.status);
+        const applicationDate = application?.applicationDate
+          ? String(application.applicationDate)
+          : null;
+        const applicationYear = applicationDate
+          ? new Date(applicationDate).getFullYear()
+          : null;
+        const isBlockingApplication =
+          (applicationStatus === "pending" || applicationStatus === "approved") &&
+          (applicationYear === null || applicationYear === currentYear);
+
+        if (!cancelled) {
+          setApprovedFormalYear(approvedFormalRequest ? currentYear : null);
+          setLatestApplicationStatus(applicationStatus || null);
+          setLatestApplicationDate(applicationDate);
+
+          if (!approvedFormalRequest) {
+            setAccessBlockedReason("formal");
+            setAccessBlockedTitle("Formal letter approval required");
+            setAccessBlockedMessage(
+              `Your formal letter must be approved for ${currentYear} before you can open the new application page.`,
+            );
+          } else if (isBlockingApplication) {
+            setAccessBlockedReason("application");
+            setAccessBlockedTitle("Application already submitted");
+            setAccessBlockedMessage(
+              `Your latest application is ${applicationStatus === "approved" ? "approved" : "pending"}${applicationDate ? ` since ${applicationDate.slice(0, 10)}` : ""}. The new application page is hidden until the status changes.`,
+            );
+          } else {
+            setAccessBlockedReason(null);
+            setAccessBlockedTitle("");
+            setAccessBlockedMessage("");
+          }
+        }
+      } catch (error: any) {
+        if (!cancelled) {
+          setEligibilityError(
+            error?.message || "Failed to verify application eligibility.",
+          );
+          setAccessBlockedReason("formal");
+          setAccessBlockedTitle("Eligibility check failed");
+          setAccessBlockedMessage(
+            "We could not verify your formal letter approval or application status right now.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setEligibilityLoading(false);
+        }
+      }
+    };
+
+    void loadEligibility();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser?.id]);
+
+  // Watch selected positionId for each personnel and fetch requirements when needed
+  React.useEffect(() => {
+    const managerPid = Number(watch("manager.positionId"));
+    const opsPid = Number(watch("ops.positionId"));
+    const adminPid = Number(watch("admin.positionId"));
+
+    if (Number.isFinite(managerPid) && managerPid > 0) {
+      void fetchPositionRequirements(managerPid);
+    }
+    if (Number.isFinite(opsPid) && opsPid > 0) {
+      void fetchPositionRequirements(opsPid);
+    }
+    if (Number.isFinite(adminPid) && adminPid > 0) {
+      void fetchPositionRequirements(adminPid);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    watch("manager.positionId"),
+    watch("ops.positionId"),
+    watch("admin.positionId"),
+  ]);
+
+  React.useEffect(() => {
+    let isMounted = true;
+
+    apiRequest<any>("/positions")
+      .then((res) => {
+        if (!isMounted) return;
+        setPositions(
+          (res.data || []).map((position: any) => ({
+            id: position.id,
+            name: position.name,
+          })),
+        );
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setPositions([]);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    const personnel = [
+      { prefix: "manager", data: watchedManager },
+      { prefix: "ops", data: watchedOps },
+      { prefix: "admin", data: watchedAdmin },
+    ].filter((entry) => entry.data);
+    const branchAddresses = (watchedBranchAddresses || []).filter(Boolean);
+
+    const load = async () => {
+      try {
+        const nextCache: Record<string, string> = {};
+
+        const allRegions = await apiRequest<any>("/location/regions");
+        const regionRows = allRegions.data || [];
+
+        for (const entry of personnel) {
+          const regionId = Number(entry.data?.region);
+          const zoneId = Number(entry.data?.zone);
+          const woredaId = Number(entry.data?.woreda);
+          const kebeleId = Number(entry.data?.kebele);
+
+          if (Number.isFinite(regionId)) {
+            const region = regionRows.find((item: any) => item.id === regionId);
+            nextCache[`${entry.prefix}:region:${regionId}`] =
+              region?.nameEnglish ||
+              region?.nameAmharic ||
+              region?.name ||
+              String(regionId);
+
+            if (Number.isFinite(zoneId)) {
+              const zonesRes = await apiRequest<any>(
+                `/location/regions/${regionId}/zones`,
+              );
+              const zoneRows = zonesRes.data || [];
+              const zone = zoneRows.find((item: any) => item.id === zoneId);
+              nextCache[`${entry.prefix}:zone:${zoneId}`] =
+                zone?.nameEnglish ||
+                zone?.nameAmharic ||
+                zone?.name ||
+                String(zoneId);
+
+              if (Number.isFinite(woredaId)) {
+                const woredasRes = await apiRequest<any>(
+                  `/location/zones/${zoneId}/woredas`,
+                );
+                const woredaRows = woredasRes.data || [];
+                const woreda = woredaRows.find(
+                  (item: any) => item.id === woredaId,
+                );
+                nextCache[`${entry.prefix}:woreda:${woredaId}`] =
+                  woreda?.nameEnglish ||
+                  woreda?.nameAmharic ||
+                  woreda?.name ||
+                  String(woredaId);
+
+                if (Number.isFinite(kebeleId)) {
+                  const kebelesRes = await apiRequest<any>(
+                    `/location/woredas/${woredaId}/kebeles`,
+                  );
+                  const kebeleRows = kebelesRes.data || [];
+                  const kebele = kebeleRows.find(
+                    (item: any) => item.id === kebeleId,
+                  );
+                  nextCache[`${entry.prefix}:kebele:${kebeleId}`] =
+                    kebele?.nameEnglish ||
+                    kebele?.nameAmharic ||
+                    kebele?.name ||
+                    String(kebeleId);
+                }
+              }
+            }
+          }
+        }
+
+        for (const [index, branch] of branchAddresses.entries()) {
+          const regionId = Number(branch?.region);
+          const zoneId = Number(branch?.zone);
+          const woredaId = Number(branch?.woreda);
+          const kebeleId = Number(branch?.kebeleId);
+
+          if (Number.isFinite(regionId)) {
+            const region = regionRows.find((item: any) => item.id === regionId);
+            nextCache[`branch:${index}:region:${regionId}`] =
+              region?.nameEnglish ||
+              region?.nameAmharic ||
+              region?.name ||
+              String(regionId);
+
+            if (Number.isFinite(zoneId)) {
+              const zonesRes = await apiRequest<any>(
+                `/location/regions/${regionId}/zones`,
+              );
+              const zoneRows = zonesRes.data || [];
+              const zone = zoneRows.find((item: any) => item.id === zoneId);
+              nextCache[`branch:${index}:zone:${zoneId}`] =
+                zone?.nameEnglish ||
+                zone?.nameAmharic ||
+                zone?.name ||
+                String(zoneId);
+
+              if (Number.isFinite(woredaId)) {
+                const woredasRes = await apiRequest<any>(
+                  `/location/zones/${zoneId}/woredas`,
+                );
+                const woredaRows = woredasRes.data || [];
+                const woreda = woredaRows.find(
+                  (item: any) => item.id === woredaId,
+                );
+                nextCache[`branch:${index}:woreda:${woredaId}`] =
+                  woreda?.nameEnglish ||
+                  woreda?.nameAmharic ||
+                  woreda?.name ||
+                  String(woredaId);
+
+                if (Number.isFinite(kebeleId)) {
+                  const kebelesRes = await apiRequest<any>(
+                    `/location/woredas/${woredaId}/kebeles`,
+                  );
+                  const kebeleRows = kebelesRes.data || [];
+                  const kebele = kebeleRows.find(
+                    (item: any) => item.id === kebeleId,
+                  );
+                  nextCache[`branch:${index}:kebele:${kebeleId}`] =
+                    kebele?.nameEnglish ||
+                    kebele?.nameAmharic ||
+                    kebele?.name ||
+                    String(kebeleId);
+                }
+              }
+            }
+          }
+        }
+
+        if (!cancelled) {
+          setReviewLocationLabels(nextCache);
+        }
+      } catch {
+        // Keep fallback labels from the current in-memory location lists.
+      }
+    };
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [watchedManager, watchedOps, watchedAdmin, watchedBranchAddresses]);
+
+  const managerProfile = serverUserProfile ?? currentUser;
 
   const {
     fields: branchAddressFields,
@@ -1440,6 +2238,13 @@ export const NewApplication = () => {
     control,
     name: "branchAddresses",
   });
+
+  const branchAddresses = watch("branchAddresses") || [];
+  const canAppendBranchAddress =
+    branchAddresses.length === 0 ||
+    Boolean(
+      branchAddresses[branchAddresses.length - 1]?.kebeleId?.toString().trim(),
+    );
 
   const nextStep = (e?: React.MouseEvent) => {
     if (e) e.preventDefault();
@@ -1507,10 +2312,12 @@ export const NewApplication = () => {
       return {};
     }
 
-    const result = await uploadOrganizationDocuments(
-      String(watch("agencyName") || ""),
-      files,
-    );
+    const orgDisplayName =
+      language === "am"
+        ? String(watch("agencyNameAmharic") || watch("agencyName") || "")
+        : String(watch("agencyName") || watch("agencyNameAmharic") || "");
+
+    const result = await uploadOrganizationDocuments(orgDisplayName, files);
 
     if (!result.success || !result.data?.uploadedFiles) {
       throw new Error(result.error || "File upload failed");
@@ -1556,7 +2363,15 @@ export const NewApplication = () => {
 
       // 1. Gather form data
       const formData = {
-        agencyName: data.agencyName,
+        agencyName: normalizeText(data.agencyName),
+        agencyNameEnglish:
+          normalizeText(data.agencyNameEnglish) ||
+          normalizeText(data.agencyName) ||
+          null,
+        agencyNameAmharic:
+          normalizeText(data.agencyNameAmharic) ||
+          normalizeText(data.agencyName) ||
+          null,
         email: data.email,
         phone: data.agencyphone,
         faxNumber: data.faxNumber,
@@ -1578,12 +2393,16 @@ export const NewApplication = () => {
         totalTraineesMale: Number(data.totalTraineesMale || 0),
         totalTraineesFemale: Number(data.totalTraineesFemale || 0),
         managerName:
-          data.managerName || data.manager?.fullName || "manager name missing",
+          normalizeText(data.managerName) ||
+          normalizeText(data.manager?.fullName) ||
+          "manager name missing",
         opsHeadName:
-          data.opsHeadName || data.ops?.fullName || "ops head name missing",
+          normalizeText(data.opsHeadName) ||
+          normalizeText(data.ops?.fullName) ||
+          "ops head name missing",
         adminHeadName:
-          data.adminHeadName ||
-          data.admin?.fullName ||
+          normalizeText(data.adminHeadName) ||
+          normalizeText(data.admin?.fullName) ||
           "admin head name missing",
         manager: data.manager,
         ops: data.ops,
@@ -1596,25 +2415,17 @@ export const NewApplication = () => {
       console.debug("Uploaded file URLs:", uploadedFilesUrls);
       console.groupEnd();
 
-      // 3. Get JWT token (replace with your auth logic)
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("User not authenticated");
-
       // 4. Send POST request
       const payload = {
         formData,
         uploadedFiles: uploadedFilesUrls,
       };
       console.groupCollapsed("[DEBUG] Final submission payload");
-      console.debug("Token present?", !!token);
       console.debug("Payload:", payload);
       console.groupEnd();
 
       await apiRequest("/applications/submit", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify(payload),
       });
 
@@ -1699,6 +2510,70 @@ export const NewApplication = () => {
     { id: 6, title: curT.steps[5], icon: CheckCircle2 },
   ];
 
+  const formLocked =
+    isSubmitted || isApplicationBlockingStatus || !canOpenNewApplicationPage;
+
+  if (eligibilityLoading) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-20">
+        <div className="rounded-[32px] border border-gray-100 bg-white p-10 text-center shadow-xl">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/5 text-primary">
+            <RefreshCw className="h-8 w-8 animate-spin" />
+          </div>
+          <h2 className="text-2xl font-black uppercase tracking-tight text-primary">
+            Checking application access
+          </h2>
+          <p className="mt-3 text-sm text-gray-500">
+            We are verifying your formal letter approval and latest application
+            status.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canOpenNewApplicationPage && !isSubmitted) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-20">
+        <div className="rounded-[36px] border border-gray-100 bg-white p-10 shadow-xl sm:p-12">
+          <div className="flex flex-col items-center text-center space-y-4">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-amber-50 text-amber-600 ring-4 ring-amber-50">
+              <AlertCircle className="h-10 w-10" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-3xl font-black uppercase tracking-tighter text-primary">
+                {accessBlockedTitle || "Access restricted"}
+              </h2>
+              <p className="mx-auto max-w-2xl text-sm leading-6 text-gray-600">
+                {accessBlockedMessage}
+              </p>
+            </div>
+
+            {accessBlockedReason === "application" && (
+              <div className="rounded-2xl border border-gray-100 bg-gray-50 px-6 py-4 text-left text-sm text-gray-600">
+                <p className="font-bold text-primary">Current application</p>
+                <p className="mt-1">
+                  Status: {latestApplicationStatus || "Unknown"}
+                  {latestApplicationDate
+                    ? ` • Submitted: ${latestApplicationDate.slice(0, 10)}`
+                    : ""}
+                </p>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => (window.location.href = "/dashboard")}
+              className="rounded-[24px] bg-primary px-10 py-4 text-sm font-black uppercase tracking-widest text-secondary shadow-xl shadow-primary/20 transition-all hover:scale-105"
+            >
+              Return to Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (isSubmitted) {
     return (
       <div className="max-w-5xl mx-auto space-y-8 pb-20">
@@ -1725,172 +2600,10 @@ export const NewApplication = () => {
 
           <div className="h-px bg-gray-100" />
 
-          <div className="space-y-12 text-left">
-            <div className="grid grid-cols-1 gap-12">
-              {/* 1. Agency */}
-              <section className="space-y-6">
-                <div className="flex items-center space-x-3 text-primary">
-                  <Shield className="w-6 h-6" />
-                  <h3 className="text-xl font-bold uppercase tracking-tight">
-                    Organization Profile
-                  </h3>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-8 bg-gray-50/50 p-8 rounded-[32px] border border-gray-100">
-                  {[
-                    { label: curT.orgName, value: watch("agencyName") },
-
-                    {
-                      label: curT.agencyphone,
-                      value: watch("agencyphone"),
-                    },
-                    { label: curT.email, value: watch("email") },
-                    { label: curT.tinNumber, value: watch("tinNumber") },
-                    {
-                      label: "Location",
-                      value: `${watch("region")}, ${watch("zone")}`,
-                    },
-                    {
-                      label: "Woreda/Kebele",
-                      value: `${watch("woreda")}/${watch("kebele")}`,
-                    },
-                    { label: "House No", value: watch("houseNumber") },
-                  ].map((item, i) => (
-                    <div key={i} className="space-y-1">
-                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                        {item.label}
-                      </p>
-                      <p className="text-sm font-bold text-primary truncate">
-                        {item.value}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-                <div className="bg-gray-50/50 p-6 rounded-[28px] border border-gray-100 space-y-3">
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                    Branch Addresses
-                  </p>
-                  {(watch("branchAddresses") || []).length === 0 ? (
-                    <p className="text-sm font-bold text-primary">
-                      No branches added
-                    </p>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {(watch("branchAddresses") || []).map(
-                        (branch: any, index: number) => (
-                          <div
-                            key={index}
-                            className="p-4 bg-white rounded-2xl border border-gray-100"
-                          >
-                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
-                              Branch #{index + 1}
-                            </p>
-                            <p className="text-sm font-bold text-primary">
-                              Kebele ID: {branch?.kebeleId || "-"}
-                            </p>
-                            <p className="text-xs text-gray-600">
-                              {branch?.houseNumber || "No house no"}
-                              {branch?.specialLocation
-                                ? `, ${branch.specialLocation}`
-                                : ""}
-                            </p>
-                          </div>
-                        ),
-                      )}
-                    </div>
-                  )}
-                </div>
-              </section>
-
-              {/* 2. Documents */}
-              <section className="space-y-6">
-                <div className="flex items-center space-x-3 text-blue-600">
-                  <FileText className="w-6 h-6" />
-                  <h3 className="text-xl font-bold uppercase tracking-tight">
-                    Submitted Documents
-                  </h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {Object.entries(uploadedFiles).map(([key, file]) => (
-                    <div
-                      key={key}
-                      className="p-5 bg-white border border-gray-100 rounded-[24px] flex items-center justify-between shadow-sm hover:shadow-md transition-all"
-                    >
-                      <div className="flex items-center space-x-4 min-w-0">
-                        <div className="p-3 bg-blue-50 text-blue-500 rounded-xl flex-shrink-0">
-                          <FileText className="w-5 h-5" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest truncate">
-                            {key.replace(/_/g, " ")}
-                          </p>
-                          <p className="text-[11px] font-bold text-primary truncate max-w-[140px]">
-                            {file?.name}
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => file && handleView(file, null)}
-                        className="p-2.5 bg-gray-50 text-gray-400 rounded-xl hover:bg-primary hover:text-white transition-all shadow-sm"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              {/* 3. Assets & Personnel Summary */}
-              <section className="space-y-6">
-                <div className="flex items-center space-x-3 text-amber-600">
-                  <Shield className="w-6 h-6" />
-                  <h3 className="text-xl font-bold uppercase tracking-tight">
-                    System Records & Staff
-                  </h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="p-6 bg-gray-900 rounded-[32px] text-white space-y-1">
-                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">
-                      Manager
-                    </p>
-                    <p className="text-sm font-black text-secondary truncate">
-                      {watch("managerName") || "Verified"}
-                    </p>
-                  </div>
-                  <div className="p-6 bg-gray-900 rounded-[32px] text-white space-y-1">
-                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">
-                      Operations Head
-                    </p>
-                    <p className="text-sm font-black truncate">
-                      {watch("opsHeadName") || "Enrolled"}
-                    </p>
-                  </div>
-                  <div className="p-6 bg-gray-900 rounded-[32px] text-white space-y-1">
-                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">
-                      Admin Head
-                    </p>
-                    <p className="text-sm font-black text-secondary truncate">
-                      {watch("adminHeadName") || "Cleared"}
-                    </p>
-                  </div>
-                  <div className="p-6 bg-gray-900 rounded-[32px] text-white space-y-1">
-                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">
-                      Branch Profile
-                    </p>
-                    <p className="text-sm font-black truncate">
-                      {(watch("branchAddresses") || []).length > 0
-                        ? `${(watch("branchAddresses") || []).length} Branch(es)`
-                        : "No Branches"}
-                    </p>
-                  </div>
-                </div>
-              </section>
-            </div>
-          </div>
-
           <div className="flex justify-center pt-8">
             <button
               type="button"
-              onClick={() => (window.location.href = "/")}
+              onClick={() => (window.location.href = "/dashboard")}
               className="px-12 py-5 bg-primary text-secondary rounded-[24px] font-black uppercase tracking-widest text-sm hover:shadow-2xl hover:scale-105 transition-all shadow-xl shadow-primary/20"
             >
               Return to Dashboard
@@ -1902,40 +2615,42 @@ export const NewApplication = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-12 pb-20">
+    <div className="mx-auto max-w-7xl space-y-8 px-3 pb-20 sm:px-4 lg:px-6 xl:px-8 lg:space-y-12">
       {/* Stepper */}
-      <div className="flex justify-between items-center relative px-4">
-        <div className="absolute top-1/2 left-0 w-full h-0.5 bg-gray-200 -translate-y-1/2 z-0" />
-        {steps.map((s) => (
-          <div
-            key={s.id}
-            className="relative z-10 flex flex-col items-center space-y-2"
-          >
+      <div className="relative overflow-x-auto px-1 pb-2 sm:px-4">
+        <div className="absolute left-4 right-4 top-1/2 z-0 h-0.5 -translate-y-1/2 bg-gray-200" />
+        <div className="relative flex min-w-[720px] items-center justify-between gap-2 sm:min-w-0 sm:gap-0">
+          {steps.map((s) => (
             <div
-              className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-500 ${
-                step >= s.id
-                  ? "bg-primary text-secondary shadow-lg scale-110"
-                  : "bg-white text-gray-400 border-2 border-gray-200"
-              }`}
+              key={s.id}
+              className="relative z-10 flex flex-1 flex-col items-center space-y-2"
             >
-              {step > s.id ? (
-                <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6" />
-              ) : (
-                <s.icon className="w-5 h-5 md:w-6 md:h-6" />
-              )}
+              <div
+                className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-500 ${
+                  step >= s.id
+                    ? "bg-primary text-secondary shadow-lg scale-110"
+                    : "bg-white text-gray-400 border-2 border-gray-200"
+                }`}
+              >
+                {step > s.id ? (
+                  <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6" />
+                ) : (
+                  <s.icon className="w-5 h-5 md:w-6 md:h-6" />
+                )}
+              </div>
+              <span
+                className={`hidden md:block text-[10px] font-bold uppercase tracking-wider ${step >= s.id ? "text-primary" : "text-gray-400"}`}
+              >
+                {s.title}
+              </span>
             </div>
-            <span
-              className={`hidden md:block text-[10px] font-bold uppercase tracking-wider ${step >= s.id ? "text-primary" : "text-gray-400"}`}
-            >
-              {s.title}
-            </span>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       <form
         onSubmit={handleSubmit(onSubmit, onInvalid)}
-        className="bg-white rounded-[40px] shadow-xl p-6 md:p-12 border border-gray-100 min-h-[600px] flex flex-col"
+        className="flex min-h-[600px] flex-col rounded-[28px] border border-gray-100 bg-white p-4 shadow-xl sm:rounded-[32px] sm:p-6 md:rounded-[40px] md:p-10 lg:p-12"
       >
         <AnimatePresence mode="wait">
           {step === 1 && (
@@ -1952,21 +2667,61 @@ export const NewApplication = () => {
                 </h3>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
+                <div className="md:col-span-2 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 sm:gap-6">
                   <FormInput
                     label={curT.orgName}
                     name="agencyName"
                     register={register}
                     value={watch("agencyName")}
                     error={errors.agencyName}
-                    disabled={isFormLocked}
+                    disabled={formLocked}
                     isOpenedForEdit={openedFields.includes("agencyName")}
+                  />
+                  <FormInput
+                    label={"Organization Name (Amharic)"}
+                    name="agencyNameAmharic"
+                    register={register}
+                    value={watch("agencyNameAmharic")}
+                    error={errors.agencyNameAmharic}
+                    disabled={formLocked}
+                    isOpenedForEdit={openedFields.includes("agencyNameAmharic")}
                   />
                 </div>
 
-                <div className="md:col-span-2 space-y-4 p-5 rounded-[28px] border border-dashed border-primary/20 bg-primary/5">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
+                <section className="md:col-span-2 rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm space-y-5">
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-black text-primary uppercase tracking-widest">
+                      {curT.headOfficeAddress || "Head Office Address"}
+                    </h4>
+                    <p className="text-xs text-gray-500">
+                      Primary office location used for the application record.
+                    </p>
+                  </div>
+
+                  <LocationFields
+                    register={register}
+                    errors={errors}
+                    watch={watch}
+                    isFormLocked={formLocked}
+                    openedFields={openedFields}
+                    setValue={setValue}
+                  />
+
+                  <FormInput
+                    label={curT.specialLocation}
+                    name="specialLocation"
+                    register={register}
+                    value={watch("specialLocation")}
+                    error={errors.specialLocation}
+                    required={false}
+                    disabled={formLocked}
+                    isOpenedForEdit={openedFields.includes("specialLocation")}
+                  />
+                </section>
+
+                <div className="md:col-span-2 space-y-4 rounded-[24px] border border-dashed border-primary/20 bg-primary/5 p-4 sm:rounded-[28px] sm:p-5 lg:p-6">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <h4 className="text-sm font-black text-primary uppercase tracking-widest">
                         Branch Addresses (Optional)
@@ -1977,8 +2732,15 @@ export const NewApplication = () => {
                     </div>
                     <button
                       type="button"
-                      disabled={isFormLocked}
-                      onClick={() =>
+                      disabled={formLocked || !canAppendBranchAddress}
+                      onClick={() => {
+                        if (!canAppendBranchAddress) {
+                          alert(
+                            "Please complete the current branch address before adding another one.",
+                          );
+                          return;
+                        }
+
                         appendBranchAddress({
                           region: "",
                           zone: "",
@@ -1986,9 +2748,9 @@ export const NewApplication = () => {
                           kebeleId: "",
                           houseNumber: "",
                           specialLocation: "",
-                        })
-                      }
-                      className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-primary text-white text-[11px] font-black uppercase tracking-widest hover:shadow-lg transition-all disabled:opacity-50"
+                        });
+                      }}
+                      className="inline-flex items-center justify-center space-x-2 rounded-xl bg-primary px-4 py-2 text-[11px] font-black uppercase tracking-widest text-white transition-all hover:shadow-lg disabled:opacity-50"
                     >
                       <Plus className="w-4 h-4" />
                       <span>Add Address</span>
@@ -1996,7 +2758,7 @@ export const NewApplication = () => {
                   </div>
 
                   {branchAddressFields.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-4 text-xs text-gray-500">
+                    <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-4 text-xs text-gray-500 sm:p-5">
                       No branch address added. You can submit with only the head
                       office address.
                     </div>
@@ -2010,35 +2772,21 @@ export const NewApplication = () => {
                           errors={errors}
                           watch={watch}
                           setValue={setValue}
-                          isFormLocked={isFormLocked}
+                          isFormLocked={formLocked}
+                          isRequired={branchAddressFields.length > 0}
                           onRemove={() => removeBranchAddress(index)}
                         />
                       ))}
                     </div>
                   )}
                 </div>
-
-                <div className="md:col-span-2 space-y-3">
-                  <h4 className="text-sm font-black text-primary uppercase tracking-widest">
-                    {curT.headOfficeAddress || "Head Office Address"}
-                  </h4>
-                  <LocationFields
-                    register={register}
-                    errors={errors}
-                    watch={watch}
-                    isFormLocked={isFormLocked}
-                    openedFields={openedFields}
-                    setValue={setValue}
-                  />
-                </div>
-
                 <FormInput
                   label={curT.agencyphone}
                   name="agencyphone"
                   register={register}
                   value={watch("agencyphone")}
                   error={errors.agencyphone}
-                  disabled={isFormLocked}
+                  disabled={formLocked}
                   isOpenedForEdit={openedFields.includes("agencyphone")}
                 />
                 <FormInput
@@ -2047,7 +2795,7 @@ export const NewApplication = () => {
                   register={register}
                   value={watch("faxNumber")}
                   error={errors.faxNumber}
-                  disabled={isFormLocked}
+                  disabled={formLocked}
                   isOpenedForEdit={openedFields.includes("faxNumber")}
                 />
                 <FormInput
@@ -2056,32 +2804,18 @@ export const NewApplication = () => {
                   register={register}
                   value={watch("tradeName")}
                   error={errors.tradeName}
-                  disabled={isFormLocked}
+                  disabled={formLocked}
                   isOpenedForEdit={openedFields.includes("tradeName")}
                 />
-
                 <FormInput
-                  label={curT.specialLocation}
-                  name="specialLocation"
+                  label={curT.email}
+                  name="email"
                   register={register}
-                  value={watch("specialLocation")}
-                  error={errors.specialLocation}
-                  required={false}
-                  disabled={isFormLocked}
-                  isOpenedForEdit={openedFields.includes("specialLocation")}
+                  value={watch("email")}
+                  error={errors.email}
+                  disabled={formLocked}
+                  isOpenedForEdit={openedFields.includes("email")}
                 />
-
-                <div className="md:col-span-2">
-                  <FormInput
-                    label={curT.email}
-                    name="email"
-                    register={register}
-                    value={watch("email")}
-                    error={errors.email}
-                    disabled={isFormLocked}
-                    isOpenedForEdit={openedFields.includes("email")}
-                  />
-                </div>
 
                 <FormInput
                   label={curT.tinNumber}
@@ -2089,7 +2823,7 @@ export const NewApplication = () => {
                   register={register}
                   value={watch("tinNumber")}
                   error={errors.tinNumber}
-                  disabled={isFormLocked}
+                  disabled={formLocked}
                   isOpenedForEdit={openedFields.includes("tinNumber")}
                 />
               </div>
@@ -2190,7 +2924,7 @@ export const NewApplication = () => {
                   <input
                     type="number"
                     {...register("capitalAmount")}
-                    disabled={isFormLocked}
+                    disabled={formLocked}
                     placeholder="Enter capital amount"
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
                   />
@@ -2211,7 +2945,7 @@ export const NewApplication = () => {
                   <input
                     type="number"
                     {...register("officesCount")}
-                    disabled={isFormLocked}
+                    disabled={formLocked}
                     placeholder="Enter number of offices"
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
                   />
@@ -2231,7 +2965,7 @@ export const NewApplication = () => {
                   </label>
                   <select
                     {...register("hasStoreHouse")}
-                    disabled={isFormLocked}
+                    disabled={formLocked}
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
                   >
                     <option value="">Select option</option>
@@ -2250,7 +2984,7 @@ export const NewApplication = () => {
                   <input
                     type="number"
                     {...register("computersCount")}
-                    disabled={isFormLocked}
+                    disabled={formLocked}
                     placeholder="Enter number of computers"
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
                   />
@@ -2271,7 +3005,7 @@ export const NewApplication = () => {
                   <input
                     type="number"
                     {...register("vehiclesCount")}
-                    disabled={isFormLocked}
+                    disabled={formLocked}
                     placeholder="Enter number of vehicles"
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
                   />
@@ -2373,7 +3107,7 @@ export const NewApplication = () => {
                   </label>
                   <input
                     {...register("trainingAddress")}
-                    disabled={isFormLocked}
+                    disabled={formLocked}
                     placeholder="Enter training address"
                     className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
                   />
@@ -2381,15 +3115,15 @@ export const NewApplication = () => {
 
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700 flex items-center space-x-1.5">
-                    <span>Number of Days Trained</span>
-                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
-                      *
+                    <span>Number of Days Trained (Optional)</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-amber-700 bg-amber-50">
+                      Optional
                     </span>
                   </label>
                   <input
                     type="number"
                     {...register("trainingDays")}
-                    disabled={isFormLocked}
+                    disabled={formLocked}
                     placeholder="Enter number of days"
                     className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
                   />
@@ -2397,15 +3131,15 @@ export const NewApplication = () => {
 
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700 flex items-center space-x-1.5">
-                    <span>Number of Males Trained</span>
-                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
-                      *
+                    <span>Number of Males Trained (Optional)</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-amber-700 bg-amber-50">
+                      Optional
                     </span>
                   </label>
                   <input
                     type="number"
                     {...register("totalTraineesMale")}
-                    disabled={isFormLocked}
+                    disabled={formLocked}
                     placeholder="Enter number of males"
                     className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
                   />
@@ -2413,15 +3147,15 @@ export const NewApplication = () => {
 
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700 flex items-center space-x-1.5">
-                    <span>Number of Females Trained</span>
-                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
-                      *
+                    <span>Number of Females Trained (Optional)</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-amber-700 bg-amber-50">
+                      Optional
                     </span>
                   </label>
                   <input
                     type="number"
                     {...register("totalTraineesFemale")}
-                    disabled={isFormLocked}
+                    disabled={formLocked}
                     placeholder="Enter number of females"
                     className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
                   />
@@ -2436,7 +3170,7 @@ export const NewApplication = () => {
                   </label>
                   <input
                     {...register("trainingProvider")}
-                    disabled={isFormLocked}
+                    disabled={formLocked}
                     placeholder="Enter training provider"
                     className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
                   />
@@ -2453,7 +3187,8 @@ export const NewApplication = () => {
                 </div>
                 <div className="md:col-span-2">
                   <FileUpload
-                    label="Certificate of Training"
+                    label="Certificate of Training (Optional)"
+                    required={false}
                     file={uploadedFiles.training_cert}
                     onUpload={(file) => handleUpload("training_cert", file)}
                     onDelete={() => handleDelete("training_cert")}
@@ -2491,11 +3226,15 @@ export const NewApplication = () => {
                 <PersonnelSection
                   title="General Manager"
                   prefix="manager"
+                  currentUser={managerProfile}
                   register={register}
                   errors={errors}
                   setValue={setValue} // Passing setValue for location resets
                   watch={watch}
-                  isFormLocked={isFormLocked}
+                  isFormLocked={formLocked}
+                  positions={positions}
+                  positionEducationOptions={positionEducationOptions}
+                  onPositionChange={fetchPositionRequirements}
                   files={uploadedFiles}
                   onUpload={handleUpload}
                   onDelete={handleDelete}
@@ -2520,7 +3259,10 @@ export const NewApplication = () => {
                   errors={errors}
                   setValue={setValue}
                   watch={watch}
-                  isFormLocked={isFormLocked}
+                  isFormLocked={formLocked}
+                  positions={positions}
+                  positionEducationOptions={positionEducationOptions}
+                  onPositionChange={fetchPositionRequirements}
                   files={uploadedFiles}
                   onUpload={handleUpload}
                   onDelete={handleDelete}
@@ -2545,7 +3287,10 @@ export const NewApplication = () => {
                   errors={errors}
                   setValue={setValue}
                   watch={watch}
-                  isFormLocked={isFormLocked}
+                  isFormLocked={formLocked}
+                  positions={positions}
+                  positionEducationOptions={positionEducationOptions}
+                  onPositionChange={fetchPositionRequirements}
                   files={uploadedFiles}
                   onUpload={handleUpload}
                   onDelete={handleDelete}
@@ -2555,7 +3300,7 @@ export const NewApplication = () => {
               </div>
 
               {/* Form Navigation/Status Hint */}
-              {!isFormLocked && (
+              {!formLocked && (
                 <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl flex items-start space-x-3">
                   <ShieldCheck className="w-5 h-5 text-amber-600 mt-0.5" />
                   <p className="text-xs text-amber-700 leading-relaxed">
@@ -2611,20 +3356,51 @@ export const NewApplication = () => {
                   </div>
                   <div className="p-8 grid grid-cols-2 md:grid-cols-4 gap-y-8 gap-x-6">
                     {[
-                      { label: curT.orgName, value: watch("agencyName") },
                       {
-                        label: curT.branchOffice,
+                        label: "Organization Name (English)",
+                        value: watch("agencyName") || "-",
+                      },
+                      {
+                        label: "Organization Name (Amharic)",
+                        value: watch("agencyNameAmharic") || "-",
+                      },
+                      {
+                        label: "Branch Addresses",
                         value:
                           (watch("branchAddresses") || []).length > 0
-                            ? `${(watch("branchAddresses") || []).length} Branch(es) Added`
+                            ? `${(watch("branchAddresses") || []).length} added`
                             : "-",
                       },
                       { label: curT.agencyphone, value: watch("agencyphone") },
                       { label: curT.email, value: watch("email") },
-                      { label: curT.region, value: watch("region") },
-                      { label: curT.zone, value: watch("zone") },
-                      { label: curT.woreda, value: watch("woreda") },
-                      { label: curT.kebele, value: watch("kebele") },
+                      {
+                        label: curT.region,
+                        value: getLocationLabel(
+                          locationLookup.regions,
+                          watch("region"),
+                        ),
+                      },
+                      {
+                        label: curT.zone,
+                        value: getLocationLabel(
+                          locationLookup.zones,
+                          watch("zone"),
+                        ),
+                      },
+                      {
+                        label: curT.woreda,
+                        value: getLocationLabel(
+                          locationLookup.woredas,
+                          watch("woreda"),
+                        ),
+                      },
+                      {
+                        label: curT.kebele,
+                        value: getLocationLabel(
+                          locationLookup.kebeles,
+                          watch("kebele"),
+                        ),
+                      },
                       { label: curT.houseNo, value: watch("houseNumber") },
                       { label: curT.tradeName, value: watch("tradeName") },
                       {
@@ -2661,7 +3437,78 @@ export const NewApplication = () => {
                       Edit Documents
                     </button>
                   </div>
-                  <div className="p-8">
+                  <div className="p-8 space-y-6">
+                    {(watch("branchAddresses") || []).length > 0 && (
+                      <div className="space-y-4">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                          Branch Addresses
+                        </p>
+                        {(watch("branchAddresses") || []).map(
+                          (branch: any, index: number) => {
+                            const regionCacheKey = `branch:${index}:region:${branch?.region ?? ""}`;
+                            const zoneCacheKey = `branch:${index}:zone:${branch?.zone ?? ""}`;
+                            const woredaCacheKey = `branch:${index}:woreda:${branch?.woreda ?? ""}`;
+                            const kebeleCacheKey = `branch:${index}:kebele:${branch?.kebeleId ?? ""}`;
+
+                            const branchRegionName =
+                              reviewLocationLabels[regionCacheKey] || "-";
+                            const branchZoneName =
+                              reviewLocationLabels[zoneCacheKey] || "-";
+                            const branchWoredaName =
+                              reviewLocationLabels[woredaCacheKey] || "-";
+                            const branchKebeleName =
+                              reviewLocationLabels[kebeleCacheKey] || "-";
+
+                            return (
+                              <div
+                                key={index}
+                                className="p-4 bg-white border border-gray-100 rounded-2xl space-y-3"
+                              >
+                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
+                                  Branch #{index + 1}
+                                </p>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                  {[
+                                    {
+                                      label: "Region",
+                                      value: branchRegionName,
+                                    },
+                                    {
+                                      label: "Zone",
+                                      value: branchZoneName,
+                                    },
+                                    {
+                                      label: "Woreda",
+                                      value: branchWoredaName,
+                                    },
+                                    {
+                                      label: "Kebele",
+                                      value: branchKebeleName,
+                                    },
+                                  ].map((item) => (
+                                    <div key={item.label} className="space-y-1">
+                                      <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">
+                                        {item.label}
+                                      </p>
+                                      <p className="text-sm font-bold text-primary truncate">
+                                        {item.value}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                                <p className="text-xs text-gray-600">
+                                  {branch?.houseNumber || "No house no"}
+                                  {branch?.specialLocation
+                                    ? `, ${branch.specialLocation}`
+                                    : ""}
+                                </p>
+                              </div>
+                            );
+                          },
+                        )}
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {Object.entries(uploadedFiles)
                         .filter(
@@ -2862,7 +3709,7 @@ export const NewApplication = () => {
                             </div>
 
                             {/* Personnel Details Grid */}
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                               {[
                                 { label: "Email", value: personnelData?.email },
                                 { label: "Phone", value: personnelData?.phone },
@@ -2899,16 +3746,35 @@ export const NewApplication = () => {
                                 {[
                                   {
                                     label: "Region",
-                                    value: personnelData?.region,
+                                    value: getCachedLocationLabel(
+                                      locationLookup.regions,
+                                      personnelData?.region,
+                                      `${prefix}:region:${personnelData?.region ?? ""}`,
+                                    ),
                                   },
-                                  { label: "Zone", value: personnelData?.zone },
+                                  {
+                                    label: "Zone",
+                                    value: getCachedLocationLabel(
+                                      locationLookup.zones,
+                                      personnelData?.zone,
+                                      `${prefix}:zone:${personnelData?.zone ?? ""}`,
+                                    ),
+                                  },
                                   {
                                     label: "Woreda",
-                                    value: personnelData?.woreda,
+                                    value: getCachedLocationLabel(
+                                      locationLookup.woredas,
+                                      personnelData?.woreda,
+                                      `${prefix}:woreda:${personnelData?.woreda ?? ""}`,
+                                    ),
                                   },
                                   {
                                     label: "Kebele",
-                                    value: personnelData?.kebele,
+                                    value: getCachedLocationLabel(
+                                      locationLookup.kebeles,
+                                      personnelData?.kebele,
+                                      `${prefix}:kebele:${personnelData?.kebele ?? ""}`,
+                                    ),
                                   },
                                   {
                                     label: "House No",
@@ -2927,6 +3793,47 @@ export const NewApplication = () => {
                               </div>
                             </div>
 
+                            {/* Position & Experience */}
+                            <div className="pt-4 border-t border-gray-100">
+                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-3">
+                                Position & Experience
+                              </p>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                {[
+                                  {
+                                    label: "Position",
+                                    value:
+                                      positions.find(
+                                        (position) =>
+                                          position.id ===
+                                          Number(personnelData?.positionId),
+                                      )?.name || personnelData?.positionId,
+                                  },
+                                  {
+                                    label: "Education Level",
+                                    value: personnelData?.educationLevel,
+                                  },
+                                  {
+                                    label: "Work Experience",
+                                    value: personnelData?.workExpYears,
+                                  },
+                                  {
+                                    label: "Total Experience",
+                                    value: personnelData?.TotalExpYears,
+                                  },
+                                ].map((item, i) => (
+                                  <div key={i}>
+                                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1">
+                                      {item.label}
+                                    </p>
+                                    <p className="text-sm font-bold text-primary">
+                                      {item.value ?? "-"}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
                             {/* Documents Section */}
                             <div className="pt-4 border-t border-gray-100">
                               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-3">
@@ -2934,16 +3841,16 @@ export const NewApplication = () => {
                               </p>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 {[
-                                  `${prefix}fingerprint_doc`,
-                                  `${prefix}medical_doc`,
-                                  `${prefix}training_doc`,
-                                  `${prefix}support_doc`,
-                                  `${prefix}collateral_doc`,
-                                  `${prefix}experience_doc`,
-                                  `${prefix}resignation_letter_doc`,
-                                  `${prefix}education_doc`,
-                                  `${prefix}id_passport_or_kabele_doc`,
-                                  `${prefix}organization_Id_doc`,
+                                  `${prefix}_fingerprint_doc`,
+                                  `${prefix}_medical_doc`,
+                                  `${prefix}_training_doc`,
+                                  `${prefix}_support_doc`,
+                                  `${prefix}_collateral_doc`,
+                                  `${prefix}_experience_doc`,
+                                  `${prefix}_resignation_letter_doc`,
+                                  `${prefix}_education_doc`,
+                                  `${prefix}_passport_or_kabele_doc`,
+                                  `${prefix}_organization_Id_doc`,
                                 ].map((key) =>
                                   uploadedFiles[key] ? (
                                     <div
@@ -2992,66 +3899,7 @@ export const NewApplication = () => {
                   </div>
                 </section>
 
-                {/* 5. Guards (Summary) */}
-                <section className="bg-gray-50/50 rounded-[32px] border border-gray-100 overflow-hidden">
-                  <div className="p-6 bg-white border-b border-gray-100 flex items-center justify-between">
-                    <div className="flex items-center space-x-3 text-red-600">
-                      <Shield className="w-5 h-5" />
-                      <h4 className="font-black text-xs uppercase tracking-widest">
-                        Guards Recruitment Criteria
-                      </h4>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setStep(5)}
-                      className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all"
-                    >
-                      Edit Criteria
-                    </button>
-                  </div>
-                  <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-4">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-                        Mandatory Requirements Status
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {[
-                          "No Criminal Record",
-                          "Healthy / Medical Fit",
-                          "Training Completed",
-                          "Fingerprint Verified",
-                        ].map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-3 py-1 bg-green-50 text-green-600 text-[9px] font-black uppercase rounded-full border border-green-100"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="space-y-4">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-                        Education Distribution
-                      </p>
-                      <div className="flex items-center space-x-6 text-primary">
-                        <div>
-                          <p className="text-2xl font-black italic">80%</p>
-                          <p className="text-[8px] font-bold text-gray-400 uppercase">
-                            Grades 9-12
-                          </p>
-                        </div>
-                        <div className="w-px h-8 bg-gray-200" />
-                        <div>
-                          <p className="text-2xl font-black italic">20%</p>
-                          <p className="text-[8px] font-bold text-gray-400 uppercase">
-                            Cert / Diploma
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </section>
+                {/* Guards Recruitment Criteria removed per request */}
               </div>
 
               <div className="p-8 bg-primary/5 rounded-[40px] border-2 border-dashed border-primary/20 flex flex-col items-center text-center space-y-4">
@@ -3073,12 +3921,12 @@ export const NewApplication = () => {
           )}
         </AnimatePresence>
 
-        <div className="flex justify-between pt-12 mt-auto">
+        <div className="mt-auto flex flex-col-reverse gap-3 pt-8 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:pt-12">
           <button
             type="button"
             onClick={() => setStep(Math.max(1, step - 1))}
             disabled={step === 1}
-            className="flex items-center space-x-2 px-8 py-4 rounded-2xl font-bold text-gray-500 hover:bg-gray-100 disabled:opacity-0 transition-all"
+            className="flex w-full items-center justify-center space-x-2 rounded-2xl px-6 py-4 font-bold text-gray-500 transition-all hover:bg-gray-100 disabled:opacity-0 sm:w-auto sm:px-8"
           >
             <ArrowLeft className="w-5 h-5" />
             <span>{curT.back}</span>
@@ -3087,7 +3935,7 @@ export const NewApplication = () => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="blue-gradient text-white px-10 py-4 rounded-2xl font-bold shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all flex items-center space-x-2"
+              className="blue-gradient flex w-full items-center justify-center space-x-2 rounded-2xl px-8 py-4 font-bold text-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-2xl sm:w-auto sm:px-10"
             >
               <span>{isSubmitting ? curT.processing : curT.submit}</span>
               {!isSubmitting && <ArrowRight className="w-5 h-5" />}
@@ -3096,7 +3944,7 @@ export const NewApplication = () => {
             <button
               type="button"
               onClick={nextStep}
-              className="blue-gradient text-white px-10 py-4 rounded-2xl font-bold shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all flex items-center space-x-2"
+              className="blue-gradient flex w-full items-center justify-center space-x-2 rounded-2xl px-8 py-4 font-bold text-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-2xl sm:w-auto sm:px-10"
             >
               <span>
                 {step === 5

@@ -3,13 +3,17 @@ import { useState, useEffect } from "react";
 import { Edit, Trash2 } from "lucide-react";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { AutoDismissToast } from "../../components/AutoDismissToast";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface NodeItem {
   id: number;
-  name: string;
+  name?: string;
+  nameEnglish?: string;
+  nameAmharic?: string;
 }
 
 export default function LocationManager() {
+  const { language } = useLanguage();
   // Cascading Layer States
   const [regions, setRegions] = useState<NodeItem[]>([]);
   const [zones, setZones] = useState<NodeItem[]>([]);
@@ -52,16 +56,23 @@ export default function LocationManager() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editModalTier, setEditModalTier] = useState<string | null>(null);
   const [editModalId, setEditModalId] = useState<number | null>(null);
-  const [editModalValue, setEditModalValue] = useState("");
+  const [editModalEnglishValue, setEditModalEnglishValue] = useState("");
+  const [editModalAmharicValue, setEditModalAmharicValue] = useState("");
   const [editModalLoading, setEditModalLoading] = useState(false);
   // Add modal state
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [addModalTier, setAddModalTier] = useState<string | null>(null);
   const [addModalParentId, setAddModalParentId] = useState<number | null>(null);
-  const [addModalValue, setAddModalValue] = useState("");
+  const [addModalEnglishValue, setAddModalEnglishValue] = useState("");
+  const [addModalAmharicValue, setAddModalAmharicValue] = useState("");
   const [addModalLoading, setAddModalLoading] = useState(false);
 
   const API_ROOT = "http://localhost:5000/api/location";
+
+  const getDisplayName = (obj?: any) =>
+    language === "am"
+      ? obj?.nameAmharic || obj?.name || obj?.nameEnglish || ""
+      : obj?.nameEnglish || obj?.name || obj?.nameAmharic || "";
 
   // Generic request wrapper with error handling and JSON parsing
   const stripHtml = (s: string) =>
@@ -98,9 +109,15 @@ export default function LocationManager() {
         data = { success: res.ok, data: null, message };
       }
 
-      // If server returned an explicit failure structure, show its message
+      // If server returned an explicit failure structure, prefer the most specific message.
       if (data && data.success === false) {
-        setErrorLog(data.message || `Request failed (${res.status})`);
+        const detailedError =
+          typeof data.errors === "string" && data.errors.trim().length > 0
+            ? stripHtml(data.errors)
+            : null;
+        setErrorLog(
+          detailedError || data.message || `Request failed (${res.status})`,
+        );
         return data;
       }
 
@@ -202,17 +219,25 @@ export default function LocationManager() {
     setConfirmOpen(true);
   };
 
-  const openEditModal = (tier: string, id: number, name: string) => {
+  const openEditModal = (tier: string, id: number) => {
     setEditModalTier(tier);
     setEditModalId(id);
-    setEditModalValue(name);
+    // Prefill modal values by looking up the selected entity
+    let item: any = null;
+    if (tier === "r") item = regions.find((x) => x.id === id);
+    if (tier === "z") item = zones.find((x) => x.id === id);
+    if (tier === "w") item = woredas.find((x) => x.id === id);
+    if (tier === "k") item = kebeles.find((x) => x.id === id);
+    setEditModalEnglishValue(item?.nameEnglish || item?.name || "");
+    setEditModalAmharicValue(item?.nameAmharic || item?.name || "");
     setEditModalOpen(true);
   };
 
   const openAddModal = (tier: string, parentId: number | null = null) => {
     setAddModalTier(tier);
     setAddModalParentId(parentId);
-    setAddModalValue("");
+    setAddModalEnglishValue("");
+    setAddModalAmharicValue("");
     setAddModalOpen(true);
   };
 
@@ -235,7 +260,21 @@ export default function LocationManager() {
       return;
     }
 
-    const result = await request("POST", endpoint, { name: addModalValue });
+    const payload: any = {};
+    if (addModalEnglishValue && addModalEnglishValue.trim().length)
+      payload.nameEnglish = addModalEnglishValue.trim();
+    if (addModalAmharicValue && addModalAmharicValue.trim())
+      payload.nameAmharic = addModalAmharicValue.trim();
+    // fallback to single-language if only one supplied
+    if (!payload.nameEnglish && !payload.nameAmharic) {
+      setAddModalLoading(false);
+      setToastType("error");
+      setToastMessage("Please provide at least one name (English or Amharic)");
+      setToastOpen(true);
+      return;
+    }
+
+    const result = await request("POST", endpoint, payload);
     setAddModalLoading(false);
     setAddModalOpen(false);
     if (result.success) {
@@ -267,7 +306,20 @@ export default function LocationManager() {
     else if (editModalTier === "w") endpoint = `/woredas/${id}`;
     else if (editModalTier === "k") endpoint = `/kebeles/${id}`;
 
-    const result = await request("PUT", endpoint, { name: editModalValue });
+    const payload: any = {};
+    if (editModalEnglishValue && editModalEnglishValue.trim())
+      payload.nameEnglish = editModalEnglishValue.trim();
+    if (editModalAmharicValue && editModalAmharicValue.trim())
+      payload.nameAmharic = editModalAmharicValue.trim();
+    if (!payload.nameEnglish && !payload.nameAmharic) {
+      setEditModalLoading(false);
+      setToastType("error");
+      setToastMessage("Please provide at least one name (English or Amharic)");
+      setToastOpen(true);
+      return;
+    }
+
+    const result = await request("PUT", endpoint, payload);
     setEditModalLoading(false);
     setEditModalOpen(false);
     if (result.success) {
@@ -309,16 +361,16 @@ export default function LocationManager() {
 
   // Client-Side Live Filter Computations
   const filteredRegions = regions.filter((r) =>
-    r.name.toLowerCase().includes(queryRegion.toLowerCase()),
+    getDisplayName(r).toLowerCase().includes(queryRegion.toLowerCase()),
   );
   const filteredZones = zones.filter((z) =>
-    z.name.toLowerCase().includes(queryZone.toLowerCase()),
+    getDisplayName(z).toLowerCase().includes(queryZone.toLowerCase()),
   );
   const filteredWoredas = woredas.filter((w) =>
-    w.name.toLowerCase().includes(queryWoreda.toLowerCase()),
+    getDisplayName(w).toLowerCase().includes(queryWoreda.toLowerCase()),
   );
   const filteredKebeles = kebeles.filter((k) =>
-    k.name.toLowerCase().includes(queryKebele.toLowerCase()),
+    getDisplayName(k).toLowerCase().includes(queryKebele.toLowerCase()),
   );
 
   return (
@@ -335,7 +387,7 @@ export default function LocationManager() {
 
       {errorLog && (
         <div className="p-4 bg-red-50 border-l-4 border-red-600 text-red-800 text-sm font-semibold rounded shadow-sm">
-          ⚠️ Operational Error: {errorLog}
+          ⚠️ {errorLog}
         </div>
       )}
 
@@ -366,11 +418,20 @@ export default function LocationManager() {
                     ? "Woreda"
                     : "Kebele"}
             </h3>
-            <input
-              value={editModalValue}
-              onChange={(e) => setEditModalValue(e.target.value)}
-              className="w-full p-2 border rounded mb-4"
-            />
+            <div className="grid grid-cols-1 gap-3">
+              <input
+                value={editModalEnglishValue}
+                onChange={(e) => setEditModalEnglishValue(e.target.value)}
+                className="w-full p-2 border rounded mb-2"
+                placeholder="Name (English)"
+              />
+              <input
+                value={editModalAmharicValue}
+                onChange={(e) => setEditModalAmharicValue(e.target.value)}
+                className="w-full p-2 border rounded"
+                placeholder="ስም (Amharic)"
+              />
+            </div>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setEditModalOpen(false)}
@@ -411,20 +472,36 @@ export default function LocationManager() {
               <div className="text-sm text-gray-500 mb-2">
                 Parent:{" "}
                 {addModalTier === "z"
-                  ? regions.find((rt) => rt.id === addModalParentId)?.name
+                  ? getDisplayName(
+                      regions.find((rt) => rt.id === addModalParentId),
+                    )
                   : addModalTier === "w"
-                    ? zones.find((z) => z.id === addModalParentId)?.name
+                    ? getDisplayName(
+                        zones.find((z) => z.id === addModalParentId),
+                      )
                     : addModalTier === "k"
-                      ? woredas.find((w) => w.id === addModalParentId)?.name
+                      ? getDisplayName(
+                          woredas.find((w) => w.id === addModalParentId),
+                        )
                       : "-"}
               </div>
             )}
-            <input
-              value={addModalValue}
-              onChange={(e) => setAddModalValue(e.target.value)}
-              className="w-full p-2 border rounded mb-4"
-              placeholder={`Enter ${addModalTier === "r" ? "region" : addModalTier === "z" ? "zone" : addModalTier === "w" ? "woreda" : "kebele"} name`}
-            />
+
+            <div className="grid grid-cols-1 gap-3 mb-4">
+              <input
+                value={addModalEnglishValue}
+                onChange={(e) => setAddModalEnglishValue(e.target.value)}
+                className="w-full p-2 border rounded"
+                placeholder={`Enter English name`}
+              />
+              <input
+                value={addModalAmharicValue}
+                onChange={(e) => setAddModalAmharicValue(e.target.value)}
+                className="w-full p-2 border rounded"
+                placeholder={`Enter Amharic name (optional)`}
+              />
+            </div>
+
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setAddModalOpen(false)}
@@ -489,10 +566,10 @@ export default function LocationManager() {
               <li
                 key={r.id}
                 onClick={() => setSelRegion(r)}
-                className={`p-2.5 rounded-lg text-xs font-medium cursor-pointer flex justify-between items-center transition-all ${
+                className={`p-2.5 rounded-lg text-xs font-medium cursor-pointer flex items-center gap-2 transition-all ${
                   selRegion?.id === r.id
                     ? "bg-[#003366] text-[#FFD700] shadow-sm font-bold"
-                    : "hover:bg-gray-100 text-gray-700"
+                    : "hover:bg-gray-100 text-black"
                 }`}
               >
                 {editTier === "r" && editId === r.id ? (
@@ -505,24 +582,28 @@ export default function LocationManager() {
                       e.key === "Enter" &&
                       executeUpdate(
                         `/regions/${r.id}`,
-                        { name: editValue },
+                        language === "am"
+                          ? { nameAmharic: editValue }
+                          : { nameEnglish: editValue },
                         fetchRegions,
                       )
                     }
                   />
                 ) : (
-                  <span>{r.name}</span>
+                  <span className="flex-1 min-w-0 pr-2 truncate text-inherit text-left">
+                    {getDisplayName(r)}
+                  </span>
                 )}
                 <div className="flex space-x-2 flex-shrink-0">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      openEditModal("r", r.id, r.name);
+                      openEditModal("r", r.id);
                     }}
                     className={`opacity-80 hover:opacity-100 px-2 ${
                       selRegion?.id === r.id
                         ? "text-[#FFD700]"
-                        : "text-gray-600 hover:text-[#003366]"
+                        : "text-black hover:text-[#003366]"
                     }`}
                     title="Edit region"
                   >
@@ -539,7 +620,7 @@ export default function LocationManager() {
                     className={`opacity-80 hover:opacity-100 px-2 ${
                       selRegion?.id === r.id
                         ? "text-[#FFD700]"
-                        : "text-gray-600 hover:text-red-600"
+                        : "text-black hover:text-red-600"
                     }`}
                     title="Delete region"
                   >
@@ -587,10 +668,10 @@ export default function LocationManager() {
                   <li
                     key={z.id}
                     onClick={() => setSelZone(z)}
-                    className={`p-2.5 rounded-lg text-xs font-medium cursor-pointer flex justify-between items-center transition-all ${
+                    className={`p-2.5 rounded-lg text-xs font-medium cursor-pointer flex items-center gap-2 transition-all ${
                       selZone?.id === z.id
                         ? "bg-[#003366] text-[#FFD700] shadow-sm font-bold"
-                        : "hover:bg-gray-100 text-gray-700"
+                        : "hover:bg-gray-100 text-black"
                     }`}
                   >
                     {editTier === "z" && editId === z.id ? (
@@ -603,24 +684,28 @@ export default function LocationManager() {
                           e.key === "Enter" &&
                           executeUpdate(
                             `/zones/${z.id}`,
-                            { name: editValue },
+                            language === "am"
+                              ? { nameAmharic: editValue }
+                              : { nameEnglish: editValue },
                             () => fetchZones(selRegion.id),
                           )
                         }
                       />
                     ) : (
-                      <span>{z.name}</span>
+                      <span className="flex-1 min-w-0 pr-2 truncate text-inherit text-left">
+                        {getDisplayName(z)}
+                      </span>
                     )}
                     <div className="flex space-x-2">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          openEditModal("z", z.id, z.name);
+                          openEditModal("z", z.id);
                         }}
                         className={`opacity-80 hover:opacity-100 px-2 ${
                           selZone?.id === z.id
                             ? "text-[#FFD700]"
-                            : "text-gray-600 hover:text-[#003366]"
+                            : "text-black hover:text-[#003366]"
                         }`}
                         title="Edit zone"
                       >
@@ -636,7 +721,7 @@ export default function LocationManager() {
                         className={`opacity-80 hover:opacity-100 px-2 ${
                           selZone?.id === z.id
                             ? "text-[#FFD700]"
-                            : "text-gray-600 hover:text-red-600"
+                            : "text-black hover:text-red-600"
                         }`}
                         title="Delete zone"
                       >
@@ -689,7 +774,7 @@ export default function LocationManager() {
                   <li
                     key={w.id}
                     onClick={() => setSelWoreda(w)}
-                    className={`p-2.5 rounded-lg text-xs font-medium cursor-pointer flex justify-between items-center transition-all ${selWoreda?.id === w.id ? "bg-[#003366] text-[#FFD700] shadow-sm font-bold" : "hover:bg-gray-100 text-gray-700"}`}
+                    className={`p-2.5 rounded-lg text-xs font-medium cursor-pointer flex items-center gap-2 transition-all ${selWoreda?.id === w.id ? "bg-[#003366] text-[#FFD700] shadow-sm font-bold" : "hover:bg-gray-100 text-black"}`}
                   >
                     {editTier === "w" && editId === w.id ? (
                       <input
@@ -701,24 +786,28 @@ export default function LocationManager() {
                           e.key === "Enter" &&
                           executeUpdate(
                             `/woredas/${w.id}`,
-                            { name: editValue },
+                            language === "am"
+                              ? { nameAmharic: editValue }
+                              : { nameEnglish: editValue },
                             () => fetchWoredas(selZone.id),
                           )
                         }
                       />
                     ) : (
-                      <span>{w.name}</span>
+                      <span className="flex-1 min-w-0 pr-2 truncate text-inherit text-left">
+                        {getDisplayName(w)}
+                      </span>
                     )}
                     <div className="flex space-x-1">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          openEditModal("w", w.id, w.name);
+                          openEditModal("w", w.id);
                         }}
                         className={`opacity-80 hover:opacity-100 px-2 ${
                           selWoreda?.id === w.id
                             ? "text-[#FFD700]"
-                            : "text-gray-600 hover:text-[#003366]"
+                            : "text-black hover:text-[#003366]"
                         }`}
                         title="Edit woreda"
                       >
@@ -734,7 +823,7 @@ export default function LocationManager() {
                         className={`opacity-80 hover:opacity-100 px-2 ${
                           selWoreda?.id === w.id
                             ? "text-[#FFD700]"
-                            : "text-gray-600 hover:text-red-600"
+                            : "text-black hover:text-red-600"
                         }`}
                         title="Delete woreda"
                       >
@@ -786,7 +875,7 @@ export default function LocationManager() {
                 {filteredKebeles.map((k) => (
                   <li
                     key={k.id}
-                    className="p-2.5 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-100 flex justify-between items-center transition-all"
+                    className="p-2.5 rounded-lg text-xs font-medium text-black hover:bg-gray-100 flex items-center gap-2 transition-all"
                   >
                     {editTier === "k" && editId === k.id ? (
                       <input
@@ -798,23 +887,27 @@ export default function LocationManager() {
                           e.key === "Enter" &&
                           executeUpdate(
                             `/kebeles/${k.id}`,
-                            { name: editValue },
+                            language === "am"
+                              ? { nameAmharic: editValue }
+                              : { nameEnglish: editValue },
                             () => fetchKebeles(selWoreda.id),
                           )
                         }
                       />
                     ) : (
-                      <span>{k.name}</span>
+                      <span className="flex-1 min-w-0 pr-2 truncate text-inherit text-left">
+                        {getDisplayName(k)}
+                      </span>
                     )}
                     <div className="flex space-x-1">
                       <button
                         onClick={() => {
-                          openEditModal("k", k.id, k.name);
+                          openEditModal("k", k.id);
                         }}
                         className={`opacity-80 hover:opacity-100 px-2 ${
                           selWoreda?.id === k.id
                             ? "text-[#FFD700]"
-                            : "text-gray-600 hover:text-[#003366]"
+                            : "text-black hover:text-[#003366]"
                         }`}
                         title="Edit kebele"
                       >
@@ -829,7 +922,7 @@ export default function LocationManager() {
                         className={`opacity-80 hover:opacity-100 px-2 ${
                           selWoreda?.id === k.id
                             ? "text-[#FFD700]"
-                            : "text-gray-600 hover:text-red-600"
+                            : "text-black hover:text-red-600"
                         }`}
                         title="Delete kebele"
                       >

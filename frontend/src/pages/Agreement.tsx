@@ -19,14 +19,23 @@ type AgreementPayload = {
   issuedDate: string;
   expiryDate: string;
   snapshotData: Record<string, any>;
-  organization?: { name: string; tinNumber: string };
+  organization?: {
+    name?: string;
+    nameEnglish?: string;
+    nameAmharic?: string;
+    tinNumber: string;
+  };
   signedBy?: { fullName: string; email: string; phone?: string };
 };
 
 type ApplicationPayload = {
   id: number;
+  status?: string;
+  applicationDate?: string;
   organization: {
-    name: string;
+    name?: string;
+    nameEnglish?: string;
+    nameAmharic?: string;
     email: string;
     phone: string;
     faxNumber?: string | null;
@@ -38,9 +47,22 @@ type ApplicationPayload = {
       specialLocation?: string | null;
       kebele?: {
         name?: string | null;
+        nameEnglish?: string | null;
+        nameAmharic?: string | null;
         woreda?: {
           name?: string | null;
-          zone?: { name?: string | null; region?: { name?: string | null } };
+          nameEnglish?: string | null;
+          nameAmharic?: string | null;
+          zone?: {
+            name?: string | null;
+            nameEnglish?: string | null;
+            nameAmharic?: string | null;
+            region?: {
+              name?: string | null;
+              nameEnglish?: string | null;
+              nameAmharic?: string | null;
+            };
+          };
         };
       };
     };
@@ -74,6 +96,22 @@ export const Agreement = () => {
     typeof value === "number" && Number.isFinite(value)
       ? value.toString()
       : fallback;
+  const getOrganizationName = (
+    org?: { name?: string; nameEnglish?: string; nameAmharic?: string } | null,
+  ) =>
+    language === "am"
+      ? org?.nameAmharic || org?.name || org?.nameEnglish || "N/A"
+      : org?.nameEnglish || org?.name || org?.nameAmharic || "N/A";
+  const getLocalizedLocationName = (
+    value?: {
+      name?: string | null;
+      nameEnglish?: string | null;
+      nameAmharic?: string | null;
+    } | null,
+  ) =>
+    language === "am"
+      ? value?.nameAmharic || value?.name || value?.nameEnglish || "N/A"
+      : value?.nameEnglish || value?.name || value?.nameAmharic || "N/A";
   const formatDate = (value?: string | null) => {
     if (!value) return "N/A";
     const date = new Date(value);
@@ -178,15 +216,63 @@ export const Agreement = () => {
   const isValidDate = () => !!assembleDateISO();
 
   const org = application?.organization;
+  const agreementOrg = agreement?.organization;
   const address = org?.address;
-  const regionName = address?.kebele?.woreda?.zone?.region?.name;
-  const zoneName = address?.kebele?.woreda?.zone?.name;
-  const woredaName = address?.kebele?.woreda?.name;
-  const kebeleName = address?.kebele?.name;
+  const regionName = getLocalizedLocationName(
+    address?.kebele?.woreda?.zone?.region,
+  );
+  const zoneName = getLocalizedLocationName(address?.kebele?.woreda?.zone);
+  const woredaName = getLocalizedLocationName(address?.kebele?.woreda);
+  const kebeleName = getLocalizedLocationName(address?.kebele);
   const effectiveDeadline = (() => {
     if (agreement?.recruitmentDeadline) return agreement.recruitmentDeadline;
     const assembled = assembleDateISO();
     return assembled ? assembled : null;
+  })();
+
+  const currentGregorianYear = new Date().getFullYear();
+  const safeYearFromDate = (value?: string | null) => {
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.getFullYear();
+  };
+
+  const agreementIssuedYear = safeYearFromDate(agreement?.issuedDate);
+  const applicationYear = safeYearFromDate(application?.applicationDate);
+  const normalizedApplicationStatus = String(application?.status || "")
+    .trim()
+    .toLowerCase();
+  const isApplicationApproved = normalizedApplicationStatus === "approved";
+  const isApplicationPending = normalizedApplicationStatus === "pending";
+  const isPendingForLatestYear =
+    isApplicationPending &&
+    (applicationYear === null || applicationYear === currentGregorianYear);
+
+  const agreementEligibilityMessage = (() => {
+    if (!application?.id) {
+      return "Application not found for this account.";
+    }
+
+    if (!isApplicationApproved) {
+      return "Only approved applications can generate an agreement.";
+    }
+
+    if (agreementIssuedYear === currentGregorianYear) {
+      return `An agreement has already been issued for the current year (${currentGregorianYear} GC.).`;
+    }
+
+    if (agreementIssuedYear !== null) {
+      if (applicationYear === null) {
+        return "Application year is missing. Submit a new approved application for a new year.";
+      }
+
+      if (applicationYear <= agreementIssuedYear) {
+        return `You can only create a new agreement from an approved new-year application. Latest agreement year: ${agreementIssuedYear}, application year: ${applicationYear}.`;
+      }
+    }
+
+    return null;
   })();
 
   const loadAgreementContext = React.useCallback(async () => {
@@ -225,10 +311,11 @@ export const Agreement = () => {
   }, [loadAgreementContext]);
 
   const handleConfirm = async () => {
-    if (!application?.id) {
-      setError("Application not found for this account.");
+    if (agreementEligibilityMessage) {
+      setError(agreementEligibilityMessage);
       return;
     }
+
     if (!isValidDate()) {
       setError("Recruitment deadline is required.");
       return;
@@ -236,15 +323,18 @@ export const Agreement = () => {
 
     setSubmitting(true);
     setError(null);
+
     try {
       const payload = {
-        applicationId: application.id,
+        applicationId: application!.id,
         recruitmentDeadline: assembleDateISO(),
       };
+
       const result = await apiRequest<any>("/agreements/generate", {
         method: "POST",
         body: JSON.stringify(payload),
       });
+
       setAgreement(result?.data as AgreementPayload);
       navigate("/dashboard/payment");
     } catch (err) {
@@ -254,6 +344,70 @@ export const Agreement = () => {
       setSubmitting(false);
     }
   };
+
+  const agreementSectionBlockMessage = (() => {
+    if (loading) return null;
+
+    if (error) {
+      return language === "am"
+        ? "የውል መረጃ መጫን አልተሳካም። ገጹን እንደገና ያድሱ ወይም በኋላ ይሞክሩ።"
+        : "You do not have an application record yet, so agreement information is not available. Please submit a new application first.";
+    }
+
+    if (!application?.id) {
+      return language === "am"
+        ? "ለመለያዎ የተመዘገበ ማመልከቻ አልተገኘም። የውል ክፍሉን ለመክፈት አዲስ ማመልከቻ ያስገቡ እና እሱ እስኪፀድቅ ይጠብቁ።"
+        : "No application record was found for your account. To open the agreement section, submit a new application and wait until it is approved.";
+    }
+
+    if (isPendingForLatestYear) {
+      return language === "am"
+        ? `የቅርብ ጊዜ ማመልከቻዎ${applicationYear ? ` (${applicationYear})` : ""} አሁንም በምርመራ ላይ ነው። ማመልከቻው ከፀደቀ በኋላ የውል ክፍሉ ይከፈታል።`
+        : `Your latest application${applicationYear ? ` (${applicationYear})` : ""} is still under review. The agreement section will be available after approval.`;
+    }
+
+    if (
+      isApplicationApproved &&
+      agreementIssuedYear === currentGregorianYear
+    ) {
+      return language === "am"
+        ? `ለዚህ ዓመት (${currentGregorianYear} GC) ውል አስቀድሞ ተሰጥቷል። በተመሳሳይ ዓመት ሁለተኛ ውል መፍጠር አይቻልም።`
+        : `An agreement has already been issued for ${currentGregorianYear}. A second agreement cannot be created in the same year.`;
+    }
+
+    return null;
+  })();
+
+  if (agreementSectionBlockMessage) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-8">
+        <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 space-y-6">
+          <div className="flex items-center space-x-3 text-amber-700">
+            <AlertCircle className="w-6 h-6" />
+            <h2 className="text-xl font-black text-primary">
+              {language === "am"
+                ? "የውል ክፍሉ ጊዜያዊ ዝግ ነው"
+                : "Agreement Section Is Temporarily Unavailable"}
+            </h2>
+          </div>
+
+          <p className="text-sm text-gray-700 leading-relaxed">
+            {agreementSectionBlockMessage}
+          </p>
+
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard/new")}
+              className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:shadow-lg transition-all"
+            >
+              {language === "am" ? "ወደ አዲስ ማመልከቻ ገጽ ሂድ" : "Go to New Application"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -299,7 +453,10 @@ export const Agreement = () => {
                 <p>
                   እኛ
                   <span className="font-semibold text-gray-900">
-                    {safeText(org?.name, "የተቋሙ ስም")}
+                    {safeText(
+                      getOrganizationName(agreementOrg || org),
+                      "የተቋሙ ስም",
+                    )}
                   </span>
                   የግል ጥበቃ አገልግሎት ተቋማት ኃላ/የተ/የግ/ማህበር የከፈትነው ዋና መስሪያ እና ቅርንጫፍ መስሪያ
                   ቤት አድራሻ፡- ክልል/ከተማ /አስ/ር
@@ -433,7 +590,10 @@ export const Agreement = () => {
                 <p>
                   We{" "}
                   <span className="font-semibold text-gray-900">
-                    {safeText(org?.name, "Agency Name")}
+                    {safeText(
+                      getOrganizationName(agreementOrg || org),
+                      "Agency Name",
+                    )}
                   </span>
                   , a Private Protection Service Institution, having our main
                   office address at: Region/City{" "}
@@ -444,15 +604,15 @@ export const Agreement = () => {
                   <span className="font-semibold text-gray-900">
                     {safeText(zoneName, "Zone")}
                   </span>
-                  , Woreda
+                  , Woreda{" "}
                   <span className="font-semibold text-gray-900">
                     {safeText(woredaName, "Woreda")}
                   </span>
-                  , Kebele
+                  , Kebele {" "}
                   <span className="font-semibold text-gray-900">
                     {safeText(kebeleName, "Kebele")}
                   </span>
-                  , Special Place
+                  , Special Place{" "}
                   <span className="font-semibold text-gray-900">
                     {safeText(address?.specialLocation, "Location")}
                   </span>
@@ -460,15 +620,15 @@ export const Agreement = () => {
                   <span className="font-semibold text-gray-900">
                     {safeText(address?.houseNumber, "Number")}
                   </span>
-                  , with permanent phone number
+                  , with permanent phone number{" "}
                   <span className="font-semibold text-gray-900">
                     {safeText(org?.phone, "Phone")}
                   </span>
-                  , Fax
+                  , Fax:{"  "}
                   <span className="font-semibold text-gray-900">
                     {safeText(org?.faxNumber, "Fax")}
                   </span>
-                  , and Email
+                  , and Email:{""}
                   <span className="font-semibold text-gray-900">
                     {safeText(org?.email, "Email")}
                   </span>
@@ -596,7 +756,7 @@ export const Agreement = () => {
                       {language === "am" ? "ስም" : "Name"}:
                     </span>{" "}
                     <span className="font-semibold text-gray-900">
-                      {safeText(org?.name)}
+                      {safeText(getOrganizationName(agreementOrg || org))}
                     </span>
                   </div>
                   <div>
@@ -644,7 +804,6 @@ export const Agreement = () => {
                   </div>
                 </div>
               </div>
-
               <div className="space-y-3">
                 <h3 className="text-sm font-black text-primary uppercase tracking-widest">
                   {language === "am" ? "የተፈረመው መረጃ" : "Signed User"}
@@ -847,8 +1006,13 @@ export const Agreement = () => {
         <div className="flex justify-end print:hidden">
           <button
             onClick={handleConfirm}
-            disabled={!agreed || submitting || !isValidDate()}
-            className={`px-12 py-5 blue-gradient text-white rounded-2xl font-bold hover:shadow-xl transition-all flex items-center space-x-3 ${!agreed || submitting || !isValidDate() ? "opacity-50 cursor-not-allowed" : ""}`}
+            disabled={
+              !agreed ||
+              submitting ||
+              !isValidDate() ||
+              !!agreementEligibilityMessage
+            }
+            className={`px-12 py-5 blue-gradient text-white rounded-2xl font-bold hover:shadow-xl transition-all flex items-center space-x-3 ${!agreed || submitting || !isValidDate() || !!agreementEligibilityMessage ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             <span>
               {submitting

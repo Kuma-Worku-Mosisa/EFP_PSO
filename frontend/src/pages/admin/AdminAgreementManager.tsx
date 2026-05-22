@@ -16,6 +16,7 @@ import {
   PlusCircle,
 } from "lucide-react";
 import { apiRequest } from "../../lib/api";
+import { useLanguage } from "../../context/LanguageContext";
 
 // --- System Types & Framework Interfaces ---
 interface AgreementSnapshot {
@@ -57,6 +58,7 @@ interface Agreement {
 }
 
 export default function AdminAgreementManager() {
+  const { language } = useLanguage();
   const navigate = useNavigate();
   const safeText = (value?: string | null, fallback = "N/A") =>
     value && value.trim().length > 0 ? value : fallback;
@@ -212,7 +214,11 @@ export default function AdminAgreementManager() {
 
   // Pipeline Filter Logic
   const filteredAgreements = agreements.filter((item) => {
-    const orgName = item.organization?.name ?? item.snapshotData?.agencyName;
+    const orgObj = item.organization || { name: item.snapshotData?.agencyName };
+    const orgName =
+      language === "am"
+        ? orgObj?.nameAmharic || orgObj?.name || orgObj?.nameEnglish || ""
+        : orgObj?.nameEnglish || orgObj?.name || orgObj?.nameAmharic || "";
     const tinNumber = item.organization?.tinNumber;
     const signedByName = item.snapshotData?.signedByFullName;
     const matchesSearch =
@@ -430,10 +436,22 @@ export default function AdminAgreementManager() {
                     <td className="p-4">
                       <div className="font-bold text-slate-900 flex items-center gap-1.5">
                         <Building2 className="h-4 w-4 text-slate-400" />{" "}
-                        {safeText(
-                          agreement.organization?.name ||
-                            agreement.snapshotData?.agencyName,
-                        )}
+                        {(() => {
+                          const orgObj = agreement.organization || {
+                            name: agreement.snapshotData?.agencyName,
+                          };
+                          const displayName =
+                            language === "am"
+                              ? (orgObj as any).nameAmharic ||
+                                orgObj.name ||
+                                (orgObj as any).nameEnglish ||
+                                "N/A"
+                              : (orgObj as any).nameEnglish ||
+                                orgObj.name ||
+                                (orgObj as any).nameAmharic ||
+                                "N/A";
+                          return displayName;
+                        })()}
                       </div>
                       {/* <div className="text-xs text-slate-400 font-semibold mt-0.5">
                         TIN: {safeText(agreement.organization?.tinNumber)}

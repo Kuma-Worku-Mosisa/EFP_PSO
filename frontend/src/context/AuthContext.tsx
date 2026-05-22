@@ -14,6 +14,7 @@ interface User {
   email: string;
   username: string;
   phone?: string;
+  faydaId?: string;
   roles: string[]; // Array of role names from your join table
   initials: string;
   avatar?: string; // client-side field
@@ -71,6 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       avatar: userData.avatar ?? userData.photoUrl ?? userData.photo_url,
       photoUrl: userData.photoUrl ?? userData.photo_url ?? userData.avatar,
       phone: userData.phone,
+      faydaId: userData.faydaId,
       agencyName: userData.agencyName,
     };
 
@@ -119,6 +121,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       avatar: updated.photoUrl ?? updated.avatar ?? user?.avatar,
       photoUrl: updated.photoUrl ?? updated.avatar ?? user?.photoUrl,
       phone: updated.phone ?? user?.phone,
+      faydaId: updated.faydaId ?? user?.faydaId,
       agencyName: updated.agencyName ?? user?.agencyName,
     };
 
