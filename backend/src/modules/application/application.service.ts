@@ -96,6 +96,21 @@ export class ApplicationService {
       console.log("[DEBUG] Form data keys:", Object.keys(formData));
       console.log("[DEBUG] Uploaded files keys:", Object.keys(uploadedFiles));
 
+      const currentUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          phone: true,
+          faydaId: true,
+        },
+      });
+
+      if (!currentUser) {
+        throw new Error("Authenticated user could not be found");
+      }
+
       // Validate kebele existence
       if (!formData.kebele) {
         throw new Error("Agency kebele is required");
@@ -111,11 +126,30 @@ export class ApplicationService {
       }
 
       // Validate personnel kebeles
+      const managerInput = formData.manager || {};
       const personnelKebeles = [
-        formData.manager?.kebele,
+        managerInput.kebele,
         formData.ops?.kebele,
         formData.admin?.kebele,
       ].filter(Boolean);
+
+      const normalizeOptionalNumber = (value: unknown): number | null => {
+        if (value === null || value === undefined || value === "") {
+          return null;
+        }
+
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+      };
+
+      const normalizeOptionalText = (value: unknown): string | null => {
+        if (typeof value !== "string") {
+          return null;
+        }
+
+        const trimmed = value.trim();
+        return trimmed.length > 0 ? trimmed : null;
+      };
 
       for (const kId of personnelKebeles) {
         const exists = await prisma.kebele.findUnique({
@@ -157,11 +191,17 @@ export class ApplicationService {
       const hasStoreHouse = parseBooleanFromInput(formData.hasStoreHouse);
 
       // Ensure organization folder structure exists for document storage
+      // Prefer explicit bilingual fields; fall back to legacy `agencyName` for compatibility
+      const orgFolderDisplayName =
+        formData.agencyNameEnglish ||
+        formData.agencyNameAmharic ||
+        formData.agencyName ||
+        `org_${Date.now()}`;
       console.log(
         "[DEBUG] Ensuring folder structure for organization:",
-        formData.agencyName,
+        orgFolderDisplayName,
       );
-      const orgFolderPath = ensureOrganizationFolders(formData.agencyName);
+      const orgFolderPath = ensureOrganizationFolders(orgFolderDisplayName);
       console.log(
         "[DEBUG] Organization folder structure ready:",
         orgFolderPath,
@@ -230,10 +270,14 @@ export class ApplicationService {
           console.log("[DEBUG] Organization address created:", orgAddress.id);
 
           // 2. Create Organization
-          console.log("[DEBUG] Creating organization:", formData.agencyName);
+          console.log("[DEBUG] Creating organization:", orgFolderDisplayName);
           const organization = await tx.organization.create({
             data: {
-              name: formData.agencyName,
+              // store both language variants when provided; fall back to legacy `agencyName`
+              nameAmharic:
+                formData.agencyNameAmharic || formData.agencyName || null,
+              nameEnglish:
+                formData.agencyNameEnglish || formData.agencyName || null,
               email: formData.email,
               phone: formData.phone,
               faxNumber: formData.faxNumber || null,
@@ -262,7 +306,7 @@ export class ApplicationService {
               uniformSampleUrl: uploadedFiles.uniform_sample,
               idCardSampleUrl: uploadedFiles.id_sample,
               status: "Pending",
-            },
+            } as any,
           });
 
           if (normalizedBranchAddresses.length > 0) {
@@ -297,7 +341,8 @@ export class ApplicationService {
               oldValue: null,
               newValue: JSON.stringify({
                 id: organization.id,
-                name: organization.name,
+                nameAmharic: (organization as any).nameAmharic,
+                nameEnglish: (organization as any).nameEnglish,
               }),
               ipAddress: null,
               userAgent: null,
@@ -315,19 +360,30 @@ export class ApplicationService {
               return null;
             }
 
+            const sourceData =
+              prefix === "manager"
+                ? {
+                    ...personData,
+                    fullName: currentUser.fullName,
+                    email: currentUser.email,
+                    phone: currentUser.phone,
+                    faydaId: currentUser.faydaId,
+                  }
+                : personData;
+
             console.log(`[DEBUG] Registering ${prefix}:`, {
-              fullName: personData.fullName,
-              email: personData.email,
-              faydaId: personData.faydaId,
-              kebele: personData.kebele,
+              fullName: sourceData.fullName,
+              email: sourceData.email,
+              faydaId: sourceData.faydaId,
+              kebele: sourceData.kebele,
             });
 
             // Validate required fields
             if (
-              !personData.fullName ||
-              !personData.email ||
-              !personData.faydaId ||
-              !personData.kebele
+              !sourceData.fullName ||
+              !sourceData.email ||
+              !sourceData.faydaId ||
+              !sourceData.kebele
             ) {
               throw new Error(
                 `${prefix} missing required fields: fullName, email, faydaId, or kebele`,
@@ -337,35 +393,74 @@ export class ApplicationService {
             // A. Create the Personal Address for the employee
             const personalAddress = await tx.address.create({
               data: {
-                kebeleId: Number(personData.kebele),
-                houseNumber: personData.houseNo || null,
-                specialLocation: personData.specialLocation || null,
+                kebeleId: Number(sourceData.kebele),
+                houseNumber: sourceData.houseNo || null,
+                specialLocation: sourceData.specialLocation || null,
               },
             });
 
             const uniqueSuffix = Date.now() + Math.floor(Math.random() * 1000);
 
             // B. Create User Account
-            const user = await tx.user.create({
-              data: {
-                fullName: personData.fullName,
-                username: `${prefix}_${uniqueSuffix}`,
-                email: personData.email,
-                phone: personData.phone,
-                password: "hashed_password_placeholder",
-                faydaId: personData.faydaId,
-              },
-            });
+            const user =
+              prefix === "manager"
+                ? currentUser
+                : await tx.user.create({
+                    data: {
+                      fullName: sourceData.fullName,
+                      username: `${prefix}_${uniqueSuffix}`,
+                      email: sourceData.email,
+                      phone: sourceData.phone,
+                      password: "hashed_password_placeholder",
+                      faydaId: sourceData.faydaId,
+                    },
+                  });
 
             // C. Create Employee Profile linked to Organization and Address
-            const employee = await tx.employee.create({
-              data: {
+            const employee = await tx.employee.upsert({
+              where: { userId: user.id },
+              create: {
                 userId: user.id,
                 organizationId: organization.id,
-                addressId: personalAddress.id, // Linking the created address
+                addressId: personalAddress.id,
+                positionId: normalizeOptionalNumber(sourceData.positionId),
+                educationLevel: normalizeOptionalText(
+                  sourceData.educationLevel,
+                ),
+                workExpYears:
+                  normalizeOptionalNumber(
+                    sourceData.workExpYears ?? sourceData.workExperienceYears,
+                  ) ?? 0,
+                TotalExpYears:
+                  normalizeOptionalNumber(
+                    sourceData.TotalExpYears ??
+                      sourceData.totalExpYears ??
+                      sourceData.totalExperienceYears,
+                  ) ?? 0,
                 employmentStatus: "PENDING",
-                gender: personData.gender,
-                citizenship: personData.citizenship,
+                gender: sourceData.gender,
+                citizenship: sourceData.citizenship,
+              },
+              update: {
+                organizationId: organization.id,
+                addressId: personalAddress.id,
+                positionId: normalizeOptionalNumber(sourceData.positionId),
+                educationLevel: normalizeOptionalText(
+                  sourceData.educationLevel,
+                ),
+                workExpYears:
+                  normalizeOptionalNumber(
+                    sourceData.workExpYears ?? sourceData.workExperienceYears,
+                  ) ?? 0,
+                TotalExpYears:
+                  normalizeOptionalNumber(
+                    sourceData.TotalExpYears ??
+                      sourceData.totalExpYears ??
+                      sourceData.totalExperienceYears,
+                  ) ?? 0,
+                employmentStatus: "PENDING",
+                gender: sourceData.gender,
+                citizenship: sourceData.citizenship,
               },
             });
 
@@ -460,10 +555,7 @@ export class ApplicationService {
 
           // 4. Register the 3 Personnel Roles (Step 5 Data)
           console.log("[DEBUG] Registering manager...");
-          const managerId = await registerPersonnel(
-            formData.manager,
-            "manager",
-          );
+          const managerId = await registerPersonnel(managerInput, "manager");
           console.log("[DEBUG] Registering ops...");
           const opsHeadId = await registerPersonnel(formData.ops, "ops");
           console.log("[DEBUG] Registering admin...");
@@ -498,6 +590,8 @@ export class ApplicationService {
               newValue: JSON.stringify({
                 id: application.id,
                 organizationId: organization.id,
+                organizationNameEnglish: organization.nameEnglish,
+                organizationNameAmharic: organization.nameAmharic,
                 status: application.status,
               }),
               ipAddress: null,
@@ -523,7 +617,7 @@ export class ApplicationService {
               trainingEndDate: formData.trainingEndDate
                 ? new Date(formData.trainingEndDate)
                 : new Date(),
-              trainingDurationDays: Number(formData.trainingDays),
+              trainingDurationDays: Number(formData.trainingDays || 0),
               trainingManualUrl: uploadedFiles.training_manual,
               trainingCertificateUrl: uploadedFiles.training_cert,
               // FIX: Add default 0 to prevent the NaN error seen in your log
@@ -906,9 +1000,13 @@ export class ApplicationService {
 
         return {
           id: employee.id,
+          positionId: employee.positionId ?? null,
           user: employee.user,
           gender: employee.gender,
           citizenship: employee.citizenship,
+          educationLevel: employee.educationLevel ?? null,
+          workExpYears: employee.workExpYears ?? 0,
+          TotalExpYears: employee.TotalExpYears ?? 0,
           address: employee.address,
           educationDocs: toFileList(employee.educationDocs || []),
           documents: toFileList(employee.documents || []),
@@ -919,9 +1017,12 @@ export class ApplicationService {
         const organization = r.organization as any;
         const latestTraining = r.trainingDetails?.[0] as any;
 
+        const displayOrgName =
+          organization?.nameEnglish || organization?.nameAmharic || "";
+
         return {
           id: r.id,
-          agency: organization?.name || "",
+          agency: displayOrgName,
           type: r.type,
           date: r.applicationDate
             ? r.applicationDate.toISOString().split("T")[0]
@@ -930,9 +1031,13 @@ export class ApplicationService {
           organization: organization
             ? {
                 id: organization.id,
-                name: organization.name,
-                // Keep compatibility for older frontend fields.
-                headOfficeName: organization.name,
+                nameEnglish: organization.nameEnglish,
+                nameAmharic: organization.nameAmharic,
+                // Keep compatibility for older frontend fields (English-first fallback).
+                name:
+                  organization.nameEnglish || organization.nameAmharic || null,
+                headOfficeName:
+                  organization.nameEnglish || organization.nameAmharic || null,
                 branchOfficeName:
                   organization.branchAddresses
                     ?.map((ba: any) => ba?.address?.specialLocation)
@@ -957,19 +1062,61 @@ export class ApplicationService {
                       specialLocation: organization.address.specialLocation,
                       kebele: organization.address.kebele
                         ? {
-                            name: organization.address.kebele.name,
+                            name:
+                              organization.address.kebele.nameEnglish ||
+                              organization.address.kebele.nameAmharic ||
+                              null,
+                            nameEnglish:
+                              organization.address.kebele.nameEnglish,
+                            nameAmharic:
+                              organization.address.kebele.nameAmharic,
                             woreda: organization.address.kebele.woreda
                               ? {
-                                  name: organization.address.kebele.woreda.name,
+                                  name:
+                                    organization.address.kebele.woreda
+                                      .nameEnglish ||
+                                    organization.address.kebele.woreda
+                                      .nameAmharic ||
+                                    null,
+                                  nameEnglish:
+                                    organization.address.kebele.woreda
+                                      .nameEnglish,
+                                  nameAmharic:
+                                    organization.address.kebele.woreda
+                                      .nameAmharic,
                                   zone: organization.address.kebele.woreda.zone
                                     ? {
-                                        name: organization.address.kebele.woreda
-                                          .zone.name,
+                                        name:
+                                          organization.address.kebele.woreda
+                                            .zone.nameEnglish ||
+                                          organization.address.kebele.woreda
+                                            .zone.nameAmharic ||
+                                          null,
+                                        nameEnglish:
+                                          organization.address.kebele.woreda
+                                            .zone.nameEnglish,
+                                        nameAmharic:
+                                          organization.address.kebele.woreda
+                                            .zone.nameAmharic,
                                         region: organization.address.kebele
                                           .woreda.zone.region
                                           ? {
-                                              name: organization.address.kebele
-                                                .woreda.zone.region.name,
+                                              name:
+                                                organization.address.kebele
+                                                  .woreda.zone.region
+                                                  .nameEnglish ||
+                                                organization.address.kebele
+                                                  .woreda.zone.region
+                                                  .nameAmharic ||
+                                                null,
+                                              nameEnglish:
+                                                organization.address.kebele
+                                                  .woreda.zone.region
+                                                  .nameEnglish,
+                                              nameAmharic:
+                                                organization.address.kebele
+                                                  .woreda.zone.region
+                                                  .nameAmharic,
                                             }
                                           : null,
                                       }
@@ -992,24 +1139,62 @@ export class ApplicationService {
                           kebele: branch.address.kebele
                             ? {
                                 id: branch.address.kebele.id,
-                                name: branch.address.kebele.name,
+                                nameEnglish: branch.address.kebele.nameEnglish,
+                                nameAmharic: branch.address.kebele.nameAmharic,
+                                name:
+                                  branch.address.kebele.nameEnglish ||
+                                  branch.address.kebele.nameAmharic ||
+                                  null,
                                 woreda: branch.address.kebele.woreda
                                   ? {
                                       id: branch.address.kebele.woreda.id,
-                                      name: branch.address.kebele.woreda.name,
+                                      nameEnglish:
+                                        branch.address.kebele.woreda
+                                          .nameEnglish,
+                                      nameAmharic:
+                                        branch.address.kebele.woreda
+                                          .nameAmharic,
+                                      name:
+                                        branch.address.kebele.woreda
+                                          .nameEnglish ||
+                                        branch.address.kebele.woreda
+                                          .nameAmharic ||
+                                        null,
                                       zone: branch.address.kebele.woreda.zone
                                         ? {
                                             id: branch.address.kebele.woreda
                                               .zone.id,
-                                            name: branch.address.kebele.woreda
-                                              .zone.name,
+                                            nameEnglish:
+                                              branch.address.kebele.woreda.zone
+                                                .nameEnglish,
+                                            nameAmharic:
+                                              branch.address.kebele.woreda.zone
+                                                .nameAmharic,
+                                            name:
+                                              branch.address.kebele.woreda.zone
+                                                .nameEnglish ||
+                                              branch.address.kebele.woreda.zone
+                                                .nameAmharic ||
+                                              null,
                                             region: branch.address.kebele.woreda
                                               .zone.region
                                               ? {
                                                   id: branch.address.kebele
                                                     .woreda.zone.region.id,
-                                                  name: branch.address.kebele
-                                                    .woreda.zone.region.name,
+                                                  nameEnglish:
+                                                    branch.address.kebele.woreda
+                                                      .zone.region.nameEnglish,
+                                                  nameAmharic:
+                                                    branch.address.kebele.woreda
+                                                      .zone.region.nameAmharic,
+                                                  name:
+                                                    branch.address.kebele.woreda
+                                                      .zone.region
+                                                      .nameEnglish ||
+                                                    branch.address.kebele.woreda
+                                                      .zone.region
+                                                      .nameAmharic ||
+                                                    null,
                                                 }
                                               : null,
                                           }

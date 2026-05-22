@@ -3,6 +3,7 @@ import { Router } from "express";
 import {
   createPosition,
   getAllPositions,
+  getPositionById,
   assignEmployee,
   updatePosition,
   deletePosition,
@@ -13,6 +14,7 @@ const router = Router();
 // Position Management
 router.post("/", createPosition);
 router.get("/", getAllPositions);
+router.get("/:id", getPositionById);
 router.put("/:id", updatePosition);
 router.delete("/:id", deletePosition);
 

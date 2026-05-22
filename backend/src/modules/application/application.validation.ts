@@ -46,8 +46,11 @@ export const createApplicationSchema = z.object({
     // Step 4: Training Details
     trainingAddress: z.string().min(5, "Training address is required"),
     trainingDays: z.preprocess(
-      (val: unknown) => Number(val),
-      z.number().min(1, "Training days must be at least 1"),
+      (val: unknown) =>
+        val === "" || val === null || val === undefined
+          ? undefined
+          : Number(val),
+      z.number().optional(),
     ),
     trainingProvider: z.string().min(3, "Training provider name is required"),
 
@@ -133,7 +136,6 @@ export const createApplicationSchema = z.object({
 
         // Training Docs
         "training_manual",
-        "training_cert",
 
         // Personnel Specific Docs (Required for the RegisterPersonnel logic)
         "manager_edu_doc",
@@ -148,7 +150,7 @@ export const createApplicationSchema = z.object({
     },
     {
       message:
-        "Missing required files. Please ensure all Organization documents, Photo samples, and Personnel (Education/ID) documents are uploaded.",
+        "Missing required files. Please ensure all Organization documents, Photo samples, the Training Manual, and Personnel (Education/ID) documents are uploaded.",
     },
   ),
 });

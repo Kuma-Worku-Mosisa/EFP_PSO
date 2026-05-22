@@ -7,13 +7,20 @@ export const createPositionSchema = z.object({
     .min(2, "Position name must be at least 2 characters")
     .max(100),
   requirements: z
-    .object({
-      minimumExperienceYears: z.number().nonnegative().nullable().optional(),
-      requiredEducationLevel: z.string().max(100).nullable().optional(),
-      requiredExperienceField: z.string().max(255).nullable().optional(),
-    })
+    .array(
+      z.object({
+        level: z.number().int().positive().nullable().optional(),
+        minimumExperienceYears: z.number().nonnegative().nullable().optional(),
+        requiredEducationLevel: z.string().max(100).nullable().optional(),
+        requiredWorkExperienceYears: z
+          .number()
+          .nonnegative()
+          .nullable()
+          .optional(),
+      }),
+    )
     .nullable()
-    .optional(), // Requirements are optional based on your schema
+    .optional(), // Multiple requirement rows can be attached to one position
 });
 
 export const updatePositionSchema = createPositionSchema;

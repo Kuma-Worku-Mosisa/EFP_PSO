@@ -12,6 +12,10 @@ export class AgreementService {
     if (!value) return null;
     return value.toISOString().replace("T", " ").replace("Z", "");
   }
+
+  private static resolveOrganizationName(org: any) {
+    return org?.nameEnglish || org?.nameAmharic || org?.name || "";
+  }
   /**
    * CREATE: Generates a new agreement row and commits a frozen snapshot to VarChar(Max)
    * Automatically supersedes existing active contracts for the given organization.
@@ -111,7 +115,13 @@ export class AgreementService {
       include: {
         application: {
           select: {
-            organization: { select: { name: true, tinNumber: true } },
+            organization: {
+              select: {
+                nameEnglish: true,
+                nameAmharic: true,
+                tinNumber: true,
+              },
+            },
             user: { select: { fullName: true, email: true } },
           },
         },
@@ -121,7 +131,14 @@ export class AgreementService {
     return {
       ...newAgreement,
       snapshotData: snapshot, // Return as parsed JSON object directly to the controller
-      organization: newAgreement.application?.organization,
+      organization: newAgreement.application?.organization
+        ? {
+            ...newAgreement.application.organization,
+            name: AgreementService.resolveOrganizationName(
+              newAgreement.application.organization,
+            ),
+          }
+        : null,
       signedBy: newAgreement.application?.user,
     };
   }
@@ -163,7 +180,13 @@ export class AgreementService {
         include: {
           application: {
             select: {
-              organization: { select: { name: true, tinNumber: true } },
+              organization: {
+                select: {
+                  nameEnglish: true,
+                  nameAmharic: true,
+                  tinNumber: true,
+                },
+              },
               user: { select: { fullName: true, email: true } },
             },
           },
@@ -262,7 +285,12 @@ export class AgreementService {
       include: {
         application: {
           select: {
-            organization: { select: { name: true } },
+            organization: {
+              select: {
+                nameEnglish: true,
+                nameAmharic: true,
+              },
+            },
             user: { select: { fullName: true } },
           },
         },
@@ -274,7 +302,12 @@ export class AgreementService {
     return {
       ...updated,
       snapshotData: JSON.parse(updated.snapshotData),
-      organization,
+      organization: organization
+        ? {
+            ...organization,
+            name: AgreementService.resolveOrganizationName(organization),
+          }
+        : null,
       signedBy,
     };
   }

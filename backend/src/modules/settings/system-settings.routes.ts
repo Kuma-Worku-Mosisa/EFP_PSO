@@ -3,9 +3,11 @@ import { Router, Request, Response } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import crypto from "crypto";
 import { getConfig, updateConfig } from "./system-settings.controller";
-import { getRelativeTempFilePath } from "../../middleware/fileUpload";
+import {
+  buildPrefixedFilename,
+  getRelativeTempFilePath,
+} from "../../middleware/fileUpload";
 import { getDocumentUrl } from "../../utils/documentOrganizer";
 
 const router = Router();
@@ -32,12 +34,7 @@ router.post("/upload", (req: Request, res: Response, next) => {
   const storage = multer.diskStorage({
     destination: (_req, _file, cb) => cb(null, tmpDir),
     filename: (_req, file, cb) => {
-      const timestamp = Date.now();
-      const uniqueSuffix = crypto.randomUUID().replace(/-/g, "");
-      const sanitized = file.originalname
-        .replace(/[^a-zA-Z0-9.-]/g, "_")
-        .toLowerCase();
-      cb(null, `${timestamp}-${uniqueSuffix}-${sanitized}`);
+      cb(null, buildPrefixedFilename(file.fieldname, file.originalname));
     },
   });
 

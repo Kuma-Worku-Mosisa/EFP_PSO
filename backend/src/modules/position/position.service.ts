@@ -1,30 +1,51 @@
 // filepath: backend/src/modules/position/position.service.ts
 import prisma from "../../lib/prisma";
 export class PositionService {
+  static normalizeRequirements(data: any) {
+    if (Array.isArray(data.requirements)) {
+      return data.requirements;
+    }
+
+    if (data.requirements) {
+      return [data.requirements];
+    }
+
+    return [];
+  }
+
   /**
    * 1. Create a Position with optional integrated Requirements
    * Uses Prisma's nested writes to ensure transactional integrity.
    */
   static async createPosition(data: any) {
-    return await prisma.position.create({
-      data: {
-        name: data.name,
-        requirements: data.requirements
-          ? {
-              create: {
-                minimumExperienceYears:
-                  data.requirements.minimumExperienceYears,
-                requiredEducationLevel:
-                  data.requirements.requiredEducationLevel,
-                requiredExperienceField:
-                  data.requirements.requiredExperienceField,
-              },
-            }
-          : undefined,
-      },
-      include: {
-        requirements: true,
-      },
+    const requirements = PositionService.normalizeRequirements(data);
+
+    return await prisma.$transaction(async (tx) => {
+      const position = await tx.position.create({
+        data: {
+          name: data.name,
+        },
+      });
+
+      if (requirements.length > 0) {
+        await tx.positionRequirement.createMany({
+          data: requirements.map((requirement: any, index: number) => ({
+            positionId: position.id,
+            level: requirement.level ?? index + 1,
+            minimumExperienceYears: requirement.minimumExperienceYears,
+            requiredEducationLevel: requirement.requiredEducationLevel,
+            requiredWorkExperienceYears:
+              requirement.requiredWorkExperienceYears,
+          })),
+        });
+      }
+
+      return await tx.position.findUnique({
+        where: { id: position.id },
+        include: {
+          requirements: true,
+        },
+      });
     });
   }
 
@@ -46,41 +67,63 @@ export class PositionService {
   }
 
   /**
+   * 2b. Get a single Position with its ordered requirements
+   * Used by the application form to populate position-specific education levels.
+   */
+  static async getPositionById(id: number) {
+    return await prisma.position.findUnique({
+      where: { id },
+      include: {
+        requirements: {
+          orderBy: {
+            level: "asc",
+          },
+        },
+        _count: {
+          select: { employees: true },
+        },
+      },
+    });
+  }
+
+  /**
    * 3. Update an existing Position profile and its Requirements matrix
-   * Uses an upsert block so that if a position didn't originally have requirements,
-   * they are seamlessly created without throwing record-not-found errors.
+   * Replaces the current criteria rows so the UI can manage multiple entries cleanly.
    */
   static async updatePosition(id: number, data: any) {
-    return await prisma.position.update({
-      where: { id },
-      data: {
-        name: data.name,
-        requirements: data.requirements
-          ? {
-              upsert: {
-                create: {
-                  minimumExperienceYears:
-                    data.requirements.minimumExperienceYears,
-                  requiredEducationLevel:
-                    data.requirements.requiredEducationLevel,
-                  requiredExperienceField:
-                    data.requirements.requiredExperienceField,
-                },
-                update: {
-                  minimumExperienceYears:
-                    data.requirements.minimumExperienceYears,
-                  requiredEducationLevel:
-                    data.requirements.requiredEducationLevel,
-                  requiredExperienceField:
-                    data.requirements.requiredExperienceField,
-                },
-              },
-            }
-          : undefined,
-      },
-      include: {
-        requirements: true,
-      },
+    const requirements = PositionService.normalizeRequirements(data);
+
+    return await prisma.$transaction(async (tx) => {
+      const position = await tx.position.update({
+        where: { id },
+        data: {
+          name: data.name,
+        },
+      });
+
+      await tx.positionRequirement.deleteMany({
+        where: { positionId: position.id },
+      });
+
+      if (requirements.length > 0) {
+        await tx.positionRequirement.createMany({
+          data: requirements.map((requirement: any, index: number) => ({
+            positionId: position.id,
+            level: requirement.level ?? index + 1,
+            minimumExperienceYears: requirement.minimumExperienceYears,
+            requiredEducationLevel: requirement.requiredEducationLevel,
+            requiredWorkExperienceYears:
+              requirement.requiredWorkExperienceYears,
+          })),
+        });
+      }
+
+      return await tx.position.findUnique({
+        where: { id: position.id },
+        include: {
+          requirements: true,
+        },
+      });
     });
   }
 
@@ -99,10 +142,13 @@ export class PositionService {
    * 5. Assign an Employee to a Position (Handles Many-to-Many Bridge Table)
    */
   static async assignEmployee(employeeId: number, positionId: number) {
-    return await prisma.employeePosition.create({
+    return await prisma.employee.update({
+      where: { id: employeeId },
       data: {
-        employeeId,
         positionId,
+      },
+      include: {
+        position: true,
       },
     });
   }

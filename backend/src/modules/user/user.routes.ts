@@ -4,6 +4,7 @@ import {
   registerHandler,
   loginHandler,
   getAllUsers,
+  getCurrentUserHandler,
   updateProfileHandler,
   changePasswordHandler,
   revokeAccessHandler,
@@ -24,6 +25,7 @@ router.post("/login", loginValidation, loginHandler);
 router.post("/register", registerValidation, registerHandler);
 
 // --- PROTECTED ROUTES (ANY AUTHENTICATED USER) ---
+router.get("/me", authenticate, getCurrentUserHandler);
 router.put("/me", authenticate, profileValidation, updateProfileHandler);
 router.put(
   "/me/password",

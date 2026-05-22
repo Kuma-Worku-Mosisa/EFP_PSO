@@ -6,6 +6,25 @@ import { ApiResponse } from "../../utils/apiResponse";
 import * as bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+const getAuditContext = (req: Request) => {
+  const rawUserId = req.user?.userId ?? req.user?.id ?? null;
+  const normalizedUserId =
+    typeof rawUserId === "string"
+      ? Number(rawUserId)
+      : typeof rawUserId === "number"
+        ? rawUserId
+        : null;
+
+  return {
+    userId:
+      normalizedUserId !== null && Number.isFinite(normalizedUserId)
+        ? normalizedUserId
+        : null,
+    ipAddress: req.ip ?? null,
+    userAgent: req.get("user-agent") ?? null,
+  };
+};
+
 /**
  * Retrieves a list of all application users with their respective roles.
  */
@@ -19,6 +38,37 @@ export const getAllUsers = async (req: Request, res: Response) => {
       "Failed to retrieve users",
       500,
       error.message,
+    );
+  }
+};
+
+/**
+ * Returns the authenticated user's own profile for client-side prefill and account-driven workflows.
+ */
+export const getCurrentUserHandler = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.userId ?? req.user?.id;
+    if (!userId) {
+      return ApiResponse.error(res, "Unauthorized", 401);
+    }
+
+    const user = await UserService.getUserById(userId);
+    return ApiResponse.success(res, "Current user profile retrieved", user);
+  } catch (error: any) {
+    // If the user was not found, return a 404 rather than a 500 to reduce noise
+    if (error && error.code === "NOT_FOUND") {
+      console.warn("Get Current User: user not found", {
+        attemptedUserId: req.user?.userId ?? req.user?.id ?? null,
+      });
+      return ApiResponse.error(res, "User profile does not exist", 404);
+    }
+
+    console.error("Get Current User Error:", error?.message ?? error);
+    return ApiResponse.error(
+      res,
+      "Failed to retrieve current user profile",
+      500,
+      error?.message ?? String(error),
     );
   }
 };
@@ -59,16 +109,19 @@ export const registerHandler = async (req: Request, res: Response) => {
   }
 
   try {
-    const newUser = await UserService.createUser({
-      username: req.body.username,
-      fullName: req.body.fullName,
-      email: req.body.email,
-      phone: req.body.phone,
-      password_hash: req.body.password,
-      faydaId: req.body.faydaId,
-      photoUrl: req.body.photoUrl,
-      roleIds: req.body.roleIds || [2],
-    });
+    const newUser = await UserService.createUserWithAudit(
+      {
+        username: req.body.username,
+        fullName: req.body.fullName,
+        email: req.body.email,
+        phone: req.body.phone,
+        password_hash: req.body.password,
+        faydaId: req.body.faydaId,
+        photoUrl: req.body.photoUrl,
+        roleIds: Array.isArray(req.body.roleIds) ? req.body.roleIds : [],
+      },
+      getAuditContext(req),
+    );
 
     return ApiResponse.success(
       res,
@@ -168,6 +221,7 @@ export const updateProfileHandler = async (req: Request, res: Response) => {
     const updated = await UserService.updateUserProfile(
       resolvedUserId as string | number,
       req.body,
+      getAuditContext(req),
     );
     return ApiResponse.success(res, "Profile updated successfully", updated);
   } catch (error: any) {
@@ -202,6 +256,7 @@ export const changePasswordHandler = async (req: Request, res: Response) => {
       userId as string | number,
       currentPassword,
       newPassword,
+      getAuditContext(req),
     );
 
     return ApiResponse.success(res, "Password changed successfully");
@@ -235,7 +290,10 @@ export const revokeAccessHandler = async (req: Request, res: Response) => {
       );
     }
 
-    const user = await UserService.administrativeRevokeAccess(id);
+    const user = await UserService.administrativeRevokeAccess(
+      id,
+      getAuditContext(req),
+    );
     return ApiResponse.success(
       res,
       "User permissions revoked and disabled successfully",

@@ -2,7 +2,6 @@ import { Router, Request, Response } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import crypto from "crypto";
 import {
   approveFormalRequest,
   createFormalRequest,
@@ -13,7 +12,7 @@ import {
   updateFormalRequestFeedback,
 } from "./formalRequest.controller";
 import { ApiResponse } from "../../utils/apiResponse";
-import { fileFilter } from "../../middleware/fileUpload";
+import { buildPrefixedFilename, fileFilter } from "../../middleware/fileUpload";
 import { getDocumentUrl } from "../../utils/documentOrganizer";
 import prisma from "../../lib/prisma";
 
@@ -75,8 +74,8 @@ const createFormalRequestUploader = () => {
       const year = /^\d{4}$/.test(yearInput)
         ? yearInput
         : String(new Date().getFullYear());
-      const ext = path.extname(file.originalname).toLowerCase() || ".pdf";
-      cb(null, `${year}-formal_request_letter${ext}`);
+      const prefix = `${year}-formal_request_letter`;
+      cb(null, buildPrefixedFilename(prefix, file.originalname));
     },
   });
 

@@ -9,41 +9,53 @@ datasource db {
 
 // Note: SQL Server connector does not support Prisma enums.
 // Using a string `status` column with a default value instead.
-
 model Region {
-  id    Int    @id(map: "PK__regions__01146BAEBE221DD1") @default(autoincrement()) @map("region_id")
-  name  String @unique(map: "UQ__regions__4BB31B03F2BF7603") @map("region_name") @db.VarChar(100)
-  zones Zone[]
+  id           Int    @id(map: "PK__regions__01146BAEBE221DD1") @default(autoincrement()) @map("region_id")
+  
+  // Dual language support with NVarChar
+  nameAmharic  String @unique @map("region_name_am") @db.NVarChar(150)
+  nameEnglish  String @unique @map("region_name_en") @db.VarChar(150) // English characters stay safe in standard VarChar
+  
+  zones        Zone[]
 
   @@map("regions")
 }
 
 model Zone {
-  id       Int      @id(map: "PK__zones__80B401DF6769EBAD") @default(autoincrement()) @map("zone_id")
-  regionId Int      @map("region_id")
-  name     String   @map("zone_name") @db.VarChar(100)
-  woredas  Woreda[]
-  region   Region   @relation(fields: [regionId], references: [id], onUpdate: NoAction, map: "FK_Zones_Regions")
+  id           Int      @id(map: "PK__zones__80B401DF6769EBAD") @default(autoincrement()) @map("zone_id")
+  regionId     Int      @map("region_id")
+  
+  nameAmharic  String   @map("zone_name_am") @db.NVarChar(100)
+  nameEnglish  String   @map("zone_name_en") @db.VarChar(100)
+  
+  woredas      Woreda[]
+  region       Region   @relation(fields: [regionId], references: [id], onUpdate: NoAction, map: "FK_Zones_Regions")
 
   @@map("zones")
 }
 
 model Woreda {
-  id      Int      @id(map: "PK__woredas__024DE9E7AD1B218E") @default(autoincrement()) @map("woreda_id")
-  zoneId  Int      @map("zone_id")
-  name    String   @map("woreda_name") @db.VarChar(100)
-  kebeles Kebele[]
-  zone    Zone     @relation(fields: [zoneId], references: [id], onUpdate: NoAction, map: "FK_Woredas_Zones")
+  id           Int      @id(map: "PK__woredas__024DE9E7AD1B218E") @default(autoincrement()) @map("woreda_id")
+  zoneId       Int      @map("zone_id")
+  
+  nameAmharic  String   @map("woreda_name_am") @db.NVarChar(100)
+  nameEnglish  String   @map("woreda_name_en") @db.VarChar(100)
+  
+  kebeles      Kebele[]
+  zone         Zone     @relation(fields: [zoneId], references: [id], onUpdate: NoAction, map: "FK_Woredas_Zones")
 
   @@map("woredas")
 }
 
 model Kebele {
-  id        Int       @id(map: "PK__kebeles__E44A705322F18FA2") @default(autoincrement()) @map("kebele_id")
-  woredaId  Int       @map("woreda_id")
-  name      String    @map("kebele_name") @db.VarChar(100)
-  addresses Address[]
-  woreda    Woreda    @relation(fields: [woredaId], references: [id], onUpdate: NoAction, map: "FK_Kebeles_Woredas")
+  id           Int       @id(map: "PK__kebeles__E44A705322F18FA2") @default(autoincrement()) @map("kebele_id")
+  woredaId     Int       @map("woreda_id")
+  
+  nameAmharic  String    @map("kebele_name_am") @db.NVarChar(100)
+  nameEnglish  String    @map("kebele_name_en") @db.VarChar(100)
+  
+  addresses    Address[]
+  woreda       Woreda    @relation(fields: [woredaId], references: [id], onUpdate: NoAction, map: "FK_Kebeles_Woredas")
 
   @@map("kebeles")
 }
@@ -51,8 +63,11 @@ model Kebele {
 model Address {
   id              Int            @id(map: "PK__addresse__CAA247C865086651") @default(autoincrement()) @map("address_id")
   kebeleId        Int            @map("kebele_id")
-  houseNumber     String?        @map("house_number") @db.VarChar(50)
-  specialLocation String?        @map("special_location") @db.VarChar(Max)
+  houseNumber     String?        @map("house_number") @db.VarChar(50) // House numbers stay standard alphanumerics
+  
+  // Special locations often hold descriptive Ge'ez pointers (e.g., "ከሀረማያ ዩኒቨርሲቲ ጀርባ")
+  specialLocation String?        @map("special_location") @db.NVarChar(Max) 
+  
   kebele          Kebele         @relation(fields: [kebeleId], references: [id], onUpdate: NoAction, map: "FK_Addresses_Kebeles")
   organizations   Organization[]
   employees       Employee[]
@@ -61,13 +76,12 @@ model Address {
   @@map("addresses")
 }
 
-
 // Global Authority Identity (Singleton)
 model SystemSettings {
-  id               Int     @id @default(1)
-  governmentName   String  @default("Ethiopian Federal Police")
-  efpLogoUrl       String  @map("efp_logo_url") @db.VarChar(Max)
-  issuingAuthority String  @default("Private Security Agency Management Directorate") @map("issuing_authority")
+  id               Int    @id @default(1)
+  governmentName   String @default("Ethiopian Federal Police")
+  efpLogoUrl       String @map("efp_logo_url") @db.VarChar(Max)
+  issuingAuthority String @default("Private Security Agency Management Directorate") @map("issuing_authority")
 
   @@map("system_settings")
 }
@@ -80,13 +94,13 @@ model User {
   phone      String       @unique(map: "UQ__users__A1936A6BBE0D0FB3") @map("phone_number") @db.VarChar(50)
   password   String       @map("password_hash") @db.VarChar(Max)
   faydaId    String       @unique // Add this line
-  photoUrl  String?  @map("photo_url") @db.VarChar(Max)
+  photoUrl   String?      @map("photo_url") @db.VarChar(Max)
   createdAt  DateTime?    @default(now(), map: "DF__users__account_c__6E01572D") @map("account_created_at") @db.DateTime
   status     String       @default("ACTIVE") @map("status") @db.VarChar(20)
   user_roles user_roles[]
 
   // Add these back-relation fields:
-  applications     Application[]               // Fixes the missing opposite relation error
+  applications    Application[] // Fixes the missing opposite relation error
   formalRequests  FormalRequest[]
   auditLogs       AuditLog[]                   @relation("UserAuditLogs")
   employee        Employee?
@@ -115,28 +129,29 @@ model user_roles {
 }
 
 model FormalRequest {
-  id                Int       @id @default(autoincrement())
-  userId            Int      
-  user              User      @relation(fields: [userId], references: [id])
-  requestLetterUrl  String    
-  status            String    @default("PENDING") // PENDING, APPROVED, REJECTED
-  adminFeedback     String?   @db.VarChar(Max)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id               Int      @id @default(autoincrement())
+  userId           Int
+  user             User     @relation(fields: [userId], references: [id])
+  requestLetterUrl String
+  status           String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  adminFeedback    String?  @db.VarChar(Max)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@map("formal_requests")
 }
 
 model Organization {
-  id               Int     @id @default(autoincrement()) @map("organization_id")
-  name             String  @unique @map("organization_name") @db.VarChar(255)
-  parentOrgId      Int?    @map("parent_org_id")
-  email            String  @unique @map("email_address") @db.VarChar(255)
-  phone            String  @map("phone_number") @db.VarChar(50)
-  faxNumber        String? @map("fax_number") @db.VarChar(50)
-  tradeName        String? @map("trade_name") @db.VarChar(255)
-  tinNumber        String  @unique @map("tin_number") @db.VarChar(50)
-  addressId        Int?    @map("address_id")
+  id          Int     @id @default(autoincrement()) @map("organization_id")
+  nameAmharic      String  @unique @map("organization_name_am") @db.NVarChar(255)
+  nameEnglish      String  @unique @map("organization_name_en") @db.NVarChar(255)
+  parentOrgId Int?    @map("parent_org_id")
+  email       String  @unique @map("email_address") @db.VarChar(255)
+  phone       String  @map("phone_number") @db.VarChar(50)
+  faxNumber   String? @map("fax_number") @db.VarChar(50)
+  tradeName   String? @map("trade_name") @db.VarChar(255)
+  tinNumber   String  @unique @map("tin_number") @db.VarChar(50)
+  addressId   Int?    @map("address_id")
 
   // Resource Tracking (Step 3)
   numberOfOffices   Int?     @map("number_of_offices")
@@ -160,14 +175,14 @@ model Organization {
   createdAt DateTime @default(now()) @map("created_at") @db.DateTime
 
   // Relations
-  address        Address?               @relation(fields: [addressId], references: [id], onUpdate: NoAction, map: "FK_Organizations_Addresses")
-  parentOrg      Organization?          @relation("OrgHierarchy", fields: [parentOrgId], references: [id], onUpdate: NoAction, onDelete: NoAction, map: "FK_Organizations_Parent")
-  childOrgs      Organization[]         @relation("OrgHierarchy")
-  documents      OrganizationDocument[]
-  employees      Employee[]
-  applications   Application[]
-  certifications Certification[]
-  incidents      IncidentReport[]
+  address         Address?                    @relation(fields: [addressId], references: [id], onUpdate: NoAction, map: "FK_Organizations_Addresses")
+  parentOrg       Organization?               @relation("OrgHierarchy", fields: [parentOrgId], references: [id], onUpdate: NoAction, onDelete: NoAction, map: "FK_Organizations_Parent")
+  childOrgs       Organization[]              @relation("OrgHierarchy")
+  documents       OrganizationDocument[]
+  employees       Employee[]
+  applications    Application[]
+  certifications  Certification[]
+  incidents       IncidentReport[]
   // agreements now relate through applications
   // Tracks multiple secondary branch physical locations
   branchAddresses OrganizationBranchAddress[]
@@ -175,30 +190,28 @@ model Organization {
   @@map("organizations")
 }
 
-
 model OrganizationBranchAddress {
-  id             Int          @id @default(autoincrement()) @map("branch_address_id")
-  organizationId Int          @map("organization_id")
-  addressId      Int          @map("address_id")
-  createdAt      DateTime     @default(now()) @map("created_at") @db.DateTime
+  id             Int      @id @default(autoincrement()) @map("branch_address_id")
+  organizationId Int      @map("organization_id")
+  addressId      Int      @map("address_id")
+  createdAt      DateTime @default(now()) @map("created_at") @db.DateTime
 
   // Relational mappings
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_OrgBranchAddresses_Organizations")
-  address        Address      @relation(fields: [addressId], references: [id], onUpdate: NoAction, map: "FK_OrgBranchAddresses_Addresses")
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_OrgBranchAddresses_Organizations")
+  address      Address      @relation(fields: [addressId], references: [id], onUpdate: NoAction, map: "FK_OrgBranchAddresses_Addresses")
 
   @@map("organization_branch_addresses")
 }
 
-
 model Agreement {
-  id                  Int      @id @default(autoincrement()) @map("agreement_id")
-  agreementNumber     String   @unique @map("agreement_number") @db.VarChar(100) 
-  applicationId       Int?     @map("application_id")
-  status              String   @default("Pending") @map("agreement_status") @db.VarChar(50) 
-  
+  id              Int    @id @default(autoincrement()) @map("agreement_id")
+  agreementNumber String @unique @map("agreement_number") @db.VarChar(100)
+  applicationId   Int?   @map("application_id")
+  status          String @default("Pending") @map("agreement_status") @db.VarChar(50)
+
   // FIXED: Changed from Json to VarChar(Max) for SQL Server stringified compatibility
-  snapshotData        String   @map("snapshot_data") @db.VarChar(Max) 
-  
+  snapshotData String @map("snapshot_data") @db.VarChar(Max)
+
   recruitmentDeadline DateTime @map("recruitment_deadline") @db.DateTime
   issuedDate          DateTime @default(now()) @map("issued_date") @db.DateTime
   expiryDate          DateTime @map("expiry_date") @db.DateTime
@@ -206,9 +219,9 @@ model Agreement {
   updatedAt           DateTime @updatedAt @map("updated_at") @db.DateTime
 
   // FIXED: Changed onDelete from Restrict to NoAction for SQL Server compatibility
-  application         Application? @relation(fields: [applicationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Agreements_Applications")
+  application Application? @relation(fields: [applicationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Agreements_Applications")
 
-  @@index([applicationId, issuedDate]) 
+  @@index([applicationId, issuedDate])
   @@map("agreements")
 }
 
@@ -232,19 +245,17 @@ model OrganizationDocument {
 // ==========================================
 
 model Employee {
-  id              Int     @id @default(autoincrement()) @map("employee_id")
-  userId          Int     @unique @map("user_id")
-  organizationId  Int     @map("organization_id")
-  addressId       Int?    @map("address_id")
-  gender          String? @db.VarChar(20)
-  //faydaIdNumber         String    @unique @map("fayda_id_number") @db.VarChar(100)
-  citizenship     String? @db.VarChar(100)
-  age             Int?
-  educationLevel  String? @map("education_level") @db.VarChar(100)
-  defenseExpYears Int     @default(0) @map("defense_exp_years")
-  policeExpYears  Int     @default(0) @map("police_exp_years")
-  othersExpYears  Int     @default(0) @map("others_exp_years")
-
+  id                  Int       @id @default(autoincrement()) @map("employee_id")
+  userId              Int       @unique @map("user_id")
+  organizationId      Int       @map("organization_id")
+  positionId          Int?      @map("position_id") // Made optional (?) in case onboarding hasn't assigned a position yet
+  addressId           Int?      @map("address_id")
+  gender              String?   @db.VarChar(20)
+  citizenship         String?   @db.VarChar(100)
+  age                 Int?
+  educationLevel      String?   @map("education_level") @db.VarChar(100)
+  workExpYears        Int       @default(0) @map("work_experience_years")
+  TotalExpYears       Int       @default(0) @map("total_experience_years")
   isBlacklisted       Boolean   @default(false) @map("is_blacklisted")
   employmentStatus    String?   @map("employment_status") @db.VarChar(50)
   employmentStartDate DateTime? @map("employment_start_date") @db.Date
@@ -255,7 +266,7 @@ model Employee {
   address      Address?     @relation(fields: [addressId], references: [id], onUpdate: NoAction, map: "FK_Employees_Addresses")
 
   // Existing Module Relations
-  positions     EmployeePosition[]
+  position      Position?                   @relation(fields: [positionId], references: [id], onUpdate: NoAction, map: "FK_Employees_Positions")
   educationDocs EmployeeEducationDocument[]
   documents     EmployeeDocument[]
 
@@ -271,33 +282,22 @@ model Employee {
 }
 
 model Position {
-  id   Int    @id @default(autoincrement()) @map("position_id")
-  name String @unique @map("position_name") @db.VarChar(100)
-
-  employees    EmployeePosition[]
-  requirements PositionRequirement?
+  id           Int                   @id @default(autoincrement()) @map("position_id")
+  name         String                @unique @map("position_name") @db.VarChar(100)
+  requirements PositionRequirement[]
+  employees    Employee[]
 
   @@map("positions")
 }
 
-model EmployeePosition {
-  employeeId Int @map("employee_id")
-  positionId Int @map("position_id")
-
-  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade, map: "FK_EmpPos_Employees")
-  position Position @relation(fields: [positionId], references: [id], onDelete: Cascade, map: "FK_EmpPos_Positions")
-
-  @@id([employeeId, positionId], map: "PK_EmployeePositions")
-  @@map("employee_positions")
-}
-
 model PositionRequirement {
-  positionId              Int     @id @map("position_id")
-  minimumExperienceYears  Int?    @map("minimum_experience_years")
-  requiredEducationLevel  String? @map("required_education_level") @db.VarChar(100)
-  requiredExperienceField String? @map("required_experience_field") @db.VarChar(255)
-
-  position Position @relation(fields: [positionId], references: [id], onDelete: Cascade, map: "FK_PosReq_Positions")
+  id                        Int      @id @default(autoincrement()) @map("position_requirement_id")
+  positionId                Int      @map("position_id")
+  level                     Int?     @map("level")
+  requiredEducationLevel    String?  @map("required_education_level") @db.VarChar(100)
+  minimumExperienceYears    Int?     @map("minimum_experience_years")
+  requiredWorkExperienceYears Int?    @map("required_work_experience_years")
+  position                  Position @relation(fields: [positionId], references: [id], onDelete: Cascade, map: "FK_PosReq_Positions")
 
   @@map("position_requirements")
 }

@@ -46,6 +46,29 @@ export const getAllPositions = async (req: Request, res: Response) => {
   }
 };
 
+export const getPositionById = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) {
+      return res.status(400).json({ success: false, message: "Invalid id" });
+    }
+
+    const position = await PositionService.getPositionById(id);
+
+    if (!position) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Position not found" });
+    }
+
+    res.status(200).json({ success: true, data: position });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch position" });
+  }
+};
+
 export const assignEmployee = async (req: Request, res: Response) => {
   try {
     const validatedData = assignEmployeeSchema.parse(req.body);

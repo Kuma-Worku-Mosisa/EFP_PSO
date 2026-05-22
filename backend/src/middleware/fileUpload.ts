@@ -20,6 +20,29 @@ export const VALID_ROLES = [
   "security_guard",
 ];
 
+const sanitizeFilenamePrefix = (value: string) =>
+  value
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/^organization_/, "")
+    .replace(/[^a-zA-Z0-9]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .toLowerCase() || "file";
+
+export const buildPrefixedFilename = (
+  prefix: string,
+  originalName: string,
+): string => {
+  const timestamp = Date.now();
+  const uniqueSuffix = crypto.randomUUID().replace(/-/g, "");
+  const sanitizedName = originalName
+    .replace(/[^a-zA-Z0-9.-]/g, "_")
+    .toLowerCase();
+  const sanitizedPrefix = sanitizeFilenamePrefix(prefix);
+
+  return `${sanitizedPrefix}-${timestamp}-${uniqueSuffix}-${sanitizedName}`;
+};
+
 /**
  * Creates the folder structure for an organization
  * uploads/{organizationName}/{role}/
@@ -65,14 +88,7 @@ export const createMulterStorage = (organizationName: string, role: string) => {
       cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
-      // Create collision-resistant filename: {timestamp}-{random}-{sanitized-original-name}
-      const timestamp = Date.now();
-      const uniqueSuffix = crypto.randomUUID().replace(/-/g, "");
-      const sanitizedName = file.originalname
-        .replace(/[^a-zA-Z0-9.-]/g, "_")
-        .toLowerCase();
-      const filename = `${timestamp}-${uniqueSuffix}-${sanitizedName}`;
-      cb(null, filename);
+      cb(null, buildPrefixedFilename(file.fieldname, file.originalname));
     },
   });
 
@@ -163,12 +179,7 @@ export const createOrganizationDocumentsUploader = () => {
       cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
-      const timestamp = Date.now();
-      const uniqueSuffix = crypto.randomUUID().replace(/-/g, "");
-      const sanitizedName = file.originalname
-        .replace(/[^a-zA-Z0-9.-]/g, "_")
-        .toLowerCase();
-      cb(null, `${timestamp}-${uniqueSuffix}-${sanitizedName}`);
+      cb(null, buildPrefixedFilename(file.fieldname, file.originalname));
     },
   });
 

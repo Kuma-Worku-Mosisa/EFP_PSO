@@ -39,11 +39,7 @@ router.post("/upload", (req: Request, res: Response, next) => {
  * @desc    Submit a new license application including organization, resources, and personnel
  * @access  Private (Requires valid User Token)
  */
-router.post(
-  "/submit",
-  // authenticate, // This populates req.user.id for the controller
-  submitApplication,
-);
+router.post("/submit", authenticate, submitApplication);
 
 // GET /api/applications/me - logged-in user's latest application
 router.get("/me", authenticate, getMyApplication);

@@ -1,6 +1,7 @@
 // src/modules/user/user.service.ts
 import prisma from "../../lib/prisma";
 import * as bcrypt from "bcryptjs";
+import { createAuditLog } from "../../utils/auditLogger";
 
 // Custom error class to pass readable error codes to controllers
 class ServiceError extends Error {
@@ -66,6 +67,12 @@ export type UserAdminUpdateInput = {
   status?: string;
 };
 
+type AuditContext = {
+  userId?: number | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+};
+
 /**
  * Creates a brand new user and links their initial roles inside a secure Database Transaction.
  */
@@ -110,6 +117,19 @@ export const createUser = async (input: UserCreateInput) => {
 
   // 3. Execute writing user and user_roles simultaneously
   return await prisma.$transaction(async (tx) => {
+    const defaultRoleId = async () => {
+      const agencyRole = await tx.roles.upsert({
+        where: { role_name: "agency" },
+        update: {},
+        create: { role_name: "agency" },
+      });
+
+      return agencyRole.role_id;
+    };
+
+    const resolvedRoleIds =
+      input.roleIds.length > 0 ? input.roleIds : [await defaultRoleId()];
+
     const newUser = await tx.user.create({
       data: {
         username: input.username,
@@ -122,7 +142,7 @@ export const createUser = async (input: UserCreateInput) => {
         ...(input.status && { status: input.status }),
         // Nested write logic into junction table
         user_roles: {
-          create: input.roleIds.map((rId) => ({
+          create: resolvedRoleIds.map((rId) => ({
             role_id: rId,
           })),
         },
@@ -131,6 +151,26 @@ export const createUser = async (input: UserCreateInput) => {
     });
     return newUser;
   });
+};
+
+export const createUserWithAudit = async (
+  input: UserCreateInput,
+  audit?: AuditContext,
+) => {
+  const createdUser = await createUser(input);
+
+  await createAuditLog(prisma, {
+    userId: audit?.userId ?? null,
+    action: "CREATE",
+    entityName: "User",
+    entityId: createdUser.id,
+    oldValue: null,
+    newValue: JSON.stringify(createdUser),
+    ipAddress: audit?.ipAddress ?? null,
+    userAgent: audit?.userAgent ?? null,
+  });
+
+  return createdUser;
 };
 
 /**
@@ -177,11 +217,15 @@ export const findUserByUsername = async (username: string) => {
 export const updateUserProfile = async (
   userId: number | string,
   input: UserAdminUpdateInput,
+  audit?: AuditContext,
 ) => {
   const id = parseUserId(userId);
 
   // Verify user exists first
-  const existingUser = await prisma.user.findUnique({ where: { id } });
+  const existingUser = await prisma.user.findUnique({
+    where: { id },
+    select: userSelection,
+  });
   if (!existingUser) throw new ServiceError("User not found", "NOT_FOUND");
 
   return await prisma.$transaction(async (tx) => {
@@ -202,7 +246,7 @@ export const updateUserProfile = async (
     }
 
     // Update individual profile table components
-    return await tx.user.update({
+    const updatedUser = await tx.user.update({
       where: { id },
       data: {
         username: input.username,
@@ -215,6 +259,19 @@ export const updateUserProfile = async (
       },
       select: userSelection,
     });
+
+    await createAuditLog(tx, {
+      userId: audit?.userId ?? null,
+      action: "UPDATE",
+      entityName: "User",
+      entityId: id,
+      oldValue: JSON.stringify(existingUser),
+      newValue: JSON.stringify(updatedUser),
+      ipAddress: audit?.ipAddress ?? null,
+      userAgent: audit?.userAgent ?? null,
+    });
+
+    return updatedUser;
   });
 };
 
@@ -225,29 +282,52 @@ export const changeUserPassword = async (
   userId: number | string,
   currentPassword: string,
   newPassword: string,
+  audit?: AuditContext,
 ) => {
   const id = parseUserId(userId);
 
-  const user = await prisma.user.findUnique({
-    where: { id },
-    select: { password: true },
-  });
+  const user = await prisma.user.findUnique({ where: { id } });
 
   if (!user)
     throw new ServiceError("User profile could not be verified", "NOT_FOUND");
 
-  const isMatch = await bcrypt.compare(currentPassword, user.password);
-  if (!isMatch)
-    throw new ServiceError(
-      "Current password configuration is invalid",
-      "INVALID_CURRENT_PASSWORD",
-    );
-
   const newHashedPassword = await bcrypt.hash(newPassword, 12);
 
-  await prisma.user.update({
-    where: { id },
-    data: { password: newHashedPassword },
+  await prisma.$transaction(async (tx) => {
+    const passwordRecord = await tx.user.findUnique({
+      where: { id },
+      select: { password: true },
+    });
+
+    if (!passwordRecord) {
+      throw new ServiceError("User profile could not be verified", "NOT_FOUND");
+    }
+
+    const isMatch = await bcrypt.compare(
+      currentPassword,
+      passwordRecord.password,
+    );
+    if (!isMatch)
+      throw new ServiceError(
+        "Current password configuration is invalid",
+        "INVALID_CURRENT_PASSWORD",
+      );
+
+    await tx.user.update({
+      where: { id },
+      data: { password: newHashedPassword },
+    });
+
+    await createAuditLog(tx, {
+      userId: audit?.userId ?? null,
+      action: "UPDATE",
+      entityName: "UserPassword",
+      entityId: id,
+      oldValue: null,
+      newValue: JSON.stringify({ userId: id, passwordChanged: true }),
+      ipAddress: audit?.ipAddress ?? null,
+      userAgent: audit?.userAgent ?? null,
+    });
   });
 
   return true;
@@ -258,13 +338,40 @@ export const changeUserPassword = async (
  * Removes permissions from junction table so user loses full system access,
  * but safely keeps the main record row intact to satisfy legal/inspection tracking integrity constraints.
  */
-export const administrativeRevokeAccess = async (userId: number | string) => {
+export const administrativeRevokeAccess = async (
+  userId: number | string,
+  audit?: AuditContext,
+) => {
   const id = parseUserId(userId);
 
   return await prisma.$transaction(async (tx) => {
+    const existingUser = await tx.user.findUnique({
+      where: { id },
+      select: userSelection,
+    });
+
+    if (!existingUser) {
+      throw new ServiceError("User not found", "NOT_FOUND");
+    }
+
     // Clear roles completely to lock out user from system routes entirely
     await tx.user_roles.deleteMany({
       where: { user_id: id },
+    });
+
+    await createAuditLog(tx, {
+      userId: audit?.userId ?? null,
+      action: "UPDATE",
+      entityName: "UserAccess",
+      entityId: id,
+      oldValue: JSON.stringify(existingUser),
+      newValue: JSON.stringify({
+        ...existingUser,
+        user_roles: [],
+        accessRevoked: true,
+      }),
+      ipAddress: audit?.ipAddress ?? null,
+      userAgent: audit?.userAgent ?? null,
     });
 
     // We clear out the photo url or set other identifiers to note inactivation if necessary

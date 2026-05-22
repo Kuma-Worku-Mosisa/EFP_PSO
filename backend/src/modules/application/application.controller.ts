@@ -43,7 +43,7 @@ export const submitApplication = async (req: Request, res: Response) => {
     const { formData, uploadedFiles } = validation.data;
 
     // 3. Identify the logged-in user (Critical for Tracking History)
-    const userId = (req as any).user?.id || 1;
+    const userId = req.user?.userId ?? req.user?.id;
 
     if (!userId) {
       return ApiResponse.error(
@@ -57,7 +57,7 @@ export const submitApplication = async (req: Request, res: Response) => {
     const result = await ApplicationService.submitNewApplication(
       formData,
       uploadedFiles,
-      userId,
+      Number(userId),
     );
 
     // 5. Success Response
