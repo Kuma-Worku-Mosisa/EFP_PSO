@@ -1,2 +1,12 @@
 .env
 prisma.config.ts
+node_modules/
+build/
+dist/
+backend/uploads/
+backend/prisma.config.ts
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
