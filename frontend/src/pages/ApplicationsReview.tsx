@@ -54,14 +54,23 @@ const getFileType = (fileUrl?: string) => {
 };
 
 const buildDocumentCards = (
-  docs: Array<{ documentType?: string; fileUrl?: string }>,
+  docs: Array<{
+    id?: number | string;
+    documentType?: string;
+    fileUrl?: string;
+    isVerified?: boolean;
+    verifiedAt?: string | null;
+  }>,
   prefix: string,
 ) =>
   (docs || []).map((doc, index) => ({
     id: `${prefix}_${index}`,
+    documentId: doc.id,
     label: doc.documentType || "Document",
     fileUrl: doc.fileUrl || "",
     fileName: getFileName(doc.fileUrl),
+    isVerified: Boolean(doc.isVerified),
+    verifiedAt: doc.verifiedAt,
   }));
 
 const getOrganizationDocumentCards = (application?: any) =>
@@ -84,6 +93,109 @@ const getEmployeeDocs = (employee: any) => [
   ...(employee?.documents || []),
 ];
 
+const collectApplicationDocuments = (application: any) => [
+  ...(application?.organization?.documents || []).map((doc: any) => ({
+    scope: "organization",
+    id: doc?.id,
+    isVerified: Boolean(doc?.isVerified),
+  })),
+  ...getEmployeeDocs(application?.manager).map((doc: any) => ({
+    scope: "manager",
+    id: doc?.id,
+    isVerified: Boolean(doc?.isVerified),
+  })),
+  ...getEmployeeDocs(application?.operationsHead).map((doc: any) => ({
+    scope: "operationsHead",
+    id: doc?.id,
+    isVerified: Boolean(doc?.isVerified),
+  })),
+  ...getEmployeeDocs(application?.adminHead).map((doc: any) => ({
+    scope: "adminHead",
+    id: doc?.id,
+    isVerified: Boolean(doc?.isVerified),
+  })),
+];
+
+const hasUnverifiedApplicationDocuments = (application: any) => {
+  const docs = collectApplicationDocuments(application);
+  return docs.length > 0 && docs.some((doc) => !doc.isVerified);
+};
+
+const normalizeFileReference = (value?: string | null) =>
+  normalizeText(
+    (value || "").split("?")[0].split("#")[0].split("/").pop() || value,
+  );
+
+const resolveDocumentVerificationTarget = (
+  application: any,
+  label: string,
+  fileUrl?: string,
+  value?: string,
+) => {
+  const labelTerms = [label, value]
+    .filter(Boolean)
+    .map((term) => normalizeText(term));
+  const normalizedFileName = normalizeFileReference(fileUrl || value);
+
+  const matches = (doc: any, typeKey = "documentType") => {
+    const docType = normalizeText(doc?.[typeKey]);
+    const docFileName = normalizeFileReference(doc?.fileUrl);
+
+    if (normalizedFileName && docFileName === normalizedFileName) {
+      return true;
+    }
+
+    return labelTerms.some(
+      (term) => term && (docType.includes(term) || docFileName.includes(term)),
+    );
+  };
+
+  const organizationDocs = application?.organization?.documents || [];
+  const organizationDoc = organizationDocs.find((doc: any) => matches(doc));
+  if (organizationDoc) {
+    return {
+      scope: "organization" as const,
+      id: organizationDoc.id,
+      isVerified: Boolean(organizationDoc.isVerified),
+      verifiedAt: organizationDoc.verifiedAt ?? null,
+    };
+  }
+
+  const employees = [
+    application?.manager,
+    application?.operationsHead,
+    application?.adminHead,
+  ].filter(Boolean);
+
+  for (const employee of employees) {
+    const employeeDoc = (employee?.documents || []).find((doc: any) =>
+      matches(doc),
+    );
+    if (employeeDoc) {
+      return {
+        scope: "employee" as const,
+        id: employeeDoc.id,
+        isVerified: Boolean(employeeDoc.isVerified),
+        verifiedAt: employeeDoc.verifiedAt ?? null,
+      };
+    }
+
+    const educationDoc = (employee?.educationDocs || []).find((doc: any) =>
+      matches(doc, "educationDocumentType"),
+    );
+    if (educationDoc) {
+      return {
+        scope: "education" as const,
+        id: educationDoc.id,
+        isVerified: Boolean(educationDoc.isVerified),
+        verifiedAt: educationDoc.verifiedAt ?? null,
+      };
+    }
+  }
+
+  return null;
+};
+
 const findEmployeeDoc = (employee: any, terms: string[]) => {
   const docs = getEmployeeDocs(employee);
   return docs.find((doc: any) => {
@@ -95,29 +207,40 @@ const findEmployeeDoc = (employee: any, terms: string[]) => {
 const getEmployeeDisplayName = (employee: any) =>
   employee?.user?.fullName || employee?.fullName || "-";
 
-const getEmployeeContact = (employee: any) => {
-  const phone = employee?.user?.phone || employee?.phone;
-  const email = employee?.user?.email || employee?.email;
-  return [phone, email].filter(Boolean).join(" / ") || "-";
-};
-
-const getEmployeeAddressSummary = (employee: any) => {
+const getEmployeeAddressDetails = (employee: any) => {
   const address = employee?.address;
-  if (!address) return "-";
+  const region = address?.kebele?.woreda?.zone?.region;
+  const zone = address?.kebele?.woreda?.zone;
+  const woreda = address?.kebele?.woreda;
+  const kebele = address?.kebele;
 
-  const region = address?.kebele?.woreda?.zone?.region?.name;
-  const zone = address?.kebele?.woreda?.zone?.name;
-  const woreda = address?.kebele?.woreda?.name;
-  const kebele = address?.kebele?.name;
-  const houseNumber = address?.houseNumber;
-  const specialLocation = address?.specialLocation;
-
-  return (
-    [region, zone, woreda, kebele, houseNumber, specialLocation]
-      .filter(Boolean)
-      .join(", ") || "-"
-  );
+  return {
+    region: region?.nameEnglish || region?.nameAmharic || region?.name || "-",
+    zone: zone?.nameEnglish || zone?.nameAmharic || zone?.name || "-",
+    woreda: woreda?.nameEnglish || woreda?.nameAmharic || woreda?.name || "-",
+    kebele: kebele?.nameEnglish || kebele?.nameAmharic || kebele?.name || "-",
+    specialLocation: address?.specialLocation || "-",
+    houseNumber: address?.houseNumber || "-",
+  };
 };
+
+const getEmployeeEmploymentDetails = (employee: any) => ({
+  educationLevel: employee?.educationLevel || "-",
+  workExpYears:
+    employee?.workExpYears !== undefined && employee?.workExpYears !== null
+      ? String(employee.workExpYears)
+      : "-",
+  totalExpYears:
+    employee?.TotalExpYears !== undefined && employee?.TotalExpYears !== null
+      ? String(employee.TotalExpYears)
+      : "-",
+  isBlacklisted:
+    employee?.isBlacklisted === undefined || employee?.isBlacklisted === null
+      ? "-"
+      : employee.isBlacklisted
+        ? "Yes"
+        : "No",
+});
 
 export const ApplicationsReview = () => {
   const { language } = useLanguage();
@@ -128,7 +251,7 @@ export const ApplicationsReview = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedApp, setSelectedApp] = useState<any>(null);
   const [viewingStage, setViewingStage] = useState<
-    "selection" | "formal" | "new" | "renewal"
+    "selection" | "new" | "renewal"
   >("selection");
   const [docStatuses, setDocStatuses] = useState<
     Record<
@@ -156,11 +279,6 @@ export const ApplicationsReview = () => {
       pending: isAm ? "በመጠባበቅ ላይ" : "Pending",
       reviewing: isAm ? "በግምገማ ላይ" : "Reviewing",
       correction: isAm ? "ማስተካከያ የሚፈልጉ" : "Need Correction",
-    },
-    stages: {
-      formal: isAm ? "መደበኛ ደብዳቤ" : "Formal Letter",
-      new: isAm ? "አዲስ ማመልከቻ" : "New Application",
-      renewal: isAm ? "የእድሳት ማመልከቻ" : "Renewal Review",
     },
     table: {
       appId: isAm ? "የማመልከቻ መለያ" : "App ID",
@@ -245,6 +363,121 @@ export const ApplicationsReview = () => {
     }
   };
 
+  const markDocumentAsVerifiedLocally = React.useCallback(
+    (target: {
+      scope: "organization" | "employee" | "education";
+      id: number;
+    }) => {
+      const verifyById = (docs?: any[]) =>
+        (docs || []).map((doc: any) =>
+          doc?.id === target.id
+            ? {
+                ...doc,
+                isVerified: true,
+                verifiedAt: doc?.verifiedAt || new Date().toISOString(),
+              }
+            : doc,
+        );
+
+      setSelectedApp((prev: any) => {
+        if (!prev) return prev;
+
+        if (target.scope === "organization") {
+          return {
+            ...prev,
+            organization: {
+              ...prev.organization,
+              documents: verifyById(prev.organization?.documents),
+            },
+          };
+        }
+
+        const updateEmployee = (employee: any) => {
+          if (!employee) return employee;
+
+          if (target.scope === "employee") {
+            return {
+              ...employee,
+              documents: verifyById(employee.documents),
+            };
+          }
+
+          return {
+            ...employee,
+            educationDocs: verifyById(employee.educationDocs),
+          };
+        };
+
+        return {
+          ...prev,
+          manager: updateEmployee(prev.manager),
+          operationsHead: updateEmployee(prev.operationsHead),
+          adminHead: updateEmployee(prev.adminHead),
+        };
+      });
+    },
+    [],
+  );
+
+  const handleVerifyDocument = async (
+    stateKey: string,
+    label: string,
+    target: {
+      scope: "organization" | "employee" | "education";
+      id: number;
+    } | null,
+  ) => {
+    if (!selectedApp) return;
+
+    if (!target) {
+      showToast(
+        "error",
+        "This file is not linked to a database document, so it cannot be verified here.",
+      );
+      return;
+    }
+
+    try {
+      const res = await apiRequest(
+        `/applications/documents/${target.scope}/${target.id}/verify`,
+        { method: "POST" },
+      );
+
+      setDocStatuses((prev) => ({
+        ...prev,
+        [stateKey]: {
+          status: "approved",
+          comment: prev[stateKey]?.comment,
+        },
+      }));
+
+      const successMessage =
+        res?.message || res?.data?.message || `${label} verified and saved.`;
+      showToast("success", successMessage);
+
+      // Keep New Application Audit stable without refetching the entire page data.
+      if (viewingStage === "new") {
+        markDocumentAsVerifiedLocally(target);
+        return;
+      }
+
+      await fetchApplications();
+    } catch (err: any) {
+      console.error("Document verification failed", err);
+      const errMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to verify the selected document.";
+      showToast("error", errMsg);
+    }
+  };
+
+  const isApplicationReadyForApproval = (app: any) => {
+    if (!app) return false;
+
+    return !hasUnverifiedApplicationDocuments(app);
+  };
+
   const handleDocAction = (
     key: string,
     status: "approved" | "rejected" | "pending",
@@ -277,21 +510,37 @@ export const ApplicationsReview = () => {
     id,
     isFile = false,
     fileUrl,
+    verificationKey,
+    initialVerified = false,
   }: {
     label: string;
     value: string;
     id: string;
     isFile?: boolean;
     fileUrl?: string;
+    verificationKey?: string;
+    initialVerified?: boolean;
   }) => {
-    const status = docStatuses[id]?.status || "pending";
+    const resolvedTarget = isFile
+      ? resolveDocumentVerificationTarget(selectedApp, label, fileUrl, value)
+      : null;
+    const scopedVerificationKey = resolvedTarget
+      ? `${selectedApp?.id ?? "app"}:${viewingStage}:${resolvedTarget.scope}:${resolvedTarget.id}`
+      : verificationKey
+        ? `${selectedApp?.id ?? "app"}:${viewingStage}:${verificationKey}`
+        : `${selectedApp?.id ?? "app"}:${viewingStage}:${id}`;
+    const status =
+      docStatuses[scopedVerificationKey]?.status ||
+      (resolvedTarget?.isVerified || initialVerified ? "approved" : "pending");
     const [showComment, setShowComment] = useState(false);
     const [commentText, setCommentText] = useState(
-      docStatuses[id]?.comment || "",
+      docStatuses[scopedVerificationKey]?.comment || "",
     );
 
+    const [isVerifying, setIsVerifying] = useState(false);
+
     const handleSendComment = () => {
-      handleDocAction(id, status, commentText);
+      handleDocAction(scopedVerificationKey, status, commentText);
       setShowComment(false);
       setNotifMessage(`Comment sent for "${label}"`);
       setShowNotification(true);
@@ -369,11 +618,12 @@ export const ApplicationsReview = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 pt-2">
-            {isFile && (
+          {isFile && (
+            <div className="flex flex-wrap items-center gap-2 pt-2">
               <button
                 type="button"
-                onClick={() => {
+                onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                  e.preventDefault();
                   if (fileUrl) {
                     openDocumentPreview(fileUrl, label);
                     return;
@@ -396,56 +646,78 @@ export const ApplicationsReview = () => {
                   Preview
                 </span>
               </button>
-            )}
-            <button
-              type="button"
-              onClick={() => handleDocAction(id, "approved")}
-              className={cn(
-                "flex items-center space-x-2 px-3 py-1.5 rounded-xl transition-all shadow-sm",
-                status === "approved"
-                  ? "bg-green-600 text-white"
-                  : "bg-green-50 text-green-600 hover:bg-green-600 hover:text-white",
-              )}
-              title="Approve"
-            >
-              <CheckCircle className="w-4 h-4" />
-              <span className="text-[10px] font-bold uppercase tracking-tight">
-                Approve
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDocAction(id, "rejected")}
-              className={cn(
-                "flex items-center space-x-2 px-3 py-1.5 rounded-xl transition-all shadow-sm",
-                status === "rejected"
-                  ? "bg-amber-600 text-white"
-                  : "bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white",
-              )}
-              title="Open for Correction"
-            >
-              <RefreshCw className="w-4 h-4" />
-              <span className="text-[10px] font-bold uppercase tracking-tight">
-                Correct
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowComment(!showComment)}
-              className={cn(
-                "flex items-center space-x-2 px-3 py-1.5 rounded-xl transition-all shadow-sm",
-                docStatuses[id]?.comment
-                  ? "bg-primary text-white"
-                  : "bg-gray-50 text-gray-400 hover:bg-primary hover:text-white",
-              )}
-              title="Send Comment"
-            >
-              <FileText className="w-4 h-4" />
-              <span className="text-[10px] font-bold uppercase tracking-tight">
-                Comment
-              </span>
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={async (e: React.MouseEvent<HTMLButtonElement>) => {
+                  e.preventDefault();
+                  setIsVerifying(true);
+                  try {
+                    await handleVerifyDocument(
+                      scopedVerificationKey,
+                      label,
+                      resolvedTarget,
+                    );
+                  } finally {
+                    setIsVerifying(false);
+                  }
+                }}
+                disabled={isVerifying}
+                className={cn(
+                  "flex items-center space-x-2 px-3 py-1.5 rounded-xl transition-all shadow-sm",
+                  isVerifying ? "opacity-60 pointer-events-none" : "",
+                  status === "approved"
+                    ? "bg-green-600 text-white"
+                    : "bg-green-50 text-green-600 hover:bg-green-600 hover:text-white",
+                )}
+                title="Verify document"
+              >
+                <CheckCircle className="w-4 h-4" />
+                <span className="text-[10px] font-bold uppercase tracking-tight">
+                  {isVerifying
+                    ? isAm
+                      ? "Verifying..."
+                      : "Verifying..."
+                    : status === "approved"
+                      ? "Verified"
+                      : "Verify"}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  handleDocAction(scopedVerificationKey, "rejected")
+                }
+                className={cn(
+                  "flex items-center space-x-2 px-3 py-1.5 rounded-xl transition-all shadow-sm",
+                  status === "rejected"
+                    ? "bg-amber-600 text-white"
+                    : "bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white",
+                )}
+                title="Open for Correction"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span className="text-[10px] font-bold uppercase tracking-tight">
+                  Correct
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowComment(!showComment)}
+                className={cn(
+                  "flex items-center space-x-2 px-3 py-1.5 rounded-xl transition-all shadow-sm",
+                  docStatuses[scopedVerificationKey]?.comment
+                    ? "bg-primary text-white"
+                    : "bg-gray-50 text-gray-400 hover:bg-primary hover:text-white",
+                )}
+                title="Send Comment"
+              >
+                <FileText className="w-4 h-4" />
+                <span className="text-[10px] font-bold uppercase tracking-tight">
+                  Comment
+                </span>
+              </button>
+            </div>
+          )}
         </div>
 
         {showComment && (
@@ -476,6 +748,194 @@ export const ApplicationsReview = () => {
     );
   };
 
+  const renderPersonnelInfoSection = ({
+    accentClass,
+    title,
+    name,
+    gender,
+    citizenship,
+    phoneLabel,
+    phoneValue,
+    emailLabel,
+    emailValue,
+    addressTitle,
+    regionLabel,
+    regionValue,
+    zoneLabel,
+    zoneValue,
+    woredaLabel,
+    woredaValue,
+    kebeleLabel,
+    kebeleValue,
+    specialLocationLabel,
+    specialLocationValue,
+    houseNumberLabel,
+    houseNumberValue,
+    educationLevelLabel,
+    educationLevelValue,
+    workExpYearsLabel,
+    workExpYearsValue,
+    totalExpYearsLabel,
+    totalExpYearsValue,
+    isBlacklistedLabel,
+    isBlacklistedValue,
+  }: {
+    accentClass: string;
+    title: string;
+    name: string;
+    gender: string;
+    citizenship: string;
+    phoneLabel: string;
+    phoneValue: string;
+    emailLabel: string;
+    emailValue: string;
+    addressTitle: string;
+    regionLabel: string;
+    regionValue: string;
+    zoneLabel: string;
+    zoneValue: string;
+    woredaLabel: string;
+    woredaValue: string;
+    kebeleLabel: string;
+    kebeleValue: string;
+    specialLocationLabel: string;
+    specialLocationValue: string;
+    houseNumberLabel: string;
+    houseNumberValue: string;
+    educationLevelLabel?: string;
+    educationLevelValue?: string;
+    workExpYearsLabel?: string;
+    workExpYearsValue?: string;
+    totalExpYearsLabel?: string;
+    totalExpYearsValue?: string;
+    isBlacklistedLabel?: string;
+    isBlacklistedValue?: string;
+  }) => (
+    <div className="space-y-4 mb-6">
+      <div className="flex items-center space-x-3 px-4">
+        <div className={`w-1.5 h-6 rounded-full ${accentClass}`} />
+        <h5 className="text-sm font-black text-primary uppercase tracking-tight">
+          {title}
+        </h5>
+      </div>
+      <div className="rounded-[28px] border border-gray-200 bg-white/70 px-5 py-4 shadow-sm">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="space-y-3 text-sm leading-relaxed">
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <span className="font-black text-[#0C2A4C]">Full Name:</span>
+              <span className="font-bold text-gray-700">{name}</span>
+            </div>
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <span className="font-black text-[#0C2A4C]">Gender:</span>
+              <span className="font-bold text-gray-700">{gender}</span>
+            </div>
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <span className="font-black text-[#0C2A4C]">Citizenship:</span>
+              <span className="font-bold text-gray-700">{citizenship}</span>
+            </div>
+          </div>
+
+          <div className="space-y-3 text-sm leading-relaxed lg:border-l lg:border-gray-200 lg:pl-5">
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <span className="font-black text-[#0C2A4C]">{phoneLabel}:</span>
+              <span className="font-bold text-gray-700">{phoneValue}</span>
+            </div>
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <span className="font-black text-[#0C2A4C]">{emailLabel}:</span>
+              <span className="font-bold text-gray-700">{emailValue}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-[24px] border border-gray-100 bg-gray-50/70 px-4 py-4">
+          <div className="flex items-center space-x-2 mb-3">
+            <div className="w-1.5 h-5 rounded-full bg-[#0C2A4C]" />
+            <h6 className="text-xs font-black text-[#0C2A4C] uppercase tracking-[0.18em]">
+              {addressTitle}
+            </h6>
+          </div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 text-sm leading-relaxed">
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <span className="font-black text-[#0C2A4C]">{regionLabel}:</span>
+              <span className="font-bold text-gray-700">{regionValue}</span>
+            </div>
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <span className="font-black text-[#0C2A4C]">{zoneLabel}:</span>
+              <span className="font-bold text-gray-700">{zoneValue}</span>
+            </div>
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <span className="font-black text-[#0C2A4C]">{woredaLabel}:</span>
+              <span className="font-bold text-gray-700">{woredaValue}</span>
+            </div>
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <span className="font-black text-[#0C2A4C]">{kebeleLabel}:</span>
+              <span className="font-bold text-gray-700">{kebeleValue}</span>
+            </div>
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <span className="font-black text-[#0C2A4C]">
+                {specialLocationLabel}:
+              </span>
+              <span className="font-bold text-gray-700">
+                {specialLocationValue}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <span className="font-black text-[#0C2A4C]">
+                {houseNumberLabel}:
+              </span>
+              <span className="font-bold text-gray-700">
+                {houseNumberValue}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-[24px] border border-gray-100 bg-white/90 px-4 py-4">
+          <div className="flex items-center space-x-2 mb-3">
+            <div className="w-1.5 h-5 rounded-full bg-[#0C2A4C]" />
+            <h6 className="text-xs font-black text-[#0C2A4C] uppercase tracking-[0.18em]">
+              Employment Details
+            </h6>
+          </div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 text-sm leading-relaxed">
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <span className="font-black text-[#0C2A4C]">
+                {educationLevelLabel || "Education Level"}:
+              </span>
+              <span className="font-bold text-gray-700">
+                {educationLevelValue || "-"}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <span className="font-black text-[#0C2A4C]">
+                {workExpYearsLabel || "Work Exp. Years"}:
+              </span>
+              <span className="font-bold text-gray-700">
+                {workExpYearsValue || "-"}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <span className="font-black text-[#0C2A4C]">
+                {totalExpYearsLabel || "Total Exp. Years"}:
+              </span>
+              <span className="font-bold text-gray-700">
+                {totalExpYearsValue || "-"}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <span className="font-black text-[#0C2A4C]">
+                {isBlacklistedLabel || "Blacklisted"}:
+              </span>
+              <span className="font-bold text-gray-700">
+                {isBlacklistedValue || "-"}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   const ReviewModal = () => {
     if (!selectedApp) return null;
 
@@ -503,16 +963,8 @@ export const ApplicationsReview = () => {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 w-full max-w-7xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 w-full max-w-7xl">
           {[
-            {
-              id: "formal",
-              title: "Formal Letter",
-              desc: "Process and verify the initial competency certificate request and official letters.",
-              icon: FileText,
-              color: "blue",
-              delay: 0,
-            },
             {
               id: "new",
               title: "New Application",
@@ -562,52 +1014,10 @@ export const ApplicationsReview = () => {
       </div>
     );
 
-    const renderFormalLetter = () => (
-      <div className="space-y-8">
-        <div className="bg-blue-50 border border-blue-100 p-8 rounded-[40px] flex items-center justify-between">
-          <div className="flex items-center space-x-6">
-            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm">
-              <FileText className="w-8 h-8 text-blue-500" />
-            </div>
-            <div>
-              <h4 className="text-xl font-black text-primary uppercase tracking-tighter">
-                Request Letter
-              </h4>
-              <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">
-                Formal Request for Competency Certificate
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              setViewerFile({
-                name: "formal_letter.pdf",
-                type: "application/pdf",
-                size: 2.1 * 1024 * 1024,
-              });
-              setIsViewerOpen(true);
-            }}
-            className="px-8 py-3 bg-white text-blue-600 rounded-2xl font-black text-xs uppercase tracking-widest shadow-sm hover:shadow-xl transition-all border border-blue-100"
-          >
-            Preview Document
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <ReviewItem
-            label="Formal Letter Status"
-            value="formal_letter.pdf"
-            id="formal_letter"
-            isFile={true}
-          />
-        </div>
-      </div>
-    );
-
     const renderNewApplication = () => (
       <div className="space-y-10 pb-24">
         {/* Agency & Office Information */}
-        <section className="space-y-10 py-6">
+        <section className="grid grid-cols-1 gap-10 py-6 lg:grid-cols-2 lg:items-start">
           {/* SECTION 1: ORGANIZATION INFORMATION */}
           <div className="space-y-6">
             <div className="flex items-center space-x-3 border-b border-gray-100 pb-3">
@@ -617,14 +1027,14 @@ export const ApplicationsReview = () => {
               </h4>
             </div>
 
-            <div className="bg-gray-50/50 rounded-[32px] border border-gray-100 p-8 shadow-sm">
+            <div className="bg-gray-50/50 rounded-[32px] border border-gray-100 p-8 shadow-sm h-full">
               <div className="flex flex-wrap gap-y-4 text-sm leading-relaxed">
                 <div className="flex items-center mr-6">
                   <span className="font-black text-[#0C2A4C] mr-2">
-                    Organization Name:
+                    Organization Name (Amharic):
                   </span>
                   <span className="font-bold text-gray-700">
-                    {selectedApp.organization?.name ||
+                    {selectedApp.organization?.nameAmharic ||
                       selectedApp.agency ||
                       "—"}
                   </span>
@@ -633,22 +1043,10 @@ export const ApplicationsReview = () => {
 
                 <div className="flex items-center mr-6">
                   <span className="font-black text-[#0C2A4C] mr-2">
-                    Head Office Name:
+                    Organization Name (English):
                   </span>
                   <span className="font-bold text-gray-700">
-                    {selectedApp.organization?.headOfficeName || "—"}
-                  </span>
-                  <span className="mx-4 text-[#DCC380] font-light">|</span>
-                </div>
-
-                <div className="flex items-center mr-6">
-                  <span className="font-black text-[#0C2A4C] mr-2">
-                    Branch Office Name:
-                  </span>
-                  <span className="font-bold text-gray-700">
-                    {selectedApp.branchOfficeName ||
-                      selectedApp.organization?.branchOfficeName ||
-                      "—"}
+                    {selectedApp.organization?.nameEnglish || "—"}
                   </span>
                   <span className="mx-4 text-[#DCC380] font-light">|</span>
                 </div>
@@ -684,7 +1082,7 @@ export const ApplicationsReview = () => {
               </h4>
             </div>
 
-            <div className="bg-[#0C2A4C] rounded-[32px] p-8 shadow-xl shadow-blue-900/10 relative overflow-hidden">
+            <div className="bg-[#0C2A4C] rounded-[32px] p-8 shadow-xl shadow-blue-900/10 relative overflow-hidden h-full">
               {/* Decorative Brand Accent */}
               <div className="absolute top-0 right-0 w-32 h-32 bg-[#DCC380] opacity-5 -mr-16 -mt-16 rounded-full" />
 
@@ -804,6 +1202,7 @@ export const ApplicationsReview = () => {
                 id="new_logo_live"
                 isFile
                 fileUrl={selectedApp.organization.logoUrl}
+                verificationKey="organization:logo"
               />
             )}
             {selectedApp.organization?.uniformSampleUrl && (
@@ -813,6 +1212,7 @@ export const ApplicationsReview = () => {
                 id="new_uniform_live"
                 isFile
                 fileUrl={selectedApp.organization.uniformSampleUrl}
+                verificationKey="organization:uniform"
               />
             )}
             {selectedApp.organization?.idCardSampleUrl && (
@@ -822,6 +1222,7 @@ export const ApplicationsReview = () => {
                 id="new_id_sample_live"
                 isFile
                 fileUrl={selectedApp.organization.idCardSampleUrl}
+                verificationKey="organization:id-card"
               />
             )}
             {buildDocumentCards(
@@ -837,55 +1238,12 @@ export const ApplicationsReview = () => {
                   id={doc.id}
                   isFile
                   fileUrl={doc.fileUrl}
+                  verificationKey={
+                    doc.documentId ? `organization:${doc.documentId}` : doc.id
+                  }
+                  initialVerified={doc.isVerified}
                 />
               ))}
-          </div>
-        </section>
-
-        {/* Organizational Documents */}
-        <section className="space-y-6">
-          <div className="flex items-center space-x-3 px-4">
-            <div className="w-1.5 h-6 bg-purple-600 rounded-full" />
-            <h4 className="text-base font-black text-primary uppercase tracking-tight">
-              Organizational Documents
-            </h4>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
-            {(buildDocumentCards(
-              selectedApp.organization?.documents || [],
-              "org-grid",
-            ).length > 0
-              ? buildDocumentCards(
-                  selectedApp.organization?.documents || [],
-                  "org-grid",
-                )
-              : []
-            ).map((doc) => (
-              <div
-                key={doc.id}
-                className="p-6 rounded-[32px] border-2 border-gray-100 bg-white shadow-sm min-h-[160px] flex flex-col justify-between"
-              >
-                <div className="space-y-2">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                    {doc.label}
-                  </p>
-                  <p className="text-sm font-bold text-primary break-words line-clamp-2">
-                    {/* {doc.fileName || "-"} */}
-                    click down button to preview
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => openDocumentPreview(doc.fileUrl, doc.label)}
-                  className="mt-4 flex items-center justify-center space-x-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
-                >
-                  <Eye className="w-4 h-4" />
-                  <span className="text-[10px] font-bold uppercase tracking-tight">
-                    Preview
-                  </span>
-                </button>
-              </div>
-            ))}
           </div>
         </section>
 
@@ -996,6 +1354,7 @@ export const ApplicationsReview = () => {
               id="new_uniform"
               isFile
               fileUrl={selectedApp.organization?.uniformSampleUrl}
+              verificationKey="organization:uniform-sample"
             />
             <ReviewItem
               label="Employee ID Card Sample"
@@ -1005,6 +1364,7 @@ export const ApplicationsReview = () => {
               id="new_id_card"
               isFile
               fileUrl={selectedApp.organization?.idCardSampleUrl}
+              verificationKey="organization:id-card-sample"
             />
             <ReviewItem
               label="Logo of Organization"
@@ -1012,6 +1372,7 @@ export const ApplicationsReview = () => {
               id="new_logo"
               isFile
               fileUrl={selectedApp.organization?.logoUrl}
+              verificationKey="organization:logo-file"
             />
             <ReviewItem
               label="Employment Form"
@@ -1025,6 +1386,15 @@ export const ApplicationsReview = () => {
                 findOrganizationDocument(selectedApp, ["employment form"])
                   ?.fileUrl
               }
+              verificationKey={
+                findOrganizationDocument(selectedApp, ["employment form"])
+                  ? `organization:${findOrganizationDocument(selectedApp, ["employment form"])?.documentId}`
+                  : "organization:employment-form"
+              }
+              initialVerified={Boolean(
+                findOrganizationDocument(selectedApp, ["employment form"])
+                  ?.isVerified,
+              )}
             />
             <ReviewItem
               label="Employment Warranty Form"
@@ -1042,6 +1412,20 @@ export const ApplicationsReview = () => {
                   "warranty form",
                 ])?.fileUrl
               }
+              verificationKey={
+                findOrganizationDocument(selectedApp, [
+                  "warranty",
+                  "warranty form",
+                ])
+                  ? `organization:${findOrganizationDocument(selectedApp, ["warranty", "warranty form"])?.documentId}`
+                  : "organization:warranty-form"
+              }
+              initialVerified={Boolean(
+                findOrganizationDocument(selectedApp, [
+                  "warranty",
+                  "warranty form",
+                ])?.isVerified,
+              )}
             />
           </div>
         </section>
@@ -1109,32 +1493,60 @@ export const ApplicationsReview = () => {
             </h4>
           </div>
           <div className="p-6 bg-gray-50/30 rounded-[40px] border border-gray-200">
+            {renderPersonnelInfoSection({
+              accentClass: "bg-cyan-600",
+              title: "Personal Information",
+              name: getEmployeeDisplayName(selectedApp.manager),
+              gender: selectedApp.manager?.gender || "-",
+              citizenship: selectedApp.manager?.citizenship || "-",
+              phoneLabel: "Phone",
+              phoneValue:
+                selectedApp.manager?.user?.phone ||
+                selectedApp.manager?.phone ||
+                "-",
+              emailLabel: "Email",
+              emailValue:
+                selectedApp.manager?.user?.email ||
+                selectedApp.manager?.email ||
+                "-",
+              addressTitle: "Address",
+              regionLabel: "Region",
+              regionValue: getEmployeeAddressDetails(selectedApp.manager)
+                .region,
+              zoneLabel: "Zone",
+              zoneValue: getEmployeeAddressDetails(selectedApp.manager).zone,
+              woredaLabel: "Woreda",
+              woredaValue: getEmployeeAddressDetails(selectedApp.manager)
+                .woreda,
+              kebeleLabel: "Kebele",
+              kebeleValue: getEmployeeAddressDetails(selectedApp.manager)
+                .kebele,
+              specialLocationLabel: "Special Location",
+              specialLocationValue: getEmployeeAddressDetails(
+                selectedApp.manager,
+              ).specialLocation,
+              houseNumberLabel: "House Number",
+              houseNumberValue: getEmployeeAddressDetails(selectedApp.manager)
+                .houseNumber,
+              educationLevelLabel: "Education Level",
+              educationLevelValue: getEmployeeEmploymentDetails(
+                selectedApp.manager,
+              ).educationLevel,
+              workExpYearsLabel: "Work Exp. Years",
+              workExpYearsValue: getEmployeeEmploymentDetails(
+                selectedApp.manager,
+              ).workExpYears,
+              totalExpYearsLabel: "Total Exp. Years",
+              totalExpYearsValue: getEmployeeEmploymentDetails(
+                selectedApp.manager,
+              ).totalExpYears,
+              isBlacklistedLabel: "Blacklisted",
+              isBlacklistedValue: getEmployeeEmploymentDetails(
+                selectedApp.manager,
+              ).isBlacklisted,
+            })}
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
-              <ReviewItem
-                label="Full name"
-                value={getEmployeeDisplayName(selectedApp.manager)}
-                id="new_mgr_name"
-              />
-              <ReviewItem
-                label="Gender"
-                value={selectedApp.manager?.gender || "-"}
-                id="new_mgr_gender"
-              />
-              <ReviewItem
-                label="Citizenship"
-                value={selectedApp.manager?.citizenship || "-"}
-                id="new_mgr_citizen"
-              />
-              <ReviewItem
-                label="Phone/Email"
-                value={getEmployeeContact(selectedApp.manager)}
-                id="new_mgr_contact"
-              />
-              <ReviewItem
-                label="Address (Reg/Wor/Kebele)"
-                value={getEmployeeAddressSummary(selectedApp.manager)}
-                id="new_mgr_address"
-              />
               <ReviewItem
                 label="Fingerprint Doc"
                 value={
@@ -1148,6 +1560,15 @@ export const ApplicationsReview = () => {
                 fileUrl={
                   findEmployeeDoc(selectedApp.manager, ["fingerprint"])?.fileUrl
                 }
+                verificationKey={
+                  findEmployeeDoc(selectedApp.manager, ["fingerprint"])?.id
+                    ? `manager:${findEmployeeDoc(selectedApp.manager, ["fingerprint"])?.id}`
+                    : "manager:fingerprint"
+                }
+                initialVerified={Boolean(
+                  findEmployeeDoc(selectedApp.manager, ["fingerprint"])
+                    ?.isVerified,
+                )}
               />
               <ReviewItem
                 label="Medical Result"
@@ -1295,32 +1716,62 @@ export const ApplicationsReview = () => {
             </h4>
           </div>
           <div className="p-6 bg-gray-50/30 rounded-[40px] border border-gray-200">
+            {renderPersonnelInfoSection({
+              accentClass: "bg-blue-700",
+              title: "Personal Information",
+              name: getEmployeeDisplayName(selectedApp.operationsHead),
+              gender: selectedApp.operationsHead?.gender || "-",
+              citizenship: selectedApp.operationsHead?.citizenship || "-",
+              phoneLabel: "Phone",
+              phoneValue:
+                selectedApp.operationsHead?.user?.phone ||
+                selectedApp.operationsHead?.phone ||
+                "-",
+              emailLabel: "Email",
+              emailValue:
+                selectedApp.operationsHead?.user?.email ||
+                selectedApp.operationsHead?.email ||
+                "-",
+              addressTitle: "Address",
+              regionLabel: "Region",
+              regionValue: getEmployeeAddressDetails(selectedApp.operationsHead)
+                .region,
+              zoneLabel: "Zone",
+              zoneValue: getEmployeeAddressDetails(selectedApp.operationsHead)
+                .zone,
+              woredaLabel: "Woreda",
+              woredaValue: getEmployeeAddressDetails(selectedApp.operationsHead)
+                .woreda,
+              kebeleLabel: "Kebele",
+              kebeleValue: getEmployeeAddressDetails(selectedApp.operationsHead)
+                .kebele,
+              specialLocationLabel: "Special Location",
+              specialLocationValue: getEmployeeAddressDetails(
+                selectedApp.operationsHead,
+              ).specialLocation,
+              houseNumberLabel: "House Number",
+              houseNumberValue: getEmployeeAddressDetails(
+                selectedApp.operationsHead,
+              ).houseNumber,
+              educationLevelLabel: "Education Level",
+              educationLevelValue: getEmployeeEmploymentDetails(
+                selectedApp.operationsHead,
+              ).educationLevel,
+              workExpYearsLabel: "Work Exp. Years",
+              workExpYearsValue: getEmployeeEmploymentDetails(
+                selectedApp.operationsHead,
+              ).workExpYears,
+              totalExpYearsLabel: "Total Exp. Years",
+              totalExpYearsValue: getEmployeeEmploymentDetails(
+                selectedApp.operationsHead,
+              ).totalExpYears,
+              isBlacklistedLabel: "Blacklisted",
+              isBlacklistedValue: getEmployeeEmploymentDetails(
+                selectedApp.operationsHead,
+              ).isBlacklisted,
+            })}
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
-              <ReviewItem
-                label="Full name"
-                value={getEmployeeDisplayName(selectedApp.operationsHead)}
-                id="new_ops_name"
-              />
-              <ReviewItem
-                label="Gender"
-                value={selectedApp.operationsHead?.gender || "-"}
-                id="new_ops_gender"
-              />
-              <ReviewItem
-                label="Citizenship"
-                value={selectedApp.operationsHead?.citizenship || "-"}
-                id="new_ops_citizen"
-              />
-              <ReviewItem
-                label="Phone/Email"
-                value={getEmployeeContact(selectedApp.operationsHead)}
-                id="new_ops_contact"
-              />
-              <ReviewItem
-                label="Address (Reg/Wor/Kebele)"
-                value={getEmployeeAddressSummary(selectedApp.operationsHead)}
-                id="new_ops_address"
-              />
               <ReviewItem
                 label="Fingerprint Doc"
                 id="new_ops_finger"
@@ -1495,45 +1946,60 @@ export const ApplicationsReview = () => {
             </h4>
           </div>
           <div className="p-6 bg-gray-50/30 rounded-[40px] border border-gray-200">
+            {renderPersonnelInfoSection({
+              accentClass: "bg-purple-700",
+              title: "Personal Information",
+              name: getEmployeeDisplayName(selectedApp.adminHead),
+              gender: selectedApp.adminHead?.gender || "-",
+              citizenship: selectedApp.adminHead?.citizenship || "-",
+              phoneLabel: "Phone",
+              phoneValue:
+                selectedApp.adminHead?.user?.phone ||
+                selectedApp.adminHead?.phone ||
+                "-",
+              emailLabel: "Email",
+              emailValue:
+                selectedApp.adminHead?.user?.email ||
+                selectedApp.adminHead?.email ||
+                "-",
+              addressTitle: "Address",
+              regionLabel: "Region",
+              regionValue: getEmployeeAddressDetails(selectedApp.adminHead)
+                .region,
+              zoneLabel: "Zone",
+              zoneValue: getEmployeeAddressDetails(selectedApp.adminHead).zone,
+              woredaLabel: "Woreda",
+              woredaValue: getEmployeeAddressDetails(selectedApp.adminHead)
+                .woreda,
+              kebeleLabel: "Kebele",
+              kebeleValue: getEmployeeAddressDetails(selectedApp.adminHead)
+                .kebele,
+              specialLocationLabel: "Special Location",
+              specialLocationValue: getEmployeeAddressDetails(
+                selectedApp.adminHead,
+              ).specialLocation,
+              houseNumberLabel: "House Number",
+              houseNumberValue: getEmployeeAddressDetails(selectedApp.adminHead)
+                .houseNumber,
+              educationLevelLabel: "Education Level",
+              educationLevelValue: getEmployeeEmploymentDetails(
+                selectedApp.adminHead,
+              ).educationLevel,
+              workExpYearsLabel: "Work Exp. Years",
+              workExpYearsValue: getEmployeeEmploymentDetails(
+                selectedApp.adminHead,
+              ).workExpYears,
+              totalExpYearsLabel: "Total Exp. Years",
+              totalExpYearsValue: getEmployeeEmploymentDetails(
+                selectedApp.adminHead,
+              ).totalExpYears,
+              isBlacklistedLabel: "Blacklisted",
+              isBlacklistedValue: getEmployeeEmploymentDetails(
+                selectedApp.adminHead,
+              ).isBlacklisted,
+            })}
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
-              <ReviewItem
-                label="Full name"
-                value={getEmployeeDisplayName(selectedApp.adminHead)}
-                id="new_admin_name"
-              />
-              <ReviewItem
-                label="Gender"
-                value={selectedApp.adminHead?.gender || "-"}
-                id="new_admin_gender"
-              />
-              <ReviewItem
-                label="Citizenship"
-                value={selectedApp.adminHead?.citizenship || "-"}
-                id="new_admin_citizen"
-              />
-              <ReviewItem
-                label="Phone Number"
-                value={
-                  selectedApp.adminHead?.user?.phone ||
-                  selectedApp.adminHead?.phone ||
-                  "-"
-                }
-                id="new_admin_phone"
-              />
-              <ReviewItem
-                label="Email"
-                value={
-                  selectedApp.adminHead?.user?.email ||
-                  selectedApp.adminHead?.email ||
-                  "-"
-                }
-                id="new_admin_email"
-              />
-              <ReviewItem
-                label="Address (Reg/Zone/Wor/Keb/Loc/House)"
-                value={getEmployeeAddressSummary(selectedApp.adminHead)}
-                id="new_admin_address"
-              />
               <ReviewItem
                 label="Fingerprint from police"
                 id="new_admin_finger"
@@ -1733,10 +2199,10 @@ export const ApplicationsReview = () => {
               <div className="flex flex-wrap gap-y-4 text-sm leading-relaxed">
                 <div className="flex items-center mr-6">
                   <span className="font-black text-[#0C2A4C] mr-2">
-                    Organization Name:
+                    Organization Name (Amharic):
                   </span>
                   <span className="font-bold text-gray-700">
-                    {selectedApp.organization?.name ||
+                    {selectedApp.organization?.nameAmharic ||
                       selectedApp.agency ||
                       "—"}
                   </span>
@@ -1745,22 +2211,10 @@ export const ApplicationsReview = () => {
 
                 <div className="flex items-center mr-6">
                   <span className="font-black text-[#0C2A4C] mr-2">
-                    Head Office Name:
+                    Organization Name (English):
                   </span>
                   <span className="font-bold text-gray-700">
-                    {selectedApp.organization?.headOfficeName || "—"}
-                  </span>
-                  <span className="mx-4 text-[#DCC380] font-light">|</span>
-                </div>
-
-                <div className="flex items-center mr-6">
-                  <span className="font-black text-[#0C2A4C] mr-2">
-                    Branch Office Name:
-                  </span>
-                  <span className="font-bold text-gray-700">
-                    {selectedApp.branchOfficeName ||
-                      selectedApp.organization?.branchOfficeName ||
-                      "—"}
+                    {selectedApp.organization?.nameEnglish || "—"}
                   </span>
                   <span className="mx-4 text-[#DCC380] font-light">|</span>
                 </div>
@@ -2189,33 +2643,40 @@ export const ApplicationsReview = () => {
               </span>
             </div>
             <div className="p-6 bg-gray-50/40 rounded-[40px] border border-gray-100">
+              {renderPersonnelInfoSection({
+                accentClass: "bg-amber-500",
+                title: "Personal Information",
+                name: "Abdi Wahid",
+                gender: "Male",
+                citizenship: "Ethiopian",
+                phoneLabel: "Phone",
+                phoneValue: "+251 912",
+                emailLabel: "Email",
+                emailValue: "abdi@lion.com",
+                addressTitle: "Address",
+                regionLabel: "Region",
+                regionValue: "Addis",
+                zoneLabel: "Zone",
+                zoneValue: "Bole",
+                woredaLabel: "Woreda",
+                woredaValue: "02",
+                kebeleLabel: "Kebele",
+                kebeleValue: "05",
+                specialLocationLabel: "Special Location",
+                specialLocationValue: "Bridge",
+                houseNumberLabel: "House Number",
+                houseNumberValue: "102",
+                educationLevelLabel: "Education Level",
+                educationLevelValue: "Degree",
+                workExpYearsLabel: "Work Exp. Years",
+                workExpYearsValue: "5",
+                totalExpYearsLabel: "Total Exp. Years",
+                totalExpYearsValue: "8",
+                isBlacklistedLabel: "Blacklisted",
+                isBlacklistedValue: "No",
+              })}
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
-                <ReviewItem
-                  label="Full name"
-                  value="Abdi Wahid"
-                  id="ren_mgr_name"
-                />
-                <ReviewItem label="Gender" value="Male" id="ren_mgr_gender" />
-                <ReviewItem
-                  label="Citizenship"
-                  value="Ethiopian"
-                  id="ren_mgr_citizen"
-                />
-                <ReviewItem
-                  label="Phone Number"
-                  value="+251 912"
-                  id="ren_mgr_phone"
-                />
-                <ReviewItem
-                  label="Email"
-                  value="abdi@lion.com"
-                  id="ren_mgr_email"
-                />
-                <ReviewItem
-                  label="Address (R/Z/W/K/Loc/H)"
-                  value="Addis, Bole, 02, 05, Bridge, 102"
-                  id="ren_mgr_addr"
-                />
                 <ReviewItem
                   label="Fingerprint from police"
                   id="ren_mgr_finger"
@@ -2292,33 +2753,40 @@ export const ApplicationsReview = () => {
               II. Operations Head Requirements
             </h4>
             <div className="p-6 bg-gray-50/40 rounded-[40px] border border-gray-100">
+              {renderPersonnelInfoSection({
+                accentClass: "bg-blue-700",
+                title: "Personal Information",
+                name: "Selam Mengesha",
+                gender: "Female",
+                citizenship: "Ethiopian",
+                phoneLabel: "Phone",
+                phoneValue: "+251 922",
+                emailLabel: "Email",
+                emailValue: "selam@lion.com",
+                addressTitle: "Address",
+                regionLabel: "Region",
+                regionValue: "Addis",
+                zoneLabel: "Zone",
+                zoneValue: "Yeka",
+                woredaLabel: "Woreda",
+                woredaValue: "04",
+                kebeleLabel: "Kebele",
+                kebeleValue: "10",
+                specialLocationLabel: "Special Location",
+                specialLocationValue: "Mall",
+                houseNumberLabel: "House Number",
+                houseNumberValue: "203",
+                educationLevelLabel: "Education Level",
+                educationLevelValue: "Degree",
+                workExpYearsLabel: "Work Exp. Years",
+                workExpYearsValue: "4",
+                totalExpYearsLabel: "Total Exp. Years",
+                totalExpYearsValue: "7",
+                isBlacklistedLabel: "Blacklisted",
+                isBlacklistedValue: "No",
+              })}
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
-                <ReviewItem
-                  label="Full name"
-                  value="Selam Mengesha"
-                  id="ren_ops_name"
-                />
-                <ReviewItem label="Gender" value="Female" id="ren_ops_gender" />
-                <ReviewItem
-                  label="Citizenship"
-                  value="Ethiopian"
-                  id="ren_ops_citizen"
-                />
-                <ReviewItem
-                  label="Phone Number"
-                  value="+251 922"
-                  id="ren_ops_phone"
-                />
-                <ReviewItem
-                  label="Email"
-                  value="selam@lion.com"
-                  id="ren_ops_email"
-                />
-                <ReviewItem
-                  label="Address (R/Z/W/K/Loc/H)"
-                  value="Addis, Yeka, 04, 10, Mall, 203"
-                  id="ren_ops_addr"
-                />
                 <ReviewItem
                   label="Fingerprint from police"
                   id="ren_ops_finger"
@@ -2395,33 +2863,40 @@ export const ApplicationsReview = () => {
               III. Administration Head Requirements
             </h4>
             <div className="p-6 bg-gray-50/40 rounded-[40px] border border-gray-100">
+              {renderPersonnelInfoSection({
+                accentClass: "bg-purple-700",
+                title: "Personal Information",
+                name: "Dawit Haile",
+                gender: "Male",
+                citizenship: "Ethiopian",
+                phoneLabel: "Phone",
+                phoneValue: "+251 933",
+                emailLabel: "Email",
+                emailValue: "dawit@lion.com",
+                addressTitle: "Address",
+                regionLabel: "Region",
+                regionValue: "Addis",
+                zoneLabel: "Zone",
+                zoneValue: "Arada",
+                woredaLabel: "Woreda",
+                woredaValue: "01",
+                kebeleLabel: "Kebele",
+                kebeleValue: "15",
+                specialLocationLabel: "Special Location",
+                specialLocationValue: "Church",
+                houseNumberLabel: "House Number",
+                houseNumberValue: "401",
+                educationLevelLabel: "Education Level",
+                educationLevelValue: "Degree",
+                workExpYearsLabel: "Work Exp. Years",
+                workExpYearsValue: "6",
+                totalExpYearsLabel: "Total Exp. Years",
+                totalExpYearsValue: "10",
+                isBlacklistedLabel: "Blacklisted",
+                isBlacklistedValue: "No",
+              })}
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
-                <ReviewItem
-                  label="Full name"
-                  value="Dawit Haile"
-                  id="ren_adm_name"
-                />
-                <ReviewItem label="Gender" value="Male" id="ren_adm_gender" />
-                <ReviewItem
-                  label="Citizenship"
-                  value="Ethiopian"
-                  id="ren_adm_citizen"
-                />
-                <ReviewItem
-                  label="Phone Number"
-                  value="+251 933"
-                  id="ren_adm_phone"
-                />
-                <ReviewItem
-                  label="Email"
-                  value="dawit@lion.com"
-                  id="ren_adm_email"
-                />
-                <ReviewItem
-                  label="Address (R/Z/W/K/Loc/H)"
-                  value="Addis, Arada, 01, 15, Church, 401"
-                  id="ren_adm_addr"
-                />
                 <ReviewItem
                   label="Fingerprint from police"
                   id="ren_adm_finger"
@@ -2694,6 +3169,10 @@ export const ApplicationsReview = () => {
       </div>
     );
 
+    const currentApplicationReadyForApproval = selectedApp
+      ? isApplicationReadyForApproval(selectedApp)
+      : false;
+
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-primary/40 backdrop-blur-xl overflow-hidden p-2 md:p-4">
         <motion.div
@@ -2742,19 +3221,17 @@ export const ApplicationsReview = () => {
                     <div className="w-0.5 h-6 bg-gray-100 rounded-full" />
                     <div className="flex items-center space-x-2">
                       <div className="w-9 h-9 bg-primary text-white rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-                        {viewingStage === "formal" ? (
-                          <FileText className="w-5 h-5" />
-                        ) : (
+                        {viewingStage === "new" ? (
                           <ShieldCheck className="w-5 h-5" />
+                        ) : (
+                          <RefreshCw className="w-5 h-5" />
                         )}
                       </div>
                       <div>
                         <h3 className="text-base font-black text-primary uppercase tracking-tighter shrink-0 leading-none">
-                          {viewingStage === "formal"
-                            ? "Formal Letter Review"
-                            : viewingStage === "new"
-                              ? "New Application Audit"
-                              : "Renewal Audit"}
+                          {viewingStage === "new"
+                            ? "New Application Audit"
+                            : "Renewal Audit"}
                         </h3>
                         <div className="flex items-center space-x-2">
                           <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest leading-none">
@@ -2781,7 +3258,6 @@ export const ApplicationsReview = () => {
                 {/* Maximized Body */}
                 <div className="flex-1 overflow-y-auto bg-gray-50/5 relative">
                   <div className="max-w-[1800px] mx-auto p-6 md:p-8">
-                    {viewingStage === "formal" && renderFormalLetter()}
                     {viewingStage === "new" && renderNewApplication()}
                     {viewingStage === "renewal" && renderRenewalReview()}
                   </div>
@@ -2810,7 +3286,27 @@ export const ApplicationsReview = () => {
                     <button className="px-4 py-2 bg-red-50 text-red-500 border-2 border-red-100 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all shadow-sm">
                       Reject
                     </button>
-                    <button className="px-8 py-2 blue-gradient text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/30 hover:scale-[1.02] transition-all flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!selectedApp) return;
+                        if (!currentApplicationReadyForApproval) {
+                          showToast(
+                            "error",
+                            "License issuance blocked: verify every required document first. Open each file and click Verify, then try again.",
+                          );
+                          return;
+                        }
+
+                        handleOpenConfirm(
+                          selectedApp.id,
+                          selectedApp.agency,
+                          "approve",
+                        );
+                      }}
+                      disabled={!currentApplicationReadyForApproval}
+                      className="px-8 py-2 blue-gradient text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/30 hover:scale-[1.02] transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    >
                       <ShieldCheck className="w-4 h-4" />
                       <span>Issue License</span>
                     </button>
@@ -3100,9 +3596,19 @@ export const ApplicationsReview = () => {
                       </button>
                       {/* Approve - Triggers Dialog */}
                       <button
-                        onClick={() =>
-                          handleOpenConfirm(app.id, app.agency, "approve")
-                        }
+                        onClick={() => {
+                          if (!isApplicationReadyForApproval(app)) {
+                            setSelectedApp(app);
+                            setViewingStage("selection");
+                            showToast(
+                              "error",
+                              "Approval blocked: verify every required document first. Open each file and click Verify, then try approving again.",
+                            );
+                            return;
+                          }
+
+                          handleOpenConfirm(app.id, app.agency, "approve");
+                        }}
                         className="p-2.5 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white transition-all shadow-sm"
                       >
                         <CheckCircle className="w-4 h-4" />
@@ -3130,22 +3636,24 @@ export const ApplicationsReview = () => {
           </table>
         </div>
         {/* REUSABLE DIALOG INSTANCE */}
-      <ConfirmDialog
-        isOpen={confirmState.isOpen}
-        isLoading={isActionLoading}
-        type={confirmState.type}
-        onClose={() => setConfirmState((prev) => ({ ...prev, isOpen: false }))}
-        onConfirm={handleExecuteAction}
-        title={
-          confirmState.type === "approve" 
-            ? "Approve Application" 
-            : "Reject Application"
-        }
-        message={`Are you sure you want to ${confirmState.type} the application for ${confirmState.agencyName}? This action will update their status immediately.`}
-      />
+        <ConfirmDialog
+          isOpen={confirmState.isOpen}
+          isLoading={isActionLoading}
+          type={confirmState.type}
+          onClose={() =>
+            setConfirmState((prev) => ({ ...prev, isOpen: false }))
+          }
+          onConfirm={handleExecuteAction}
+          title={
+            confirmState.type === "approve"
+              ? "Approve Application"
+              : "Reject Application"
+          }
+          message={`Are you sure you want to ${confirmState.type} the application for ${confirmState.agencyName}? This action will update their status immediately.`}
+        />
       </div>
       {/* Review Modal */}
-      <AnimatePresence>{selectedApp && <ReviewModal />}</AnimatePresence>
+      <AnimatePresence>{selectedApp && ReviewModal()}</AnimatePresence>
     </div>
   );
-};;
+};

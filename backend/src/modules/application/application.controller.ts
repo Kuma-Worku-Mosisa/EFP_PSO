@@ -163,6 +163,37 @@ export const rejectApplication = async (req: Request, res: Response) => {
   }
 };
 
+export const verifyDocument = async (req: Request, res: Response) => {
+  const scope = String(req.params.scope || "").toLowerCase();
+  const documentId = Number(req.params.id);
+  const userId = (req as any).user?.id || 1;
+
+  if (!Number.isFinite(documentId) || documentId <= 0) {
+    return ApiResponse.error(res, "Invalid document id.", 400);
+  }
+
+  try {
+    const result = await ApplicationService.verifyDocument(
+      scope,
+      documentId,
+      userId,
+    );
+
+    return ApiResponse.success(res, "Document verified successfully.", result);
+  } catch (error: any) {
+    console.error(
+      "[ERROR] Document verification failed:",
+      error?.message || error,
+    );
+    return ApiResponse.error(
+      res,
+      error?.message || "Failed to verify document.",
+      500,
+      error?.message,
+    );
+  }
+};
+
 export const getMyApplication = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.userId ?? (req as any).user?.id;

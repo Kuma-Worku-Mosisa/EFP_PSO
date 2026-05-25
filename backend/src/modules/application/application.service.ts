@@ -985,14 +985,25 @@ export class ApplicationService {
       });
 
       const toFileList = (
-        docs: Array<{ documentType?: string; fileUrl?: string }>,
+        docs: Array<{
+          id?: number;
+          documentType?: string;
+          fileUrl?: string;
+          isVerified?: boolean;
+          verifiedAt?: Date | string | null;
+        }>,
       ) =>
         (docs || []).map((doc) => ({
+          id: doc.id,
           documentType: doc.documentType,
           fileUrl: doc.fileUrl,
           fileName: doc.fileUrl
             ? doc.fileUrl.split("/").pop() || doc.fileUrl
             : doc.documentType,
+          isVerified: Boolean(doc.isVerified),
+          verifiedAt: doc.verifiedAt
+            ? new Date(doc.verifiedAt).toISOString()
+            : null,
         }));
 
       const serializeEmployee = (employee: any) => {
@@ -1007,6 +1018,7 @@ export class ApplicationService {
           educationLevel: employee.educationLevel ?? null,
           workExpYears: employee.workExpYears ?? 0,
           TotalExpYears: employee.TotalExpYears ?? 0,
+          isBlacklisted: Boolean(employee.isBlacklisted),
           address: employee.address,
           educationDocs: toFileList(employee.educationDocs || []),
           documents: toFileList(employee.documents || []),
@@ -1238,6 +1250,113 @@ export class ApplicationService {
       });
     } catch (error: any) {
       console.error("[ERROR] listApplications failed", error?.message || error);
+      throw error;
+    }
+  }
+
+  static async verifyDocument(
+    scope: string,
+    documentId: number,
+    userId: number,
+  ) {
+    const verifiedAt = new Date();
+
+    try {
+      if (scope === "organization") {
+        const updated = await prisma.organizationDocument.update({
+          where: { id: documentId },
+          data: { isVerified: true, verifiedAt },
+        });
+
+        try {
+          await createAuditLog(prisma, {
+            userId,
+            action: "UPDATE",
+            entityName: "OrganizationDocument",
+            entityId: updated.id,
+            oldValue: null,
+            newValue: JSON.stringify({
+              id: updated.id,
+              isVerified: updated.isVerified,
+              verifiedAt: updated.verifiedAt,
+            }),
+            ipAddress: null,
+            userAgent: null,
+          });
+        } catch (auditError) {
+          console.warn(
+            "[WARN] Audit log failed for organization document verify",
+            auditError,
+          );
+        }
+
+        return updated;
+      }
+
+      if (scope === "employee") {
+        const updated = await prisma.employeeDocument.update({
+          where: { id: documentId },
+          data: { isVerified: true, verifiedAt },
+        });
+
+        try {
+          await createAuditLog(prisma, {
+            userId,
+            action: "UPDATE",
+            entityName: "EmployeeDocument",
+            entityId: updated.id,
+            oldValue: null,
+            newValue: JSON.stringify({
+              id: updated.id,
+              isVerified: updated.isVerified,
+              verifiedAt: updated.verifiedAt,
+            }),
+            ipAddress: null,
+            userAgent: null,
+          });
+        } catch (auditError) {
+          console.warn(
+            "[WARN] Audit log failed for employee document verify",
+            auditError,
+          );
+        }
+
+        return updated;
+      }
+
+      if (scope === "education") {
+        const updated = await prisma.employeeEducationDocument.update({
+          where: { id: documentId },
+          data: { isVerified: true },
+        });
+
+        try {
+          await createAuditLog(prisma, {
+            userId,
+            action: "UPDATE",
+            entityName: "EmployeeEducationDocument",
+            entityId: updated.id,
+            oldValue: null,
+            newValue: JSON.stringify({
+              id: updated.id,
+              isVerified: updated.isVerified,
+            }),
+            ipAddress: null,
+            userAgent: null,
+          });
+        } catch (auditError) {
+          console.warn(
+            "[WARN] Audit log failed for education document verify",
+            auditError,
+          );
+        }
+
+        return updated;
+      }
+
+      throw new Error(`Unsupported document scope: ${scope}`);
+    } catch (error: any) {
+      console.error("[ERROR] verifyDocument failed", error?.message || error);
       throw error;
     }
   }

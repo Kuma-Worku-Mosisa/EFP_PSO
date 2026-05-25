@@ -228,13 +228,14 @@ model Agreement {
 // DELETE the 'enum OrgDocumentType' block entirely from your file.
 
 model OrganizationDocument {
-  id             Int       @id @default(autoincrement()) @map("org_doc_id")
-  organizationId Int       @map("organization_id")
-  // Change this from OrgDocumentType to String
-  documentType   String    @map("document_type") @db.VarChar(50)
-  fileUrl        String    @map("file_url") @db.VarChar(Max)
-  expiryDate     DateTime? @map("expiry_date") @db.Date
-
+  id             Int        @id @default(autoincrement()) @map("org_doc_id")
+  organizationId Int        @map("organization_id")
+  documentType   String     @map("document_type") @db.VarChar(50)
+  fileUrl        String     @map("file_url") @db.VarChar(Max)
+  // New Professional Verification Fields
+  isVerified     Boolean    @default(false) @map("is_verified")
+  verifiedAt     DateTime?  @map("verified_at") @db.DateTime 
+  expiryDate     DateTime?  @map("expiry_date") @db.Date
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, map: "FK_OrgDocs_Organizations")
 
   @@map("organization_documents")
@@ -312,6 +313,7 @@ model EmployeeEducationDocument {
   educationDocumentType String   @map("education_document_type") @db.VarChar(100)
   fileUrl               String   @map("education_document_file_url") @db.VarChar(Max)
   isVerified            Boolean  @default(false) @map("is_verified")
+  verifiedAt            DateTime? @map("verified_at") @db.DateTime
   uploadedAt            DateTime @default(now()) @map("uploaded_at") @db.DateTime
 
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade, map: "FK_EduDocs_Employees")
@@ -325,6 +327,7 @@ model EmployeeDocument {
   documentType String   @map("document_type") @db.VarChar(100)
   fileUrl      String   @map("document_file_url") @db.VarChar(Max)
   isVerified   Boolean  @default(false) @map("is_verified")
+  verifiedAt   DateTime? @map("verified_at") @db.DateTime
   uploadedAt   DateTime @default(now()) @map("uploaded_at") @db.DateTime
 
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade, map: "FK_EmpDocs_Employees")

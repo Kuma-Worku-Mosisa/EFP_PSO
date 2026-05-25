@@ -1,6 +1,10 @@
 // filepath: src/routes/application.routes.ts
 import { Router, Request, Response } from "express";
-import { submitApplication, getMyApplication } from "./application.controller";
+import {
+  submitApplication,
+  getMyApplication,
+  verifyDocument,
+} from "./application.controller";
 import { uploadDocuments, getOrganizationDocuments } from "./upload.controller";
 import { authenticate } from "../../middleware/auth"; // Ensure this matches your middleware file name
 import { getApplications } from "./application.controller";
@@ -77,5 +81,11 @@ router.post(
     return rejectApplication(req, res, next);
   },
 );
+
+/**
+ * Verify a document before approval
+ * POST /api/applications/documents/:scope/:id/verify
+ */
+router.post("/documents/:scope/:id/verify", verifyDocument);
 
 export default router;
