@@ -67,8 +67,11 @@ export const authorize = (allowedRoles: string[]) => {
     }
 
     // Evaluate matching constraints against the user's active permissions matrix
+    const normalizedAllowedRoles = allowedRoles.map((role) =>
+      String(role).toLowerCase(),
+    );
     const hasAccess = req.user.roles.some((role) =>
-      allowedRoles.includes(role),
+      normalizedAllowedRoles.includes(String(role).toLowerCase()),
     );
 
     if (!hasAccess) {

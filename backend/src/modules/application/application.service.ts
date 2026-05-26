@@ -11,8 +11,29 @@ import {
   moveDocumentFile,
 } from "../../utils/documentOrganizer";
 import { createAuditLog } from "../../utils/auditLogger";
+import {
+  ApplicationTrackingService,
+  ApplicationTrackingStatus,
+} from "./application-tracking.service";
 
 export class ApplicationService {
+  private static async writeApplicationTrackingHistory(
+    tx: Parameters<typeof ApplicationTrackingService.recordHistory>[0],
+    applicationId: number,
+    statusState: string,
+    remarks: string,
+    changedBy: number,
+  ) {
+    await ApplicationTrackingService.recordHistory(tx, {
+      applicationId,
+      statusState: statusState as
+        | (typeof ApplicationTrackingStatus)[keyof typeof ApplicationTrackingStatus]
+        | string,
+      remarks,
+      changedBy,
+    });
+  }
+
   private static normalizeBranchAddressInputs(formData: any): Array<{
     kebeleId: number;
     houseNumber: string | null;
@@ -290,21 +311,6 @@ export class ApplicationService {
               numberOfVehicles: Number(formData.numberOfVehicles),
               hasStoreHouse,
               capitalAmount: formData.capitalAmount,
-              managerName:
-                formData.managerName ||
-                formData.manager?.fullName ||
-                "manager name missing",
-              operationHeadName:
-                formData.opsHeadName ||
-                formData.ops?.fullName ||
-                "operations head name missing",
-              adminFinanceHeadName:
-                formData.adminHeadName ||
-                formData.admin?.fullName ||
-                "admin head name missing",
-              logoUrl: uploadedFiles.logo,
-              uniformSampleUrl: uploadedFiles.uniform_sample,
-              idCardSampleUrl: uploadedFiles.id_sample,
               status: "Pending",
             } as any,
           });
@@ -618,8 +624,6 @@ export class ApplicationService {
                 ? new Date(formData.trainingEndDate)
                 : new Date(),
               trainingDurationDays: Number(formData.trainingDays || 0),
-              trainingManualUrl: uploadedFiles.training_manual,
-              trainingCertificateUrl: uploadedFiles.training_cert,
               // FIX: Add default 0 to prevent the NaN error seen in your log
               totalTraineesMale: Number(formData.totalTraineesMale) || 0,
               totalTraineesFemale: Number(formData.totalTraineesFemale) || 0,
@@ -635,6 +639,23 @@ export class ApplicationService {
             "training_cert",
           ];
           const empPrefixes = ["manager_", "ops_", "admin_"];
+
+          const coreAssetDocMapping: Record<string, string> = {
+            logo: "Organization Logo",
+            uniform_sample: "Uniform Sample",
+            id_sample: "ID Card Sample",
+            training_manual: "Training Manual",
+            training_cert: "Training Certificate",
+          };
+
+          const coreAssetDocumentEntries = Object.entries(uploadedFiles)
+            .filter(([key]) => coreAssetDocMapping[key])
+            .map(([key, url]) => ({
+              organizationId: organization.id,
+              documentType: coreAssetDocMapping[key],
+              fileUrl: url,
+              isVerified: false,
+            }));
 
           const orgDocTypeMapping: Record<string, string> = {
             trade_name_designation: "Trade Name Designation",
@@ -661,24 +682,29 @@ export class ApplicationService {
               documentType:
                 orgDocTypeMapping[key] || key.toUpperCase().replace("_", " "),
               fileUrl: url,
+              isVerified: false,
             }));
 
-          if (orgDocumentEntries.length > 0) {
+          const allOrganizationDocumentEntries = [
+            ...coreAssetDocumentEntries,
+            ...orgDocumentEntries,
+          ];
+
+          if (allOrganizationDocumentEntries.length > 0) {
             await tx.organizationDocument.createMany({
-              data: orgDocumentEntries,
+              data: allOrganizationDocumentEntries,
             });
           }
 
           // 8. Log History
           console.log("[DEBUG] Creating application tracking history...");
-          await tx.applicationTrackingHistory.create({
-            data: {
-              applicationId: application.id,
-              statusState: "Pending",
-              remarks: "Initial application submitted via system.",
-              changedBy: userId,
-            },
-          });
+          await this.writeApplicationTrackingHistory(
+            tx,
+            application.id,
+            ApplicationTrackingStatus.Pending,
+            "Initial application submitted via system.",
+            userId,
+          );
 
           console.log("[DEBUG] Application submission completed successfully!");
           return { organization, application };
@@ -720,11 +746,75 @@ export class ApplicationService {
 
       const application = await prisma.application.findUnique({
         where: { id: applicationId },
-        include: { organization: true },
+        include: {
+          organization: {
+            include: { documents: true },
+          },
+          manager: {
+            include: {
+              documents: true,
+              educationDocs: true,
+            },
+          },
+          operationsHead: {
+            include: {
+              documents: true,
+              educationDocs: true,
+            },
+          },
+          adminHead: {
+            include: {
+              documents: true,
+              educationDocs: true,
+            },
+          },
+        },
       });
 
       if (!application) {
         throw new Error(`Application ${applicationId} not found`);
+      }
+
+      const unverifiedDocuments: Array<{ scope: string; id: number }> = [];
+
+      const collectUnverified = (
+        scope: string,
+        docs?: Array<{ id: number; isVerified?: boolean }> | null,
+      ) => {
+        for (const doc of docs || []) {
+          if (!doc?.isVerified) {
+            unverifiedDocuments.push({ scope, id: doc.id });
+          }
+        }
+      };
+
+      collectUnverified("organization", application.organization?.documents);
+      collectUnverified("manager", application.manager?.documents);
+      collectUnverified(
+        "manager-education",
+        application.manager?.educationDocs,
+      );
+      collectUnverified(
+        "operations-head",
+        application.operationsHead?.documents,
+      );
+      collectUnverified(
+        "operations-head-education",
+        application.operationsHead?.educationDocs,
+      );
+      collectUnverified("admin-head", application.adminHead?.documents);
+      collectUnverified(
+        "admin-head-education",
+        application.adminHead?.educationDocs,
+      );
+
+      if (unverifiedDocuments.length > 0) {
+        const error = new Error(
+          "Document not verified yet. Verify all organization and employee documents before approving this application.",
+        ) as Error & { statusCode?: number; details?: unknown };
+        error.statusCode = 400;
+        error.details = unverifiedDocuments;
+        throw error;
       }
 
       console.log("[DEBUG] Current application status:", application.status);
@@ -744,14 +834,13 @@ export class ApplicationService {
           });
         }
 
-        await tx.applicationTrackingHistory.create({
-          data: {
-            applicationId,
-            statusState: "Approved",
-            remarks,
-            changedBy: userId,
-          },
-        });
+        await this.writeApplicationTrackingHistory(
+          tx,
+          applicationId,
+          ApplicationTrackingStatus.Approved,
+          remarks,
+          userId,
+        );
 
         return updatedApp;
       });
@@ -804,14 +893,13 @@ export class ApplicationService {
           });
         }
 
-        await tx.applicationTrackingHistory.create({
-          data: {
-            applicationId,
-            statusState: "Rejected",
-            remarks,
-            changedBy: userId,
-          },
-        });
+        await this.writeApplicationTrackingHistory(
+          tx,
+          applicationId,
+          ApplicationTrackingStatus.Rejected,
+          remarks,
+          userId,
+        );
 
         return updatedApp;
       });
@@ -831,11 +919,130 @@ export class ApplicationService {
     }
   }
 
+  static async requestCorrection(
+    applicationId: number,
+    userId: number,
+    remarks: string,
+  ) {
+    try {
+      console.log(
+        "[DEBUG] Requesting correction for application id:",
+        applicationId,
+      );
+
+      const application = await prisma.application.findUnique({
+        where: { id: applicationId },
+        include: { organization: true },
+      });
+
+      if (!application) {
+        throw new Error(`Application ${applicationId} not found`);
+      }
+
+      const result = await prisma.$transaction(async (tx) => {
+        const updatedApp = await tx.application.update({
+          where: { id: applicationId },
+          data: { status: "Correction Requested" },
+        });
+
+        if (application.organization) {
+          await tx.organization.update({
+            where: { id: application.organizationId },
+            data: { status: "Correction Requested" },
+          });
+        }
+
+        await this.writeApplicationTrackingHistory(
+          tx,
+          applicationId,
+          ApplicationTrackingStatus.CorrectionRequested,
+          remarks,
+          userId,
+        );
+
+        return updatedApp;
+      });
+
+      console.log("[DEBUG] Application marked for correction:", applicationId);
+      return result;
+    } catch (error: any) {
+      console.error(
+        "[ERROR] Request correction failed:",
+        error?.message || error,
+      );
+      throw error;
+    }
+  }
+
+  static async markUnderReview(
+    applicationId: number,
+    userId: number,
+    remarks: string,
+  ) {
+    try {
+      console.log(
+        "[DEBUG] Marking application as under review:",
+        applicationId,
+      );
+
+      const application = await prisma.application.findUnique({
+        where: { id: applicationId },
+        include: { organization: true },
+      });
+
+      if (!application) {
+        throw new Error(`Application ${applicationId} not found`);
+      }
+
+      const result = await prisma.$transaction(async (tx) => {
+        const updatedApp = await tx.application.update({
+          where: { id: applicationId },
+          data: { status: "Reviewing" },
+        });
+
+        if (application.organization) {
+          await tx.organization.update({
+            where: { id: application.organizationId },
+            data: { status: "Under Review" },
+          });
+        }
+
+        await this.writeApplicationTrackingHistory(
+          tx,
+          applicationId,
+          ApplicationTrackingStatus.Reviewing,
+          remarks,
+          userId,
+        );
+
+        return updatedApp;
+      });
+
+      console.log("[DEBUG] Application marked under review:", applicationId);
+      return result;
+    } catch (error: any) {
+      console.error(
+        "[ERROR] Mark under review failed:",
+        error?.message || error,
+      );
+      throw error;
+    }
+  }
+
   static async listApplications() {
     try {
       const rows = await prisma.application.findMany({
-        orderBy: { applicationDate: "desc" },
+        orderBy: [{ applicationDate: "asc" }, { id: "asc" }],
         include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+              phone: true,
+              faydaId: true,
+            },
+          },
           organization: {
             include: {
               address: {
@@ -1028,12 +1235,25 @@ export class ApplicationService {
       return rows.map((r) => {
         const organization = r.organization as any;
         const latestTraining = r.trainingDetails?.[0] as any;
+        const organizationDocs = organization?.documents || [];
+
+        const findOrganizationDocUrl = (documentName: string) => {
+          const normalizedName = String(documentName || "").toLowerCase();
+          const doc = organizationDocs.find((entry: any) => {
+            const type = String(entry?.documentType || "").toLowerCase();
+            return type.includes(normalizedName);
+          });
+
+          return doc?.fileUrl || null;
+        };
 
         const displayOrgName =
           organization?.nameEnglish || organization?.nameAmharic || "";
 
         return {
           id: r.id,
+          applicantFullName: r.user?.fullName || "-",
+          user: r.user,
           agency: displayOrgName,
           type: r.type,
           date: r.applicationDate
@@ -1065,9 +1285,9 @@ export class ApplicationService {
                 numberOfComputers: organization.numberOfComputers,
                 hasStoreHouse: organization.hasStoreHouse,
                 capitalAmount: organization.capitalAmount,
-                logoUrl: organization.logoUrl,
-                uniformSampleUrl: organization.uniformSampleUrl,
-                idCardSampleUrl: organization.idCardSampleUrl,
+                logoUrl: findOrganizationDocUrl("organization logo"),
+                uniformSampleUrl: findOrganizationDocUrl("uniform sample"),
+                idCardSampleUrl: findOrganizationDocUrl("id card sample"),
                 address: organization.address
                   ? {
                       houseNumber: organization.address.houseNumber,
@@ -1233,8 +1453,10 @@ export class ApplicationService {
                 trainingStartDate: latestTraining.trainingStartDate,
                 trainingEndDate: latestTraining.trainingEndDate,
                 trainingDurationDays: latestTraining.trainingDurationDays,
-                trainingManualUrl: latestTraining.trainingManualUrl,
-                trainingCertificateUrl: latestTraining.trainingCertificateUrl,
+                trainingManualUrl: findOrganizationDocUrl("training manual"),
+                trainingCertificateUrl: findOrganizationDocUrl(
+                  "training certificate",
+                ),
                 totalTraineesMale: latestTraining.totalTraineesMale,
                 totalTraineesFemale: latestTraining.totalTraineesFemale,
               }
@@ -1252,6 +1474,26 @@ export class ApplicationService {
       console.error("[ERROR] listApplications failed", error?.message || error);
       throw error;
     }
+  }
+
+  static async getApplicationTrackingHistory(applicationId: number) {
+    const application = await prisma.application.findUnique({
+      where: { id: applicationId },
+      select: { id: true },
+    });
+
+    if (!application) {
+      throw new Error(`Application ${applicationId} not found`);
+    }
+
+    const history =
+      await ApplicationTrackingService.getHistoryByApplicationId(applicationId);
+
+    return {
+      applicationId,
+      totalEvents: history.length,
+      history,
+    };
   }
 
   static async verifyDocument(
@@ -1361,6 +1603,83 @@ export class ApplicationService {
     }
   }
 
+  static async unverifyDocument(
+    scope: string,
+    documentId: number,
+    userId: number,
+  ) {
+    const verifiedAt = null;
+
+    try {
+      if (scope === "organization") {
+        const updated = await prisma.organizationDocument.update({
+          where: { id: documentId },
+          data: { isVerified: false, verifiedAt },
+        });
+
+        try {
+          await createAuditLog(prisma, {
+            userId,
+            action: "UPDATE",
+            entityName: "OrganizationDocument",
+            entityId: updated.id,
+            oldValue: null,
+            newValue: JSON.stringify({
+              id: updated.id,
+              isVerified: updated.isVerified,
+              verifiedAt: updated.verifiedAt,
+            }),
+            ipAddress: null,
+            userAgent: null,
+          });
+        } catch (auditError) {
+          console.warn(
+            "[WARN] Audit log failed for organization document unverify",
+            auditError,
+          );
+        }
+
+        return updated;
+      }
+
+      if (scope === "employee") {
+        const updated = await prisma.employeeDocument.update({
+          where: { id: documentId },
+          data: { isVerified: false, verifiedAt },
+        });
+
+        try {
+          await createAuditLog(prisma, {
+            userId,
+            action: "UPDATE",
+            entityName: "EmployeeDocument",
+            entityId: updated.id,
+            oldValue: null,
+            newValue: JSON.stringify({
+              id: updated.id,
+              isVerified: updated.isVerified,
+              verifiedAt: updated.verifiedAt,
+            }),
+            ipAddress: null,
+            userAgent: null,
+          });
+        } catch (auditError) {
+          console.warn(
+            "[WARN] Audit log failed for employee document unverify",
+            auditError,
+          );
+        }
+
+        return updated;
+      }
+
+      throw new Error(`Unsupported document scope: ${scope}`);
+    } catch (error: any) {
+      console.error("[ERROR] unverifyDocument failed", error?.message || error);
+      throw error;
+    }
+  }
+
   static async getLatestApplicationByUser(userId: number) {
     const application = await prisma.application.findFirst({
       where: { userId },
@@ -1368,6 +1687,19 @@ export class ApplicationService {
       include: {
         user: {
           select: { id: true, fullName: true, phone: true, email: true },
+        },
+        history: {
+          orderBy: { changedAt: "desc" },
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                username: true,
+                email: true,
+              },
+            },
+          },
         },
         organization: {
           include: {

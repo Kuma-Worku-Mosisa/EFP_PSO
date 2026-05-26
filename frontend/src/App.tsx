@@ -7,6 +7,7 @@ import { Home } from "./pages/Home";
 import { Login } from "./pages/auth/login/Login";
 import { AgencyDashboard } from "./pages/AgencyDashboard";
 import { AdminDashboard } from "./pages/AdminDashboard";
+import { FieldReviewerDashboard } from "./pages/FieldReviewerDashboard";
 import SystemAdminDashboard from "./pages/systemAdmin/SystemAdminDashboard";
 import { Requirements } from "./pages/Requirements";
 import { Services } from "./pages/Services";
@@ -82,6 +83,10 @@ function App() {
             {/* Dashboard Routes (No Layout as they have their own) */}
             <Route path="/dashboard/*" element={<AgencyDashboard />} />
             <Route path="/admin/*" element={<AdminDashboard />} />
+            <Route
+              path="/field-reviewer/*"
+              element={<FieldReviewerDashboard />}
+            />
             <Route path="/system-admin/*" element={<SystemAdminDashboard />} />
             <Route
               path="/super-admin/dashboard/*"

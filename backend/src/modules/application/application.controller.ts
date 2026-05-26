@@ -117,11 +117,12 @@ export const approveApplication = async (req: Request, res: Response) => {
       "[ERROR] Application approve failed:",
       error?.message || error,
     );
+    const statusCode = error?.statusCode || 500;
     return ApiResponse.error(
       res,
-      "Failed to approve application.",
-      500,
-      error?.message,
+      error?.message || "Failed to approve application.",
+      statusCode,
+      error?.details || error?.message,
     );
   }
 };
@@ -163,6 +164,61 @@ export const rejectApplication = async (req: Request, res: Response) => {
   }
 };
 
+export const requestCorrection = async (req: Request, res: Response) => {
+  const applicationId = Number(req.params.id);
+  const userId = (req as any).user?.id || 1;
+  const { remarks } = req.body || {};
+
+  try {
+    const result = await ApplicationService.requestCorrection(
+      applicationId,
+      userId,
+      String(remarks || "Correction requested by reviewer"),
+    );
+
+    return ApiResponse.success(
+      res,
+      "Application marked for correction.",
+      result,
+    );
+  } catch (error: any) {
+    console.error(
+      "[ERROR] Request correction failed:",
+      error?.message || error,
+    );
+    return ApiResponse.error(
+      res,
+      error?.message || "Failed to request correction.",
+      500,
+      error?.message,
+    );
+  }
+};
+
+export const markUnderReview = async (req: Request, res: Response) => {
+  const applicationId = Number(req.params.id);
+  const userId = (req as any).user?.id || 1;
+  const { remarks } = req.body || {};
+
+  try {
+    const result = await ApplicationService.markUnderReview(
+      applicationId,
+      userId,
+      String(remarks || "Marked under review by reviewer"),
+    );
+
+    return ApiResponse.success(res, "Application marked under review.", result);
+  } catch (error: any) {
+    console.error("[ERROR] Mark under review failed:", error?.message || error);
+    return ApiResponse.error(
+      res,
+      error?.message || "Failed to mark under review.",
+      500,
+      error?.message,
+    );
+  }
+};
+
 export const verifyDocument = async (req: Request, res: Response) => {
   const scope = String(req.params.scope || "").toLowerCase();
   const documentId = Number(req.params.id);
@@ -194,6 +250,41 @@ export const verifyDocument = async (req: Request, res: Response) => {
   }
 };
 
+export const unverifyDocument = async (req: Request, res: Response) => {
+  const scope = String(req.params.scope || "").toLowerCase();
+  const documentId = Number(req.params.id);
+  const userId = (req as any).user?.id || 1;
+
+  if (!Number.isFinite(documentId) || documentId <= 0) {
+    return ApiResponse.error(res, "Invalid document id.", 400);
+  }
+
+  try {
+    const result = await ApplicationService.unverifyDocument(
+      scope,
+      documentId,
+      userId,
+    );
+
+    return ApiResponse.success(
+      res,
+      "Document sent back for correction.",
+      result,
+    );
+  } catch (error: any) {
+    console.error(
+      "[ERROR] Document correction failed:",
+      error?.message || error,
+    );
+    return ApiResponse.error(
+      res,
+      error?.message || "Failed to mark document for correction.",
+      500,
+      error?.message,
+    );
+  }
+};
+
 export const getMyApplication = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.userId ?? (req as any).user?.id;
@@ -209,6 +300,38 @@ export const getMyApplication = async (req: Request, res: Response) => {
     return ApiResponse.error(
       res,
       "Failed to fetch application.",
+      500,
+      error?.message,
+    );
+  }
+};
+
+export const getApplicationTrackingHistory = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const applicationId = Number(req.params.id);
+    if (!Number.isFinite(applicationId) || applicationId <= 0) {
+      return ApiResponse.error(res, "Invalid application id", 400);
+    }
+
+    const result =
+      await ApplicationService.getApplicationTrackingHistory(applicationId);
+
+    return ApiResponse.success(res, "Application history fetched", result);
+  } catch (error: any) {
+    if (String(error?.message || "").includes("not found")) {
+      return ApiResponse.error(res, error.message, 404);
+    }
+
+    console.error(
+      "[ERROR] Fetch application history failed:",
+      error?.message || error,
+    );
+    return ApiResponse.error(
+      res,
+      "Failed to fetch application history.",
       500,
       error?.message,
     );

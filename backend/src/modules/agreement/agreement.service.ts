@@ -47,6 +47,15 @@ export class AgreementService {
             },
           },
         },
+        manager: {
+          include: {
+            user: {
+              select: {
+                fullName: true,
+              },
+            },
+          },
+        },
         user: true,
       },
     });
@@ -57,22 +66,23 @@ export class AgreementService {
 
     const org = application.organization;
     const signingUser = application.user;
+    const managerName = application.manager?.user?.fullName || "N/A";
 
     const deadlineDate = new Date(recruitmentDeadline);
 
     // Build the structural data payload to snapshot historical context
     const snapshot: AgreementSnapshot = {
-      agencyName: org.name,
+      agencyName: AgreementService.resolveOrganizationName(org),
       email: org.email,
       phone: org.phone,
       fax: org.faxNumber || "N/A",
-      managerName: org.managerName || "N/A",
+      managerName,
       signedByFullName: signingUser.fullName,
       signedByPhone: signingUser.phone,
-      region: org.address?.kebele?.woreda?.zone?.region?.name || "N/A",
-      zone: org.address?.kebele?.woreda?.zone?.name || "N/A",
-      woreda: org.address?.kebele?.woreda?.name || "N/A",
-      kebele: org.address?.kebele?.name || "N/A",
+      region: org.address?.kebele?.woreda?.zone?.region?.nameEnglish || "N/A",
+      zone: org.address?.kebele?.woreda?.zone?.nameEnglish || "N/A",
+      woreda: org.address?.kebele?.woreda?.nameEnglish || "N/A",
+      kebele: org.address?.kebele?.nameEnglish || "N/A",
       location: org.address?.specialLocation || "N/A",
       number: org.address?.houseNumber || "N/A",
       numberOfOffices: org.numberOfOffices || 0,

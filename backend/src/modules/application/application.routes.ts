@@ -4,9 +4,11 @@ import {
   submitApplication,
   getMyApplication,
   verifyDocument,
+  unverifyDocument,
+  getApplicationTrackingHistory,
 } from "./application.controller";
 import { uploadDocuments, getOrganizationDocuments } from "./upload.controller";
-import { authenticate } from "../../middleware/auth"; // Ensure this matches your middleware file name
+import { authenticate, authorize } from "../../middleware/auth";
 import { getApplications } from "./application.controller";
 import { createOrganizationDocumentsUploader } from "../../middleware/fileUpload";
 
@@ -48,13 +50,15 @@ router.post("/submit", authenticate, submitApplication);
 // GET /api/applications/me - logged-in user's latest application
 router.get("/me", authenticate, getMyApplication);
 
+// GET /api/applications/:id/history - tracking history for an application
+router.get("/:id/history", getApplicationTrackingHistory);
+
 // GET /api/applications - list for admin review
 router.get(
   "/",
-  /* authenticate, */ (req, res, next) => {
-    const { getApplications: handler } = require("./application.controller");
-    return handler(req, res, next);
-  },
+  authenticate,
+  authorize(["admin", "system_admin"]),
+  getApplications,
 );
 
 /**
@@ -63,8 +67,9 @@ router.get(
  */
 router.post(
   "/:id/approve",
-  /* authenticate, */ (req, res, next) => {
-    // lazy import to avoid circular issues
+  authenticate,
+  authorize(["admin", "system_admin"]),
+  (req, res, next) => {
     const { approveApplication } = require("./application.controller");
     return approveApplication(req, res, next);
   },
@@ -76,9 +81,39 @@ router.post(
  */
 router.post(
   "/:id/reject",
-  /* authenticate, */ (req, res, next) => {
+  authenticate,
+  authorize(["admin", "system_admin"]),
+  (req, res, next) => {
     const { rejectApplication } = require("./application.controller");
     return rejectApplication(req, res, next);
+  },
+);
+
+/**
+ * Request correction for an application (send back for applicant fixes)
+ * POST /api/applications/:id/correction
+ */
+router.post(
+  "/:id/correction",
+  authenticate,
+  authorize(["admin", "system_admin"]),
+  (req, res, next) => {
+    const { requestCorrection } = require("./application.controller");
+    return requestCorrection(req, res, next);
+  },
+);
+
+/**
+ * Mark application as under review
+ * POST /api/applications/:id/under-review
+ */
+router.post(
+  "/:id/under-review",
+  authenticate,
+  authorize(["admin", "system_admin"]),
+  (req, res, next) => {
+    const { markUnderReview } = require("./application.controller");
+    return markUnderReview(req, res, next);
   },
 );
 
@@ -87,5 +122,11 @@ router.post(
  * POST /api/applications/documents/:scope/:id/verify
  */
 router.post("/documents/:scope/:id/verify", verifyDocument);
+
+/**
+ * Mark a verified document back for correction
+ * POST /api/applications/documents/:scope/:id/unverify
+ */
+router.post("/documents/:scope/:id/unverify", unverifyDocument);
 
 export default router;

@@ -64,16 +64,25 @@ export const Login = () => {
       });
 
       const { user, token } = res.data;
-      login(user, token);
+      const normalizedUser = {
+        ...user,
+        roles: Array.isArray(user.roles)
+          ? user.roles.map((role: string) => String(role).toLowerCase())
+          : [],
+      };
+
+      login(normalizedUser, token);
 
       // Dynamic Role-Based Navigation
-      if (user.roles?.includes("system_admin")) {
+      if (normalizedUser.roles?.includes("system_admin")) {
         // System admins go to the system admin dashboard
         navigate("/system-admin/dashboard");
-      } else if (user.roles?.includes("super_admin")) {
+      } else if (normalizedUser.roles?.includes("super_admin")) {
         navigate("/super-admin/dashboard");
-      } else if (user.roles?.includes("admin")) {
+      } else if (normalizedUser.roles?.includes("admin")) {
         navigate("/admin");
+      } else if (normalizedUser.roles?.includes("field_reviewer")) {
+        navigate("/field-reviewer");
       } else {
         navigate("/dashboard");
       }

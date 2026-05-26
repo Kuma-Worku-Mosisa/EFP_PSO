@@ -3,6 +3,34 @@ import prisma from "../../lib/prisma";
 import crypto from "crypto";
 
 export class CertificationService {
+  private static getOrganizationLogoUrl(organization: any) {
+    const logoDoc = (organization?.documents || []).find((doc: any) => {
+      const type = String(doc?.documentType || "").toLowerCase();
+      return type.includes("organization logo");
+    });
+
+    return logoDoc?.fileUrl || null;
+  }
+
+  private static getOrganizationDisplayName(organization: any) {
+    return (
+      organization?.nameEnglish ||
+      organization?.nameAmharic ||
+      organization?.name ||
+      null
+    );
+  }
+
+  private static normalizeOrganization(organization: any) {
+    if (!organization) return organization;
+
+    return {
+      ...organization,
+      name: CertificationService.getOrganizationDisplayName(organization),
+      logoUrl: CertificationService.getOrganizationLogoUrl(organization),
+    };
+  }
+
   /**
    * CREATE: Issue a new 1-year certificate
    */
@@ -41,8 +69,9 @@ export class CertificationService {
       include: {
         organization: {
           select: {
-            name: true,
-            logoUrl: true,
+            nameEnglish: true,
+            nameAmharic: true,
+            documents: true,
             address: {
               select: {
                 id: true,
@@ -124,6 +153,9 @@ export class CertificationService {
 
     return {
       ...cert,
+      organization: CertificationService.normalizeOrganization(
+        cert.organization,
+      ),
       applicantPhotoUrl:
         cert.application?.manager?.user?.photoUrl ||
         cert.application?.operationsHead?.user?.photoUrl ||
@@ -143,34 +175,37 @@ export class CertificationService {
    * READ: List all certificates for Admin
    */
   static async getAll() {
-    return await prisma.certification.findMany({
-      include: {
-        organization: {
-          select: {
-            name: true,
-            logoUrl: true,
-            address: {
-              select: {
-                id: true,
-                houseNumber: true,
-                specialLocation: true,
-                kebeleId: true,
-                kebele: {
-                  select: {
-                    id: true,
-                    name: true,
-                    woreda: {
-                      select: {
-                        id: true,
-                        name: true,
-                        zone: {
-                          select: {
-                            id: true,
-                            name: true,
-                            region: {
-                              select: {
-                                id: true,
-                                name: true,
+    return await prisma.certification
+      .findMany({
+        include: {
+          organization: {
+            select: {
+              nameEnglish: true,
+              nameAmharic: true,
+              documents: true,
+              address: {
+                select: {
+                  id: true,
+                  houseNumber: true,
+                  specialLocation: true,
+                  kebeleId: true,
+                  kebele: {
+                    select: {
+                      id: true,
+                      name: true,
+                      woreda: {
+                        select: {
+                          id: true,
+                          name: true,
+                          zone: {
+                            select: {
+                              id: true,
+                              name: true,
+                              region: {
+                                select: {
+                                  id: true,
+                                  name: true,
+                                },
                               },
                             },
                           },
@@ -182,69 +217,79 @@ export class CertificationService {
               },
             },
           },
-        },
-        application: {
-          select: {
-            userId: true,
-            user: {
-              select: {
-                id: true,
-                fullName: true,
-                username: true,
+          application: {
+            select: {
+              userId: true,
+              user: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  username: true,
+                },
               },
-            },
-            type: true,
-            manager: {
-              select: {
-                user: {
-                  select: { photoUrl: true },
+              type: true,
+              manager: {
+                select: {
+                  user: {
+                    select: { photoUrl: true },
+                  },
                 },
               },
             },
           },
         },
-      },
-      orderBy: { issueDate: "desc" },
-    });
+        orderBy: { issueDate: "desc" },
+      })
+      .then((certs) =>
+        certs.map((cert) => ({
+          ...cert,
+          organization: CertificationService.normalizeOrganization(
+            cert.organization,
+          ),
+        })),
+      );
   }
 
   /**
    * READ: List certificates for a specific applicant/user
    */
   static async getByUserId(userId: number) {
-    return await prisma.certification.findMany({
-      where: {
-        application: {
-          userId,
+    return await prisma.certification
+      .findMany({
+        where: {
+          application: {
+            userId,
+          },
         },
-      },
-      include: {
-        organization: {
-          select: {
-            name: true,
-            logoUrl: true,
-            address: {
-              select: {
-                id: true,
-                houseNumber: true,
-                specialLocation: true,
-                kebeleId: true,
-                kebele: {
-                  select: {
-                    id: true,
-                    name: true,
-                    woreda: {
-                      select: {
-                        id: true,
-                        name: true,
-                        zone: {
-                          select: {
-                            id: true,
-                            name: true,
-                            region: {
-                              select: {
-                                id: true,
-                                name: true,
+        include: {
+          organization: {
+            select: {
+              nameEnglish: true,
+              nameAmharic: true,
+              documents: true,
+              address: {
+                select: {
+                  id: true,
+                  houseNumber: true,
+                  specialLocation: true,
+                  kebeleId: true,
+                  kebele: {
+                    select: {
+                      id: true,
+                      name: true,
+                      woreda: {
+                        select: {
+                          id: true,
+                          name: true,
+                          zone: {
+                            select: {
+                              id: true,
+                              name: true,
+                              region: {
+                                select: {
+                                  id: true,
+                                  name: true,
+                                },
                               },
                             },
                           },
@@ -256,30 +301,37 @@ export class CertificationService {
               },
             },
           },
-        },
-        application: {
-          select: {
-            userId: true,
-            user: {
-              select: {
-                id: true,
-                fullName: true,
-                username: true,
+          application: {
+            select: {
+              userId: true,
+              user: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  username: true,
+                },
               },
-            },
-            type: true,
-            manager: {
-              select: {
-                user: {
-                  select: { photoUrl: true },
+              type: true,
+              manager: {
+                select: {
+                  user: {
+                    select: { photoUrl: true },
+                  },
                 },
               },
             },
           },
         },
-      },
-      orderBy: { issueDate: "desc" },
-    });
+        orderBy: { issueDate: "desc" },
+      })
+      .then((certs) =>
+        certs.map((cert) => ({
+          ...cert,
+          organization: CertificationService.normalizeOrganization(
+            cert.organization,
+          ),
+        })),
+      );
   }
 
   /**
@@ -325,10 +377,32 @@ export class CertificationService {
       });
 
       if (data.logoUrl) {
-        await tx.organization.update({
-          where: { id: cert.organizationId as number },
-          data: { logoUrl: data.logoUrl },
+        const existingLogo = await tx.organizationDocument.findFirst({
+          where: {
+            organizationId: cert.organizationId as number,
+            documentType: "Organization Logo",
+          },
         });
+
+        if (existingLogo) {
+          await tx.organizationDocument.update({
+            where: { id: existingLogo.id },
+            data: {
+              fileUrl: data.logoUrl,
+              isVerified: false,
+              verifiedAt: null,
+            },
+          });
+        } else {
+          await tx.organizationDocument.create({
+            data: {
+              organizationId: cert.organizationId as number,
+              documentType: "Organization Logo",
+              fileUrl: data.logoUrl,
+              isVerified: false,
+            },
+          });
+        }
       }
 
       if (data.applicantPhotoUrl && applicantUserId) {
@@ -351,7 +425,11 @@ export class CertificationService {
       where: { certificateSerialNumber: serial },
       include: {
         organization: {
-          select: { name: true, logoUrl: true },
+          select: {
+            nameEnglish: true,
+            nameAmharic: true,
+            documents: true,
+          },
         },
       },
     });
@@ -367,8 +445,10 @@ export class CertificationService {
       status: cert.status,
       qrCodeValue: cert.qrCodeValue,
       organization: {
-        name: cert.organization?.name || null,
-        logoUrl: cert.organization?.logoUrl || null,
+        name: CertificationService.getOrganizationDisplayName(
+          cert.organization,
+        ),
+        logoUrl: CertificationService.getOrganizationLogoUrl(cert.organization),
       },
     };
   }

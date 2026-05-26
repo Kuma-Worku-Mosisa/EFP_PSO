@@ -184,6 +184,29 @@ export const getAllUsers = async () => {
 };
 
 /**
+ * Returns users that have the given role name (case-insensitive).
+ */
+export const getUsersByRole = async (roleName: string) => {
+  const normalized = (roleName || "").trim().toLowerCase();
+  return await prisma.user.findMany({
+    where: {
+      user_roles: {
+        some: {
+          roles: {
+            role_name: {
+              equals: normalized,
+              mode: "insensitive",
+            },
+          },
+        },
+      },
+    },
+    select: userSelection,
+    orderBy: { createdAt: "desc" },
+  });
+};
+
+/**
  * Locates a single specific user profile by its ID.
  */
 export const getUserById = async (userId: number | string) => {

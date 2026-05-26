@@ -1,3 +1,4 @@
+//filepath: frontend/src/pages/admin/AdminAgreementDetail.tsx
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AgreementView } from "../../components/AgreementView";

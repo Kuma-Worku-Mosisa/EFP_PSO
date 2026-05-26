@@ -53,6 +53,7 @@ export const DashboardLayout = ({
   const isSuperAdmin = user?.roles.includes("super_admin");
   const isAdmin = user?.roles.includes("admin");
   const isAgency = user?.roles.includes("agency");
+  const isFieldReviewer = user?.roles.includes("field_reviewer");
 
   // 2. Specialized notifications based on roles array
   const [notifications, setNotifications] = useState(() => {
@@ -108,7 +109,9 @@ export const DashboardLayout = ({
       ? "/super-admin"
       : isAdmin
         ? "/admin"
-        : "/dashboard";
+        : user?.roles.includes("field_reviewer")
+          ? "/field-reviewer"
+          : "/dashboard";
     navigate(`${basePath}/notifications`);
   };
 
@@ -297,7 +300,9 @@ export const DashboardLayout = ({
                             ? "/dashboard/profile"
                             : isSuperAdmin
                               ? "/super-admin/profile"
-                              : "/admin/profile"
+                              : isFieldReviewer
+                                ? "/field-reviewer/profile"
+                                : "/admin/profile"
                         }
                         onClick={() => setShowProfile(false)}
                         className="w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 text-sm text-gray-600"

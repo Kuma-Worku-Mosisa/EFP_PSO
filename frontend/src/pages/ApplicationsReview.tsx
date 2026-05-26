@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import {
   Search,
   CheckCircle,
-  XCircle,
   Clock,
   Eye,
   FileText,
@@ -19,6 +18,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { useLanguage } from "../context/LanguageContext";
 import { apiRequest } from "../lib/api";
+import AssignInspectionModal from "../components/AssignInspectionModal.tsx";
 import {
   AutoDismissToast,
   type ToastType,
@@ -86,7 +86,182 @@ const findOrganizationDocument = (application: any, terms: string[]) => {
 };
 
 const normalizeText = (value?: string | null) =>
-  (value || "").trim().toLowerCase();
+  (value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const getEmployeeDocumentTarget = (
+  employee: any,
+  terms: string[],
+  excludeTerms: string[] = [],
+) => {
+  const doc = findEmployeeDoc(employee, terms, excludeTerms);
+
+  if (!doc?.id) {
+    return null;
+  }
+
+  return {
+    scope: "employee" as const,
+    id: Number(doc.id),
+    isVerified: Boolean(doc.isVerified),
+    verifiedAt: doc.verifiedAt ?? null,
+  };
+};
+
+const CORRECTION_UPLOAD_FIELDS_STORAGE_KEY =
+  "applicationCorrectionUploadFields";
+
+const persistCorrectionUploadField = (fieldKey: string | null) => {
+  if (!fieldKey || typeof window === "undefined") return;
+
+  try {
+    const existingRaw = window.localStorage.getItem(
+      CORRECTION_UPLOAD_FIELDS_STORAGE_KEY,
+    );
+    const existing = Array.isArray(existingRaw ? JSON.parse(existingRaw) : [])
+      ? (JSON.parse(existingRaw || "[]") as string[])
+      : [];
+    const next = Array.from(new Set([...existing, fieldKey]));
+    window.localStorage.setItem(
+      CORRECTION_UPLOAD_FIELDS_STORAGE_KEY,
+      JSON.stringify(next),
+    );
+  } catch (error) {
+    console.warn("Failed to persist correction upload field", error);
+  }
+};
+
+const getEmployeeRolePrefix = (
+  application: any,
+  documentId: number | undefined,
+  verificationKey?: string,
+) => {
+  const scopedRole = normalizeText(verificationKey?.split(":")?.[0]);
+  if (scopedRole === "manager") return "manager";
+  if (scopedRole === "operations") return "ops";
+  if (scopedRole === "admin") return "admin";
+
+  const employeeBuckets: Array<["manager" | "ops" | "admin", any]> = [
+    ["manager", application?.manager],
+    ["ops", application?.operationsHead],
+    ["admin", application?.adminHead],
+  ];
+
+  for (const [role, employee] of employeeBuckets) {
+    const employeeDocs = getEmployeeDocs(employee);
+    if (
+      employeeDocs.some((doc: any) => Number(doc?.id) === Number(documentId))
+    ) {
+      return role;
+    }
+  }
+
+  return null;
+};
+
+// Map action keys to icon components
+const actionIconMap: Record<string, any> = {
+  preview: Eye,
+  under_review: Clock,
+  approve: CheckCircle,
+  reject: X,
+  correction: FileText,
+};
+
+const getCorrectionUploadFieldKey = (
+  application: any,
+  label: string,
+  verificationKey?: string,
+  target?: {
+    scope: "organization" | "employee" | "education";
+    id: number;
+  } | null,
+) => {
+  const normalizedLabel = normalizeText(label);
+  const organizationScope = target?.scope === "organization";
+
+  if (organizationScope) {
+    if (normalizedLabel.includes("logo")) return "logo";
+    if (normalizedLabel.includes("uniform")) return "uniform_sample";
+    if (
+      normalizedLabel.includes("id card sample") ||
+      normalizedLabel.includes("employee id sample")
+    ) {
+      return "id_sample";
+    }
+    if (normalizedLabel.includes("training manual")) return "training_manual";
+    if (
+      normalizedLabel.includes("training certificate") ||
+      normalizedLabel.includes("certificate of training")
+    ) {
+      return "training_cert";
+    }
+    if (normalizedLabel.includes("employment form")) return "employment_form";
+    if (
+      normalizedLabel.includes("organization id") ||
+      normalizedLabel.includes("organization identification") ||
+      normalizedLabel.includes("org identification")
+    ) {
+      return "organization_Id_doc";
+    }
+    if (normalizedLabel.includes("vehicle rent")) return "vehicle_rent";
+    if (normalizedLabel.includes("house rent")) return "house_rent";
+    return null;
+  }
+
+  const rolePrefix = getEmployeeRolePrefix(
+    application,
+    target?.id,
+    verificationKey,
+  );
+  if (!rolePrefix) return null;
+
+  if (normalizedLabel.includes("fingerprint"))
+    return `${rolePrefix}_fingerprint_doc`;
+  if (normalizedLabel.includes("medical")) return `${rolePrefix}_medical_doc`;
+  if (normalizedLabel.includes("training certificate"))
+    return `${rolePrefix}_training_doc`;
+  if (
+    normalizedLabel.includes("support letter") ||
+    normalizedLabel.includes("kebele")
+  ) {
+    return `${rolePrefix}_support_doc`;
+  }
+  if (normalizedLabel.includes("collateral"))
+    return `${rolePrefix}_collateral_doc`;
+  if (normalizedLabel.includes("experience"))
+    return `${rolePrefix}_experience_doc`;
+  if (normalizedLabel.includes("resignation"))
+    return `${rolePrefix}_resignation_letter_doc`;
+  if (
+    normalizedLabel.includes("degree") ||
+    normalizedLabel.includes("educational")
+  ) {
+    return `${rolePrefix}_education_doc`;
+  }
+  if (
+    normalizedLabel.includes("passport") ||
+    normalizedLabel.includes("kabele") ||
+    normalizedLabel.includes("renewed id")
+  ) {
+    return `${rolePrefix}_passport_or_kabele_doc`;
+  }
+  if (normalizedLabel.includes("national id"))
+    return `${rolePrefix}_national_id_doc`;
+  if (
+    normalizedLabel.includes("organization id") ||
+    normalizedLabel.includes("organization identification") ||
+    normalizedLabel.includes("org identification")
+  ) {
+    return `${rolePrefix}_organization_Id_doc`;
+  }
+
+  return null;
+};
 
 const getEmployeeDocs = (employee: any) => [
   ...(employee?.educationDocs || []),
@@ -196,12 +371,41 @@ const resolveDocumentVerificationTarget = (
   return null;
 };
 
-const findEmployeeDoc = (employee: any, terms: string[]) => {
+const findEmployeeDoc = (
+  employee: any,
+  terms: string[],
+  excludeTerms: string[] = [],
+) => {
   const docs = getEmployeeDocs(employee);
-  return docs.find((doc: any) => {
-    const docType = normalizeText(doc?.documentType);
-    return terms.some((term) => docType.includes(normalizeText(term)));
-  });
+  const include = terms.map((term) => normalizeText(term)).filter(Boolean);
+  const exclude = excludeTerms
+    .map((term) => normalizeText(term))
+    .filter(Boolean);
+
+  let bestDoc: any = undefined;
+  let bestScore = -1;
+
+  for (const doc of docs) {
+    const searchText = normalizeText(
+      `${doc?.documentType || doc?.educationDocumentType || ""} ${getFileName(doc?.fileUrl)}`,
+    );
+
+    if (exclude.some((term) => searchText.includes(term))) {
+      continue;
+    }
+
+    const score = include.reduce(
+      (sum, term) => sum + (searchText.includes(term) ? 1 : 0),
+      0,
+    );
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestDoc = doc;
+    }
+  }
+
+  return bestScore > 0 ? bestDoc : undefined;
 };
 
 const getEmployeeDisplayName = (employee: any) =>
@@ -282,6 +486,7 @@ export const ApplicationsReview = () => {
     },
     table: {
       appId: isAm ? "የማመልከቻ መለያ" : "App ID",
+      applicant: isAm ? "አመልካች" : "Applicant",
       agency: isAm ? "ኤጀንሲ" : "Agency",
       type: isAm ? "ዓይነት" : "Type",
       date: isAm ? "ቀን" : "Date",
@@ -312,6 +517,9 @@ export const ApplicationsReview = () => {
     message: string;
   }>({ isOpen: false, type: "success", message: "" });
 
+  const [assignModal, setAssignModal] = useState<{ isOpen: boolean; app: any }>(
+    { isOpen: false, app: null },
+  );
   const showToast = (type: ToastType, message: string) =>
     setToast({ isOpen: true, type, message });
 
@@ -348,7 +556,11 @@ export const ApplicationsReview = () => {
       await fetchApplications();
     } catch (err: any) {
       console.error("Approve failed", err);
-      showToast("error", "Failed to approve application.");
+      const errMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to approve application.";
+      showToast("error", errMsg);
     }
   };
 
@@ -419,6 +631,62 @@ export const ApplicationsReview = () => {
     [],
   );
 
+  const markDocumentAsUnverifiedLocally = React.useCallback(
+    (target: {
+      scope: "organization" | "employee" | "education";
+      id: number;
+    }) => {
+      const unverifyById = (docs?: any[]) =>
+        (docs || []).map((doc: any) =>
+          doc?.id === target.id
+            ? {
+                ...doc,
+                isVerified: false,
+                verifiedAt: null,
+              }
+            : doc,
+        );
+
+      setSelectedApp((prev: any) => {
+        if (!prev) return prev;
+
+        if (target.scope === "organization") {
+          return {
+            ...prev,
+            organization: {
+              ...prev.organization,
+              documents: unverifyById(prev.organization?.documents),
+            },
+          };
+        }
+
+        const updateEmployee = (employee: any) => {
+          if (!employee) return employee;
+
+          if (target.scope === "employee") {
+            return {
+              ...employee,
+              documents: unverifyById(employee.documents),
+            };
+          }
+
+          return {
+            ...employee,
+            educationDocs: unverifyById(employee.educationDocs),
+          };
+        };
+
+        return {
+          ...prev,
+          manager: updateEmployee(prev.manager),
+          operationsHead: updateEmployee(prev.operationsHead),
+          adminHead: updateEmployee(prev.adminHead),
+        };
+      });
+    },
+    [],
+  );
+
   const handleVerifyDocument = async (
     stateKey: string,
     label: string,
@@ -472,6 +740,59 @@ export const ApplicationsReview = () => {
     }
   };
 
+  const handleRequestDocumentCorrection = async (
+    stateKey: string,
+    label: string,
+    target: {
+      scope: "organization" | "employee" | "education";
+      id: number;
+    } | null,
+    uploadFieldKey: string | null,
+  ) => {
+    if (!selectedApp) return;
+
+    if (!target) {
+      showToast(
+        "error",
+        "This file is not linked to a database document, so it cannot be marked for correction here.",
+      );
+      return;
+    }
+
+    try {
+      const res = await apiRequest(
+        `/applications/documents/${target.scope}/${target.id}/unverify`,
+        { method: "POST" },
+      );
+
+      setDocStatuses((prev) => ({
+        ...prev,
+        [stateKey]: {
+          status: "pending",
+          comment: prev[stateKey]?.comment,
+        },
+      }));
+
+      persistCorrectionUploadField(uploadFieldKey);
+      markDocumentAsUnverifiedLocally(target);
+
+      const successMessage =
+        res?.message || res?.data?.message || `${label} sent for correction.`;
+      showToast("success", successMessage);
+
+      if (viewingStage !== "new") {
+        await fetchApplications();
+      }
+    } catch (err: any) {
+      console.error("Document correction request failed", err);
+      const errMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to mark the selected document for correction.";
+      showToast("error", errMsg);
+    }
+  };
+
   const isApplicationReadyForApproval = (app: any) => {
     if (!app) return false;
 
@@ -511,6 +832,7 @@ export const ApplicationsReview = () => {
     isFile = false,
     fileUrl,
     verificationKey,
+    documentTarget,
     initialVerified = false,
   }: {
     label: string;
@@ -519,10 +841,25 @@ export const ApplicationsReview = () => {
     isFile?: boolean;
     fileUrl?: string;
     verificationKey?: string;
+    documentTarget?: {
+      scope: "organization" | "employee" | "education";
+      id: number;
+      isVerified?: boolean;
+      verifiedAt?: string | null;
+    } | null;
     initialVerified?: boolean;
   }) => {
     const resolvedTarget = isFile
-      ? resolveDocumentVerificationTarget(selectedApp, label, fileUrl, value)
+      ? (documentTarget ??
+        resolveDocumentVerificationTarget(selectedApp, label, fileUrl, value))
+      : null;
+    const correctionUploadKey = resolvedTarget
+      ? getCorrectionUploadFieldKey(
+          selectedApp,
+          label,
+          verificationKey,
+          resolvedTarget,
+        )
       : null;
     const scopedVerificationKey = resolvedTarget
       ? `${selectedApp?.id ?? "app"}:${viewingStage}:${resolvedTarget.scope}:${resolvedTarget.id}`
@@ -538,6 +875,7 @@ export const ApplicationsReview = () => {
     );
 
     const [isVerifying, setIsVerifying] = useState(false);
+    const [isCorrecting, setIsCorrecting] = useState(false);
 
     const handleSendComment = () => {
       handleDocAction(scopedVerificationKey, status, commentText);
@@ -545,51 +883,6 @@ export const ApplicationsReview = () => {
       setNotifMessage(`Comment sent for "${label}"`);
       setShowNotification(true);
       setTimeout(() => setShowNotification(false), 3000);
-    };
-
-    // Inside your component function
-    const [confirmState, setConfirmState] = useState<{
-      isOpen: boolean;
-      type: "approve" | "reject" | "delete" | "default";
-      appId: string | null;
-      agencyName: string;
-    }>({
-      isOpen: false,
-      type: "default",
-      appId: null,
-      agencyName: "",
-    });
-
-    const [isActionLoading, setIsActionLoading] = useState(false);
-
-    const handleOpenConfirm = (
-      id: string,
-      agency: string,
-      type: "approve" | "reject",
-    ) => {
-      setConfirmState({
-        isOpen: true,
-        type,
-        appId: id,
-        agencyName: agency,
-      });
-    };
-
-    const handleExecuteAction = async () => {
-      if (!confirmState.appId) return;
-
-      setIsActionLoading(true);
-      try {
-        if (confirmState.type === "approve") {
-          await handleApproveApp(confirmState.appId);
-        } else {
-          await handleRejectApp(confirmState.appId);
-        }
-        // Close on success
-        setConfirmState((prev) => ({ ...prev, isOpen: false }));
-      } finally {
-        setIsActionLoading(false);
-      }
     };
 
     return (
@@ -684,11 +977,24 @@ export const ApplicationsReview = () => {
               </button>
               <button
                 type="button"
-                onClick={() =>
-                  handleDocAction(scopedVerificationKey, "rejected")
-                }
+                onClick={async (e: React.MouseEvent<HTMLButtonElement>) => {
+                  e.preventDefault();
+                  setIsCorrecting(true);
+                  try {
+                    await handleRequestDocumentCorrection(
+                      scopedVerificationKey,
+                      label,
+                      resolvedTarget,
+                      correctionUploadKey,
+                    );
+                  } finally {
+                    setIsCorrecting(false);
+                  }
+                }}
+                disabled={isCorrecting}
                 className={cn(
                   "flex items-center space-x-2 px-3 py-1.5 rounded-xl transition-all shadow-sm",
+                  isCorrecting ? "opacity-60 pointer-events-none" : "",
                   status === "rejected"
                     ? "bg-amber-600 text-white"
                     : "bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white",
@@ -1430,6 +1736,45 @@ export const ApplicationsReview = () => {
           </div>
         </section>
 
+        {/* All Organizational Documents */}
+        <section className="space-y-6">
+          <div className="flex items-center space-x-3 px-4">
+            <div className="w-1.5 h-6 bg-slate-600 rounded-full" />
+            <h4 className="text-base font-black text-primary uppercase tracking-tight">
+              All Organizational Documents
+            </h4>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
+            {buildDocumentCards(
+              selectedApp.organization?.documents || [],
+              "org-docs",
+            ).map((doc) => (
+              <ReviewItem
+                key={doc.id}
+                label={doc.label}
+                value={doc.fileName}
+                id={doc.id}
+                isFile
+                fileUrl={doc.fileUrl}
+                documentTarget={
+                  doc.documentId
+                    ? {
+                        scope: "organization",
+                        id: Number(doc.documentId),
+                        isVerified: doc.isVerified,
+                        verifiedAt: doc.verifiedAt ?? null,
+                      }
+                    : null
+                }
+                verificationKey={
+                  doc.documentId ? `organization:${doc.documentId}` : doc.id
+                }
+                initialVerified={doc.isVerified}
+              />
+            ))}
+          </div>
+        </section>
+
         {/* Training Programs */}
         <section className="space-y-6">
           <div className="flex items-center space-x-3 px-4">
@@ -1447,39 +1792,6 @@ export const ApplicationsReview = () => {
               id="new_training_manual"
               isFile
               fileUrl={selectedApp.training?.trainingManualUrl}
-            />
-            <ReviewItem
-              label="Training Address"
-              value={selectedApp.training?.trainingAddress || "-"}
-              id="new_training_address"
-            />
-            <ReviewItem
-              label="Days Trained"
-              value={
-                selectedApp.training?.trainingDurationDays !== undefined &&
-                selectedApp.training?.trainingDurationDays !== null
-                  ? `${selectedApp.training.trainingDurationDays} Days`
-                  : "-"
-              }
-              id="new_training_days"
-            />
-            <ReviewItem
-              label="Training Provider Body"
-              value={
-                selectedApp.training?.trainingBodyName ||
-                selectedApp.training?.provider ||
-                "-"
-              }
-              id="new_training_provider"
-            />
-            <ReviewItem
-              label="Certificate of Training"
-              value={
-                getFileName(selectedApp.training?.trainingCertificateUrl) || "-"
-              }
-              id="new_training_cert"
-              isFile
-              fileUrl={selectedApp.training?.trainingCertificateUrl}
             />
           </div>
         </section>
@@ -1587,14 +1899,36 @@ export const ApplicationsReview = () => {
                 label="Training Certificate"
                 value={
                   getFileName(
-                    findEmployeeDoc(selectedApp.manager, ["training"])?.fileUrl,
+                    findEmployeeDoc(selectedApp.manager, [
+                      "training certificate",
+                    ])?.fileUrl,
                   ) || "-"
                 }
                 id="new_mgr_train"
                 isFile
                 fileUrl={
-                  findEmployeeDoc(selectedApp.manager, ["training"])?.fileUrl
+                  findEmployeeDoc(selectedApp.manager, ["training certificate"])
+                    ?.fileUrl
                 }
+                documentTarget={getEmployeeDocumentTarget(selectedApp.manager, [
+                  "training certificate",
+                ])}
+                verificationKey={
+                  getEmployeeDocumentTarget(selectedApp.manager, [
+                    "training certificate",
+                  ])?.id
+                    ? `manager:${
+                        getEmployeeDocumentTarget(selectedApp.manager, [
+                          "training certificate",
+                        ])?.id
+                      }`
+                    : "manager:training-certificate"
+                }
+                initialVerified={Boolean(
+                  getEmployeeDocumentTarget(selectedApp.manager, [
+                    "training certificate",
+                  ])?.isVerified,
+                )}
               />
               <ReviewItem
                 label="Kebele Support Letter"
@@ -1671,36 +2005,100 @@ export const ApplicationsReview = () => {
                 label="National ID / Passport"
                 value={
                   getFileName(
-                    findEmployeeDoc(selectedApp.manager, [
-                      "id",
-                      "passport",
-                      "kebele",
-                    ])?.fileUrl,
+                    findEmployeeDoc(
+                      selectedApp.manager,
+                      ["national id doc"],
+                      [
+                        "organization id",
+                        "organization identification",
+                        "passport",
+                        "kebele",
+                      ],
+                    )?.fileUrl,
                   ) || "-"
                 }
                 id="new_mgr_id"
                 isFile
                 fileUrl={
-                  findEmployeeDoc(selectedApp.manager, [
-                    "id",
+                  findEmployeeDoc(
+                    selectedApp.manager,
+                    ["national id doc"],
+                    [
+                      "organization id",
+                      "organization identification",
+                      "passport",
+                      "kebele",
+                    ],
+                  )?.fileUrl
+                }
+                documentTarget={getEmployeeDocumentTarget(
+                  selectedApp.manager,
+                  ["national id doc"],
+                  [
+                    "organization id",
+                    "organization identification",
                     "passport",
                     "kebele",
-                  ])?.fileUrl
+                  ],
+                )}
+              />
+              <ReviewItem
+                label="Renewed Kebele ID / passport"
+                value={
+                  getFileName(
+                    findEmployeeDoc(
+                      selectedApp.manager,
+                      ["passport or kabele doc"],
+                      [
+                        "organization id",
+                        "organization identification",
+                        "national id doc",
+                      ],
+                    )?.fileUrl,
+                  ) || "-"
                 }
+                id="new_mgr_kid"
+                isFile
+                fileUrl={
+                  findEmployeeDoc(
+                    selectedApp.manager,
+                    ["passport or kabele doc"],
+                    [
+                      "organization id",
+                      "organization identification",
+                      "national id doc",
+                    ],
+                  )?.fileUrl
+                }
+                documentTarget={getEmployeeDocumentTarget(
+                  selectedApp.manager,
+                  ["passport or kabele doc"],
+                  [
+                    "organization id",
+                    "organization identification",
+                    "national id doc",
+                  ],
+                )}
               />
               <ReviewItem
                 label="Org Identification"
                 value={
                   getFileName(
-                    findEmployeeDoc(selectedApp.manager, ["organization"])
-                      ?.fileUrl,
+                    findEmployeeDoc(
+                      selectedApp.manager,
+                      ["organization id", "organization identification"],
+                      ["passport", "kebele", "national"],
+                    )?.fileUrl,
                   ) || "-"
                 }
                 id="new_mgr_oid"
                 isFile
                 fileUrl={
-                  findEmployeeDoc(selectedApp.manager, ["organization"])
-                    ?.fileUrl
+                  findEmployeeDoc(
+                    selectedApp.manager,
+                    ["organization id", "organization identification"],
+                    ["passport", "kebele", "national"],
+                  )?.fileUrl
                 }
               />
             </div>
@@ -1807,15 +2205,37 @@ export const ApplicationsReview = () => {
                 id="new_ops_train"
                 value={
                   getFileName(
-                    findEmployeeDoc(selectedApp.operationsHead, ["training"])
-                      ?.fileUrl,
+                    findEmployeeDoc(selectedApp.operationsHead, [
+                      "training certificate",
+                    ])?.fileUrl,
                   ) || "-"
                 }
                 isFile
                 fileUrl={
-                  findEmployeeDoc(selectedApp.operationsHead, ["training"])
-                    ?.fileUrl
+                  findEmployeeDoc(selectedApp.operationsHead, [
+                    "training certificate",
+                  ])?.fileUrl
                 }
+                documentTarget={getEmployeeDocumentTarget(
+                  selectedApp.operationsHead,
+                  ["training certificate"],
+                )}
+                verificationKey={
+                  getEmployeeDocumentTarget(selectedApp.operationsHead, [
+                    "training certificate",
+                  ])?.id
+                    ? `operations:${
+                        getEmployeeDocumentTarget(selectedApp.operationsHead, [
+                          "training certificate",
+                        ])?.id
+                      }`
+                    : "operations:training-certificate"
+                }
+                initialVerified={Boolean(
+                  getEmployeeDocumentTarget(selectedApp.operationsHead, [
+                    "training certificate",
+                  ])?.isVerified,
+                )}
               />
               <ReviewItem
                 label="Kebele Support Letter"
@@ -1901,36 +2321,99 @@ export const ApplicationsReview = () => {
                 id="new_ops_id"
                 value={
                   getFileName(
-                    findEmployeeDoc(selectedApp.operationsHead, [
-                      "id",
-                      "passport",
-                      "kebele",
-                    ])?.fileUrl,
+                    findEmployeeDoc(
+                      selectedApp.operationsHead,
+                      ["national id doc"],
+                      [
+                        "organization id",
+                        "organization identification",
+                        "passport",
+                        "kebele",
+                      ],
+                    )?.fileUrl,
                   ) || "-"
                 }
                 isFile
                 fileUrl={
-                  findEmployeeDoc(selectedApp.operationsHead, [
-                    "id",
+                  findEmployeeDoc(
+                    selectedApp.operationsHead,
+                    ["national id doc"],
+                    [
+                      "organization id",
+                      "organization identification",
+                      "passport",
+                      "kebele",
+                    ],
+                  )?.fileUrl
+                }
+                documentTarget={getEmployeeDocumentTarget(
+                  selectedApp.operationsHead,
+                  ["national id doc"],
+                  [
+                    "organization id",
+                    "organization identification",
                     "passport",
                     "kebele",
-                  ])?.fileUrl
+                  ],
+                )}
+              />
+              <ReviewItem
+                label="Renewed Kebele ID / passport"
+                id="new_ops_kid"
+                value={
+                  getFileName(
+                    findEmployeeDoc(
+                      selectedApp.operationsHead,
+                      ["passport or kabele doc"],
+                      [
+                        "organization id",
+                        "organization identification",
+                        "national id doc",
+                      ],
+                    )?.fileUrl,
+                  ) || "-"
                 }
+                isFile
+                fileUrl={
+                  findEmployeeDoc(
+                    selectedApp.operationsHead,
+                    ["passport or kabele doc"],
+                    [
+                      "organization id",
+                      "organization identification",
+                      "national id doc",
+                    ],
+                  )?.fileUrl
+                }
+                documentTarget={getEmployeeDocumentTarget(
+                  selectedApp.operationsHead,
+                  ["passport or kabele doc"],
+                  [
+                    "organization id",
+                    "organization identification",
+                    "national id doc",
+                  ],
+                )}
               />
               <ReviewItem
                 label="Org Identification"
                 id="new_ops_oid"
                 value={
                   getFileName(
-                    findEmployeeDoc(selectedApp.operationsHead, [
-                      "organization",
-                    ])?.fileUrl,
+                    findEmployeeDoc(
+                      selectedApp.operationsHead,
+                      ["organization id", "organization identification"],
+                      ["passport", "kebele", "national"],
+                    )?.fileUrl,
                   ) || "-"
                 }
                 isFile
                 fileUrl={
-                  findEmployeeDoc(selectedApp.operationsHead, ["organization"])
-                    ?.fileUrl
+                  findEmployeeDoc(
+                    selectedApp.operationsHead,
+                    ["organization id", "organization identification"],
+                    ["passport", "kebele", "national"],
+                  )?.fileUrl
                 }
               />
             </div>
@@ -2124,41 +2607,69 @@ export const ApplicationsReview = () => {
                 id="new_admin_id"
                 value={
                   getFileName(
-                    findEmployeeDoc(selectedApp.adminHead, [
-                      "id",
-                      "passport",
-                      "kebele",
-                    ])?.fileUrl,
+                    findEmployeeDoc(
+                      selectedApp.adminHead,
+                      ["national id doc"],
+                      [
+                        "organization id",
+                        "organization identification",
+                        "passport",
+                        "kebele",
+                      ],
+                    )?.fileUrl,
                   ) || "-"
                 }
                 isFile
                 fileUrl={
-                  findEmployeeDoc(selectedApp.adminHead, [
-                    "id",
+                  findEmployeeDoc(
+                    selectedApp.adminHead,
+                    ["national id doc"],
+                    [
+                      "organization id",
+                      "organization identification",
+                      "passport",
+                      "kebele",
+                    ],
+                  )?.fileUrl
+                }
+                documentTarget={getEmployeeDocumentTarget(
+                  selectedApp.adminHead,
+                  ["national id doc"],
+                  [
+                    "organization id",
+                    "organization identification",
                     "passport",
                     "kebele",
-                  ])?.fileUrl
-                }
+                  ],
+                )}
               />
               <ReviewItem
                 label="Renewed Kebele ID / passport"
                 id="new_admin_kid"
                 value={
                   getFileName(
-                    findEmployeeDoc(selectedApp.adminHead, [
-                      "passport",
-                      "kebele",
-                      "id",
-                    ])?.fileUrl,
+                    findEmployeeDoc(
+                      selectedApp.adminHead,
+                      ["passport or kabele doc", "passport", "kebele"],
+                      [
+                        "organization id",
+                        "organization identification",
+                        "national id doc",
+                      ],
+                    )?.fileUrl,
                   ) || "-"
                 }
                 isFile
                 fileUrl={
-                  findEmployeeDoc(selectedApp.adminHead, [
-                    "passport",
-                    "kebele",
-                    "id",
-                  ])?.fileUrl
+                  findEmployeeDoc(
+                    selectedApp.adminHead,
+                    ["passport or kabele doc", "passport", "kebele"],
+                    [
+                      "organization id",
+                      "organization identification",
+                      "national id doc",
+                    ],
+                  )?.fileUrl
                 }
               />
               <ReviewItem
@@ -2166,14 +2677,20 @@ export const ApplicationsReview = () => {
                 id="new_admin_oid"
                 value={
                   getFileName(
-                    findEmployeeDoc(selectedApp.adminHead, ["organization"])
-                      ?.fileUrl,
+                    findEmployeeDoc(
+                      selectedApp.adminHead,
+                      ["organization id", "organization identification"],
+                      ["passport", "kebele", "national id doc"],
+                    )?.fileUrl,
                   ) || "-"
                 }
                 isFile
                 fileUrl={
-                  findEmployeeDoc(selectedApp.adminHead, ["organization"])
-                    ?.fileUrl
+                  findEmployeeDoc(
+                    selectedApp.adminHead,
+                    ["organization id", "organization identification"],
+                    ["passport", "kebele", "national id doc"],
+                  )?.fileUrl
                 }
               />
             </div>
@@ -2899,69 +3416,239 @@ export const ApplicationsReview = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
                 <ReviewItem
                   label="Fingerprint from police"
-                  id="ren_adm_finger"
-                  value="adm_finger.pdf"
+                  id="new_admin_finger"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.adminHead, ["fingerprint"])
+                        ?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.adminHead, ["fingerprint"])
+                      ?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="Medical result"
-                  id="ren_adm_med"
-                  value="adm_med.pdf"
+                  id="new_admin_med"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.adminHead, ["medical"])
+                        ?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.adminHead, ["medical"])?.fileUrl
+                  }
                 />
                 <ReviewItem
-                  label="Training certificate"
-                  id="ren_adm_train"
-                  value="adm_train.pdf"
+                  label="training certificate"
+                  id="new_admin_train"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.adminHead, [
+                        "training certificate",
+                      ])?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.adminHead, [
+                      "training certificate",
+                    ])?.fileUrl
+                  }
+                  documentTarget={getEmployeeDocumentTarget(
+                    selectedApp.adminHead,
+                    ["training certificate"],
+                  )}
+                  verificationKey={
+                    getEmployeeDocumentTarget(selectedApp.adminHead, [
+                      "training certificate",
+                    ])?.id
+                      ? `admin:${
+                          getEmployeeDocumentTarget(selectedApp.adminHead, [
+                            "training certificate",
+                          ])?.id
+                        }`
+                      : "admin:training-certificate"
+                  }
+                  initialVerified={Boolean(
+                    getEmployeeDocumentTarget(selectedApp.adminHead, [
+                      "training certificate",
+                    ])?.isVerified,
+                  )}
                 />
                 <ReviewItem
-                  label="Support letter (Kebele)"
-                  id="ren_adm_kebele"
-                  value="adm_kb.pdf"
+                  label="support letter from kebele"
+                  id="new_admin_kebele"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.adminHead, [
+                        "support",
+                        "kebele",
+                      ])?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.adminHead, [
+                      "support",
+                      "kebele",
+                    ])?.fileUrl
+                  }
                 />
                 <ReviewItem
-                  label="Proof of collateral"
-                  id="ren_adm_coll"
-                  value="adm_coll.pdf"
+                  label="proof of collateral"
+                  id="new_admin_collateral"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.adminHead, ["collateral"])
+                        ?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.adminHead, ["collateral"])
+                      ?.fileUrl
+                  }
                 />
                 <ReviewItem
-                  label="Exp (Admin 2+ yr / Degree)"
-                  id="ren_adm_exp"
-                  value="adm_exp.pdf"
+                  label="Work experience (Admin 2+ Years / Degree)"
+                  id="new_admin_exp"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.adminHead, ["experience"])
+                        ?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.adminHead, ["experience"])
+                      ?.fileUrl
+                  }
                 />
                 <ReviewItem
-                  label="Resignation record"
-                  id="ren_adm_resign"
-                  value="adm_rs.pdf"
+                  label="Dismissal / resignation record"
+                  id="new_admin_resign"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.adminHead, ["resignation"])
+                        ?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.adminHead, ["resignation"])
+                      ?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="Educational certificate"
-                  id="ren_adm_edu"
-                  value="adm_edu.pdf"
+                  id="new_admin_edu"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.adminHead, ["education"])
+                        ?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.adminHead, ["education"])
+                      ?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="National Id"
-                  id="ren_adm_nid"
-                  value="adm_nid.pdf"
+                  id="new_admin_id"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(
+                        selectedApp.adminHead,
+                        ["national id doc"],
+                        [
+                          "organization id",
+                          "organization identification",
+                          "passport",
+                          "kebele",
+                        ],
+                      )?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(
+                      selectedApp.adminHead,
+                      ["national id doc"],
+                      [
+                        "organization id",
+                        "organization identification",
+                        "passport",
+                        "kebele",
+                      ],
+                    )?.fileUrl
+                  }
+                  documentTarget={getEmployeeDocumentTarget(
+                    selectedApp.adminHead,
+                    ["national id doc"],
+                    [
+                      "organization id",
+                      "organization identification",
+                      "passport",
+                      "kebele",
+                    ],
+                  )}
                 />
                 <ReviewItem
-                  label="Renewed ID/Passport"
-                  id="ren_adm_kid"
-                  value="adm_kid.pdf"
+                  label="Renewed Kebele ID / passport"
+                  id="new_admin_kid"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(
+                        selectedApp.adminHead,
+                        ["renewed", "passport", "kebele"],
+                        [
+                          "organization id",
+                          "organization identification",
+                          "national id doc",
+                        ],
+                      )?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(
+                      selectedApp.adminHead,
+                      ["renewed", "passport", "kebele"],
+                      [
+                        "organization id",
+                        "organization identification",
+                        "national id doc",
+                      ],
+                    )?.fileUrl
+                  }
                 />
                 <ReviewItem
-                  label="Org identification"
-                  id="ren_adm_oid"
-                  value="adm_oid.pdf"
+                  label="Organization identification"
+                  id="new_admin_oid"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(
+                        selectedApp.adminHead,
+                        ["organization id", "organization identification"],
+                        ["passport", "kebele", "national id doc"],
+                      )?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(
+                      selectedApp.adminHead,
+                      ["organization id", "organization identification"],
+                      ["passport", "kebele", "national id doc"],
+                    )?.fileUrl
+                  }
                 />
               </div>
             </div>
@@ -3425,7 +4112,30 @@ export const ApplicationsReview = () => {
     agencyName: "",
   });
 
+  // Action modal state for approve/reject with remarks
+  const [actionModal, setActionModal] = useState<{
+    isOpen: boolean;
+    type?: "approve" | "reject" | "suspend" | "correction" | "under_review";
+    appId?: string | null;
+    agencyName?: string;
+    remarks?: string;
+  }>({
+    isOpen: false,
+    type: undefined,
+    appId: null,
+    agencyName: "",
+    remarks: "",
+  });
+
   const [isActionLoading, setIsActionLoading] = useState(false);
+  const [activeActionMenuId, setActiveActionMenuId] = useState<string | null>(
+    null,
+  );
+  // Pop-up modal state for actions (replaces inline dropdown)
+  const [actionPopup, setActionPopup] = useState<{
+    isOpen: boolean;
+    app?: any | null;
+  }>({ isOpen: false, app: null });
 
   // Function to trigger the dialog from the table buttons
   const handleOpenConfirm = (
@@ -3460,6 +4170,83 @@ export const ApplicationsReview = () => {
       setIsActionLoading(false);
     }
   };
+
+  const handleListActionChange = (app: any, action: string) => {
+    if (!action) return;
+
+    setActiveActionMenuId(null);
+
+    if (action === "preview") {
+      // open the audit preview modal (selection screen)
+      setSelectedApp(app);
+      setViewingStage("selection");
+      return;
+    }
+
+    if (action === "under_review") {
+      // open modal to allow remarks / scheduling notes for under review status
+      setActionModal({
+        isOpen: true,
+        type: "under_review",
+        appId: String(app.id),
+        agencyName: app.agency,
+        remarks: "",
+      });
+      return;
+    }
+
+    if (action === "correction") {
+      // open correction remarks modal
+      setActionModal({
+        isOpen: true,
+        type: "correction",
+        appId: String(app.id),
+        agencyName: app.agency,
+        remarks: "",
+      });
+      return;
+    }
+
+    if (action === "approve") {
+      if (hasUnverifiedApplicationDocuments(app)) {
+        showToast(
+          "error",
+          "Verify every required document before approving this application.",
+        );
+        return;
+      }
+
+      // Open action modal to allow entering optional remarks before approving
+      setActionModal({
+        isOpen: true,
+        type: "approve",
+        appId: String(app.id),
+        agencyName: app.agency,
+        remarks: "",
+      });
+      return;
+    }
+
+    if (action === "reject") {
+      // Open action modal to allow entering rejection remarks
+      setActionModal({
+        isOpen: true,
+        type: "reject",
+        appId: String(app.id),
+        agencyName: app.agency,
+        remarks: "",
+      });
+      return;
+    }
+
+    if (action === "assign_inspection") {
+      setAssignModal({ isOpen: true, app });
+      return;
+    }
+  };
+
+  void activeActionMenuId;
+  void handleListActionChange;
 
   return (
     <div className="space-y-8">
@@ -3526,6 +4313,7 @@ export const ApplicationsReview = () => {
             <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider font-bold">
               <tr>
                 <th className="px-8 py-6">{t.table.appId}</th>
+                <th className="px-8 py-6">{t.table.applicant}</th>
                 <th className="px-8 py-6">{t.table.agency}</th>
                 <th className="px-8 py-6">{t.table.type}</th>
                 <th className="px-8 py-6">{t.table.date}</th>
@@ -3543,6 +4331,9 @@ export const ApplicationsReview = () => {
                     <span className="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
                       {app.id}
                     </span>
+                  </td>
+                  <td className="px-8 py-6 text-sm text-gray-700 font-semibold">
+                    {app.applicantFullName || app.user?.fullName || "-"}
                   </td>
                   <td className="px-8 py-6">
                     <div className="flex items-center space-x-3">
@@ -3582,52 +4373,21 @@ export const ApplicationsReview = () => {
                       </span>
                     </div>
                   </td>
-                  <td className="px-8 py-6 text-right">
-                    <div className="flex items-center justify-end space-x-2">
-                      <button
-                        onClick={() => {
-                          setSelectedApp(app);
-                          setViewingStage("selection");
-                        }}
-                        className="flex items-center space-x-2 px-6 py-2.5 bg-blue-600 text-white rounded-2xl font-black text-xs hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 active:scale-95"
-                      >
-                        <Eye className="w-4 h-4" />
-                        <span>Review</span>
-                      </button>
-                      {/* Approve - Triggers Dialog */}
-                      <button
-                        onClick={() => {
-                          if (!isApplicationReadyForApproval(app)) {
-                            setSelectedApp(app);
-                            setViewingStage("selection");
-                            showToast(
-                              "error",
-                              "Approval blocked: verify every required document first. Open each file and click Verify, then try approving again.",
-                            );
-                            return;
-                          }
+                  <td className="px-8 py-6 text-right relative">
+                    <div className="flex items-center justify-end">
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setActionPopup({ isOpen: true, app })}
+                          className="inline-flex items-center space-x-2 px-4 py-2 bg-white border border-gray-200 text-primary rounded-xl font-black text-xs hover:border-primary hover:shadow-sm transition-all"
+                          title="Choose action"
+                        >
+                          <span>Actions</span>
+                          <Clock className="w-4 h-4" />
+                        </button>
 
-                          handleOpenConfirm(app.id, app.agency, "approve");
-                        }}
-                        className="p-2.5 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white transition-all shadow-sm"
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                      </button>
-                      {/* Reject - Triggers Dialog */}
-                      <button
-                        onClick={() =>
-                          handleOpenConfirm(app.id, app.agency, "reject")
-                        }
-                        className="p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
-                      >
-                        <XCircle className="w-4 h-4" />
-                      </button>
-                      <button
-                        className="p-2.5 bg-amber-50 text-amber-600 rounded-xl hover:bg-amber-600 hover:text-white transition-all shadow-sm"
-                        title="Set Pending"
-                      >
-                        <Clock className="w-4 h-4" />
-                      </button>
+                        {/* actions dropdown replaced by centered pop-up modal */}
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -3650,6 +4410,254 @@ export const ApplicationsReview = () => {
               : "Reject Application"
           }
           message={`Are you sure you want to ${confirmState.type} the application for ${confirmState.agencyName}? This action will update their status immediately.`}
+        />
+        {/* Centered action pop-up modal (replaces dropdown) */}
+        <AnimatePresence>
+          {actionPopup.isOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[70] flex items-center justify-center p-6"
+            >
+              <div
+                className="absolute inset-0 bg-black/30"
+                onClick={() => setActionPopup({ isOpen: false, app: null })}
+              />
+              <motion.div
+                initial={{ y: 12, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 12, opacity: 0 }}
+                className="relative z-50 w-full max-w-2xl rounded-2xl border-4"
+                style={{ borderColor: "#02305E", background: "#02305E" }}
+              >
+                {/* gold ring with same thickness */}
+                <div
+                  className="rounded-xl border-4"
+                  style={{ borderColor: "#FFD700", padding: "8px" }}
+                >
+                  {/* inner content area: white background with same border thickness */}
+                  <div
+                    className="bg-white rounded-lg p-8 border-4 min-h-[320px]"
+                    style={{ borderColor: "#02305E" }}
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-black text-lg text-[#02305E]">
+                        Actions for {actionPopup.app?.agency}
+                      </h4>
+                      <button
+                        onClick={() =>
+                          setActionPopup({ isOpen: false, app: null })
+                        }
+                        className="p-2 rounded-lg text-[#02305E] hover:bg-[#02305E]/10 cursor-pointer"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="grid gap-2">
+                      {[
+                        { label: "Preview", value: "preview" },
+                        {
+                          label: "Assign Inspection",
+                          value: "assign_inspection",
+                        },
+                        { label: "Under review", value: "under_review" },
+                        { label: "Approve", value: "approve" },
+                        { label: "Reject", value: "reject" },
+                        { label: "Correction", value: "correction" },
+                      ].map((item) => {
+                        const Icon = actionIconMap[item.value];
+                        return (
+                          <button
+                            key={item.value}
+                            type="button"
+                            onClick={() => {
+                              setActionPopup({ isOpen: false, app: null });
+                              handleListActionChange(
+                                actionPopup.app,
+                                item.value,
+                              );
+                            }}
+                            className="w-full text-left px-4 py-4 rounded-lg flex items-center text-sm font-bold cursor-pointer active:scale-95 active:opacity-90 focus:outline-none"
+                            style={{
+                              background: "#FFFFFF",
+                              color: "#02305E",
+                              border: "2px solid #02305E",
+                            }}
+                          >
+                            {Icon && (
+                              <Icon
+                                className="w-5 h-5 mr-3"
+                                style={{ color: "#02305E" }}
+                              />
+                            )}
+                            <span>{item.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="mt-4 flex justify-end">
+                      <button
+                        onClick={() =>
+                          setActionPopup({ isOpen: false, app: null })
+                        }
+                        className="px-6 py-3 rounded-lg font-bold cursor-pointer"
+                        style={{
+                          border: "4px solid #02305E",
+                          color: "#02305E",
+                          background: "#FFFFFF",
+                        }}
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        {/* Action modal for entering remarks and updating status */}
+        <AnimatePresence>
+          {actionModal.isOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[60] flex items-center justify-center p-8"
+            >
+              <div
+                className="absolute inset-0 bg-black/30"
+                onClick={() => setActionModal({ isOpen: false })}
+              />
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 20, opacity: 0 }}
+                className="bg-white rounded-2xl shadow-2xl z-50 w-full max-w-3xl p-8 max-h-[80vh] overflow-auto"
+              >
+                <h3 className="text-lg font-black mb-2">
+                  {actionModal.type === "approve"
+                    ? "Approve Application"
+                    : actionModal.type === "reject"
+                      ? "Reject Application"
+                      : actionModal.type === "under_review"
+                        ? "Mark Under Review"
+                        : "Request Correction"}
+                </h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  Update status for{" "}
+                  <span className="font-bold">{actionModal.agencyName}</span>.
+                  Add optional remarks below.
+                </p>
+                <textarea
+                  value={actionModal.remarks}
+                  onChange={(e) =>
+                    setActionModal((s) => ({ ...s, remarks: e.target.value }))
+                  }
+                  placeholder="Optional remarks..."
+                  className="w-full min-h-[220px] border rounded-lg p-4 text-sm mb-4"
+                />
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={() => setActionModal({ isOpen: false })}
+                    className="px-4 py-2 rounded-lg border"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!actionModal.appId || !actionModal.type) return;
+                      setIsActionLoading(true);
+                      try {
+                        if (actionModal.type === "approve") {
+                          await apiRequest(
+                            `/applications/${actionModal.appId}/approve`,
+                            {
+                              method: "POST",
+                              body: JSON.stringify({
+                                remarks: actionModal.remarks,
+                              }),
+                            },
+                          );
+                          showToast("success", "Application approved.");
+                        } else if (actionModal.type === "reject") {
+                          await apiRequest(
+                            `/applications/${actionModal.appId}/reject`,
+                            {
+                              method: "POST",
+                              body: JSON.stringify({
+                                remarks: actionModal.remarks,
+                              }),
+                            },
+                          );
+                          showToast("success", "Application rejected.");
+                        } else if (actionModal.type === "correction") {
+                          await apiRequest(
+                            `/applications/${actionModal.appId}/correction`,
+                            {
+                              method: "POST",
+                              body: JSON.stringify({
+                                remarks: actionModal.remarks,
+                              }),
+                            },
+                          );
+                          showToast("success", "Correction requested.");
+                        } else if (actionModal.type === "under_review") {
+                          await apiRequest(
+                            `/applications/${actionModal.appId}/under-review`,
+                            {
+                              method: "POST",
+                              body: JSON.stringify({
+                                remarks: actionModal.remarks,
+                              }),
+                            },
+                          );
+                          showToast(
+                            "success",
+                            "Application marked under review.",
+                          );
+                        }
+                        setActionModal({ isOpen: false });
+                        await fetchApplications();
+                      } catch (err: any) {
+                        console.error("Action failed", err);
+                        showToast(
+                          "error",
+                          err?.message ||
+                            "Failed to update application status.",
+                        );
+                      } finally {
+                        setIsActionLoading(false);
+                      }
+                    }}
+                    className="px-4 py-2 rounded-lg bg-primary text-white font-bold"
+                  >
+                    {actionModal.type === "approve"
+                      ? "Approve"
+                      : actionModal.type === "reject"
+                        ? "Reject"
+                        : actionModal.type === "under_review"
+                          ? "Mark Under Review"
+                          : "Request Correction"}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        {/* Assign inspection modal for admin */}
+        <AssignInspectionModal
+          isOpen={assignModal.isOpen}
+          applicationId={assignModal.app?.id}
+          onClose={() => setAssignModal({ isOpen: false, app: null })}
+          onAssigned={async () => {
+            setAssignModal({ isOpen: false, app: null });
+            showToast("success", "Inspection scheduled.");
+            await fetchApplications();
+          }}
         />
       </div>
       {/* Review Modal */}

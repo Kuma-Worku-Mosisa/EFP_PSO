@@ -155,11 +155,6 @@ export const applicationSchema = z
     manager: personnelSchema,
     ops: personnelSchema,
     admin: personnelSchema,
-
-    // Flat fields for legacy or UI tracking
-    managerName: z.string().optional(),
-    opsHeadName: z.string().optional(),
-    adminHeadName: z.string().optional(),
   })
   .refine(
     (val) => {
@@ -1104,6 +1099,7 @@ const PersonnelSection = ({
   onPositionChange,
   watch,
   setValue,
+  openedFields,
 }: {
   title: string;
   prefix: string;
@@ -1126,8 +1122,10 @@ const PersonnelSection = ({
   onPositionChange?: (positionId: number) => void;
   setValue?: any;
   watch?: any;
+  openedFields?: string[];
 }) => {
   const isManagerSection = prefix === "manager";
+  const correctionOpenedFields = openedFields || [];
   const personnelDocs = [
     { label: "Fingerprint from Police", key: "fingerprint_doc" },
     { label: "Medical Result", key: "medical_doc" },
@@ -1557,6 +1555,9 @@ const PersonnelSection = ({
               onDelete={() => onDelete(`${prefix}_${doc.key}`)}
               onView={onView}
               disabled={isFormLocked}
+              isOpenedForEdit={correctionOpenedFields.includes(
+                `${prefix}_${doc.key}`,
+              )}
             />
           ))}
         </div>
@@ -1594,10 +1595,26 @@ export const NewApplication = () => {
   >(null);
   const [accessBlockedTitle, setAccessBlockedTitle] = React.useState("");
   const [accessBlockedMessage, setAccessBlockedMessage] = React.useState("");
-  const [openedFields] = React.useState<string[]>([
-    "trade_license",
-    "kebele_id_m_2024",
-  ]); // Mock admin opened fields
+  const [openedFields] = React.useState<string[]>(() => {
+    const defaultOpenedFields = ["trade_license", "kebele_id_m_2024"];
+
+    if (typeof window === "undefined") {
+      return defaultOpenedFields;
+    }
+
+    try {
+      const stored = window.localStorage.getItem(
+        "applicationCorrectionUploadFields",
+      );
+      const parsed = stored ? (JSON.parse(stored) as string[]) : [];
+
+      return Array.from(
+        new Set([...defaultOpenedFields, ...parsed.filter(Boolean)]),
+      );
+    } catch {
+      return defaultOpenedFields;
+    }
+  });
   const [uploadedFiles, setUploadedFiles] = React.useState<
     Record<string, File | null>
   >({});
@@ -1862,10 +1879,6 @@ export const NewApplication = () => {
       shouldTouch: false,
     });
     setValue("manager.faydaId", currentUser.faydaId ?? "", {
-      shouldDirty: false,
-      shouldTouch: false,
-    });
-    setValue("managerName", currentUser.fullName ?? "", {
       shouldDirty: false,
       shouldTouch: false,
     });
@@ -2396,18 +2409,6 @@ export const NewApplication = () => {
         trainingProvider: data.trainingProvider,
         totalTraineesMale: Number(data.totalTraineesMale || 0),
         totalTraineesFemale: Number(data.totalTraineesFemale || 0),
-        managerName:
-          normalizeText(data.managerName) ||
-          normalizeText(data.manager?.fullName) ||
-          "manager name missing",
-        opsHeadName:
-          normalizeText(data.opsHeadName) ||
-          normalizeText(data.ops?.fullName) ||
-          "ops head name missing",
-        adminHeadName:
-          normalizeText(data.adminHeadName) ||
-          normalizeText(data.admin?.fullName) ||
-          "admin head name missing",
         manager: data.manager,
         ops: data.ops,
         admin: data.admin,
@@ -3028,6 +3029,7 @@ export const NewApplication = () => {
                   onUpload={(file) => handleUpload("vehicle_rent", file)}
                   onDelete={() => handleDelete("vehicle_rent")}
                   onView={handleView}
+                  isOpenedForEdit={openedFields.includes("vehicle_rent")}
                 />
                 <FileUpload
                   label="Notarized House Rent/Ownership"
@@ -3035,6 +3037,7 @@ export const NewApplication = () => {
                   onUpload={(file) => handleUpload("house_rent", file)}
                   onDelete={() => handleDelete("house_rent")}
                   onView={handleView}
+                  isOpenedForEdit={openedFields.includes("house_rent")}
                 />
               </div>
 
@@ -3048,6 +3051,7 @@ export const NewApplication = () => {
                     onUpload={(file) => handleUpload("uniform_sample", file)}
                     onDelete={() => handleDelete("uniform_sample")}
                     onView={handleView}
+                    isOpenedForEdit={openedFields.includes("uniform_sample")}
                   />
                   <FileUpload
                     label=" Organization Employee ID Sample (Front & Back)"
@@ -3056,6 +3060,7 @@ export const NewApplication = () => {
                     onUpload={(file) => handleUpload("id_sample", file)}
                     onDelete={() => handleDelete("id_sample")}
                     onView={handleView}
+                    isOpenedForEdit={openedFields.includes("id_sample")}
                   />
                   <FileUpload
                     label="Employment Form"
@@ -3064,6 +3069,7 @@ export const NewApplication = () => {
                     onUpload={(file) => handleUpload("employment_form", file)}
                     onDelete={() => handleDelete("employment_form")}
                     onView={handleView}
+                    isOpenedForEdit={openedFields.includes("employment_form")}
                   />
                   <FileUpload
                     label="Employment Warranty Form"
@@ -3072,6 +3078,7 @@ export const NewApplication = () => {
                     onUpload={(file) => handleUpload("warranty_form", file)}
                     onDelete={() => handleDelete("warranty_form")}
                     onView={handleView}
+                    isOpenedForEdit={openedFields.includes("warranty_form")}
                   />
                   <FileUpload
                     label="Logo of Organization"
@@ -3080,6 +3087,7 @@ export const NewApplication = () => {
                     onUpload={(file) => handleUpload("logo", file)}
                     onDelete={() => handleDelete("logo")}
                     onView={handleView}
+                    isOpenedForEdit={openedFields.includes("logo")}
                   />
                 </div>
               </div>
@@ -3187,6 +3195,7 @@ export const NewApplication = () => {
                     onUpload={(file) => handleUpload("training_manual", file)}
                     onDelete={() => handleDelete("training_manual")}
                     onView={handleView}
+                    isOpenedForEdit={openedFields.includes("training_manual")}
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -3197,6 +3206,7 @@ export const NewApplication = () => {
                     onUpload={(file) => handleUpload("training_cert", file)}
                     onDelete={() => handleDelete("training_cert")}
                     onView={handleView}
+                    isOpenedForEdit={openedFields.includes("training_cert")}
                   />
                 </div>
               </div>

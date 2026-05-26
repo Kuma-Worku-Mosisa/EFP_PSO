@@ -16,7 +16,12 @@ export const authorize = (allowedRoles: string[]) => {
     const userRoles: string[] = req.user.roles || [];
 
     // 3. Check if the user has at least one of the required roles
-    const hasPermission = userRoles.some((role) => allowedRoles.includes(role));
+    const normalizedAllowedRoles = allowedRoles.map((role) =>
+      String(role).toLowerCase(),
+    );
+    const hasPermission = userRoles.some((role) =>
+      normalizedAllowedRoles.includes(String(role).toLowerCase()),
+    );
 
     if (!hasPermission) {
       return ApiResponse.error(

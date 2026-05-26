@@ -53,6 +53,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // 3. Real Login: Now takes the user object and token from your backend
   const login = (userData: any, authToken: string) => {
+    const normalizedRoles = Array.isArray(userData.roles)
+      ? userData.roles.map((role: string) => String(role).toLowerCase())
+      : [];
+
     // Generate initials automatically from the real fullName
     const initials = userData.fullName
       ? userData.fullName
@@ -67,7 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       fullName: userData.fullName,
       email: userData.email,
       username: userData.username,
-      roles: userData.roles || [],
+      roles: normalizedRoles,
       initials: initials,
       avatar: userData.avatar ?? userData.photoUrl ?? userData.photo_url,
       photoUrl: userData.photoUrl ?? userData.photo_url ?? userData.avatar,
@@ -116,7 +120,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       fullName: updated.fullName,
       email: updated.email,
       username: updated.username,
-      roles: updated.roles || (user?.roles ?? []),
+      roles: Array.isArray(updated.roles)
+        ? updated.roles.map((role: string) => String(role).toLowerCase())
+        : (user?.roles ?? []),
       initials,
       avatar: updated.photoUrl ?? updated.avatar ?? user?.avatar,
       photoUrl: updated.photoUrl ?? updated.avatar ?? user?.photoUrl,

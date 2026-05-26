@@ -54,11 +54,6 @@ export const createApplicationSchema = z.object({
     ),
     trainingProvider: z.string().min(3, "Training provider name is required"),
 
-    // Step 5: Personnel Names
-    managerName: z.string().min(3, "Manager name is required"),
-    opsHeadName: z.string().min(3, "Operations head name is required"),
-    adminHeadName: z.string().min(3, "Admin/Finance head name is required"),
-
     // Step 5: Full Personnel Objects
     manager: z
       .object({

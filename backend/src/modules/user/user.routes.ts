@@ -39,7 +39,8 @@ router.put(
 router.get(
   "/",
   authenticate,
-  authorize(["system_admin", "super_admin"]),
+  // Allow administrators to list users for operational tasks (e.g., assigning reviewers)
+  authorize(["system_admin", "super_admin", "admin"]),
   getAllUsers,
 );
 router.put(
@@ -52,7 +53,7 @@ router.put(
 router.get(
   "/roles",
   authenticate,
-  authorize(["system_admin", "super_admin"]),
+  authorize(["system_admin", "super_admin", "admin"]),
   getRolesHandler,
 );
 // Access control revocation route

@@ -16,6 +16,8 @@ import certificationRoutes from "./modules/certification/certification.routes";
 import settingsRoutes from "./modules/settings/system-settings.routes";
 import adminRoutes from "./modules/admin/audit.routes";
 import agreementRouter from "./modules/agreement/agreement.routes";
+import faqRoutes from "./modules/faqs/faq.routes";
+import inspectionRoutes from "./modules/inspection/inspection.routes";
 
 const app = express();
 
@@ -64,6 +66,8 @@ app.use("/api/certifications", certificationRoutes);
 app.use("/api/system-settings", settingsRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/agreements", agreementRouter);
+app.use("/api/inspections", inspectionRoutes);
+app.use("/api", faqRoutes);
 
 // 6. Health Check / Root Route
 app.get("/", (req, res) => {

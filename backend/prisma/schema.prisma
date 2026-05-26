@@ -108,6 +108,7 @@ model User {
   incidentReports IncidentReport[]             @relation("IncidentReporter")
   issuedPenalties IncidentPenalty[]            @relation("PenaltyIssuer")
   historyLogs     ApplicationTrackingHistory[]
+  inspectionCommittees InspectionCommittee[]
   createdFaqs     Faq[]                        @relation("FaqCreator")
 
   @@map("users")
@@ -159,16 +160,6 @@ model Organization {
   numberOfComputers Int?     @map("number_of_computers")
   hasStoreHouse     Boolean  @default(false) @map("has_store_house")
   capitalAmount     Decimal? @map("capital_amount") @db.Decimal(18, 2)
-
-  // Personnel Names (Step 5) - ADD THESE FIELDS
-  managerName          String? @map("manager_name") @db.VarChar(255)
-  operationHeadName    String? @map("ops_head_name") @db.VarChar(255)
-  adminFinanceHeadName String? @map("admin_head_name") @db.VarChar(255)
-
-  // Assets/Media
-  logoUrl          String? @map("logo_url") @db.VarChar(Max)
-  uniformSampleUrl String? @map("uniform_sample_url") @db.VarChar(Max)
-  idCardSampleUrl  String? @map("id_card_sample_url") @db.VarChar(Max)
 
   // Status & Metadata
   status    String?  @default("Pending") @map("organization_status") @db.VarChar(50)
@@ -398,8 +389,6 @@ model OrganizationTrainingDetail {
   trainingStartDate      DateTime @map("training_start_date") @db.Date
   trainingEndDate        DateTime @map("training_end_date") @db.Date
   trainingDurationDays   Int?     @map("training_duration_days")
-  trainingManualUrl      String?  @map("training_manual_url") @db.VarChar(Max)
-  trainingCertificateUrl String?  @map("training_certificate_url") @db.VarChar(Max)
   totalTraineesMale      Int      @default(0) @map("total_trainees_male")
   totalTraineesFemale    Int      @default(0) @map("total_trainees_female")
   createdAt              DateTime @default(now()) @map("created_at") @db.DateTime
@@ -432,13 +421,16 @@ model Inspection {
 }
 
 model InspectionCommittee {
-  id           Int     @id @default(autoincrement()) @map("committee_id")
-  inspectionId Int     @map("inspection_id")
-  expertName   String  @map("expert_name") @db.VarChar(255)
-  expertRole   String? @map("expert_role") @db.VarChar(100)
-  signatureUrl String  @map("signature_url") @db.VarChar(Max)
+  id           Int       @id @default(autoincrement()) @map("committee_id")
+  inspectionId Int       @map("inspection_id")
+  userId       Int       @map("user_id")
+  expertName   String    @map("expert_name") @db.VarChar(255)
+  expertRole   String?   @map("expert_role") @db.VarChar(100)
+  signatureUrl String?   @map("signature_url") @db.VarChar(Max)
+  signedAt     DateTime? @map("signed_at") @db.DateTime
 
-  inspection Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade, map: "FK_Committee_Inspections")
+  inspection   Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Committee_Inspections")
+  user         User       @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Committee_Users")
 
   @@map("inspection_committee")
 }
@@ -528,11 +520,11 @@ model IncidentPenalty {
 
 model Faq {
   id              Int      @id @default(autoincrement()) @map("faq_id")
-  categoryType    String   @map("category_type") @db.VarChar(100)
-  questionText    String   @map("question_text") @db.VarChar(Max)
-  answerText      String   @map("answer_text") @db.VarChar(Max)
+  categoryType    String   @map("category_type") @db.NVarChar(100)
+  questionText    String   @map("question_text") @db.NVarChar(Max)
+  answerText      String   @map("answer_text") @db.NVarChar(Max)
   isPublished     Boolean  @default(true) @map("is_published")
-  displayOrder    Int      @default(0) @map("display_order")
+  hitCount        Int      @default(0) @map("hit_count")
   createdByUserId Int?     @map("created_by_user_id")
   createdAt       DateTime @default(now()) @map("created_at") @db.DateTime
   updatedAt       DateTime @default(now()) @map("updated_at") @db.DateTime

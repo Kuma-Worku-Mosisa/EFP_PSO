@@ -30,7 +30,11 @@ const getAuditContext = (req: Request) => {
  */
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
-    const users = await UserService.getAllUsers();
+    const roleFilter =
+      typeof req.query.role === "string" ? req.query.role : null;
+    const users = roleFilter
+      ? await UserService.getUsersByRole(roleFilter)
+      : await UserService.getAllUsers();
     return ApiResponse.success(res, "Users retrieved successfully", users);
   } catch (error: any) {
     return ApiResponse.error(

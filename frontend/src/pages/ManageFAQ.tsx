@@ -1,72 +1,263 @@
-import React, { useState } from 'react';
-import { useLanguage } from '../context/LanguageContext';
-import { HelpCircle, Plus, Trash2, Edit, Save, Search, GripVertical, X } from 'lucide-react';
-import { motion, Reorder, AnimatePresence } from 'motion/react';
+//filepath: frontend/src/pages/ManageFAQ.tsx
+import React, { useEffect, useState } from "react";
+import { useLanguage } from "../context/LanguageContext";
+import {
+  HelpCircle,
+  Plus,
+  Trash2,
+  Edit,
+  Save,
+  Search,
+  GripVertical,
+  X,
+  Eye,
+} from "lucide-react";
+import { motion, Reorder, AnimatePresence } from "motion/react";
+import { apiRequest } from "../lib/api";
+import { AutoDismissToast, ToastType } from "../components/AutoDismissToast";
+import { ConfirmDialog } from "../components/ConfirmDialog";
+
+type FaqRow = {
+  id: number;
+  q: string;
+  a: string;
+  cat: string;
+  isPublished: boolean;
+  hitCount: number;
+};
+
+type FaqApiRow = {
+  id: number;
+  categoryType: string;
+  questionText: string;
+  answerText: string;
+  isPublished: boolean;
+  hitCount?: number;
+};
+
+const FAQ_CATEGORIES = [
+  "all",
+  "general",
+  "licensing",
+  "technical",
+  "payment",
+] as const;
+
+const normalizeCategory = (value: string) => value.trim().toLowerCase();
+
+const mapFaqFromApi = (faq: FaqApiRow): FaqRow => ({
+  id: faq.id,
+  q: faq.questionText,
+  a: faq.answerText,
+  cat: normalizeCategory(faq.categoryType || "general"),
+  isPublished: Boolean(faq.isPublished),
+  hitCount: faq.hitCount ?? 0,
+});
+
+const toFaqPayload = (faq: {
+  q: string;
+  a: string;
+  cat: string;
+  isPublished: boolean;
+}) => ({
+  categoryType: faq.cat,
+  questionText: faq.q,
+  answerText: faq.a,
+  isPublished: faq.isPublished,
+});
 
 export const ManageFAQ = () => {
   const { language, t } = useLanguage();
-  const isAm = language === 'am';
-  
-  const [faqs, setFaqs] = useState(t.faq.items);
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const isAm = language === "am";
+
+  const [faqs, setFaqs] = useState<FaqRow[]>([]);
+  const [activeCategory, setActiveCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [isAdding, setIsAdding] = useState(false);
-  const [editingFaq, setEditingFaq] = useState<any>(null);
-  const [formData, setFormData] = useState({ q: '', a: '', cat: 'general' });
-  const [showSaveToast, setShowSaveToast] = useState(false);
+  const [editingFaq, setEditingFaq] = useState<FaqRow | null>(null);
+  const [formData, setFormData] = useState({
+    q: "",
+    a: "",
+    cat: "general",
+    isPublished: true,
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [toastState, setToastState] = useState<{
+    isOpen: boolean;
+    type: ToastType;
+    message: string;
+  }>({
+    isOpen: false,
+    type: "success",
+    message: "",
+  });
+  const [deleteTarget, setDeleteTarget] = useState<FaqRow | null>(null);
 
   const categories = t.faq.categories;
 
+  const loadFaqs = async () => {
+    setIsLoading(true);
+    setLoadError(null);
+
+    try {
+      const response = await apiRequest<{
+        success: boolean;
+        data: FaqApiRow[];
+      }>("/faqs/manage");
+      setFaqs((response.data || []).map(mapFaqFromApi));
+    } catch (error) {
+      setLoadError(
+        error instanceof Error ? error.message : "Failed to load FAQs.",
+      );
+      setFaqs([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadFaqs();
+  }, []);
+
   const filteredFaqs = faqs.filter((faq: any) => {
-    const matchesCategory = activeCategory === 'all' || faq.cat === activeCategory;
-    const matchesSearch = faq.q.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          faq.a.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory =
+      activeCategory === "all" || faq.cat === activeCategory;
+    const question = String(faq.q ?? "").toLowerCase();
+    const answer = String(faq.a ?? "").toLowerCase();
+    const matchesSearch =
+      question.includes(searchQuery.toLowerCase()) ||
+      answer.includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
-  const handleGlobalSave = () => {
-    setShowSaveToast(true);
-    setTimeout(() => setShowSaveToast(false), 3000);
+  const showToast = (type: ToastType, message: string) => {
+    setToastState({
+      isOpen: true,
+      type,
+      message,
+    });
+  };
+
+  const closeToast = () => {
+    setToastState((prev) => ({ ...prev, isOpen: false }));
+  };
+
+  const handleGlobalSave = async () => {
+    await loadFaqs();
+    showToast(
+      "success",
+      isAm ? "FAQ ዝርዝር ተሻሽሏል" : "FAQ list refreshed successfully",
+    );
   };
 
   const labels = {
     title: isAm ? "በተደጋጋሚ የሚነሱ ጥያቄዎች አስተዳደር" : "FAQ Management",
-    subtitle: isAm ? "በድረ-ገጹ ላይ የሚታዩ ጥያቄዎችን እና መልሶችን ያቀናብሩ" : "Manage questions and answers displayed on the public FAQ page",
+    subtitle: isAm
+      ? "በድረ-ገጹ ላይ የሚታዩ ጥያቄዎችን እና መልሶችን ያቀናብሩ"
+      : "Manage questions and answers displayed on the public FAQ page",
     addBtn: isAm ? "አዲስ ጥያቄ ጨምር" : "Add New Question",
     saveAll: isAm ? "ሁሉንም አስቀምጥ" : "Save All Changes",
     unsaved: isAm ? "ያልተቀመጡ ለውጦች አሉ" : "Unsaved Changes",
-    saveDesc: isAm ? "ለውጦቹን ለማጽደቅ አስቀምጥ የሚለውን ይጫኑ" : "Make sure to save after re-ordering or editing",
+    saveDesc: isAm
+      ? "ለውጦቹን ለማጽደቅ አስቀምጥ የሚለውን ይጫኑ"
+      : "Make sure to save after re-ordering or editing",
     edit: isAm ? "አስተካክል" : "Edit",
     delete: isAm ? "ሰርዝ" : "Delete",
     question: isAm ? "ጥያቄ" : "Question",
     answer: isAm ? "መልስ" : "Answer",
     category: isAm ? "ምድብ" : "Category",
+    published: isAm ? "ተለጥፏል" : "Published",
     cancel: isAm ? "ሰርዝ" : "Cancel",
     save: isAm ? "አስቀምጥ" : "Save",
     searchPlaceholder: isAm ? "ጥያቄዎችን ፈልግ..." : "Search questions...",
-    noResults: isAm ? "ምንም ጥያቄ አልተገኘም" : "No FAQs found matching your criteria"
+    noResults: isAm ? "ምንም ጥያቄ አልተገኘም" : "No FAQs found matching your criteria",
+    loading: isAm ? "FAQ በመጫን ላይ..." : "Loading FAQs...",
+    loadError: isAm ? "FAQ ማምጣት አልተሳካም" : "Failed to load FAQs",
   };
 
-  const handleSave = () => {
-    if (editingFaq) {
-      setFaqs(prev => prev.map(f => f.q === editingFaq.q ? { ...formData } : f));
-    } else {
-      setFaqs(prev => [formData, ...prev]);
+  const handleSave = async () => {
+    if (!formData.q.trim() || !formData.a.trim()) {
+      showToast(
+        "error",
+        isAm ? "ጥያቄና መልስ መሙላት ያስፈልጋል" : "Question and answer are required",
+      );
+      return;
     }
-    setIsAdding(false);
-    setEditingFaq(null);
-    setFormData({ q: '', a: '', cat: 'general' });
+
+    try {
+      if (editingFaq) {
+        const response = await apiRequest<{
+          success: boolean;
+          data: FaqApiRow;
+        }>(`/faqs/${editingFaq.id}`, {
+          method: "PUT",
+          body: JSON.stringify(toFaqPayload(formData)),
+        });
+        const updatedFaq = mapFaqFromApi(response.data);
+        setFaqs((prev) =>
+          prev.map((f) => (f.id === editingFaq.id ? updatedFaq : f)),
+        );
+      } else {
+        const response = await apiRequest<{
+          success: boolean;
+          data: FaqApiRow;
+        }>("/faqs", {
+          method: "POST",
+          body: JSON.stringify(toFaqPayload(formData)),
+        });
+        const createdFaq = mapFaqFromApi(response.data);
+        setFaqs((prev) => [createdFaq, ...prev]);
+      }
+
+      setIsAdding(false);
+      setEditingFaq(null);
+      setFormData({ q: "", a: "", cat: "general", isPublished: true });
+      showToast(
+        "success",
+        isAm ? "FAQ በተሳካ ሁኔታ ተቀምጧል" : "FAQ saved successfully",
+      );
+    } catch (error) {
+      showToast(
+        "error",
+        error instanceof Error
+          ? error.message
+          : isAm
+            ? "FAQ ማስቀመጥ አልተሳካም"
+            : "Failed to save FAQ",
+      );
+    }
   };
 
   const handleEdit = (faq: any) => {
     setEditingFaq(faq);
-    setFormData(faq);
+    setFormData({
+      q: faq.q,
+      a: faq.a,
+      cat: faq.cat,
+      isPublished: faq.isPublished,
+    });
     setIsAdding(true);
   };
 
-  const handleDelete = (question: string) => {
-    if (confirm(isAm ? "ይህንን ጥያቄ መሰረዝ ይፈልጋሉ?" : "Are you sure you want to delete this question?")) {
-      setFaqs(prev => prev.filter(f => f.q !== question));
+  const handleDelete = async (faq: FaqRow) => {
+    try {
+      await apiRequest(`/faqs/${faq.id}`, {
+        method: "DELETE",
+      });
+      setFaqs((prev) => prev.filter((f) => f.id !== faq.id));
+      setDeleteTarget(null);
+      showToast("success", isAm ? "FAQ ተሰርዟል" : "FAQ deleted successfully");
+    } catch (error) {
+      setDeleteTarget(null);
+      showToast(
+        "error",
+        error instanceof Error
+          ? error.message
+          : isAm
+            ? "FAQ ማስወገድ አልተሳካም"
+            : "Failed to delete FAQ",
+      );
     }
   };
 
@@ -74,15 +265,17 @@ export const ManageFAQ = () => {
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-primary tracking-tight">{labels.title}</h1>
+          <h1 className="text-3xl font-black text-primary tracking-tight">
+            {labels.title}
+          </h1>
           <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px] mt-1">
             {labels.subtitle}
           </p>
         </div>
-        <button 
+        <button
           onClick={() => {
             setEditingFaq(null);
-            setFormData({ q: '', a: '', cat: 'general' });
+            setFormData({ q: "", a: "", cat: "general", isPublished: true });
             setIsAdding(true);
           }}
           className="gold-gradient text-primary px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center space-x-2 shadow-xl shadow-secondary/20 hover:scale-105 active:scale-95 transition-all"
@@ -95,7 +288,7 @@ export const ManageFAQ = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
         <div className="relative flex-1 max-w-xl">
           <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input 
+          <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -104,35 +297,67 @@ export const ManageFAQ = () => {
           />
         </div>
         <div className="flex items-center space-x-3 overflow-x-auto pb-2 lg:pb-0 custom-scrollbar">
-          {['all', 'general', 'licensing', 'technical', 'payment'].map((cat) => (
+          {FAQ_CATEGORIES.map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
               className={`px-6 py-4 rounded-[20px] transition-all font-black uppercase tracking-widest text-[9px] whitespace-nowrap border-2 ${
-                cat === activeCategory 
-                ? 'gold-gradient text-primary border-secondary shadow-lg shadow-secondary/20 scale-105' 
-                : 'bg-white text-gray-400 border-transparent hover:border-gray-100 hover:text-primary hover:bg-gray-50'
+                cat === activeCategory
+                  ? "gold-gradient text-primary border-secondary shadow-lg shadow-secondary/20 scale-105"
+                  : "bg-white text-gray-400 border-transparent hover:border-gray-100 hover:text-primary hover:bg-gray-50"
               }`}
             >
-              {cat === 'all' ? (isAm ? 'ሁሉም' : 'All') : categories[cat]}
+              {cat === "all" ? (isAm ? "ሁሉም" : "All") : categories[cat]}
             </button>
           ))}
         </div>
       </div>
 
       <div className="bg-white rounded-[40px] border border-gray-100 p-8 shadow-sm min-h-[400px]">
-        {filteredFaqs.length > 0 ? (
-          <Reorder.Group axis="y" values={faqs} onReorder={setFaqs} className="space-y-4">
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 mb-6 animate-pulse">
+              <Search className="w-10 h-10" />
+            </div>
+            <h3 className="text-xl font-black text-primary mb-2">
+              {labels.loading}
+            </h3>
+          </div>
+        ) : loadError ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center text-red-300 mb-6">
+              <Search className="w-10 h-10" />
+            </div>
+            <h3 className="text-xl font-black text-primary mb-2">
+              {labels.loadError}
+            </h3>
+            <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">
+              {loadError}
+            </p>
+            <button
+              onClick={() => void loadFaqs()}
+              className="mt-6 px-6 py-3 rounded-xl bg-primary text-white font-black text-[10px] uppercase tracking-widest"
+            >
+              Retry
+            </button>
+          </div>
+        ) : filteredFaqs.length > 0 ? (
+          <Reorder.Group
+            axis="y"
+            values={faqs}
+            onReorder={setFaqs}
+            className="space-y-4"
+          >
             {filteredFaqs.map((faq: any) => (
-              <Reorder.Item 
-                key={faq.q} 
+              <Reorder.Item
+                key={faq.id}
                 value={faq}
                 className="group bg-gray-50/50 rounded-[30px] border border-transparent hover:border-secondary/30 hover:bg-white transition-all duration-300 p-8 flex items-center space-x-6 shadow-sm hover:shadow-xl"
               >
                 <div className="cursor-grab active:cursor-grabbing text-gray-300 group-hover:text-secondary transition-all">
                   <GripVertical className="w-6 h-6" />
                 </div>
-                
+
                 <div className="flex-grow space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
@@ -142,16 +367,31 @@ export const ManageFAQ = () => {
                       <span className="text-[10px] font-black uppercase tracking-widest text-secondary/80">
                         {categories[faq.cat]}
                       </span>
+                      <span
+                        className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${faq.isPublished ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"}`}
+                      >
+                        {faq.isPublished
+                          ? isAm
+                            ? "ታይቷል"
+                            : "Published"
+                          : isAm
+                            ? "የተደበቀ"
+                            : "Draft"}
+                      </span>
+                      <div className="ml-3 inline-flex items-center space-x-2 text-xs text-gray-500">
+                        <Eye className="w-4 h-4" />
+                        <span className="font-black">{faq.hitCount}</span>
+                      </div>
                     </div>
                     <div className="flex items-center space-x-3">
-                      <button 
+                      <button
                         onClick={() => handleEdit(faq)}
                         className="p-3 bg-white text-gray-400 hover:text-primary hover:border-primary border border-gray-100 rounded-xl transition-all shadow-sm group/btn"
                       >
                         <Edit className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                       </button>
-                      <button 
-                        onClick={() => handleDelete(faq.q)}
+                      <button
+                        onClick={() => setDeleteTarget(faq)}
                         className="p-3 bg-white text-red-400 hover:text-white hover:bg-red-500 border border-gray-100 rounded-xl transition-all shadow-sm group/btn"
                       >
                         <Trash2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
@@ -159,8 +399,12 @@ export const ManageFAQ = () => {
                     </div>
                   </div>
                   <div>
-                    <h4 className="text-xl font-black text-primary tracking-tight mb-3 group-hover:text-secondary transition-colors">{faq.q}</h4>
-                    <p className="text-gray-500 text-sm font-medium leading-relaxed bg-white/50 p-4 rounded-2xl border border-gray-50 italic">{faq.a}</p>
+                    <h4 className="text-xl font-black text-primary tracking-tight mb-3 group-hover:text-secondary transition-colors">
+                      {faq.q}
+                    </h4>
+                    <p className="text-gray-500 text-sm font-medium leading-relaxed bg-white/50 p-4 rounded-2xl border border-gray-50 italic">
+                      {faq.a}
+                    </p>
                   </div>
                 </div>
               </Reorder.Item>
@@ -171,8 +415,12 @@ export const ManageFAQ = () => {
             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 mb-6">
               <Search className="w-10 h-10" />
             </div>
-            <h3 className="text-xl font-black text-primary mb-2">{labels.noResults}</h3>
-            <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">Try adjusting your filters or search terms</p>
+            <h3 className="text-xl font-black text-primary mb-2">
+              {labels.noResults}
+            </h3>
+            <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">
+              Try adjusting your filters or search terms
+            </p>
           </div>
         )}
       </div>
@@ -184,11 +432,15 @@ export const ManageFAQ = () => {
             <Save className="w-8 h-8" />
           </div>
           <div>
-            <p className="text-2xl font-black text-white tracking-tight leading-none mb-1">{labels.unsaved}</p>
-            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">{labels.saveDesc}</p>
+            <p className="text-2xl font-black text-white tracking-tight leading-none mb-1">
+              {labels.unsaved}
+            </p>
+            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+              {labels.saveDesc}
+            </p>
           </div>
         </div>
-        <button 
+        <button
           onClick={handleGlobalSave}
           className="gold-gradient text-primary px-16 py-6 rounded-[24px] font-black text-sm uppercase tracking-widest shadow-2xl shadow-secondary/20 hover:scale-105 active:scale-95 transition-all relative z-10"
         >
@@ -196,35 +448,43 @@ export const ManageFAQ = () => {
         </button>
       </div>
 
-      {/* Toast Notification */}
-      <AnimatePresence>
-        {showSaveToast && (
-          <motion.div 
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[3000] gold-gradient px-8 py-4 rounded-2xl shadow-2xl flex items-center space-x-4 border border-secondary"
-          >
-            <Save className="w-5 h-5 text-primary" />
-            <span className="text-xs font-black text-primary uppercase tracking-widest">
-              {isAm ? "ለውጦች በተሳካ ሁኔታ ተቀምጠዋል!" : "Changes saved successfully!"}
-            </span>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <AutoDismissToast
+        isOpen={toastState.isOpen}
+        type={toastState.type}
+        message={toastState.message}
+        onClose={closeToast}
+      />
+
+      <ConfirmDialog
+        isOpen={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget) {
+            void handleDelete(deleteTarget);
+          }
+        }}
+        title={isAm ? "FAQ ማስወገድ" : "Delete FAQ"}
+        message={
+          isAm
+            ? "ይህንን FAQ እርግጠኛ ሆነው ማስወገድ ይፈልጋሉ?"
+            : "Are you sure you want to permanently delete this FAQ?"
+        }
+        type="delete"
+        isLoading={false}
+      />
 
       {/* Add/Edit Modal */}
       <AnimatePresence>
         {isAdding && (
           <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-primary/20 backdrop-blur-xl" 
+              className="absolute inset-0 bg-primary/20 backdrop-blur-xl"
               onClick={() => setIsAdding(false)}
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 40 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 40 }}
@@ -232,49 +492,105 @@ export const ManageFAQ = () => {
             >
               <div className="p-8 border-b border-gray-50 flex items-center justify-between shrink-0">
                 <div>
-                  <h2 className="text-xl font-black text-primary tracking-tight">{editingFaq ? labels.edit : labels.addBtn}</h2>
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Manage public knowledge base</p>
+                  <h2 className="text-xl font-black text-primary tracking-tight">
+                    {editingFaq ? labels.edit : labels.addBtn}
+                  </h2>
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">
+                    Manage public knowledge base
+                  </p>
                 </div>
-                <button onClick={() => setIsAdding(false)} className="p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all text-gray-400">
+                <button
+                  onClick={() => setIsAdding(false)}
+                  className="p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all text-gray-400"
+                >
                   <X className="w-5 h-5" />
                 </button>
               </div>
               <div className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">{labels.question}</label>
-                  <input 
-                    type="text" 
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">
+                    {labels.question}
+                  </label>
+                  <input
+                    type="text"
                     value={formData.q}
-                    onChange={(e) => setFormData({...formData, q: e.target.value})}
-                    className="w-full px-6 py-4 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-secondary focus:bg-white outline-none font-bold text-sm text-primary transition-all shadow-inner" 
-                    placeholder={isAm ? "ጥያቄውን እዚህ ያስገቡ..." : "Enter question..."}
+                    onChange={(e) =>
+                      setFormData({ ...formData, q: e.target.value })
+                    }
+                    className="w-full px-6 py-4 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-secondary focus:bg-white outline-none font-bold text-sm text-primary transition-all shadow-inner"
+                    placeholder={
+                      isAm ? "ጥያቄውን እዚህ ያስገቡ..." : "Enter question..."
+                    }
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">{labels.category}</label>
-                  <select 
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">
+                    {labels.category}
+                  </label>
+                  <select
                     value={formData.cat}
-                    onChange={(e) => setFormData({...formData, cat: e.target.value})}
+                    onChange={(e) =>
+                      setFormData({ ...formData, cat: e.target.value })
+                    }
                     className="w-full px-6 py-4 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-secondary focus:bg-white outline-none font-bold text-sm text-primary transition-all appearance-none cursor-pointer"
                   >
                     {Object.entries(categories).map(([key, value]) => (
-                      <option key={key} value={key}>{value as string}</option>
+                      <option key={key} value={key}>
+                        {value as string}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">{labels.answer}</label>
-                  <textarea 
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">
+                    Views
+                  </label>
+                  <div className="px-6 py-4 bg-gray-50 rounded-2xl border border-transparent text-sm font-bold text-gray-700 inline-flex items-center space-x-2">
+                    <Eye className="w-4 h-4 text-gray-500" />
+                    <span>{editingFaq ? editingFaq.hitCount : 0}</span>
+                  </div>
+                </div>
+                <label className="flex items-center space-x-3 px-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={formData.isPublished}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        isPublished: e.target.checked,
+                      })
+                    }
+                    className="h-5 w-5 rounded border-gray-300 text-secondary focus:ring-secondary"
+                  />
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                    {labels.published}
+                  </span>
+                </label>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">
+                    {labels.answer}
+                  </label>
+                  <textarea
                     value={formData.a}
-                    onChange={(e) => setFormData({...formData, a: e.target.value})}
+                    onChange={(e) =>
+                      setFormData({ ...formData, a: e.target.value })
+                    }
                     className="w-full px-6 py-4 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-secondary focus:bg-white outline-none font-medium text-xs text-primary transition-all h-32 resize-none leading-relaxed"
                     placeholder={isAm ? "መልሱን እዚህ ይጻፉ..." : "Enter answer..."}
                   />
                 </div>
               </div>
               <div className="p-8 bg-gray-50 border-t border-gray-100 flex justify-end items-center space-x-3 shrink-0">
-                <button onClick={() => setIsAdding(false)} className="px-6 py-3 text-gray-400 font-black uppercase text-[10px] tracking-widest hover:text-primary transition-colors">{labels.cancel}</button>
-                <button onClick={handleSave} className="blue-gradient text-white px-10 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
+                <button
+                  onClick={() => setIsAdding(false)}
+                  className="px-6 py-3 text-gray-400 font-black uppercase text-[10px] tracking-widest hover:text-primary transition-colors"
+                >
+                  {labels.cancel}
+                </button>
+                <button
+                  onClick={() => void handleSave()}
+                  className="blue-gradient text-white px-10 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                >
                   {labels.save}
                 </button>
               </div>
