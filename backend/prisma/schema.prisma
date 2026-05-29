@@ -72,6 +72,8 @@ model Address {
   organizations   Organization[]
   employees       Employee[]
   branchAddresses OrganizationBranchAddress[]
+  serviceContracts ServiceContract[]
+
 
   @@map("addresses")
 }
@@ -177,8 +179,29 @@ model Organization {
   // agreements now relate through applications
   // Tracks multiple secondary branch physical locations
   branchAddresses OrganizationBranchAddress[]
+  serviceContracts ServiceContract[]
 
   @@map("organizations")
+}
+
+model ServiceContract {
+  id                     Int          @id @default(autoincrement()) @map("contract_id")
+  organizationId         Int          @map("organization_id")                     // Foreign key to Organization table
+  serviceUserName        String       @map("service_user_name") @db.NVarChar(255) // The specific client/user name (e.g., Ethio Logistics PLC)
+  contractUrl            String       @map("contract_url") @db.VarChar(Max)       // Digital contract document link
+  addressId              Int          @map("address_id")                          // Foreign key to Address table
+  assignedPersonnelCount Int          @map("assigned_personnel_count")
+  
+  // Metadata & Audit Trail
+  createdAt              DateTime     @default(now()) @map("created_at") @db.DateTime
+  updatedAt              DateTime     @default(now()) @map("updated_at") @db.DateTime
+
+  // Relations
+  // Explicit NoAction rules keep SQL Server happy by avoiding loop collisions
+  organization           Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Contracts_Organizations")
+  address                Address      @relation(fields: [addressId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Contracts_Addresses")
+
+  @@map("service_contracts")
 }
 
 model OrganizationBranchAddress {
@@ -186,7 +209,7 @@ model OrganizationBranchAddress {
   organizationId Int      @map("organization_id")
   addressId      Int      @map("address_id")
   createdAt      DateTime @default(now()) @map("created_at") @db.DateTime
-
+  
   // Relational mappings
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_OrgBranchAddresses_Organizations")
   address      Address      @relation(fields: [addressId], references: [id], onUpdate: NoAction, map: "FK_OrgBranchAddresses_Addresses")
@@ -391,11 +414,48 @@ model OrganizationTrainingDetail {
   trainingDurationDays   Int?     @map("training_duration_days")
   totalTraineesMale      Int      @default(0) @map("total_trainees_male")
   totalTraineesFemale    Int      @default(0) @map("total_trainees_female")
+  totalNotTraineesMale   Int      @default(0) @map("total_not_trainees_male")
+  totalNotTraineesFemale Int      @default(0) @map("total_not_trainees_female")
   createdAt              DateTime @default(now()) @map("created_at") @db.DateTime
 
   application Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade, map: "FK_Training_Apps")
 
   @@map("organization_training_details")
+}
+
+// Statistics for Security Guards' Education Levels per organization
+model GuardEducationLevelStat {
+  id                          Int       @id @default(autoincrement()) @map("guard_edu_stat_id")
+  organizationId              Int       @map("organization_id")
+  applicationId               Int?      @map("application_id")
+  reportingDate               DateTime? @map("reporting_date") @db.DateTime
+
+  grade_3_9_male              Int       @default(0) @map("grade_3_9_male")
+  grade_3_9_female            Int       @default(0) @map("grade_3_9_female")
+
+  grade_10_12_male            Int       @default(0) @map("grade_10_12_male")
+  grade_10_12_female          Int       @default(0) @map("grade_10_12_female")
+
+  certificate_male            Int       @default(0) @map("certificate_male")
+  certificate_female          Int       @default(0) @map("certificate_female")
+
+  diploma_male                Int       @default(0) @map("diploma_male")
+  diploma_female              Int       @default(0) @map("diploma_female")
+
+  degree_male                 Int       @default(0) @map("degree_male")
+  degree_female               Int       @default(0) @map("degree_female")
+
+  second_degree_male          Int       @default(0) @map("second_degree_male")
+  second_degree_female        Int       @default(0) @map("second_degree_female")
+
+  createdAt                   DateTime  @default(now()) @map("created_at") @db.DateTime
+  updatedAt                   DateTime  @updatedAt @map("updated_at") @db.DateTime
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_GuardEduStats_Orgs")
+  application  Application? @relation(fields: [applicationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_GuardEduStats_Apps")
+
+  @@map("organization_guard_education_levels")
 }
 
 model Inspection {
@@ -457,7 +517,7 @@ model Certification {
   organizationId          Int?     @map("organization_id")
   applicationId           Int?     @map("application_id")
   certificateSerialNumber String?  @unique @map("certificate_serial_number") @db.VarChar(100)
-  level                   String?  @map("certification_level") @db.VarChar(50)
+  level                   Int?     @map("certification_level")
   issueDate               DateTime @map("issue_date") @db.Date
   expiryDate              DateTime @map("expiry_date") @db.Date
   qrCodeValue             String?  @unique @map("qr_code_value") @db.VarChar(255)

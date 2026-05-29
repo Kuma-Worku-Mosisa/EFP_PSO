@@ -13,22 +13,22 @@ import {
 import { createAuditLog } from "../../utils/auditLogger";
 import {
   ApplicationTrackingService,
+  type ApplicationTrackingStatusValue,
   ApplicationTrackingStatus,
 } from "./application-tracking.service";
+import { CertificationService } from "../certification/certification.service";
 
 export class ApplicationService {
   private static async writeApplicationTrackingHistory(
     tx: Parameters<typeof ApplicationTrackingService.recordHistory>[0],
     applicationId: number,
-    statusState: string,
+    statusState: ApplicationTrackingStatusValue,
     remarks: string,
     changedBy: number,
   ) {
     await ApplicationTrackingService.recordHistory(tx, {
       applicationId,
-      statusState: statusState as
-        | (typeof ApplicationTrackingStatus)[keyof typeof ApplicationTrackingStatus]
-        | string,
+      statusState,
       remarks,
       changedBy,
     });
@@ -775,6 +775,14 @@ export class ApplicationService {
         throw new Error(`Application ${applicationId} not found`);
       }
 
+      if (String(application.status).toLowerCase() === "approved") {
+        const error = new Error("Application is already approved.") as Error & {
+          statusCode?: number;
+        };
+        error.statusCode = 409;
+        throw error;
+      }
+
       const unverifiedDocuments: Array<{ scope: string; id: number }> = [];
 
       const collectUnverified = (
@@ -840,6 +848,15 @@ export class ApplicationService {
           ApplicationTrackingStatus.Approved,
           remarks,
           userId,
+        );
+
+        await CertificationService.issueCertificate(
+          {
+            applicationId,
+            organizationId: application.organizationId,
+            level: 3,
+          },
+          tx,
         );
 
         return updatedApp;

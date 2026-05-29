@@ -2,7 +2,59 @@
 import prisma from "../../lib/prisma";
 import crypto from "crypto";
 
+const BASE_HOST =
+  process.env.CERT_BASE_URL ||
+  (process.env.NODE_ENV === "production"
+    ? "https://pso.efp.gov.et"
+    : "http://localhost:5000");
+
 export class CertificationService {
+  private static getDerivedStatus(cert: {
+    status?: string | null;
+    issueDate?: Date | string | null;
+    expiryDate?: Date | string | null;
+  }) {
+    const status = String(cert.status || "").trim();
+    const normalizedStatus = status.toLowerCase();
+
+    if (normalizedStatus === "revoked" || normalizedStatus === "suspended") {
+      return status || null;
+    }
+
+    const expiryDate = new Date(cert.expiryDate || "");
+    if (Number.isNaN(expiryDate.getTime())) {
+      return status || "Active";
+    }
+
+    const expiryEndOfDay = new Date(expiryDate);
+    expiryEndOfDay.setHours(23, 59, 59, 999);
+
+    if (new Date() > expiryEndOfDay) {
+      return "EXPIRED";
+    }
+
+    if (normalizedStatus === "expired") {
+      return "Active";
+    }
+
+    return status || "Active";
+  }
+
+  private static async syncExpiryStatus(cert: any, db: any = prisma) {
+    const derivedStatus = CertificationService.getDerivedStatus(cert);
+
+    if (derivedStatus && derivedStatus !== cert.status) {
+      await db.certification.update({
+        where: { id: cert.id },
+        data: { status: derivedStatus },
+      });
+
+      return { ...cert, status: derivedStatus };
+    }
+
+    return { ...cert, status: derivedStatus ?? cert.status ?? null };
+  }
+
   private static getOrganizationLogoUrl(organization: any) {
     const logoDoc = (organization?.documents || []).find((doc: any) => {
       const type = String(doc?.documentType || "").toLowerCase();
@@ -34,25 +86,36 @@ export class CertificationService {
   /**
    * CREATE: Issue a new 1-year certificate
    */
-  static async issueCertificate(data: {
-    applicationId: number;
-    organizationId: number;
-    level: string;
-  }) {
+  static async issueCertificate(
+    data: {
+      applicationId: number;
+      organizationId: number;
+      level: number;
+    },
+    db: any = prisma,
+  ) {
+    const existingCertificate = await db.certification.findFirst({
+      where: { applicationId: data.applicationId },
+    });
+
+    if (existingCertificate) {
+      return existingCertificate;
+    }
+
     const issueDate = new Date();
     const expiryDate = new Date();
     expiryDate.setFullYear(issueDate.getFullYear() + 1);
 
     const serial = `EFP-PSO-${issueDate.getFullYear()}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
 
-    return await prisma.certification.create({
+    return await db.certification.create({
       data: {
         applicationId: data.applicationId,
         organizationId: data.organizationId,
         certificateSerialNumber: serial,
         issueDate,
         expiryDate,
-        qrCodeValue: `https://pso.efp.gov.et/verify/${serial}`,
+        qrCodeValue: `${BASE_HOST}/api/certifications/verify/${serial}`,
         status: "Active",
         level: data.level,
       },
@@ -81,19 +144,23 @@ export class CertificationService {
                 kebele: {
                   select: {
                     id: true,
-                    name: true,
+                    nameEnglish: true,
+                    nameAmharic: true,
                     woreda: {
                       select: {
                         id: true,
-                        name: true,
+                        nameEnglish: true,
+                        nameAmharic: true,
                         zone: {
                           select: {
                             id: true,
-                            name: true,
+                            nameEnglish: true,
+                            nameAmharic: true,
                             region: {
                               select: {
                                 id: true,
-                                name: true,
+                                nameEnglish: true,
+                                nameAmharic: true,
                               },
                             },
                           },
@@ -151,20 +218,23 @@ export class CertificationService {
 
     if (!cert) throw new Error("Certificate not found");
 
+    const syncedCert = await CertificationService.syncExpiryStatus(cert);
+
     return {
-      ...cert,
+      ...syncedCert,
       organization: CertificationService.normalizeOrganization(
-        cert.organization,
+        syncedCert.organization,
       ),
       applicantPhotoUrl:
-        cert.application?.manager?.user?.photoUrl ||
-        cert.application?.operationsHead?.user?.photoUrl ||
-        cert.application?.adminHead?.user?.photoUrl ||
+        syncedCert.application?.manager?.user?.photoUrl ||
+        syncedCert.application?.operationsHead?.user?.photoUrl ||
+        syncedCert.application?.adminHead?.user?.photoUrl ||
         null,
       applicantName:
-        cert.application?.manager?.user?.fullName ||
-        cert.application?.operationsHead?.user?.fullName ||
-        cert.application?.adminHead?.user?.fullName ||
+        syncedCert.application?.manager?.user?.fullName ||
+        syncedCert.application?.operationsHead?.user?.fullName ||
+        syncedCert.application?.adminHead?.user?.fullName ||
+        syncedCert.application?.user?.fullName ||
         null,
       efpLogo: system?.efpLogoUrl,
       issuingAuthority: system?.issuingAuthority,
@@ -192,19 +262,23 @@ export class CertificationService {
                   kebele: {
                     select: {
                       id: true,
-                      name: true,
+                      nameEnglish: true,
+                      nameAmharic: true,
                       woreda: {
                         select: {
                           id: true,
-                          name: true,
+                          nameEnglish: true,
+                          nameAmharic: true,
                           zone: {
                             select: {
                               id: true,
-                              name: true,
+                              nameEnglish: true,
+                              nameAmharic: true,
                               region: {
                                 select: {
                                   id: true,
-                                  name: true,
+                                  nameEnglish: true,
+                                  nameAmharic: true,
                                 },
                               },
                             },
@@ -231,7 +305,21 @@ export class CertificationService {
               manager: {
                 select: {
                   user: {
-                    select: { photoUrl: true },
+                    select: { photoUrl: true, fullName: true },
+                  },
+                },
+              },
+              operationsHead: {
+                select: {
+                  user: {
+                    select: { photoUrl: true, fullName: true },
+                  },
+                },
+              },
+              adminHead: {
+                select: {
+                  user: {
+                    select: { photoUrl: true, fullName: true },
                   },
                 },
               },
@@ -240,14 +328,29 @@ export class CertificationService {
         },
         orderBy: { issueDate: "desc" },
       })
-      .then((certs) =>
-        certs.map((cert) => ({
+      .then(async (certs) => {
+        const synced = await Promise.all(
+          certs.map((cert) => CertificationService.syncExpiryStatus(cert)),
+        );
+
+        return synced.map((cert) => ({
           ...cert,
           organization: CertificationService.normalizeOrganization(
             cert.organization,
           ),
-        })),
-      );
+          applicantPhotoUrl:
+            cert.application?.manager?.user?.photoUrl ||
+            cert.application?.operationsHead?.user?.photoUrl ||
+            cert.application?.adminHead?.user?.photoUrl ||
+            null,
+          applicantName:
+            cert.application?.manager?.user?.fullName ||
+            cert.application?.operationsHead?.user?.fullName ||
+            cert.application?.adminHead?.user?.fullName ||
+            cert.application?.user?.fullName ||
+            null,
+        }));
+      });
   }
 
   /**
@@ -276,19 +379,23 @@ export class CertificationService {
                   kebele: {
                     select: {
                       id: true,
-                      name: true,
+                      nameEnglish: true,
+                      nameAmharic: true,
                       woreda: {
                         select: {
                           id: true,
-                          name: true,
+                          nameEnglish: true,
+                          nameAmharic: true,
                           zone: {
                             select: {
                               id: true,
-                              name: true,
+                              nameEnglish: true,
+                              nameAmharic: true,
                               region: {
                                 select: {
                                   id: true,
-                                  name: true,
+                                  nameEnglish: true,
+                                  nameAmharic: true,
                                 },
                               },
                             },
@@ -315,7 +422,21 @@ export class CertificationService {
               manager: {
                 select: {
                   user: {
-                    select: { photoUrl: true },
+                    select: { photoUrl: true, fullName: true },
+                  },
+                },
+              },
+              operationsHead: {
+                select: {
+                  user: {
+                    select: { photoUrl: true, fullName: true },
+                  },
+                },
+              },
+              adminHead: {
+                select: {
+                  user: {
+                    select: { photoUrl: true, fullName: true },
                   },
                 },
               },
@@ -324,14 +445,29 @@ export class CertificationService {
         },
         orderBy: { issueDate: "desc" },
       })
-      .then((certs) =>
-        certs.map((cert) => ({
+      .then(async (certs) => {
+        const synced = await Promise.all(
+          certs.map((cert) => CertificationService.syncExpiryStatus(cert)),
+        );
+
+        return synced.map((cert) => ({
           ...cert,
           organization: CertificationService.normalizeOrganization(
             cert.organization,
           ),
-        })),
-      );
+          applicantPhotoUrl:
+            cert.application?.manager?.user?.photoUrl ||
+            cert.application?.operationsHead?.user?.photoUrl ||
+            cert.application?.adminHead?.user?.photoUrl ||
+            null,
+          applicantName:
+            cert.application?.manager?.user?.fullName ||
+            cert.application?.operationsHead?.user?.fullName ||
+            cert.application?.adminHead?.user?.fullName ||
+            cert.application?.user?.fullName ||
+            null,
+        }));
+      });
   }
 
   /**
@@ -340,7 +476,10 @@ export class CertificationService {
   static async update(
     id: number,
     data: {
-      level?: string;
+      level?: number;
+      status?: string;
+      issueDate?: Date;
+      expiryDate?: Date;
       logoUrl?: string;
       applicantPhotoUrl?: string;
     },
@@ -369,11 +508,19 @@ export class CertificationService {
       null;
 
     await prisma.$transaction(async (tx) => {
+      const certificationUpdateData: Record<string, any> = {
+        ...(data.status ? { status: data.status } : {}),
+        ...(data.issueDate ? { issueDate: data.issueDate } : {}),
+        ...(data.expiryDate ? { expiryDate: data.expiryDate } : {}),
+      };
+
+      if (data.level !== undefined) {
+        certificationUpdateData.level = Number(data.level);
+      }
+
       await tx.certification.update({
         where: { id },
-        data: {
-          ...(data.level ? { level: data.level } : {}),
-        },
+        data: certificationUpdateData as any,
       });
 
       if (data.logoUrl) {
@@ -436,19 +583,25 @@ export class CertificationService {
 
     if (!cert) return null;
 
+    const syncedCert = await CertificationService.syncExpiryStatus(cert);
+
     return {
-      id: cert.id,
-      certificateSerialNumber: cert.certificateSerialNumber,
-      level: cert.level,
-      issueDate: cert.issueDate,
-      expiryDate: cert.expiryDate,
-      status: cert.status,
-      qrCodeValue: cert.qrCodeValue,
+      id: syncedCert.id,
+      certificateSerialNumber: syncedCert.certificateSerialNumber,
+      level: syncedCert.level,
+      issueDate: syncedCert.issueDate,
+      expiryDate: syncedCert.expiryDate,
+      status: syncedCert.status,
+      qrCodeValue: syncedCert.qrCodeValue,
       organization: {
         name: CertificationService.getOrganizationDisplayName(
-          cert.organization,
+          syncedCert.organization,
         ),
-        logoUrl: CertificationService.getOrganizationLogoUrl(cert.organization),
+        nameEnglish: syncedCert.organization?.nameEnglish || null,
+        nameAmharic: syncedCert.organization?.nameAmharic || null,
+        logoUrl: CertificationService.getOrganizationLogoUrl(
+          syncedCert.organization,
+        ),
       },
     };
   }

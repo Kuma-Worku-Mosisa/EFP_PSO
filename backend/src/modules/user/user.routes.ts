@@ -9,6 +9,7 @@ import {
   changePasswordHandler,
   revokeAccessHandler,
   getRolesHandler,
+  uploadProfilePhotoHandler,
 } from "./user.controller";
 import {
   registerValidation,
@@ -34,6 +35,8 @@ router.put(
   changePasswordHandler,
 );
 
+// Upload profile photo and persist path to user.photoUrl
+router.post("/me/photo", authenticate, uploadProfilePhotoHandler);
 // --- ADMINISTRATIVE MANAGEMENT ROUTES (SYSTEM / SUPER ADMIN) ---
 // Allowed both roles here so your token works seamlessly
 router.get(

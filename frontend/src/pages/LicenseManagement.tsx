@@ -22,11 +22,15 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useLanguage } from "../context/LanguageContext";
-import { apiRequest } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
+import { apiRequest, resolveBackendAssetUrl } from "../lib/api";
 import { Link, useLocation } from "react-router-dom";
+import { AutoDismissToast, ToastType } from "../components/AutoDismissToast";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 
 type LicenseRow = {
   id: number;
+  organizationId: number | string | null;
   agency: string;
   ownership: string;
   licenseNo: string;
@@ -57,7 +61,48 @@ export const LicenseManagement = () => {
     | "history"
   >("none");
   const [licenses, setLicenses] = useState<LicenseRow[]>([]);
+  const { user } = useAuth();
+  const isAdmin = !!user?.roles?.some((r) =>
+    String(r).toLowerCase().includes("admin"),
+  );
+  const [selectedCertByOwner, setSelectedCertByOwner] = useState<
+    Record<string | number, number>
+  >({});
   const [loadingLicenses, setLoadingLicenses] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isEditSaving, setIsEditSaving] = useState(false);
+  const [isPhotoUploading, setIsPhotoUploading] = useState(false);
+  const [editCert, setEditCert] = useState<any>(null);
+  const [toast, setToast] = useState<{
+    isOpen: boolean;
+    type: ToastType;
+    message: string;
+  }>({
+    isOpen: false,
+    type: "success",
+    message: "",
+  });
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: "delete" | "approve" | "reject" | "update" | "default";
+    onConfirm: (() => void) | null;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "default",
+    onConfirm: null,
+  });
+  const [editForm, setEditForm] = useState({
+    status: "Active",
+    issuedDate: "",
+    expiryDate: "",
+    level: 1,
+    applicantPhoto: "",
+  });
 
   // Certificate State for Editor
   const [certData, setCertData] = useState({
@@ -66,7 +111,7 @@ export const LicenseManagement = () => {
     qrCode: "",
     agencyName: "",
     address: "",
-    level: "LEVEL - ONE (1)",
+    level: 1,
     issuedDate: "",
     expiryDate: "",
     licenseNo: "",
@@ -77,6 +122,159 @@ export const LicenseManagement = () => {
     type: "pdf" | "photo";
     data: any;
   } | null>(null);
+
+  const normalizeCertificationStatus = (value?: string | null) =>
+    String(value || "")
+      .trim()
+      .toLowerCase();
+
+  const formatDateForInput = (value?: string | Date | null) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toISOString().slice(0, 10);
+  };
+
+  const showToast = (type: ToastType, message: string) => {
+    setToast({ isOpen: true, type, message });
+  };
+
+  const openConfirmDialog = ({
+    title,
+    message,
+    type = "default",
+    onConfirm,
+  }: {
+    title: string;
+    message: string;
+    type?: "delete" | "approve" | "reject" | "update" | "default";
+    onConfirm: () => void;
+  }) => {
+    setConfirmDialog({
+      isOpen: true,
+      title,
+      message,
+      type,
+      onConfirm,
+    });
+  };
+
+  const openEditModal = (cert: any) => {
+    const source = cert?.source || cert;
+    setEditCert(source);
+    setEditForm({
+      status: source?.status || "Active",
+      issuedDate: formatDateForInput(source?.issueDate),
+      expiryDate: formatDateForInput(source?.expiryDate),
+      level: Number(source?.level) || 1,
+      applicantPhoto: source?.applicantPhotoUrl || "",
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditPhotoUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!editCert?.id) return;
+
+    try {
+      setIsPhotoUploading(true);
+      const fd = new FormData();
+      fd.append("photo", file);
+
+      const response = await apiRequest<{ success: boolean; data: any }>(
+        `/certifications/${editCert.id}/photo`,
+        {
+          method: "POST",
+          body: fd,
+        },
+      );
+
+      const photoUrl =
+        (response as any)?.data?.photoUrl ||
+        (response as any)?.data?.applicantPhotoUrl ||
+        "";
+
+      if (photoUrl) {
+        setEditForm((prev) => ({
+          ...prev,
+          applicantPhoto: photoUrl,
+        }));
+      }
+    } catch (error: any) {
+      showToast(
+        "error",
+        error?.message || (isAm ? "ፎቶ ማስገባት አልተሳካም" : "Failed to upload photo"),
+      );
+    } finally {
+      setIsPhotoUploading(false);
+    }
+  };
+
+  const handleSaveCertificateEdit = async () => {
+    if (!editCert?.id) return;
+
+    try {
+      setIsEditSaving(true);
+      const response = await apiRequest<{ success: boolean; data: any }>(
+        `/certifications/${editCert.id}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            status: editForm.status,
+            issueDate: editForm.issuedDate,
+            expiryDate: editForm.expiryDate,
+            level: editForm.level,
+            applicantPhotoUrl: editForm.applicantPhoto,
+          }),
+        },
+      );
+
+      const updated = (response as any)?.data || response;
+      setLicenses((prev) =>
+        prev.map((lic) =>
+          lic.id === updated.id
+            ? {
+                ...lic,
+                status: updated.status || lic.status,
+                issued: updated.issueDate
+                  ? new Date(updated.issueDate).toISOString().slice(0, 10)
+                  : lic.issued,
+                expiry: updated.expiryDate
+                  ? new Date(updated.expiryDate).toISOString().slice(0, 10)
+                  : lic.expiry,
+                type: updated.level || lic.type,
+                source: updated,
+              }
+            : lic,
+        ),
+      );
+      setIsEditModalOpen(false);
+      setEditCert(null);
+      setEditForm({
+        status: "Active",
+        issuedDate: "",
+        expiryDate: "",
+        level: 1,
+        applicantPhoto: "",
+      });
+      showToast(
+        "success",
+        isAm ? "ሰርተፊኬቱ ተዘምኗል" : "Certificate updated successfully",
+      );
+    } catch (error: any) {
+      showToast(
+        "error",
+        error?.message ||
+          (isAm ? "ማዘመን አልተሳካም" : "Failed to update certificate"),
+      );
+    } finally {
+      setIsEditSaving(false);
+    }
+  };
 
   const licenseBasePath = location.pathname.replace(/\/$/, "");
 
@@ -116,6 +314,7 @@ export const LicenseManagement = () => {
     const loadLicenses = async () => {
       try {
         setLoadingLicenses(true);
+        setLoadError(null);
         const response = await apiRequest("/certifications");
         const records = Array.isArray((response as any)?.data)
           ? (response as any).data
@@ -128,6 +327,11 @@ export const LicenseManagement = () => {
         setLicenses(
           records.map((record: any) => ({
             id: record.id,
+            organizationId: record.organization?.id ?? null,
+            userId:
+              record.application?.userId ||
+              record.application?.user?.id ||
+              null,
             agency: record.organization?.name || "Unknown Agency",
             ownership:
               record.application?.user?.fullName ||
@@ -151,9 +355,36 @@ export const LicenseManagement = () => {
             source: record,
           })),
         );
+
+        // Initialize selected certificate per organization to the latest issue date
+        if (Array.isArray(records) && records.length > 0 && isAdmin) {
+          const grouped: Record<string | number, any[]> = {};
+          for (const r of records) {
+            const orgKey =
+              r.organization?.id ?? r.organization?.name ?? "unknown";
+            grouped[orgKey] = grouped[orgKey] || [];
+            grouped[orgKey].push(r);
+          }
+          const initialSelections: Record<string | number, number> = {};
+          Object.entries(grouped).forEach(([orgKey, arr]) => {
+            arr.sort(
+              (a: any, b: any) =>
+                new Date(b.issueDate).getTime() -
+                new Date(a.issueDate).getTime(),
+            );
+            initialSelections[orgKey] = arr[0].id;
+          });
+          setSelectedCertByOwner(initialSelections);
+        }
       } catch (error) {
         console.error("Failed to load certifications", error);
         if (active) setLicenses([]);
+        try {
+          const msg = (error as any)?.message || String(error);
+          setLoadError(msg);
+        } catch {
+          setLoadError("Failed to load certifications");
+        }
       } finally {
         if (active) setLoadingLicenses(false);
       }
@@ -200,10 +431,10 @@ export const LicenseManagement = () => {
         address: lic.region || "Addis Ababa, Ethiopia",
         level:
           lic.type === "LEVEL - TWO (2)"
-            ? "LEVEL - TWO (2)"
+            ? 2
             : lic.type === "LEVEL - THREE (3)"
-              ? "LEVEL - THREE (3)"
-              : "LEVEL - ONE (1)",
+              ? 3
+              : 1,
         issuedDate: lic.issued,
         expiryDate: lic.expiry,
         licenseNo: lic.licenseNo,
@@ -218,7 +449,7 @@ export const LicenseManagement = () => {
         qrCode: "",
         agencyName: "",
         address: "",
-        level: "LEVEL - ONE (1)",
+        level: 1,
         issuedDate: "",
         expiryDate: "",
         licenseNo: "",
@@ -235,6 +466,17 @@ export const LicenseManagement = () => {
       lic.ownership.toLowerCase().includes(searchQuery.toLowerCase()) ||
       lic.licenseNo.toLowerCase().includes(searchQuery.toLowerCase()),
   );
+
+  // Group certificates by organization so one organization can show multiple yearly certificates.
+  const groupedByOrganization = React.useMemo(() => {
+    const map: Record<string | number, LicenseRow[]> = {};
+    for (const l of filteredLicenses) {
+      const key = l.organizationId ?? l.agency ?? "unknown";
+      map[key] = map[key] || [];
+      map[key].push(l);
+    }
+    return map;
+  }, [filteredLicenses]);
 
   return (
     <div className="space-y-8 pb-20">
@@ -282,16 +524,36 @@ export const LicenseManagement = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {!loadingLicenses && filteredLicenses.length === 0 && (
+              {!loadingLicenses && loadError && (
                 <tr>
                   <td
                     colSpan={7}
                     className="px-8 py-16 text-center text-sm text-gray-500"
                   >
-                    No certifications found.
+                    {loadError.includes("Authentication required") ||
+                    loadError.includes("401") ? (
+                      <>
+                        Please sign in to view certifications. If you are signed
+                        in, ensure you have sufficient permissions.
+                      </>
+                    ) : (
+                      <>{loadError}</>
+                    )}
                   </td>
                 </tr>
               )}
+              {!loadingLicenses &&
+                !loadError &&
+                filteredLicenses.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="px-8 py-16 text-center text-sm text-gray-500"
+                    >
+                      No certifications found.
+                    </td>
+                  </tr>
+                )}
               {loadingLicenses && (
                 <tr>
                   <td
@@ -302,116 +564,402 @@ export const LicenseManagement = () => {
                   </td>
                 </tr>
               )}
-              {filteredLicenses.map((lic) => (
-                <tr
-                  key={lic.id}
-                  className="hover:bg-gray-50/50 transition-colors group"
-                >
-                  <td className="px-8 py-6">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
-                        <Shield className="w-5 h-5" />
-                      </div>
-                      <span className="font-bold text-primary text-sm">
-                        {lic.agency}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-6 text-sm text-gray-500 font-medium">
-                    {lic.ownership}
-                  </td>
-                  <td className="px-8 py-6 text-sm text-gray-400 font-mono font-bold tracking-tight">
-                    {lic.licenseNo}
-                  </td>
-                  <td className="px-8 py-6">
-                    <div className="flex items-center space-x-2">
-                      <span
-                        className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                          lic.status === "Active"
-                            ? "bg-green-100 text-green-700"
-                            : lic.status === "Pending Approval"
-                              ? "bg-amber-100 text-amber-700"
-                              : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {lic.status === "Active"
-                          ? t.status.active
-                          : lic.status === "Pending Approval"
-                            ? t.status.pending
-                            : lic.status === "Expired"
-                              ? t.status.expired
-                              : lic.status}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-6 text-sm text-gray-500 font-medium">
-                    {lic.issued}
-                  </td>
-                  <td className="px-8 py-6 text-sm text-gray-500 font-medium">
-                    {lic.expiry}
-                  </td>
-                  <td className="px-8 py-6 text-right">
-                    <div className="flex justify-end gap-3 items-center">
-                      <Link
-                        to={`${licenseBasePath}/${lic.id}`}
-                        state={{ certificate: lic.source }}
-                        className="flex items-center space-x-2 px-3 py-2 bg-white text-gray-600 rounded-xl hover:bg-gray-600 hover:text-white transition-all shadow-sm group/btn"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span className="text-[10px] font-black uppercase tracking-wider">
-                          {t.actions.view}
-                        </span>
-                      </Link>
-                      <button
-                        onClick={() => {
-                          setSelectedLic(lic);
-                          setActionType("history");
-                        }}
-                        className="flex items-center space-x-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm group/btn"
-                      >
-                        <History className="w-3.5 h-3.5" />
-                        <span className="text-[10px] font-black uppercase tracking-wider">
-                          {t.actions.history}
-                        </span>
-                      </button>
-                      <Link
-                        to={`${licenseBasePath}/${lic.id}?action=edit`}
-                        className="flex items-center space-x-2 px-3 py-2 bg-gray-50 text-gray-600 rounded-xl hover:bg-gray-600 hover:text-white transition-all shadow-sm group/btn"
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                        <span className="text-[10px] font-black uppercase tracking-wider">
-                          {t.actions.edit}
-                        </span>
-                      </Link>
-                      <button
-                        onClick={() => openEditor(lic, "renew")}
-                        className="flex items-center space-x-2 px-3 py-2 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white transition-all shadow-sm group/btn"
-                      >
-                        <RotateCw className="w-3.5 h-3.5" />
-                        <span className="text-[10px] font-black uppercase tracking-wider">
-                          {t.actions.renew}
-                        </span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedLic(lic);
-                          setActionType("revoke");
-                        }}
-                        className="flex items-center space-x-2 px-3 py-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span className="text-[10px] font-black uppercase tracking-wider">
-                          {t.actions.revoke}
-                        </span>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {Object.keys(groupedByOrganization).length > 0
+                ? Object.entries(groupedByOrganization).map(
+                    ([organizationKey, certs]) => {
+                      const selectedId =
+                        selectedCertByOwner[organizationKey] ??
+                        certs.sort(
+                          (a, b) =>
+                            new Date(b.issued).getTime() -
+                            new Date(a.issued).getTime(),
+                        )[0]?.id;
+                      const selected =
+                        certs.find((c) => c.id === selectedId) || certs[0];
+                      return (
+                        <tr
+                          key={organizationKey}
+                          className="hover:bg-gray-50/50 transition-colors group"
+                        >
+                          <td className="px-8 py-6">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
+                                <Shield className="w-5 h-5" />
+                              </div>
+                              <span className="font-bold text-primary text-sm">
+                                {selected.agency}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-8 py-6 text-sm text-gray-500 font-medium">
+                            {selected.ownership}
+                          </td>
+                          <td className="px-8 py-6 text-sm text-gray-400 font-mono font-bold tracking-tight">
+                            <select
+                              value={selected.id}
+                              onChange={(e) => {
+                                const val = Number(e.target.value);
+                                setSelectedCertByOwner((prev) => ({
+                                  ...prev,
+                                  [organizationKey]: val,
+                                }));
+                              }}
+                              className="bg-transparent text-sm font-mono"
+                            >
+                              {certs
+                                .slice()
+                                .sort(
+                                  (a, b) =>
+                                    new Date(b.issued).getTime() -
+                                    new Date(a.issued).getTime(),
+                                )
+                                .map((c) => (
+                                  <option
+                                    key={c.id}
+                                    value={c.id}
+                                    className="font-mono"
+                                  >
+                                    {c.licenseNo} — {c.issued}
+                                  </option>
+                                ))}
+                            </select>
+                          </td>
+                          <td className="px-8 py-6">
+                            <div className="flex items-center space-x-2">
+                              {(() => {
+                                const statusKey = normalizeCertificationStatus(
+                                  selected.status,
+                                );
+                                return (
+                                  <span
+                                    className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${statusKey === "active" ? "bg-green-100 text-green-700" : statusKey === "pending approval" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}
+                                  >
+                                    {selected.status === "Active"
+                                      ? t.status.active
+                                      : statusKey === "pending approval"
+                                        ? t.status.pending
+                                        : statusKey === "expired"
+                                          ? t.status.expired
+                                          : selected.status}
+                                  </span>
+                                );
+                              })()}
+                            </div>
+                          </td>
+                          <td className="px-8 py-6 text-sm text-gray-500 font-medium">
+                            {selected.issued}
+                          </td>
+                          <td className="px-8 py-6 text-sm text-gray-500 font-medium">
+                            {selected.expiry}
+                          </td>
+                          <td className="px-8 py-6 text-right">
+                            <div className="flex justify-end gap-3 items-center">
+                              <button
+                                onClick={() => openEditModal(selected)}
+                                className="flex items-center space-x-2 px-3 py-2 bg-gray-50 text-gray-600 rounded-xl hover:bg-gray-600 hover:text-white transition-all shadow-sm group/btn"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                                <span className="text-[10px] font-black uppercase tracking-wider">
+                                  {t.actions.edit}
+                                </span>
+                              </button>
+                              <Link
+                                to={`${licenseBasePath}/${selected.id}`}
+                                state={{ certificate: selected.source }}
+                                className="flex items-center space-x-2 px-3 py-2 bg-white text-gray-600 rounded-xl hover:bg-gray-600 hover:text-white transition-all shadow-sm group/btn"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                                <span className="text-[10px] font-black uppercase tracking-wider">
+                                  {t.actions.view}
+                                </span>
+                              </Link>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    },
+                  )
+                : filteredLicenses.map((lic) => (
+                    <tr
+                      key={lic.id}
+                      className="hover:bg-gray-50/50 transition-colors group"
+                    >
+                      <td className="px-8 py-6">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
+                            <Shield className="w-5 h-5" />
+                          </div>
+                          <span className="font-bold text-primary text-sm">
+                            {lic.agency}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-8 py-6 text-sm text-gray-500 font-medium">
+                        {lic.ownership}
+                      </td>
+                      <td className="px-8 py-6 text-sm text-gray-400 font-mono font-bold tracking-tight">
+                        {lic.licenseNo}
+                      </td>
+                      <td className="px-8 py-6">
+                        <div className="flex items-center space-x-2">
+                          {(() => {
+                            const statusKey = normalizeCertificationStatus(
+                              lic.status,
+                            );
+                            return (
+                              <span
+                                className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${statusKey === "active" ? "bg-green-100 text-green-700" : statusKey === "pending approval" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}
+                              >
+                                {statusKey === "active"
+                                  ? t.status.active
+                                  : statusKey === "pending approval"
+                                    ? t.status.pending
+                                    : statusKey === "expired"
+                                      ? t.status.expired
+                                      : lic.status}
+                              </span>
+                            );
+                          })()}
+                        </div>
+                      </td>
+                      <td className="px-8 py-6 text-sm text-gray-500 font-medium">
+                        {lic.issued}
+                      </td>
+                      <td className="px-8 py-6 text-sm text-gray-500 font-medium">
+                        {lic.expiry}
+                      </td>
+                      <td className="px-8 py-6 text-right">
+                        <div className="flex justify-end gap-3 items-center">
+                          <button
+                            onClick={() => openEditModal(lic)}
+                            className="flex items-center space-x-2 px-3 py-2 bg-gray-50 text-gray-600 rounded-xl hover:bg-gray-600 hover:text-white transition-all shadow-sm group/btn"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                            <span className="text-[10px] font-black uppercase tracking-wider">
+                              {t.actions.edit}
+                            </span>
+                          </button>
+                          <Link
+                            to={`${licenseBasePath}/${lic.id}`}
+                            state={{ certificate: lic.source }}
+                            className="flex items-center space-x-2 px-3 py-2 bg-white text-gray-600 rounded-xl hover:bg-gray-600 hover:text-white transition-all shadow-sm group/btn"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span className="text-[10px] font-black uppercase tracking-wider">
+                              {t.actions.view}
+                            </span>
+                          </Link>
+                          <button
+                            onClick={() => {
+                              setSelectedLic(lic);
+                              setActionType("history");
+                            }}
+                            className="flex items-center space-x-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm group/btn"
+                          >
+                            <History className="w-3.5 h-3.5" />
+                            <span className="text-[10px] font-black uppercase tracking-wider">
+                              {t.actions.history}
+                            </span>
+                          </button>
+                          <button
+                            onClick={() => openEditor(lic, "renew")}
+                            className="flex items-center space-x-2 px-3 py-2 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white transition-all shadow-sm group/btn"
+                          >
+                            <RotateCw className="w-3.5 h-3.5" />
+                            <span className="text-[10px] font-black uppercase tracking-wider">
+                              {t.actions.renew}
+                            </span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedLic(lic);
+                              setActionType("revoke");
+                            }}
+                            className="flex items-center space-x-2 px-3 py-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span className="text-[10px] font-black uppercase tracking-wider">
+                              {t.actions.revoke}
+                            </span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      <AnimatePresence>
+        {isEditModalOpen && editCert && (
+          <div className="fixed inset-0 z-[110] flex items-start sm:items-center justify-center p-2 sm:p-4 bg-primary/60 backdrop-blur-md overflow-y-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-[24px] sm:rounded-[32px] shadow-2xl w-full max-w-2xl max-h-[92vh] p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 relative overflow-y-auto flex flex-col"
+            >
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-3 sm:gap-4">
+                <div>
+                  <h4 className="text-xl sm:text-2xl font-black text-primary uppercase tracking-tighter">
+                    {isAm ? "ሰርተፊኬት አስተካክል" : "Edit Certificate"}
+                  </h4>
+                  <p className="text-xs text-gray-400 font-bold uppercase tracking-[0.3em] mt-1">
+                    {editCert?.certificateSerialNumber ||
+                      editCert?.licenseNo ||
+                      ""}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="p-3 hover:bg-gray-100 rounded-full text-gray-400 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 overflow-y-auto pr-1 sm:pr-2">
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+                    {isAm ? "የሁኔታ ሁኔታ" : "Status"}
+                  </label>
+                  <select
+                    value={editForm.status}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        status: e.target.value,
+                      }))
+                    }
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-medium"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Suspended">Suspended</option>
+                    <option value="Expired">Expired</option>
+                    <option value="Revoked">Revoked</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+                    {isAm ? "የተሰጠበት ቀን" : "Issued Date"}
+                  </label>
+                  <input
+                    type="date"
+                    value={editForm.issuedDate}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        issuedDate: e.target.value,
+                      }))
+                    }
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-medium"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+                    {isAm ? "የሚያበቃበት ቀን" : "Expiry Date"}
+                  </label>
+                  <input
+                    type="date"
+                    value={editForm.expiryDate}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        expiryDate: e.target.value,
+                      }))
+                    }
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-medium"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+                    {isAm ? "ደረጃ" : "Level"}
+                  </label>
+                  <select
+                    value={editForm.level}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        level: Number(e.target.value),
+                      }))
+                    }
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-medium"
+                  >
+                    <option value={1}>LEVEL - ONE (1)</option>
+                    <option value={2}>LEVEL - TWO (2)</option>
+                    <option value={3}>LEVEL - THREE (3)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+                    {isAm ? "የተጠቃሚ ፎቶ" : "Applicant Photo"}
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <div className="w-24 h-28 rounded-2xl border border-gray-100 bg-gray-50 overflow-hidden flex items-center justify-center">
+                      {editForm.applicantPhoto ? (
+                        <img
+                          src={
+                            editForm.applicantPhoto.startsWith("data:")
+                              ? editForm.applicantPhoto
+                              : resolveBackendAssetUrl(editForm.applicantPhoto)
+                          }
+                          alt="Applicant"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-8 h-8 text-gray-300" />
+                      )}
+                    </div>
+                    <label className="flex-1 cursor-pointer px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl hover:bg-gray-100 transition-all text-sm font-bold text-gray-600 text-center disabled:opacity-60">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleEditPhotoUpload}
+                        disabled={isPhotoUploading}
+                      />
+                      {isPhotoUploading
+                        ? isAm
+                          ? "በመስቀል ላይ..."
+                          : "Uploading..."
+                        : isAm
+                          ? "ፎቶ ምረጥ"
+                          : "Choose Photo"}
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-2 mt-auto">
+                <button
+                  onClick={handleSaveCertificateEdit}
+                  disabled={isEditSaving || isPhotoUploading}
+                  className="flex-1 py-4 bg-primary text-white rounded-2xl font-black uppercase tracking-widest shadow-lg hover:shadow-xl transition-all disabled:opacity-60"
+                >
+                  {isEditSaving
+                    ? isAm
+                      ? "በማዘመን ላይ..."
+                      : "Saving..."
+                    : isAm
+                      ? "አስቀምጥ"
+                      : "Save Changes"}
+                </button>
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-black uppercase tracking-widest hover:bg-gray-200 transition-all"
+                >
+                  {isAm ? "ሰርዝ" : "Cancel"}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Action Modals */}
       <AnimatePresence>
@@ -697,15 +1245,15 @@ export const LicenseManagement = () => {
                               onChange={(e) =>
                                 setCertData((prev) => ({
                                   ...prev,
-                                  level: e.target.value,
+                                  level: Number(e.target.value),
                                 }))
                               }
                               disabled={actionType === "renew"}
                               className={`text-xs font-bold text-primary outline-none bg-transparent w-full border-none ${actionType === "renew" ? "cursor-not-allowed text-gray-500" : "cursor-pointer"}`}
                             >
-                              <option>LEVEL - ONE (1)</option>
-                              <option>LEVEL - TWO (2)</option>
-                              <option>LEVEL - THREE (3)</option>
+                              <option value={1}>LEVEL - ONE (1)</option>
+                              <option value={2}>LEVEL - TWO (2)</option>
+                              <option value={3}>LEVEL - THREE (3)</option>
                             </select>
                           </div>
 
@@ -828,7 +1376,8 @@ export const LicenseManagement = () => {
                         <div className="grid grid-cols-2 gap-4">
                           <button
                             onClick={() => {
-                              alert(
+                              showToast(
+                                "success",
                                 `License Dispatched ${actionType === "renew" ? "Renewal" : ""} to Applicant as PDF Successfully!`,
                               );
                               setSelectedLic(null);
@@ -844,7 +1393,8 @@ export const LicenseManagement = () => {
                           </button>
                           <button
                             onClick={() => {
-                              alert(
+                              showToast(
+                                "success",
                                 `License Dispatched ${actionType === "renew" ? "Renewal" : ""} to Applicant as Photo Successfully!`,
                               );
                               setSelectedLic(null);
@@ -921,7 +1471,27 @@ export const LicenseManagement = () => {
                       className="w-full p-6 bg-gray-50 border border-gray-100 rounded-3xl outline-none focus:ring-2 focus:ring-red-500 font-medium italic"
                       placeholder="State official reason for revocation..."
                     />
-                    <button className="w-full py-6 bg-red-600 text-white rounded-3xl font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-black transition-all">
+                    <button
+                      className="w-full py-6 bg-red-600 text-white rounded-3xl font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-black transition-all"
+                      onClick={() =>
+                        openConfirmDialog({
+                          title: isAm ? "ማጥፋት ያረጋግጡ" : "Confirm revocation",
+                          message: isAm
+                            ? "ይህ እርምጃ የፈቃዱን ሁኔታ ለመቀየር ያረጋግጣል።"
+                            : "This will mark the license as revoked. Continue?",
+                          type: "delete",
+                          onConfirm: () => {
+                            showToast(
+                              "success",
+                              isAm
+                                ? "ፈቃዱ ተሰርዟል"
+                                : "License revoked successfully",
+                            );
+                            setSelectedLic(null);
+                          },
+                        })
+                      }
+                    >
                       EXECUTE REVOKE PROTOCOL
                     </button>
                   </div>
@@ -931,6 +1501,35 @@ export const LicenseManagement = () => {
           </div>
         )}
       </AnimatePresence>
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={() =>
+          setConfirmDialog((prev) => ({
+            ...prev,
+            isOpen: false,
+            onConfirm: null,
+          }))
+        }
+        onConfirm={() => {
+          confirmDialog.onConfirm?.();
+          setConfirmDialog((prev) => ({
+            ...prev,
+            isOpen: false,
+            onConfirm: null,
+          }));
+        }}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        type={confirmDialog.type}
+      />
+
+      <AutoDismissToast
+        isOpen={toast.isOpen}
+        type={toast.type}
+        message={toast.message}
+        onClose={() => setToast((prev) => ({ ...prev, isOpen: false }))}
+      />
 
       {/* History Preview Modal */}
       <AnimatePresence>
@@ -1016,7 +1615,7 @@ export const LicenseManagement = () => {
                 <div className="grid grid-cols-2 gap-4 pt-4">
                   <button
                     onClick={() => {
-                      alert("Downloading Archived Document...");
+                      showToast("success", "Downloading Archived Document...");
                       setHistoryPreview(null);
                     }}
                     className="py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center space-x-2"

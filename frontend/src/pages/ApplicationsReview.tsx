@@ -112,6 +112,77 @@ const getEmployeeDocumentTarget = (
   };
 };
 
+const getEmployeeOnlyDocumentTarget = (
+  employee: any,
+  terms: string[],
+  excludeTerms: string[] = [],
+) => {
+  const docs = (employee?.documents || []).filter(Boolean);
+  const include = terms.map((term) => normalizeText(term)).filter(Boolean);
+  const exclude = excludeTerms
+    .map((term) => normalizeText(term))
+    .filter(Boolean);
+
+  let bestDoc: any = undefined;
+  let bestScore = -1;
+
+  for (const doc of docs) {
+    const searchText = normalizeText(
+      `${doc?.documentType || ""} ${getFileName(doc?.fileUrl)}`,
+    );
+
+    if (exclude.some((term) => searchText.includes(term))) {
+      continue;
+    }
+
+    const score = include.reduce(
+      (sum, term) => sum + (searchText.includes(term) ? 1 : 0),
+      0,
+    );
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestDoc = doc;
+    }
+  }
+
+  if (!bestDoc?.id || bestScore <= 0) {
+    return null;
+  }
+
+  return {
+    scope: "employee" as const,
+    id: Number(bestDoc.id),
+    fileUrl: bestDoc.fileUrl || "",
+    isVerified: Boolean(bestDoc.isVerified),
+    verifiedAt: bestDoc.verifiedAt ?? null,
+  };
+};
+
+const getEmployeeOnlyDocumentCard = (
+  employee: any,
+  terms: string[],
+  excludeTerms: string[] = [],
+) => getEmployeeOnlyDocumentTarget(employee, terms, excludeTerms);
+
+const inferEmployeeSectionRole = (id: string, verificationKey?: string) => {
+  const roleSource = `${verificationKey || ""} ${id || ""}`.toLowerCase();
+
+  if (roleSource.includes("manager") || roleSource.includes("_mgr_")) {
+    return "manager" as const;
+  }
+
+  if (roleSource.includes("operations") || roleSource.includes("_ops_")) {
+    return "operations" as const;
+  }
+
+  if (roleSource.includes("admin") || roleSource.includes("_admin_")) {
+    return "admin" as const;
+  }
+
+  return null;
+};
+
 const CORRECTION_UPLOAD_FIELDS_STORAGE_KEY =
   "applicationCorrectionUploadFields";
 
@@ -306,6 +377,7 @@ const resolveDocumentVerificationTarget = (
   label: string,
   fileUrl?: string,
   value?: string,
+  sectionRole?: "manager" | "operations" | "admin" | null,
 ) => {
   const labelTerms = [label, value]
     .filter(Boolean)
@@ -324,6 +396,43 @@ const resolveDocumentVerificationTarget = (
       (term) => term && (docType.includes(term) || docFileName.includes(term)),
     );
   };
+
+  const sectionEmployee =
+    sectionRole === "manager"
+      ? application?.manager
+      : sectionRole === "operations"
+        ? application?.operationsHead
+        : sectionRole === "admin"
+          ? application?.adminHead
+          : null;
+
+  if (sectionEmployee) {
+    const employeeDoc = (sectionEmployee?.documents || []).find((doc: any) =>
+      matches(doc),
+    );
+    if (employeeDoc) {
+      return {
+        scope: "employee" as const,
+        id: employeeDoc.id,
+        isVerified: Boolean(employeeDoc.isVerified),
+        verifiedAt: employeeDoc.verifiedAt ?? null,
+      };
+    }
+
+    const educationDoc = (sectionEmployee?.educationDocs || []).find(
+      (doc: any) => matches(doc, "educationDocumentType"),
+    );
+    if (educationDoc) {
+      return {
+        scope: "education" as const,
+        id: educationDoc.id,
+        isVerified: Boolean(educationDoc.isVerified),
+        verifiedAt: educationDoc.verifiedAt ?? null,
+      };
+    }
+
+    return null;
+  }
 
   const organizationDocs = application?.organization?.documents || [];
   const organizationDoc = organizationDocs.find((doc: any) => matches(doc));
@@ -851,7 +960,13 @@ export const ApplicationsReview = () => {
   }) => {
     const resolvedTarget = isFile
       ? (documentTarget ??
-        resolveDocumentVerificationTarget(selectedApp, label, fileUrl, value))
+        resolveDocumentVerificationTarget(
+          selectedApp,
+          label,
+          fileUrl,
+          value,
+          inferEmployeeSectionRole(id, verificationKey),
+        ))
       : null;
     const correctionUploadKey = resolvedTarget
       ? getCorrectionUploadFieldKey(
@@ -1003,7 +1118,7 @@ export const ApplicationsReview = () => {
               >
                 <RefreshCw className="w-4 h-4" />
                 <span className="text-[10px] font-bold uppercase tracking-tight">
-                  Correct
+                  Unverify
                 </span>
               </button>
               <button
@@ -1899,7 +2014,7 @@ export const ApplicationsReview = () => {
                 label="Training Certificate"
                 value={
                   getFileName(
-                    findEmployeeDoc(selectedApp.manager, [
+                    getEmployeeOnlyDocumentCard(selectedApp.manager, [
                       "training certificate",
                     ])?.fileUrl,
                   ) || "-"
@@ -1907,25 +2022,27 @@ export const ApplicationsReview = () => {
                 id="new_mgr_train"
                 isFile
                 fileUrl={
-                  findEmployeeDoc(selectedApp.manager, ["training certificate"])
-                    ?.fileUrl
+                  getEmployeeOnlyDocumentCard(selectedApp.manager, [
+                    "training certificate",
+                  ])?.fileUrl
                 }
-                documentTarget={getEmployeeDocumentTarget(selectedApp.manager, [
-                  "training certificate",
-                ])}
+                documentTarget={getEmployeeOnlyDocumentCard(
+                  selectedApp.manager,
+                  ["training certificate"],
+                )}
                 verificationKey={
-                  getEmployeeDocumentTarget(selectedApp.manager, [
+                  getEmployeeOnlyDocumentCard(selectedApp.manager, [
                     "training certificate",
                   ])?.id
                     ? `manager:${
-                        getEmployeeDocumentTarget(selectedApp.manager, [
+                        getEmployeeOnlyDocumentCard(selectedApp.manager, [
                           "training certificate",
                         ])?.id
                       }`
                     : "manager:training-certificate"
                 }
                 initialVerified={Boolean(
-                  getEmployeeDocumentTarget(selectedApp.manager, [
+                  getEmployeeOnlyDocumentCard(selectedApp.manager, [
                     "training certificate",
                   ])?.isVerified,
                 )}
@@ -2184,6 +2301,27 @@ export const ApplicationsReview = () => {
                   findEmployeeDoc(selectedApp.operationsHead, ["fingerprint"])
                     ?.fileUrl
                 }
+                documentTarget={getEmployeeOnlyDocumentTarget(
+                  selectedApp.operationsHead,
+                  ["fingerprint"],
+                )}
+                verificationKey={
+                  getEmployeeOnlyDocumentTarget(selectedApp.operationsHead, [
+                    "fingerprint",
+                  ])?.id
+                    ? `operations:${
+                        getEmployeeOnlyDocumentTarget(
+                          selectedApp.operationsHead,
+                          ["fingerprint"],
+                        )?.id
+                      }`
+                    : "operations:fingerprint"
+                }
+                initialVerified={Boolean(
+                  getEmployeeOnlyDocumentTarget(selectedApp.operationsHead, [
+                    "fingerprint",
+                  ])?.isVerified,
+                )}
               />
               <ReviewItem
                 label="Medical Result"
@@ -2205,34 +2343,35 @@ export const ApplicationsReview = () => {
                 id="new_ops_train"
                 value={
                   getFileName(
-                    findEmployeeDoc(selectedApp.operationsHead, [
+                    getEmployeeOnlyDocumentCard(selectedApp.operationsHead, [
                       "training certificate",
                     ])?.fileUrl,
                   ) || "-"
                 }
                 isFile
                 fileUrl={
-                  findEmployeeDoc(selectedApp.operationsHead, [
+                  getEmployeeOnlyDocumentCard(selectedApp.operationsHead, [
                     "training certificate",
                   ])?.fileUrl
                 }
-                documentTarget={getEmployeeDocumentTarget(
+                documentTarget={getEmployeeOnlyDocumentCard(
                   selectedApp.operationsHead,
                   ["training certificate"],
                 )}
                 verificationKey={
-                  getEmployeeDocumentTarget(selectedApp.operationsHead, [
+                  getEmployeeOnlyDocumentCard(selectedApp.operationsHead, [
                     "training certificate",
                   ])?.id
                     ? `operations:${
-                        getEmployeeDocumentTarget(selectedApp.operationsHead, [
-                          "training certificate",
-                        ])?.id
+                        getEmployeeOnlyDocumentCard(
+                          selectedApp.operationsHead,
+                          ["training certificate"],
+                        )?.id
                       }`
                     : "operations:training-certificate"
                 }
                 initialVerified={Boolean(
-                  getEmployeeDocumentTarget(selectedApp.operationsHead, [
+                  getEmployeeOnlyDocumentCard(selectedApp.operationsHead, [
                     "training certificate",
                   ])?.isVerified,
                 )}
@@ -3448,34 +3587,34 @@ export const ApplicationsReview = () => {
                   id="new_admin_train"
                   value={
                     getFileName(
-                      findEmployeeDoc(selectedApp.adminHead, [
+                      getEmployeeOnlyDocumentCard(selectedApp.adminHead, [
                         "training certificate",
                       ])?.fileUrl,
                     ) || "-"
                   }
                   isFile
                   fileUrl={
-                    findEmployeeDoc(selectedApp.adminHead, [
+                    getEmployeeOnlyDocumentCard(selectedApp.adminHead, [
                       "training certificate",
                     ])?.fileUrl
                   }
-                  documentTarget={getEmployeeDocumentTarget(
+                  documentTarget={getEmployeeOnlyDocumentCard(
                     selectedApp.adminHead,
                     ["training certificate"],
                   )}
                   verificationKey={
-                    getEmployeeDocumentTarget(selectedApp.adminHead, [
+                    getEmployeeOnlyDocumentCard(selectedApp.adminHead, [
                       "training certificate",
                     ])?.id
                       ? `admin:${
-                          getEmployeeDocumentTarget(selectedApp.adminHead, [
+                          getEmployeeOnlyDocumentCard(selectedApp.adminHead, [
                             "training certificate",
                           ])?.id
                         }`
                       : "admin:training-certificate"
                   }
                   initialVerified={Boolean(
-                    getEmployeeDocumentTarget(selectedApp.adminHead, [
+                    getEmployeeOnlyDocumentCard(selectedApp.adminHead, [
                       "training certificate",
                     ])?.isVerified,
                   )}

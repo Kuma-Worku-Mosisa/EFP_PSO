@@ -5,7 +5,7 @@ import {
   ReactNode,
   useEffect,
 } from "react";
-import { apiRequest } from "../lib/api";
+import { apiRequest, resolveBackendAssetUrl } from "../lib/api";
 
 // 1. Interface matching your Prisma User model exactly
 interface User {
@@ -73,8 +73,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       username: userData.username,
       roles: normalizedRoles,
       initials: initials,
-      avatar: userData.avatar ?? userData.photoUrl ?? userData.photo_url,
-      photoUrl: userData.photoUrl ?? userData.photo_url ?? userData.avatar,
+      avatar: resolveBackendAssetUrl(
+        userData.avatar ?? userData.photoUrl ?? userData.photo_url,
+      ),
+      photoUrl: resolveBackendAssetUrl(
+        userData.photoUrl ?? userData.photo_url ?? userData.avatar,
+      ),
       phone: userData.phone,
       faydaId: userData.faydaId,
       agencyName: userData.agencyName,
@@ -124,8 +128,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         ? updated.roles.map((role: string) => String(role).toLowerCase())
         : (user?.roles ?? []),
       initials,
-      avatar: updated.photoUrl ?? updated.avatar ?? user?.avatar,
-      photoUrl: updated.photoUrl ?? updated.avatar ?? user?.photoUrl,
+      avatar: resolveBackendAssetUrl(
+        updated.photoUrl ?? updated.avatar ?? user?.avatar,
+      ),
+      photoUrl: resolveBackendAssetUrl(
+        updated.photoUrl ?? updated.avatar ?? user?.photoUrl,
+      ),
       phone: updated.phone ?? user?.phone,
       faydaId: updated.faydaId ?? user?.faydaId,
       agencyName: updated.agencyName ?? user?.agencyName,
@@ -140,7 +148,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const updateAvatar = (url: string) => {
     // Persist avatar immediately to UI and then sync via API
     if (user) {
-      const optimistic = { ...user, avatar: url };
+      const resolvedUrl = resolveBackendAssetUrl(url);
+      const optimistic = {
+        ...user,
+        avatar: resolvedUrl,
+        photoUrl: resolvedUrl,
+      };
       setUser(optimistic);
       localStorage.setItem("efp_user", JSON.stringify(optimistic));
       // Fire-and-forget API call to persist

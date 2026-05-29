@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
+import { resolveBackendAssetUrl } from "../lib/api";
 import {
   LogOut,
   User,
@@ -268,7 +269,7 @@ export const DashboardLayout = ({
                 <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary font-black border-2 border-secondary overflow-hidden">
                   {user?.avatar ? (
                     <img
-                      src={user.avatar}
+                      src={resolveBackendAssetUrl(user.avatar)}
                       className="w-full h-full object-cover"
                     />
                   ) : (

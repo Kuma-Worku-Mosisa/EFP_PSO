@@ -8,6 +8,18 @@ export const API_BASE = import.meta.env.DEV
   : "/api";
 const IS_DEV = import.meta.env.DEV;
 
+export function resolveBackendAssetUrl(assetPath?: string | null): string {
+  if (!assetPath) return "";
+  if (/^(https?:|data:|blob:)/i.test(assetPath)) return assetPath;
+
+  const normalizedPath = assetPath.startsWith("/")
+    ? assetPath
+    : `/${assetPath}`;
+  const backendOrigin = API_BASE.replace(/\/api\/?$/, "");
+
+  return `${backendOrigin}${normalizedPath}`;
+}
+
 interface ApiErrorResponse {
   message?: string;
   error?: string;

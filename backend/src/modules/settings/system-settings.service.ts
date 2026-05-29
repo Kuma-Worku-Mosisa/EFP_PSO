@@ -1,6 +1,12 @@
 // filepath: backend/src/modules/settings/system-settings.service.ts
 import prisma from "../../lib/prisma";
 
+const BASE_HOST =
+  process.env.CERT_BASE_URL ||
+  (process.env.NODE_ENV === "production"
+    ? "https://pso.efp.gov.et"
+    : "http://localhost:5000");
+
 export class SystemSettingsService {
   private static instance: any = null;
   private static isStale: boolean = true;
@@ -17,7 +23,7 @@ export class SystemSettingsService {
       create: {
         id: 1,
         governmentName: "Ethiopian Federal Police",
-        efpLogoUrl: "https://pso.efp.gov.et/assets/official-logo.png",
+        efpLogoUrl: `${BASE_HOST}/assets/official-logo.png`,
         issuingAuthority: "Private Security Agency Management Directorate",
       },
     });
@@ -44,8 +50,7 @@ export class SystemSettingsService {
         id: 1,
         governmentName: payload.governmentName || "Ethiopian Federal Police",
         efpLogoUrl:
-          payload.efpLogoUrl ||
-          "https://pso.efp.gov.et/assets/official-logo.png",
+          payload.efpLogoUrl || `${BASE_HOST}/assets/official-logo.png`,
         issuingAuthority:
           payload.issuingAuthority ||
           "Private Security Agency Management Directorate",

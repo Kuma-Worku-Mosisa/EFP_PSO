@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useAuth } from "../context/AuthContext";
+import { apiRequest, resolveBackendAssetUrl } from "../lib/api";
 import { useLanguage } from "../context/LanguageContext";
 import { AutoDismissToast, ToastType } from "../components/AutoDismissToast";
 import ChangePasswordModal from "../components/ChangePasswordModal";
@@ -58,13 +59,45 @@ export const Profile = () => {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        updateAvatar(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+
+    // Upload the image to the backend and persist the returned path
+    (async () => {
+      try {
+        const fd = new FormData();
+        fd.append("photo", file);
+
+        const resp = await apiRequest<{
+          success: boolean;
+          message: string;
+          data: any;
+        }>("/users/me/photo", {
+          method: "POST",
+          body: fd,
+        });
+
+        const updated = resp.data;
+        if (updated) {
+          // updateAvatar will optimistically update local state and persist via updateUserProfile
+          updateAvatar(
+            resolveBackendAssetUrl(
+              updated.photoUrl ?? updated.photo_url ?? updated.avatar ?? "",
+            ),
+          );
+          setToast({
+            isOpen: true,
+            type: "success",
+            message: isAm ? "ፎቶ ተጨምሯል" : "Photo uploaded",
+          });
+        }
+      } catch (err: any) {
+        setToast({
+          isOpen: true,
+          type: "error",
+          message: err?.message || (isAm ? "ፎቶ አልተላከም" : "Upload failed"),
+        });
+      }
+    })();
   };
 
   const handleSave = () => {
@@ -146,7 +179,7 @@ export const Profile = () => {
               <div className="w-full h-full bg-gray-50 rounded-full flex items-center justify-center text-8xl font-black text-primary border-8 border-secondary overflow-hidden shadow-inner ring-4 ring-primary/5">
                 {user?.avatar ? (
                   <img
-                    src={user.avatar}
+                    src={resolveBackendAssetUrl(user.avatar)}
                     alt="Profile"
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />

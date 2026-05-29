@@ -5,6 +5,10 @@ import prisma from "../../lib/prisma";
 import { ApiResponse } from "../../utils/apiResponse";
 import * as bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { buildPrefixedFilename } from "../../middleware/fileUpload";
 
 const getAuditContext = (req: Request) => {
   const rawUserId = req.user?.userId ?? req.user?.id ?? null;
@@ -310,6 +314,109 @@ export const revokeAccessHandler = async (req: Request, res: Response) => {
       "Failed to execute access revocation",
       500,
       error.message,
+    );
+  }
+};
+
+/**
+ * Accepts a single profile photo upload, stores it under uploads/users/{userId}/
+ * updates the user's `photoUrl` and returns the updated user object.
+ */
+export const uploadProfilePhotoHandler = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const userId = req.user?.userId ?? req.user?.id;
+    if (!userId) return ApiResponse.error(res, "Unauthorized", 401);
+
+    // Resolve user's full name for folder naming (fall back to username)
+    let fullName = "";
+    try {
+      const userRecord = await UserService.getUserById(userId);
+      fullName = String(userRecord?.fullName || userRecord?.username || "");
+    } catch (e) {
+      // If fetching fails, continue with empty fullName
+      fullName = "";
+    }
+
+    const sanitizeFolder = (value: string) =>
+      value
+        .normalize("NFKD")
+        .replace(/\p{Diacritic}/gu, "")
+        .replace(/[^a-zA-Z0-9\s_-]/g, "")
+        .trim()
+        .replace(/\s+/g, "_")
+        .replace(/_+/g, "_")
+        .toLowerCase()
+        .slice(0, 120);
+
+    const folderSuffix = fullName ? sanitizeFolder(fullName) : "";
+
+    // Build folder name as userId + fullName (concatenated)
+    const userFolderName = `${String(userId)}${folderSuffix ? `-${folderSuffix}` : ""}`;
+
+    // Configure storage dynamically so we can use the authenticated user id + fullname
+    const uploadDir = path.join(
+      process.cwd(),
+      "uploads",
+      "users",
+      userFolderName,
+    );
+    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+    const storage = multer.diskStorage({
+      destination: (_req, _file, cb) => cb(null, uploadDir),
+      filename: (_req, file, cb) =>
+        cb(null, buildPrefixedFilename("photo", file.originalname)),
+    });
+
+    const upload = multer({
+      storage,
+      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    }).single("photo");
+
+    upload(req as any, res as any, async (err: any) => {
+      if (err) {
+        console.error("Profile photo upload error:", err.message || err);
+        return ApiResponse.error(
+          res,
+          "Failed to upload photo",
+          400,
+          err.message || String(err),
+        );
+      }
+
+      const file = (req as any).file as Express.Multer.File | undefined;
+      if (!file) return ApiResponse.error(res, "No file uploaded", 400);
+
+      const relativePath = `/uploads/users/${userFolderName}/${file.filename}`;
+
+      try {
+        const updated = await UserService.updateUserProfile(
+          userId as string | number,
+          { photoUrl: relativePath },
+          getAuditContext(req),
+        );
+
+        return ApiResponse.success(res, "Profile photo uploaded", updated);
+      } catch (updateErr: any) {
+        console.error("Failed to persist photoUrl:", updateErr);
+        return ApiResponse.error(
+          res,
+          "Failed to save photo information",
+          500,
+          updateErr?.message || String(updateErr),
+        );
+      }
+    });
+  } catch (error: any) {
+    console.error("Upload Profile Photo Error:", error);
+    return ApiResponse.error(
+      res,
+      "Failed to upload profile photo",
+      500,
+      error.message || String(error),
     );
   }
 };

@@ -74,6 +74,21 @@ app.get("/", (req, res) => {
   res.status(200).json({ message: "EFP PSO ERP Backend is running" });
 });
 
+// Legacy QR path: redirect simple /verify/:serial to the API mounted verification route
+app.get("/verify/:serial", (req, res) => {
+  const raw = Array.isArray(req.params.serial)
+    ? req.params.serial[0]
+    : req.params.serial;
+  // Ensure we only forward the serial segment
+  const serial = raw.includes("/")
+    ? raw.replace(/\/$/, "").split("/").pop()
+    : raw;
+  return res.redirect(
+    302,
+    `/api/certifications/verify/${encodeURIComponent(serial)}`,
+  );
+});
+
 // 7. Error Handling Middleware (Catches unhandled errors across the app)
 app.use(
   (
