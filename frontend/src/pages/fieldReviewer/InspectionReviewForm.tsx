@@ -1,7 +1,14 @@
-// filepath: frontend/src/pages/fieldReviewer/InspectionReviewForm.tsx
-import React, { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+ // filepath: frontend/src/pages/fieldReviewer/InspectionReviewForm.tsx
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { Link, useParams } from "react-router-dom";
 import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
+import {
+  InspectionReportPdfTemplate,
+  waitForPdfFonts,
+  type CommitteePdfRow,
+} from "./InspectionReportPdfTemplate";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -10,15 +17,18 @@ import {
   MapPin,
   Save,
   ShieldCheck,
-  ToggleLeft,
-  ToggleRight,
   AlertTriangle,
   Loader2,
+  Download,
+  Eye,
   UploadCloud,
+  PenLine,
+  X,
 } from "lucide-react";
 import { motion } from "motion/react";
 
 import { useAuth } from "../../context/AuthContext";
+import { useLanguage } from "../../context/LanguageContext";
 import { apiRequest } from "../../lib/api";
 
 type InspectionDetail = {
@@ -132,11 +142,6 @@ const indicatorClass = (value: boolean) =>
     ? "border-[#003366] bg-[#003366] text-white shadow-sm"
     : "border-[#003366] bg-white text-transparent shadow-sm";
 
-const truncateText = (value: string, maxLength = 90) => {
-  if (value.length <= maxLength) return value;
-  return `${value.slice(0, maxLength - 1).trimEnd()}…`;
-};
-
 const fetchImageAsDataUrl = async (url: string) => {
   const response = await fetch(url);
   if (!response.ok) {
@@ -164,22 +169,38 @@ const initialState: ReviewFormState = {
 
 export const InspectionReviewForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const { user: currentUser } = useAuth();
+  const { language } = useLanguage();
+  const isAm = language === "am";
   const inspectionId = Number(id);
   const [inspection, setInspection] = useState<InspectionDetail | null>(null);
   const [form, setForm] = useState<ReviewFormState>(initialState);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [reportGenerating, setReportGenerating] = useState(false);
+  const [pdfActionLoading, setPdfActionLoading] = useState<
+    "view" | "download" | null
+  >(null);
   const [signatureUploadingId, setSignatureUploadingId] = useState<
     number | null
   >(null);
+  const [signatureClearingId, setSignatureClearingId] = useState<
+    number | null
+  >(null);
   const [leadUploading, setLeadUploading] = useState(false);
+  const [pdfLanguage, setPdfLanguage] = useState<"en" | "am">(
+    language === "am" ? "am" : "en",
+  );
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const pdfTemplateRef = useRef<HTMLDivElement>(null);
+  const pdfTemplateRootRef = useRef<Root | null>(null);
   const [activeSection, setActiveSection] =
     useState<ReviewSection>("checklist");
+
+  useEffect(() => {
+    setPdfLanguage(language === "am" ? "am" : "en");
+  }, [language]);
 
   useEffect(() => {
     let active = true;
@@ -237,9 +258,9 @@ export const InspectionReviewForm: React.FC = () => {
     label: string;
     count?: string;
   }> = [
-    { id: "checklist", label: "Checklist Review" },
-    { id: "status", label: "Review Status" },
-    { id: "snapshot", label: "Application Snapshot" },
+    { id: "checklist", label: isAm ? "ቼክሊስት ግምገማ" : "Checklist Review" },
+    { id: "status", label: isAm ? "የግምገማ ሁኔታ" : "Review Status" },
+    { id: "snapshot", label: isAm ? "የማመልከቻ ዝርዝር" : "Application Snapshot" },
   ];
 
   const handleToggle = (
@@ -288,12 +309,6 @@ export const InspectionReviewForm: React.FC = () => {
     },
   ];
 
-  const addressLocationPath = addressRows
-    .slice(0, 4)
-    .map((row) => row.value)
-    .filter(Boolean)
-    .join(" / ");
-
   const committeeLabel = (
     member: NonNullable<InspectionDetail["committeeMembers"]>[number],
   ) => member.expertName || "Committee Member";
@@ -317,332 +332,202 @@ export const InspectionReviewForm: React.FC = () => {
   );
   const finalReportUrl = inspection?.finalReportUrl || "";
 
+  const pdfIsAm = pdfLanguage === "am";
+
+  const buildCommitteePdfRows = async (
+    forAmharic: boolean,
+  ): Promise<CommitteePdfRow[]> => {
+    if (!inspection) return [];
+
+    const rows: CommitteePdfRow[] = [];
+
+    if (inspection.leadInspector) {
+      const leadId = inspection.leadInspector.id;
+      rows.push({
+        id: leadId,
+        name:
+          leadCommittee?.expertName ||
+          inspection.leadInspector.fullName ||
+          inspection.leadInspector.username ||
+          (forAmharic ? "ዋና ተቆጣጣሪ" : "Lead Inspector"),
+        role:
+          leadCommittee?.expertRole ||
+          (forAmharic ? "ዋና ተቆጣጣሪ" : "Lead Inspector"),
+        signedAt: leadCommittee?.signedAt ?? null,
+        signatureSrc: leadCommittee?.signatureUrl
+          ? await fetchImageAsDataUrl(
+              resolveFileUrl(leadCommittee.signatureUrl),
+            ).catch(() => null)
+          : null,
+      });
+    }
+
+    for (const member of inspection.committeeMembers || []) {
+      if (member.userId && member.userId === inspection.leadInspector?.id) {
+        continue;
+      }
+      rows.push({
+        id: member.id,
+        name:
+          member.expertName ||
+          (forAmharic ? "የኮሚቴ አባል" : "Committee Member"),
+        role:
+          member.expertRole ||
+          (forAmharic ? "የኮሚቴ አባል" : "Committee Member"),
+        signedAt: member.signedAt ?? null,
+        signatureSrc: member.signatureUrl
+          ? await fetchImageAsDataUrl(resolveFileUrl(member.signatureUrl)).catch(
+              () => null,
+            )
+          : null,
+      });
+    }
+
+    return rows;
+  };
+
+  const inspectionForPdf = useMemo(() => {
+    if (!inspection) return null;
+    return {
+      ...inspection,
+      isLocationValid: form.isLocationValid,
+      isInfrastructureValid: form.isInfrastructureValid,
+      isTrainingValid: form.isTrainingValid,
+      findingsSummary: form.findingsSummary || inspection.findingsSummary,
+      expertOpinion: form.expertOpinion || inspection.expertOpinion,
+    };
+  }, [inspection, form]);
+
+  useEffect(() => {
+    return () => {
+      pdfTemplateRootRef.current?.unmount();
+      pdfTemplateRootRef.current = null;
+    };
+  }, []);
+
   const buildFinalReportPdf = async () => {
-    if (!inspection) {
+    if (!inspectionForPdf) {
       throw new Error("Inspection data not loaded.");
     }
 
-    const pdf = new jsPDF({ unit: "mm", format: "a4" });
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    const marginX = 14;
-    let cursorY = 14;
-    const contentWidth = pageWidth - marginX * 2;
+    if (!pdfTemplateRef.current) {
+      throw new Error("PDF template ref not available.");
+    }
 
-    const line = (y: number) => {
-      pdf.setDrawColor(0, 51, 102);
-      pdf.setLineWidth(0.4);
-      pdf.line(marginX, y, pageWidth - marginX, y);
-    };
+    const committeeRows = await buildCommitteePdfRows(pdfIsAm);
+    const generatedBy =
+      currentUser?.fullName || currentUser?.username || "Field Reviewer";
 
-    const sectionTitle = (title: string) => {
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(10.5);
-      pdf.setTextColor(0, 51, 102);
-      pdf.text(title, marginX, cursorY);
-      cursorY += 3.5;
-      line(cursorY);
-      cursorY += 4;
-    };
+    if (!pdfTemplateRootRef.current) {
+      pdfTemplateRootRef.current = createRoot(pdfTemplateRef.current);
+    }
 
-    const safeText = (value?: string | number | boolean | null) => {
-      if (value === null || value === undefined || value === "") return "-";
-      return String(value);
-    };
+    pdfTemplateRootRef.current.render(
+      <InspectionReportPdfTemplate
+        inspection={inspectionForPdf}
+        isAm={pdfIsAm}
+        organizationName={organizationName}
+        committeeRows={committeeRows}
+        generatedBy={generatedBy}
+        compact
+      />,
+    );
 
-    const labelValue = (
-      label: string,
-      value: string,
-      x: number,
-      width: number,
-    ) => {
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(8.5);
-      pdf.setTextColor(90, 90, 90);
-      pdf.text(label, x, cursorY);
-      pdf.setFont("helvetica", "normal");
-      pdf.setTextColor(25, 25, 25);
-      const wrapped = pdf.splitTextToSize(value, width);
-      pdf.text(wrapped, x, cursorY + 4.4);
-      return cursorY + 4.4 + wrapped.length * 3.8;
-    };
+    await waitForPdfFonts();
 
-    const committeeRows = (() => {
-      const rows = [] as Array<{
-        id: number;
-        name: string;
-        role: string;
-        signatureUrl?: string | null;
-        signedAt?: string | null;
-      }>;
-
-      const leadRow = inspection.leadInspector
-        ? {
-            id: inspection.leadInspector.id,
-            name:
-              leadCommittee?.expertName ||
-              inspection.leadInspector.fullName ||
-              inspection.leadInspector.username ||
-              "Lead Inspector",
-            role: leadCommittee?.expertRole || "Lead Inspector",
-            signatureUrl: leadCommittee?.signatureUrl ?? null,
-            signedAt: leadCommittee?.signedAt ?? null,
-          }
-        : null;
-
-      if (leadRow) rows.push(leadRow);
-
-      for (const member of inspection.committeeMembers || []) {
-        if (member.userId && member.userId === inspection.leadInspector?.id) {
-          continue;
-        }
-
-        rows.push({
-          id: member.id,
-          name: member.expertName || "Committee Member",
-          role: member.expertRole || "Committee Member",
-          signatureUrl: member.signatureUrl ?? null,
-          signedAt: member.signedAt ?? null,
-        });
-      }
-
-      return rows;
-    })();
-
-    const committeeSignatureMap = new Map<number, string>();
+    const imgs = pdfTemplateRef.current.querySelectorAll("img");
     await Promise.all(
-      committeeRows.map(async (member) => {
-        if (!member.signatureUrl) return;
-
-        try {
-          const dataUrl = await fetchImageAsDataUrl(resolveFileUrl(member.signatureUrl));
-          committeeSignatureMap.set(member.id, dataUrl);
-        } catch (loadError) {
-          console.warn("Failed to load signature image for PDF", loadError);
-        }
-      }),
+      Array.from(imgs)
+        .filter((img) => !img.complete)
+        .map(
+          (img) =>
+            new Promise<void>((resolve) => {
+              img.onload = () => resolve();
+              img.onerror = () => resolve();
+            }),
+        ),
     );
 
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(15);
-    pdf.setTextColor(0, 51, 102);
-    pdf.text("Inspection Final Report", marginX, cursorY);
-    cursorY += 7;
-
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(9);
-    pdf.setTextColor(70, 70, 70);
-    pdf.text(
-      `${safeText(organizationName)} | Inspection #${inspection.id} | ${formatDateTime(inspection.scheduledDate)}`,
-      marginX,
-      cursorY,
-    );
-    cursorY += 8;
-
-    sectionTitle("Address Details");
-    const leftX = marginX;
-    const rightX = marginX + contentWidth / 2 + 4;
-    const columnWidth = contentWidth / 2 - 4;
-    const address = inspection.application?.organization?.address;
-    const region =
-      address?.kebele?.woreda?.zone?.region?.nameEnglish ||
-      address?.kebele?.woreda?.zone?.region?.nameAmharic ||
-      "-";
-    const zone =
-      address?.kebele?.woreda?.zone?.nameEnglish ||
-      address?.kebele?.woreda?.zone?.nameAmharic ||
-      "-";
-    const woreda =
-      address?.kebele?.woreda?.nameEnglish ||
-      address?.kebele?.woreda?.nameAmharic ||
-      "-";
-    const kebele =
-      address?.kebele?.nameEnglish || address?.kebele?.nameAmharic || "-";
-
-    const topLeftY = labelValue("Region", region, leftX, columnWidth);
-    cursorY += 0;
-    pdf.text(
-      `Special Location: ${truncateText(safeText(address?.specialLocation))}`,
-      leftX,
-      topLeftY + 4,
-    );
-    pdf.text(
-      `House Number: ${truncateText(safeText(address?.houseNumber))}`,
-      leftX,
-      topLeftY + 9,
-    );
-
-    const topRightY = labelValue("Zone", zone, rightX, columnWidth);
-    pdf.text(
-      `Woreda: ${truncateText(safeText(woreda))}`,
-      rightX,
-      topRightY + 4,
-    );
-    pdf.text(
-      `Kebele: ${truncateText(safeText(kebele))}`,
-      rightX,
-      topRightY + 9,
-    );
-    cursorY = Math.max(topLeftY + 15, topRightY + 15) + 2;
-
-    sectionTitle("Infrastructure");
-    const infraLeftY = labelValue(
-      "Total Office Count",
-      safeText(inspection.application?.organization?.numberOfOffices),
-      leftX,
-      columnWidth,
-    );
-    const infraRightY = labelValue(
-      "Total Vehicle Count",
-      safeText(inspection.application?.organization?.numberOfVehicles),
-      rightX,
-      columnWidth,
-    );
-    pdf.text(
-      `Total Computer Count: ${safeText(inspection.application?.organization?.numberOfComputers)}`,
-      leftX,
-      infraLeftY + 4,
-    );
-    pdf.text(
-      `Storehouse Availability: ${inspection.application?.organization?.hasStoreHouse ? "Yes" : "No"}`,
-      rightX,
-      infraRightY + 4,
-    );
-    cursorY = Math.max(infraLeftY + 10, infraRightY + 10) + 3;
-
-    sectionTitle("Findings Summary");
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(9);
-    pdf.setTextColor(25, 25, 25);
-    const summary = pdf.splitTextToSize(
-      safeText(inspection.findingsSummary),
-      contentWidth,
-    ).slice(0, 6);
-    if (summary.length > 0 && safeText(inspection.findingsSummary) !== "-") {
-      const sourceLines = pdf.splitTextToSize(
-        safeText(inspection.findingsSummary),
-        contentWidth,
-      );
-      if (sourceLines.length > summary.length) {
-        summary[summary.length - 1] = `${summary[summary.length - 1].replace(/\.*$/, "")}...`;
-      }
-    }
-    pdf.text(summary, marginX, cursorY);
-    cursorY += summary.length * 4 + 2;
-
-    sectionTitle("Expert Opinion");
-    const opinion = pdf.splitTextToSize(
-      safeText(inspection.expertOpinion),
-      contentWidth,
-    ).slice(0, 6);
-    if (opinion.length > 0 && safeText(inspection.expertOpinion) !== "-") {
-      const sourceLines = pdf.splitTextToSize(
-        safeText(inspection.expertOpinion),
-        contentWidth,
-      );
-      if (sourceLines.length > opinion.length) {
-        opinion[opinion.length - 1] = `${opinion[opinion.length - 1].replace(/\.*$/, "")}...`;
-      }
-    }
-    pdf.text(opinion, marginX, cursorY);
-    cursorY += opinion.length * 4 + 2;
-
-    sectionTitle("Inspection Committee");
-    const tableX = marginX;
-    const tableY = cursorY;
-    const colWidths = [54, 38, 42, 40];
-    const headerHeight = 6;
-    const rowHeight = 14;
-    const tableWidth = colWidths.reduce((sum, width) => sum + width, 0);
-
-    pdf.setFillColor(240, 244, 248);
-    pdf.rect(tableX, tableY, tableWidth, headerHeight, "F");
-    pdf.setDrawColor(210, 216, 224);
-    pdf.rect(tableX, tableY, tableWidth, headerHeight + rowHeight * Math.max(committeeRows.length, 1));
-
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(8);
-    pdf.setTextColor(0, 51, 102);
-    pdf.text("Name", tableX + 2, tableY + 4);
-    pdf.text("Role", tableX + colWidths[0] + 2, tableY + 4);
-    pdf.text("Signature", tableX + colWidths[0] + colWidths[1] + 2, tableY + 4);
-    pdf.text(
-      "Signed At",
-      tableX + colWidths[0] + colWidths[1] + colWidths[2] + 2,
-      tableY + 4,
-    );
-
-    let rowTop = tableY + headerHeight;
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(7.5);
-    pdf.setTextColor(30, 30, 30);
-
-    committeeRows.forEach((member, index) => {
-      const isLastRow = index === committeeRows.length - 1;
-      const rowBottom = rowTop + rowHeight;
-      const signatureDataUrl = committeeSignatureMap.get(member.id);
-
-      pdf.line(tableX, rowBottom, tableX + tableWidth, rowBottom);
-      pdf.line(tableX + colWidths[0], rowTop, tableX + colWidths[0], rowBottom);
-      pdf.line(
-        tableX + colWidths[0] + colWidths[1],
-        rowTop,
-        tableX + colWidths[0] + colWidths[1],
-        rowBottom,
-      );
-      pdf.line(
-        tableX + colWidths[0] + colWidths[1] + colWidths[2],
-        rowTop,
-        tableX + colWidths[0] + colWidths[1] + colWidths[2],
-        rowBottom,
-      );
-
-      pdf.text(truncateText(member.name, 22), tableX + 2, rowTop + 5);
-      pdf.text(truncateText(member.role, 18), tableX + colWidths[0] + 2, rowTop + 5);
-
-      if (signatureDataUrl) {
-        try {
-          const imageFormat = signatureDataUrl.includes("image/jpeg")
-            ? "JPEG"
-            : "PNG";
-          pdf.addImage(
-            signatureDataUrl,
-            imageFormat,
-            tableX + colWidths[0] + colWidths[1] + 2,
-            rowTop + 2,
-            34,
-            9,
-          );
-        } catch {
-          pdf.text("Signed", tableX + colWidths[0] + colWidths[1] + 2, rowTop + 5);
-        }
-      } else {
-        pdf.text("Signed", tableX + colWidths[0] + colWidths[1] + 2, rowTop + 5);
-      }
-
-      pdf.text(
-        member.signedAt ? formatDateTime(member.signedAt) : "-",
-        tableX + colWidths[0] + colWidths[1] + colWidths[2] + 2,
-        rowTop + 5,
-      );
-
-      if (!isLastRow) {
-        rowTop = rowBottom;
-      }
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
     });
 
-    cursorY = rowTop + rowHeight + 2;
+    const canvas = await html2canvas(pdfTemplateRef.current, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: "#ffffff",
+      onclone: (clonedDoc) => {
+        const node = clonedDoc.body.querySelector(
+          "[data-inspection-pdf-root]",
+        ) as HTMLElement | null;
+        if (node) {
+          node.style.fontFamily =
+            '"Noto Sans Ethiopic", "Noto Sans", Arial, sans-serif';
+        }
+      },
+    });
 
-    pdf.setFont("helvetica", "italic");
-    pdf.setFontSize(8);
-    pdf.setTextColor(120, 120, 120);
-    pdf.text(
-      `Generated by ${safeText(currentUser?.fullName || currentUser?.username)} on ${formatDateTime(new Date().toISOString())}`,
-      marginX,
-      pageHeight - 10,
-    );
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const imgData = canvas.toDataURL("image/jpeg", 0.92);
+    let renderWidth = pageWidth;
+    let renderHeight = (canvas.height * renderWidth) / canvas.width;
+
+    if (renderHeight > pageHeight) {
+      renderHeight = pageHeight;
+      renderWidth = (canvas.width * renderHeight) / canvas.height;
+    }
+
+    const offsetX = (pageWidth - renderWidth) / 2;
+    pdf.addImage(imgData, "JPEG", offsetX, 0, renderWidth, renderHeight);
+
+    pdfTemplateRootRef.current.render(null);
 
     return pdf;
+  };
+
+  const handleViewPdf = async () => {
+    setError(null);
+    setPdfActionLoading("view");
+    try {
+      const pdf = await buildFinalReportPdf();
+      const blob = pdf.output("blob");
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank", "noopener,noreferrer");
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (requestError: unknown) {
+      const message =
+        requestError instanceof Error
+          ? requestError.message
+          : "Failed to open PDF preview.";
+      setError(message);
+    } finally {
+      setPdfActionLoading(null);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    setError(null);
+    setPdfActionLoading("download");
+    try {
+      const pdf = await buildFinalReportPdf();
+      pdf.save(`inspection-${inspection?.id ?? inspectionId}-final-report.pdf`);
+    } catch (requestError: unknown) {
+      const message =
+        requestError instanceof Error
+          ? requestError.message
+          : "Failed to download PDF.";
+      setError(message);
+    } finally {
+      setPdfActionLoading(null);
+    }
   };
 
   const handleConfirmFinalReport = async () => {
@@ -739,6 +624,52 @@ export const InspectionReviewForm: React.FC = () => {
     }
   };
 
+  const handleClearSignature = async (committeeId: number) => {
+    if (!inspectionId || !Number.isFinite(currentUserId)) {
+      return;
+    }
+
+    setError(null);
+    setMessage(null);
+    setSignatureClearingId(committeeId);
+
+    try {
+      const response = await apiRequest(
+        `/inspections/${inspectionId}/committee/${committeeId}/signature`,
+        { method: "DELETE" },
+      );
+
+      const updatedCommittee = (response as any)?.data ?? response;
+
+      setInspection((current) => {
+        if (!current?.committeeMembers) return current;
+
+        return {
+          ...current,
+          committeeMembers: current.committeeMembers.map((member) =>
+            member.id === committeeId
+              ? {
+                  ...member,
+                  ...updatedCommittee,
+                  signatureUrl: null,
+                  signedAt: null,
+                }
+              : member,
+          ),
+        };
+      });
+
+      setMessage(
+        isAm ? "ፊርማ በተሳካ ሁኔታ ተሰርዟል።" : "Signature removed successfully.",
+      );
+    } catch (requestError: any) {
+      console.error("Failed to remove signature", requestError);
+      setError(requestError?.message || "Failed to remove signature.");
+    } finally {
+      setSignatureClearingId(null);
+    }
+  };
+
   const handleLeadSignatureUpload = async (file: File) => {
     if (!inspectionId || !Number.isFinite(currentUserId)) return;
 
@@ -814,26 +745,28 @@ export const InspectionReviewForm: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-3xl shadow-sm border p-8 flex items-center gap-3 text-gray-500">
-        <Loader2 className="w-5 h-5 animate-spin" />
-        Loading inspection review form...
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 flex items-center gap-3 text-gray-500">
+        <Loader2 className="w-5 h-5 animate-spin text-[#003366]" />
+        <span className="font-medium">
+          {isAm ? "የምርመራ ቅጽ በመጫን ላይ..." : "Loading inspection review form..."}
+        </span>
       </div>
     );
   }
 
   if (error && !inspection) {
     return (
-      <div className="bg-white rounded-3xl shadow-sm border p-8 space-y-4">
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 space-y-4">
         <div className="flex items-center gap-3 text-red-600 font-bold">
           <AlertTriangle className="w-5 h-5" />
           {error}
         </div>
         <Link
           to="/field-reviewer/inspections"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white font-bold"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#003366] text-white font-bold hover:bg-[#004080] transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to inspections
+          {isAm ? "ወደ ምርመራዎች ተመለስ" : "Back to inspections"}
         </Link>
       </div>
     );
@@ -841,34 +774,52 @@ export const InspectionReviewForm: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-3xl shadow-sm border p-6 md:p-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-sm font-bold text-gray-400 uppercase tracking-wider">
-            <ShieldCheck className="w-4 h-4" />
-            Field Review Workspace
+      {/* Header */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-[#003366] via-[#004080] to-[#001F3F] rounded-3xl p-6 md:p-8 text-white shadow-lg">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#FFD700] via-[#C5A022] to-[#FFD700]" />
+        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-[#FFD700]/5" />
+        <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-bold text-[#FFD700] uppercase tracking-widest mb-2">
+              <ShieldCheck className="w-4 h-4" />
+              {isAm ? "ፊልድ ሪቪው ቦታ" : "Field Review Workspace"}
+            </div>
+            <h2 className="text-2xl font-black">{organizationName}</h2>
+            <p className="mt-1 text-white/70 text-sm">
+              {isAm ? "ቀጠሮ:" : "Scheduled:"} {formatDateTime(inspection?.scheduledDate)}
+            </p>
           </div>
-          <h2 className="mt-2 text-2xl font-black text-primary">
-            {organizationName}
-          </h2>
-          <p className="mt-2 text-gray-500">
-            Scheduled: {formatDateTime(inspection?.scheduledDate)}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <span className="px-3 py-2 rounded-full text-xs font-bold bg-gray-100 text-gray-600">
-            Application #{inspection?.application?.id ?? inspectionId}
-          </span>
-          <span className="px-3 py-2 rounded-full text-xs font-bold bg-blue-50 text-blue-700">
-            {inspection?.status || "Scheduled"}
-          </span>
+          <div className="flex flex-wrap gap-2">
+            <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-white/10 text-white border border-white/20">
+              {isAm ? "ማመልከቻ" : "Application"} #{inspection?.application?.id ?? inspectionId}
+            </span>
+            <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-[#FFD700]/20 text-[#FFD700] border border-[#FFD700]/30">
+              {inspection?.status || (isAm ? "ቀጠሮ ተይዟል" : "Scheduled")}
+            </span>
+          </div>
         </div>
       </div>
 
       {message && (
-        <div className="bg-green-50 border border-green-100 text-green-700 rounded-2xl px-5 py-4 font-medium">
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-2xl px-5 py-4 font-medium flex items-center gap-2"
+        >
+          <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
           {message}
-        </div>
+        </motion.div>
+      )}
+
+      {error && inspection && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-red-50 border border-red-200 text-red-700 rounded-2xl px-5 py-4 font-medium flex items-center gap-2"
+        >
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+          {error}
+        </motion.div>
       )}
 
       <div className="space-y-6">
@@ -895,7 +846,7 @@ export const InspectionReviewForm: React.FC = () => {
                     onClick={() => setActiveSection(tab.id)}
                     className={`inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-bold transition-all whitespace-nowrap ${
                       isActive
-                        ? "bg-primary text-white shadow-sm"
+                        ? "bg-[#003366] text-white shadow-sm"
                         : "bg-gray-50 text-gray-600 hover:bg-gray-100"
                     }`}
                   >
@@ -910,44 +861,45 @@ export const InspectionReviewForm: React.FC = () => {
             <div className="bg-white rounded-3xl shadow-sm border p-6 md:p-8 space-y-8">
               <section className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-primary" />
-                  <h3 className="text-lg font-bold text-primary">
-                    Checklist Review
+                  <CheckCircle2 className="w-5 h-5 text-[#003366]" />
+                  <h3 className="text-lg font-bold text-[#003366]">
+                    {isAm ? "ቼክሊስት ግምገማ" : "Checklist Review"}
                   </h3>
                 </div>
                 <p className="text-sm text-gray-500">
-                  Confirm the field conditions below before writing your final
-                  opinion.
+                  {isAm
+                    ? "የመጨረሻ አስተያየትዎን ከመጻፍዎ በፊት ከዚህ በታች ያሉ የሜዳ ሁኔታዎችን ያረጋግጡ።"
+                    : "Confirm the field conditions below before writing your final opinion."}
                 </p>
 
                 <div className="space-y-5">
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div>
                       <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                        Organization Profile
+                        {isAm ? "የድርጅት መገለጫ" : "Organization Profile"}
                       </p>
-                      <h4 className="mt-1 text-base font-black text-primary">
+                      <h4 className="mt-1 text-base font-black text-[#003366]">
                         {organizationName}
                       </h4>
                     </div>
                     <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-gray-500 border">
-                      Application #{inspection?.application?.id ?? inspectionId}
+                      {isAm ? "ማመልከቻ" : "Application"} #{inspection?.application?.id ?? inspectionId}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 text-sm">
                     <div className="rounded-2xl border bg-white p-4 space-y-4">
                       <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                        Address
+                        {isAm ? "አድራሻ" : "Address"}
                       </p>
                       <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-4">
                         <div className="space-y-3 text-gray-500 font-semibold">
-                          <p>Region</p>
-                          <p>Zone</p>
-                          <p>Woreda</p>
-                          <p>Kebele</p>
-                          <p>Special Location</p>
-                          <p>House Number</p>
+                          <p>{isAm ? "ክልል" : "Region"}</p>
+                          <p>{isAm ? "ዞን" : "Zone"}</p>
+                          <p>{isAm ? "ወረዳ" : "Woreda"}</p>
+                          <p>{isAm ? "ቀበሌ" : "Kebele"}</p>
+                          <p>{isAm ? "ልዩ ቦታ" : "Special Location"}</p>
+                          <p>{isAm ? "የቤት ቁጥር" : "House Number"}</p>
                         </div>
 
                         <div className="space-y-3 text-gray-800 font-semibold break-words">
@@ -963,14 +915,14 @@ export const InspectionReviewForm: React.FC = () => {
 
                     <div className="rounded-2xl border bg-white p-4 space-y-4">
                       <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                        Infrastructure
+                        {isAm ? "መሠረተ ልማት" : "Infrastructure"}
                       </p>
                       <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-4">
                         <div className="space-y-3 text-gray-500 font-semibold">
-                          <p>Total Office Count</p>
-                          <p>Total Vehicle Count</p>
-                          <p>Total Computer Count</p>
-                          <p>Storehouse Availability</p>
+                          <p>{isAm ? "ጠቅላላ ቢሮ ብዛት" : "Total Office Count"}</p>
+                          <p>{isAm ? "ጠቅላላ ተሽከርካሪ ብዛት" : "Total Vehicle Count"}</p>
+                          <p>{isAm ? "ጠቅላላ ኮምፒውተር ብዛት" : "Total Computer Count"}</p>
+                          <p>{isAm ? "መጋዘን ያለ" : "Storehouse Availability"}</p>
                         </div>
 
                         <div className="space-y-3 text-gray-800 font-semibold break-words">
@@ -987,18 +939,18 @@ export const InspectionReviewForm: React.FC = () => {
                               ?.numberOfComputers ?? "-"}
                           </p>
                           <p
-                            className={`font-bold ${inspection?.application?.organization?.hasStoreHouse ? "text-green-600" : "text-amber-600"}`}
+                            className={`font-bold ${inspection?.application?.organization?.hasStoreHouse ? "text-emerald-600" : "text-amber-600"}`}
                           >
-                            {inspection?.application?.organization
-                              ?.hasStoreHouse
-                              ? "Yes"
-                              : "No"}
+                            {inspection?.application?.organization?.hasStoreHouse
+                              ? (isAm ? "አዎ" : "Yes")
+                              : (isAm ? "የለም" : "No")}
                           </p>
                         </div>
                       </div>
                       <p className="text-sm text-gray-500">
-                        Use these facility counts to confirm the organization is
-                        operationally ready.
+                        {isAm
+                          ? "ድርጅቱ ዝግጁ መሆኑን ለማረጋገጥ እነዚህን የተቋም ቁጥሮች ይጠቀሙ።"
+                          : "Use these facility counts to confirm the organization is operationally ready."}
                       </p>
                     </div>
                   </div>
@@ -1009,15 +961,11 @@ export const InspectionReviewForm: React.FC = () => {
                     type="button"
                     onClick={() => handleToggle("isLocationValid")}
                     aria-pressed={form.isLocationValid}
-                    className={`rounded-2xl border-2 border-[#003366] bg-white p-4 text-left transition-all ${toggleButtonClass(
-                      form.isLocationValid,
-                    )}`}
+                    className={`rounded-2xl border-2 border-[#003366] bg-white p-4 text-left transition-all ${toggleButtonClass(form.isLocationValid)}`}
                   >
                     <div className="flex items-start gap-3">
                       <span
-                        className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-[11px] font-black transition-colors ${indicatorClass(
-                          form.isLocationValid,
-                        )}`}
+                        className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-[11px] font-black transition-colors ${indicatorClass(form.isLocationValid)}`}
                         aria-hidden="true"
                       >
                         ✓
@@ -1025,17 +973,14 @@ export const InspectionReviewForm: React.FC = () => {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-3">
                           <span className="font-bold text-gray-900">
-                            Location Valid
+                            {isAm ? "ቦታ ትክክለኛ ነው" : "Location Valid"}
                           </span>
-                          <span
-                            className={`text-xs font-bold ${form.isLocationValid ? "text-green-600" : "text-gray-400"}`}
-                          >
-                            {form.isLocationValid ? "Confirmed" : "Pending"}
+                          <span className={`text-xs font-bold ${form.isLocationValid ? "text-emerald-600" : "text-gray-400"}`}>
+                            {form.isLocationValid ? (isAm ? "ተረጋግጧል" : "Confirmed") : (isAm ? "በመጠባበቅ" : "Pending")}
                           </span>
                         </div>
                         <p className="mt-2 text-sm text-gray-500">
-                          Site access, address, and location details are
-                          verified.
+                          {isAm ? "የጣቢያ መዳረሻ፣ አድራሻ እና የቦታ ዝርዝሮች ተረጋግጠዋል።" : "Site access, address, and location details are verified."}
                         </p>
                       </div>
                     </div>
@@ -1045,15 +990,11 @@ export const InspectionReviewForm: React.FC = () => {
                     type="button"
                     onClick={() => handleToggle("isInfrastructureValid")}
                     aria-pressed={form.isInfrastructureValid}
-                    className={`rounded-2xl border-2 border-[#003366] bg-white p-4 text-left transition-all ${toggleButtonClass(
-                      form.isInfrastructureValid,
-                    )}`}
+                    className={`rounded-2xl border-2 border-[#003366] bg-white p-4 text-left transition-all ${toggleButtonClass(form.isInfrastructureValid)}`}
                   >
                     <div className="flex items-start gap-3">
                       <span
-                        className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-[11px] font-black transition-colors ${indicatorClass(
-                          form.isInfrastructureValid,
-                        )}`}
+                        className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-[11px] font-black transition-colors ${indicatorClass(form.isInfrastructureValid)}`}
                         aria-hidden="true"
                       >
                         ✓
@@ -1061,19 +1002,14 @@ export const InspectionReviewForm: React.FC = () => {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-3">
                           <span className="font-bold text-gray-900">
-                            Infrastructure Valid
+                            {isAm ? "መሠረተ ልማት ትክክለኛ ነው" : "Infrastructure Valid"}
                           </span>
-                          <span
-                            className={`text-xs font-bold ${form.isInfrastructureValid ? "text-green-600" : "text-gray-400"}`}
-                          >
-                            {form.isInfrastructureValid
-                              ? "Confirmed"
-                              : "Pending"}
+                          <span className={`text-xs font-bold ${form.isInfrastructureValid ? "text-emerald-600" : "text-gray-400"}`}>
+                            {form.isInfrastructureValid ? (isAm ? "ተረጋግጧል" : "Confirmed") : (isAm ? "በመጠባበቅ" : "Pending")}
                           </span>
                         </div>
                         <p className="mt-2 text-sm text-gray-500">
-                          Office layout, facilities, and physical readiness are
-                          confirmed.
+                          {isAm ? "የቢሮ አቀማመጥ፣ ተቋማት እና አካላዊ ዝግጁነት ተረጋግጠዋል።" : "Office layout, facilities, and physical readiness are confirmed."}
                         </p>
                       </div>
                     </div>
@@ -1083,15 +1019,11 @@ export const InspectionReviewForm: React.FC = () => {
                     type="button"
                     onClick={() => handleToggle("isTrainingValid")}
                     aria-pressed={form.isTrainingValid}
-                    className={`rounded-2xl border-2 border-[#003366] bg-white p-4 text-left transition-all ${toggleButtonClass(
-                      form.isTrainingValid,
-                    )}`}
+                    className={`rounded-2xl border-2 border-[#003366] bg-white p-4 text-left transition-all ${toggleButtonClass(form.isTrainingValid)}`}
                   >
                     <div className="flex items-start gap-3">
                       <span
-                        className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-[11px] font-black transition-colors ${indicatorClass(
-                          form.isTrainingValid,
-                        )}`}
+                        className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-[11px] font-black transition-colors ${indicatorClass(form.isTrainingValid)}`}
                         aria-hidden="true"
                       >
                         ✓
@@ -1099,16 +1031,14 @@ export const InspectionReviewForm: React.FC = () => {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-3">
                           <span className="font-bold text-gray-900">
-                            Training Valid
+                            {isAm ? "ስልጠና ትክክለኛ ነው" : "Training Valid"}
                           </span>
-                          <span
-                            className={`text-xs font-bold ${form.isTrainingValid ? "text-green-600" : "text-gray-400"}`}
-                          >
-                            {form.isTrainingValid ? "Confirmed" : "Pending"}
+                          <span className={`text-xs font-bold ${form.isTrainingValid ? "text-emerald-600" : "text-gray-400"}`}>
+                            {form.isTrainingValid ? (isAm ? "ተረጋግጧል" : "Confirmed") : (isAm ? "በመጠባበቅ" : "Pending")}
                           </span>
                         </div>
                         <p className="mt-2 text-sm text-gray-500">
-                          Required training evidence and records are consistent.
+                          {isAm ? "የሚያስፈልጉ የስልጠና ማስረጃዎች እና መዝገቦች ተጣጥመዋል።" : "Required training evidence and records are consistent."}
                         </p>
                       </div>
                     </div>
@@ -1118,9 +1048,9 @@ export const InspectionReviewForm: React.FC = () => {
 
               <section className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <FileText className="w-5 h-5 text-primary" />
-                  <h3 className="text-lg font-bold text-primary">
-                    Findings Summary
+                  <FileText className="w-5 h-5 text-[#003366]" />
+                  <h3 className="text-lg font-bold text-[#003366]">
+                    {isAm ? "የግኝቶች ማጠቃለያ" : "Findings Summary"}
                   </h3>
                 </div>
                 <textarea
@@ -1132,16 +1062,16 @@ export const InspectionReviewForm: React.FC = () => {
                     }))
                   }
                   rows={6}
-                  placeholder="Write concise site findings, deficiencies, and notable observations..."
-                  className="w-full rounded-2xl border border-gray-200 focus:ring-2 focus:ring-primary outline-none px-4 py-3 text-sm bg-gray-50"
+                  placeholder={isAm ? "አጭር የጣቢያ ግኝቶችን፣ ጉድለቶችን እና ልዩ ምልከታዎችን ይጻፉ..." : "Write concise site findings, deficiencies, and notable observations..."}
+                  className="w-full rounded-2xl border border-gray-200 focus:ring-2 focus:ring-[#003366] outline-none px-4 py-3 text-sm bg-gray-50 transition-shadow"
                 />
               </section>
 
               <section className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <MapPin className="w-5 h-5 text-primary" />
-                  <h3 className="text-lg font-bold text-primary">
-                    Expert Opinion
+                  <MapPin className="w-5 h-5 text-[#003366]" />
+                  <h3 className="text-lg font-bold text-[#003366]">
+                    {isAm ? "የባለሙያ አስተያየት" : "Expert Opinion"}
                   </h3>
                 </div>
                 <textarea
@@ -1153,70 +1083,166 @@ export const InspectionReviewForm: React.FC = () => {
                     }))
                   }
                   rows={5}
-                  placeholder="State your professional opinion and recommendation for the admin team..."
-                  className="w-full rounded-2xl border border-gray-200 focus:ring-2 focus:ring-primary outline-none px-4 py-3 text-sm bg-gray-50"
+                  placeholder={isAm ? "ለአስተዳዳሪ ቡድን ሙያዊ አስተያየትዎን እና ምክርዎን ይጻፉ..." : "State your professional opinion and recommendation for the admin team..."}
+                  className="w-full rounded-2xl border border-gray-200 focus:ring-2 focus:ring-[#003366] outline-none px-4 py-3 text-sm bg-gray-50 transition-shadow"
                 />
               </section>
 
               <section className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <FileText className="w-5 h-5 text-primary" />
-                  <h3 className="text-lg font-bold text-primary">
-                    Final Inspection Report
+                  <FileText className="w-5 h-5 text-[#003366]" />
+                  <h3 className="text-lg font-bold text-[#003366]">
+                    {isAm ? "የመጨረሻ የምርመራ ሪፖርት" : "Final Inspection Report"}
                   </h3>
                 </div>
 
                 {finalReportUrl ? (
-                  <div className="rounded-2xl border bg-green-50 p-4 space-y-3">
-                    <p className="text-sm font-semibold text-green-800">
-                      Final report generated and saved.
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 space-y-3">
+                    <p className="text-sm font-semibold text-emerald-800 flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4" />
+                      {isAm ? "የመጨረሻ ሪፖርት ተፈጥሮ ተቀምጧል።" : "Final report generated and saved."}
                     </p>
-                    <div className="flex flex-wrap gap-3">
-                      <a
-                        href={resolveFileUrl(finalReportUrl)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white font-bold"
-                      >
-                        <FileText className="w-4 h-4" />
-                        View PDF
-                      </a>
-                      <a
-                        href={resolveFileUrl(finalReportUrl)}
-                        download={`inspection-${inspection?.id ?? inspectionId}-final-report.pdf`}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-primary text-primary bg-white font-bold"
-                      >
-                        <UploadCloud className="w-4 h-4 rotate-180" />
-                        Download PDF
-                      </a>
+                    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[#003366]/15 bg-white p-3 w-full">
+                      <span className="text-xs font-bold text-[#003366]">
+                        {isAm ? "የPDF ሪፖርት ቋንቋ" : "PDF report language"}
+                      </span>
+                      <div className="inline-flex rounded-lg border border-gray-200 overflow-hidden ml-auto">
+                        <button
+                          type="button"
+                          onClick={() => setPdfLanguage("en")}
+                          className={`px-3 py-1.5 text-xs font-bold transition-colors ${pdfLanguage === "en" ? "bg-[#003366] text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+                        >
+                          English
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPdfLanguage("am")}
+                          className={`px-3 py-1.5 text-xs font-bold transition-colors ${pdfLanguage === "am" ? "bg-[#003366] text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+                        >
+                          አማርኛ
+                        </button>
+                      </div>
                     </div>
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        onClick={() => void handleViewPdf()}
+                        disabled={pdfActionLoading !== null}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#003366] text-white font-bold hover:bg-[#004080] transition-colors shadow-sm disabled:opacity-50"
+                      >
+                        {pdfActionLoading === "view" ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                        {isAm ? "PDF ይመልከቱ" : "View PDF"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleDownloadPdf()}
+                        disabled={pdfActionLoading !== null}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-[#003366] text-[#003366] bg-white font-bold hover:bg-[#003366]/5 transition-colors disabled:opacity-50"
+                      >
+                        {pdfActionLoading === "download" ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Download className="w-4 h-4" />
+                        )}
+                        {isAm ? "PDF ያውርዱ" : "Download PDF"}
+                      </button>
+                    </div>
+                    <p className="text-xs text-emerald-700/80">
+                      {isAm
+                        ? "ሪፖርቱ በተመረጠው ቋንቋ በአንድ ገጽ ይታያል/ይወረዳል። በሰርቨር ላይ ያለውን ፋይል ለማዘመን «አረጋግጥ እና PDF ፍጠር» ይጫኑ።"
+                        : "Preview/download uses the selected language on a single page. Use Confirm & Generate PDF to update the saved server copy."}
+                    </p>
                   </div>
                 ) : (
-                  <div className="rounded-2xl border bg-gray-50 p-4 space-y-3">
+                  <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5 space-y-4">
+                    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[#003366]/15 bg-white p-3 w-full">
+                      <span className="text-xs font-bold text-[#003366]">
+                        {isAm ? "የPDF ሪፖርት ቋንቋ" : "PDF report language"}
+                      </span>
+                      <div className="inline-flex rounded-lg border border-gray-200 overflow-hidden ml-auto">
+                        <button
+                          type="button"
+                          onClick={() => setPdfLanguage("en")}
+                          className={`px-3 py-1.5 text-xs font-bold transition-colors ${pdfLanguage === "en" ? "bg-[#003366] text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+                        >
+                          English
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPdfLanguage("am")}
+                          className={`px-3 py-1.5 text-xs font-bold transition-colors ${pdfLanguage === "am" ? "bg-[#003366] text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+                        >
+                          አማርኛ
+                        </button>
+                      </div>
+                    </div>
                     <p className="text-sm text-gray-600">
-                      The final report can only be generated after every committee member and the lead inspector sign.
+                      {isAm
+                        ? "የመጨረሻ ሪፖርቱ ሊፈጠር የሚችለው ሁሉም የኮሚቴ አባላት እና ዋና ተቆጣጣሪ ከፈረሙ በኋላ ብቻ ነው።"
+                        : "The final report can only be generated after every committee member and the lead inspector sign."}
                     </p>
                     <div className="flex flex-wrap items-center gap-3">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${allCommitteeSigned ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
-                        {allCommitteeSigned ? "All signatures complete" : "Waiting for signatures"}
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold border ${allCommitteeSigned ? "bg-emerald-100 text-emerald-700 border-emerald-200" : "bg-amber-100 text-amber-700 border-amber-200"}`}>
+                        {allCommitteeSigned
+                          ? (isAm ? "ሁሉም ፊርማዎች ተጠናቅቀዋል" : "All signatures complete")
+                          : (isAm ? "ፊርማዎችን በመጠባበቅ ላይ" : "Waiting for signatures")}
                       </span>
                       <span className="text-xs text-gray-500">
-                        {isLeadInspector ? "You are the lead inspector." : "Only the lead inspector can generate the report."}
+                        {isLeadInspector
+                          ? (isAm ? "እርስዎ ዋና ተቆጣጣሪ ነዎት።" : "You are the lead inspector.")
+                          : (isAm ? "ዋና ተቆጣጣሪ ብቻ ሪፖርቱን ሊፈጥር ይችላል።" : "Only the lead inspector can generate the report.")}
                       </span>
                     </div>
+
+                    {allCommitteeSigned ? (
+                      <div className="flex flex-wrap gap-3">
+                        <button
+                          type="button"
+                          onClick={() => void handleViewPdf()}
+                          disabled={pdfActionLoading !== null}
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-[#003366] text-[#003366] bg-white font-bold hover:bg-[#003366]/5 transition-colors disabled:opacity-50"
+                        >
+                          {pdfActionLoading === "view" ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                          {isAm ? "PDF ቅድመ እይታ" : "Preview PDF"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleDownloadPdf()}
+                          disabled={pdfActionLoading !== null}
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-gray-700 bg-white font-bold hover:bg-gray-50 transition-colors disabled:opacity-50"
+                        >
+                          {pdfActionLoading === "download" ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Download className="w-4 h-4" />
+                          )}
+                          {isAm ? "PDF ያውርዱ" : "Download PDF"}
+                        </button>
+                      </div>
+                    ) : null}
 
                     <button
                       type="button"
                       onClick={handleConfirmFinalReport}
                       disabled={!isLeadInspector || !allCommitteeSigned || reportGenerating}
-                      className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-primary text-white font-bold disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-[#FFD700] to-[#C5A022] text-[#003366] font-black shadow-md hover:shadow-lg active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:active:scale-100"
                     >
                       {reportGenerating ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <FileText className="w-4 h-4" />
                       )}
-                      Confirm & Generate PDF
+                      {reportGenerating
+                        ? (isAm ? "PDF በመፍጠር ላይ..." : "Generating PDF...")
+                        : (isAm ? "አረጋግጥ እና PDF ፍጠር" : "Confirm & Generate PDF")}
                     </button>
                   </div>
                 )}
@@ -1227,32 +1253,32 @@ export const InspectionReviewForm: React.FC = () => {
                   type="button"
                   onClick={handleSubmit}
                   disabled={saving}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-primary text-white font-bold disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-[#003366] text-white font-bold hover:bg-[#004080] active:scale-95 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm"
                 >
                   {saving ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
                     <Save className="w-4 h-4" />
                   )}
-                  Save Field Review
+                  {saving ? (isAm ? "በማስቀመጥ ላይ..." : "Saving...") : (isAm ? "ፊልድ ሪቪው አስቀምጥ" : "Save Field Review")}
                 </button>
                 <Link
                   to="/field-reviewer/inspections"
-                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gray-100 text-gray-700 font-bold"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  Back to Queue
+                  {isAm ? "ወደ ምርመራዎች ተመለስ" : "Back to Queue"}
                 </Link>
               </div>
             </div>
           )}
 
           {activeSection === "status" && (
-            <div className="bg-white rounded-3xl shadow-sm border p-6 space-y-4">
+            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-4">
               <div className="flex items-center gap-3">
-                <Clock className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-bold text-primary">
-                  Review Status
+                <Clock className="w-5 h-5 text-[#003366]" />
+                <h3 className="text-lg font-bold text-[#003366]">
+                  {isAm ? "የግምገማ ሁኔታ" : "Review Status"}
                 </h3>
               </div>
 
@@ -1260,9 +1286,9 @@ export const InspectionReviewForm: React.FC = () => {
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <div className="text-xs text-gray-500">
-                      Assigned Reviewer
+                      {isAm ? "የተመደበ ተቆጣጣሪ" : "Assigned Reviewer"}
                     </div>
-                    <div className="font-bold text-primary">
+                    <div className="font-bold text-[#003366]">
                       {inspection?.leadInspector?.fullName ||
                         inspection?.leadInspector?.username ||
                         "-"}
@@ -1270,37 +1296,26 @@ export const InspectionReviewForm: React.FC = () => {
                   </div>
 
                   <div className="text-right">
-                    <div className="text-xs text-gray-500">Lead Signature</div>
-                    <div className="font-bold text-primary">
+                    <div className="text-xs text-gray-500">
+                      {isAm ? "የዋና ፊርማ" : "Lead Signature"}
+                    </div>
+                    <div className={`font-bold ${leadCommittee?.signatureUrl ? "text-emerald-600" : "text-amber-600"}`}>
                       {leadCommittee?.signatureUrl
-                        ? "Signed"
-                        : "Pending signature"}
+                        ? (isAm ? "ፈርሟል" : "Signed")
+                        : (isAm ? "ፊርማ ያስፈልጋል" : "Pending signature")}
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <span>Checklist Complete</span>
-                  <span
-                    className={`font-bold ${overallReady ? "text-green-600" : "text-amber-600"}`}
-                  >
-                    {overallReady ? "Yes" : "In Progress"}
+                  <span>{isAm ? "ቼክሊስት ተጠናቅቋል" : "Checklist Complete"}</span>
+                  <span className={`font-bold ${overallReady ? "text-emerald-600" : "text-amber-600"}`}>
+                    {overallReady ? (isAm ? "አዎ" : "Yes") : (isAm ? "በሂደት ላይ" : "In Progress")}
                   </span>
                 </div>
-                {leadCommittee?.signatureUrl ? (
-                  <div className="mt-3">
-                    <img
-                      src={leadCommittee.signatureUrl}
-                      alt="Lead inspector signature"
-                      className="max-h-24 rounded-lg border bg-gray-50 object-contain"
-                    />
-                  </div>
-                ) : null}
-
-                {!leadCommittee?.signatureUrl &&
-                inspection?.leadInspector?.id === currentUserId ? (
-                  <div className="mt-3 flex flex-col gap-2 rounded-lg border border-dashed border-primary/30 bg-primary/5 p-3">
-                    <p className="text-xs font-semibold text-primary">
-                      Upload your lead signature image
+                {inspection?.leadInspector?.id === currentUserId ? (
+                  <div className="mt-3 flex flex-col gap-2 rounded-lg border border-dashed border-[#003366]/30 bg-[#003366]/5 p-3">
+                    <p className="text-xs font-semibold text-[#003366]">
+                      {isAm ? "የዋና ተቆጣጣሪ ፊርማ" : "Lead inspector signature"}
                     </p>
                     <input
                       id={`lead-file-${inspectionId}`}
@@ -1314,8 +1329,14 @@ export const InspectionReviewForm: React.FC = () => {
                       }}
                       className="hidden"
                     />
-
-                    <div className="flex items-center gap-2">
+                    {leadCommittee?.signatureUrl ? (
+                      <img
+                        src={resolveFileUrl(leadCommittee.signatureUrl)}
+                        alt="Lead inspector signature"
+                        className="max-h-24 rounded-lg border bg-white object-contain"
+                      />
+                    ) : null}
+                    <div className="flex flex-wrap items-center gap-2">
                       <button
                         type="button"
                         onClick={() => {
@@ -1324,47 +1345,88 @@ export const InspectionReviewForm: React.FC = () => {
                           ) as HTMLInputElement | null;
                           if (el) el.click();
                         }}
-                        className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-primary text-white text-sm font-semibold"
+                        disabled={
+                          leadUploading ||
+                          (leadCommittee
+                            ? signatureClearingId === leadCommittee.id
+                            : false)
+                        }
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-[#003366] text-white text-sm font-bold hover:bg-[#004080] transition-colors disabled:opacity-50"
                       >
-                        <UploadCloud className="w-4 h-4" />
-                        Upload
+                        {leadUploading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : leadCommittee?.signatureUrl ? (
+                          <PenLine className="w-4 h-4" />
+                        ) : (
+                          <UploadCloud className="w-4 h-4" />
+                        )}
+                        {leadCommittee?.signatureUrl
+                          ? isAm
+                            ? "ፊርማ ቀይር"
+                            : "Change Signature"
+                          : isAm
+                            ? "ፊርማ ያስገቡ"
+                            : "Upload Signature"}
                       </button>
-                      <p className="text-[11px] text-gray-500">
-                        Only the assigned lead inspector can upload this
-                        signature.
-                      </p>
+                      {leadCommittee?.signatureUrl && leadCommittee ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void handleClearSignature(leadCommittee.id)
+                          }
+                          disabled={
+                            leadUploading ||
+                            signatureClearingId === leadCommittee.id
+                          }
+                          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border-2 border-red-200 text-red-700 bg-white text-sm font-bold hover:bg-red-50 transition-colors disabled:opacity-50"
+                        >
+                          {signatureClearingId === leadCommittee.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <X className="w-4 h-4" />
+                          )}
+                          {isAm ? "የተጫነ ፊርማ ይሰረዝ" : "Cancel Uploaded Signature"}
+                        </button>
+                      ) : null}
                     </div>
-
-                    {leadUploading ? (
-                      <p className="text-xs text-gray-500">
-                        Uploading signature...
-                      </p>
-                    ) : null}
+                    <p className="text-[11px] text-gray-500">
+                      {isAm
+                        ? "የተመደበው ዋና ተቆጣጣሪ ብቻ ፊርማ ሊያስገባ ወይም ሊሰርዝ ይችላል።"
+                        : "Only the assigned lead inspector can upload or remove this signature."}
+                    </p>
+                  </div>
+                ) : leadCommittee?.signatureUrl ? (
+                  <div className="mt-3">
+                    <img
+                      src={resolveFileUrl(leadCommittee.signatureUrl)}
+                      alt="Lead inspector signature"
+                      className="max-h-24 rounded-lg border bg-gray-50 object-contain"
+                    />
                   </div>
                 ) : null}
                 <div className="flex items-center justify-between gap-3">
-                  <span>Committee Members</span>
+                  <span>{isAm ? "የኮሚቴ አባላት" : "Committee Members"}</span>
                   {inspection?.committeeMembers &&
                   inspection.committeeMembers.length > 0 ? (
-                    <span className="font-bold text-primary">
+                    <span className="font-bold text-[#003366]">
                       {inspection.committeeMembers.length}
                     </span>
                   ) : (
                     <span className="text-sm text-gray-500">
-                      No committee members assigned.
+                      {isAm ? "ምንም የኮሚቴ አባላት አልተመደቡም።" : "No committee members assigned."}
                     </span>
                   )}
                 </div>
                 {!!inspection?.committeeMembers?.length && (
-                  <div className="rounded-2xl border bg-gray-50 p-4 space-y-3">
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 space-y-3">
                     <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                      Assigned Committee
+                      {isAm ? "የተመደቡ ኮሚቴ" : "Assigned Committee"}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {inspection.committeeMembers.map((member) => (
                         <span
                           key={member.id}
-                          className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-bold text-primary border"
+                          className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-bold text-[#003366] border border-gray-200"
                         >
                           {committeeLabel(member)}
                           {member.expertRole ? (
@@ -1379,103 +1441,109 @@ export const InspectionReviewForm: React.FC = () => {
                 )}
               </div>
 
-              <div className="rounded-2xl bg-gray-50 border p-4">
-                <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                  Guidance
+              <div className="rounded-2xl bg-[#003366]/5 border border-[#003366]/10 p-4">
+                <p className="text-xs font-bold uppercase tracking-widest text-[#003366]/60">
+                  {isAm ? "መመሪያ" : "Guidance"}
                 </p>
                 <p className="mt-2 text-sm text-gray-600 leading-relaxed">
-                  Keep notes objective, use short actionable sentences, and
-                  paste the final report URL only after the review is complete.
+                  {isAm
+                    ? "ማስታወሻዎችን ተጨባጭ ያድርጉ፣ አጭር እና ተግባራዊ ዓረፍተ ነገሮችን ይጠቀሙ።"
+                    : "Keep notes objective, use short actionable sentences, and paste the final report URL only after the review is complete."}
                 </p>
               </div>
             </div>
           )}
 
           {activeSection === "snapshot" && (
-            <div className="bg-white rounded-3xl shadow-sm border p-6 space-y-4">
+            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-4">
               <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                Application Snapshot
+                {isAm ? "የማመልከቻ ዝርዝር" : "Application Snapshot"}
               </p>
               <div>
-                <h4 className="text-xl font-black text-primary">
+                <h4 className="text-xl font-black text-[#003366]">
                   {organizationName}
                 </h4>
                 <p className="text-sm text-gray-500 mt-1">
-                  Applicant: {inspection?.application?.user?.fullName || "-"}
+                  {isAm ? "አመልካች:" : "Applicant:"} {inspection?.application?.user?.fullName || "-"}
                 </p>
               </div>
               {finalReportUrl ? (
-                <a
-                  href={resolveFileUrl(finalReportUrl)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white font-bold"
+                <button
+                  type="button"
+                  onClick={() => void handleViewPdf()}
+                  disabled={pdfActionLoading !== null}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#003366] text-white font-bold hover:bg-[#004080] transition-colors shadow-sm disabled:opacity-50"
                 >
-                  <FileText className="w-4 h-4" />
-                  View Final PDF
-                </a>
+                  {pdfActionLoading === "view" ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <FileText className="w-4 h-4" />
+                  )}
+                  {isAm ? "የመጨረሻ PDF ይመልከቱ" : "View Final PDF"}
+                </button>
               ) : null}
               <div className="grid gap-3 text-sm text-gray-600">
                 <div className="flex items-center justify-between gap-4">
-                  <span>Application Date</span>
-                  <span className="font-bold text-primary">
+                  <span>{isAm ? "የማመልከቻ ቀን" : "Application Date"}</span>
+                  <span className="font-bold text-[#003366]">
                     {formatDateTime(inspection?.application?.applicationDate)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-4">
-                  <span>Applicant Phone</span>
-                  <span className="font-bold text-primary">
+                  <span>{isAm ? "የአመልካች ስልክ" : "Applicant Phone"}</span>
+                  <span className="font-bold text-[#003366]">
                     {inspection?.application?.user?.phone || "-"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-4">
-                  <span>Applicant Email</span>
-                  <span className="font-bold text-primary break-all text-right">
+                  <span>{isAm ? "የአመልካች ኢሜል" : "Applicant Email"}</span>
+                  <span className="font-bold text-[#003366] break-all text-right">
                     {inspection?.application?.user?.email || "-"}
                   </span>
                 </div>
               </div>
-              <div className="rounded-2xl border bg-gray-50 p-4 space-y-3">
+              <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 space-y-3">
                 <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                  Committee Members
+                  {isAm ? "የኮሚቴ አባላት" : "Committee Members"}
                 </p>
                 {inspection?.committeeMembers?.length ? (
                   <div className="space-y-2">
                     {inspection.committeeMembers.map((member) => (
                       <div
                         key={member.id}
-                        className="space-y-3 rounded-xl bg-white px-4 py-3 border"
+                        className="space-y-3 rounded-xl bg-white px-4 py-3 border border-gray-100"
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p className="font-bold text-primary">
+                            <p className="font-bold text-[#003366]">
                               {committeeLabel(member)}
                             </p>
                             <p className="text-xs text-gray-500">
-                              {member.expertRole || "Committee Member"}
+                              {member.expertRole || (isAm ? "የኮሚቴ አባል" : "Committee Member")}
                             </p>
                           </div>
-                          <span className="text-xs font-bold text-gray-400">
+                          <span className={`text-xs font-bold ${member.signatureUrl ? "text-emerald-600" : "text-amber-600"}`}>
                             {member.signatureUrl
-                              ? "Signed"
-                              : "Pending signature"}
+                              ? (isAm ? "ፈርሟል" : "Signed")
+                              : (isAm ? "ፊርማ ያስፈልጋል" : "Pending signature")}
                           </span>
                         </div>
 
-                        {member.signatureUrl ? (
+                        {member.signatureUrl &&
+                        !(Number.isFinite(currentUserId) &&
+                          member.userId === currentUserId) ? (
                           <img
-                            src={member.signatureUrl}
+                            src={resolveFileUrl(member.signatureUrl)}
                             alt={`${committeeLabel(member)} signature`}
                             className="max-h-24 rounded-lg border bg-gray-50 object-contain"
                           />
                         ) : null}
 
                         {Number.isFinite(currentUserId) &&
-                        member.userId === currentUserId &&
-                        !member.signatureUrl ? (
-                          <div className="flex flex-col gap-2 rounded-lg border border-dashed border-primary/30 bg-primary/5 p-3">
-                            <p className="text-xs font-semibold text-primary">
-                              Upload your own signature image
+                        member.userId === currentUserId ? (
+                          <div className="flex flex-col gap-2 rounded-lg border border-dashed border-[#003366]/30 bg-[#003366]/5 p-3">
+                            <p className="text-xs font-semibold text-[#003366]">
+                              {isAm ? "የእርስዎ ፊርማ" : "Your signature"}
                             </p>
                             <input
                               id={`committee-file-${member.id}`}
@@ -1489,8 +1557,14 @@ export const InspectionReviewForm: React.FC = () => {
                               }}
                               className="hidden"
                             />
-
-                            <div className="flex items-center gap-2">
+                            {member.signatureUrl ? (
+                              <img
+                                src={resolveFileUrl(member.signatureUrl)}
+                                alt={`${committeeLabel(member)} signature`}
+                                className="max-h-24 rounded-lg border bg-white object-contain"
+                              />
+                            ) : null}
+                            <div className="flex flex-wrap items-center gap-2">
                               <button
                                 type="button"
                                 onClick={() => {
@@ -1499,30 +1573,63 @@ export const InspectionReviewForm: React.FC = () => {
                                   ) as HTMLInputElement | null;
                                   if (el) el.click();
                                 }}
-                                className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-primary text-white text-sm font-semibold"
+                                disabled={
+                                  signatureUploadingId === member.id ||
+                                  signatureClearingId === member.id
+                                }
+                                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-[#003366] text-white text-sm font-bold hover:bg-[#004080] transition-colors disabled:opacity-50"
                               >
-                                <UploadCloud className="w-4 h-4" />
-                                Upload
+                                {signatureUploadingId === member.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : member.signatureUrl ? (
+                                  <PenLine className="w-4 h-4" />
+                                ) : (
+                                  <UploadCloud className="w-4 h-4" />
+                                )}
+                                {member.signatureUrl
+                                  ? isAm
+                                    ? "ፊርማ ቀይር"
+                                    : "Change Signature"
+                                  : isAm
+                                    ? "ፊርማ ያስገቡ"
+                                    : "Upload Signature"}
                               </button>
-                              <p className="text-[11px] text-gray-500">
-                                Only the assigned reviewer can upload this
-                                signature.
-                              </p>
+                              {member.signatureUrl ? (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    void handleClearSignature(member.id)
+                                  }
+                                  disabled={
+                                    signatureUploadingId === member.id ||
+                                    signatureClearingId === member.id
+                                  }
+                                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border-2 border-red-200 text-red-700 bg-white text-sm font-bold hover:bg-red-50 transition-colors disabled:opacity-50"
+                                >
+                                  {signatureClearingId === member.id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <X className="w-4 h-4" />
+                                  )}
+                                  {isAm
+                                    ? "የተጫነ ፊርማ ይሰረዝ"
+                                    : "Cancel Uploaded Signature"}
+                                </button>
+                              ) : null}
                             </div>
+                            <p className="text-[11px] text-gray-500">
+                              {isAm
+                                ? "የተመደበው ተቆጣጣሪ ብቻ ፊርማ ሊያስገባ ወይም ሊሰርዝ ይችላል።"
+                                : "Only the assigned reviewer can upload or remove this signature."}
+                            </p>
                           </div>
-                        ) : null}
-
-                        {signatureUploadingId === member.id ? (
-                          <p className="text-xs font-semibold text-gray-500">
-                            Uploading signature...
-                          </p>
                         ) : null}
                       </div>
                     ))}
                   </div>
                 ) : (
                   <p className="text-sm text-gray-500">
-                    No committee members assigned.
+                    {isAm ? "ምንም የኮሚቴ አባላት አልተመደቡም።" : "No committee members assigned."}
                   </p>
                 )}
               </div>
@@ -1530,6 +1637,21 @@ export const InspectionReviewForm: React.FC = () => {
           )}
         </motion.div>
       </div>
+
+      <div
+        ref={pdfTemplateRef}
+        data-inspection-pdf-root
+        aria-hidden
+        style={{
+          position: "fixed",
+          left: "-10000px",
+          top: 0,
+          zIndex: -1,
+          width: "794px",
+          background: "#fff",
+          pointerEvents: "none",
+        }}
+      />
     </div>
   );
 };

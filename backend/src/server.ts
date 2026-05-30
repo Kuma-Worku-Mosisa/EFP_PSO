@@ -33,11 +33,18 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // 3. Database Configuration for SQL Server
+const requiredEnvVars = ["DB_SERVER", "DB_NAME", "DB_USER", "DB_PASSWORD"];
+const missingVars = requiredEnvVars.filter((v) => !process.env[v]);
+
+if (missingVars.length > 0) {
+  throw new Error(`Missing required environment variables: ${missingVars.join(", ")}`);
+}
+
 const dbConfig = {
-  server: process.env.DB_SERVER || "localhost",
-  database: process.env.DB_NAME || "EFP_PSO",
-  user: process.env.DB_USER || "erpuser",
-  password: process.env.DB_PASSWORD || "1234",
+  server: process.env.DB_SERVER!,
+  database: process.env.DB_NAME!,
+  user: process.env.DB_USER!,
+  password: process.env.DB_PASSWORD!,
   options: {
     encrypt: true,
     trustServerCertificate: true,

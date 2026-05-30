@@ -136,15 +136,24 @@ export const PersonnelDocumentUploader: React.FC<{
       <div className="space-y-3">
         {requiredDocuments.map((docType) => {
           const fieldName = `${role}_${docType}`;
+          const inputId = `${fieldName}_file`;
+          const docLabel = getDocumentTypeName(docType);
           const selectedFile = state.files.get(fieldName);
 
           return (
             <div key={fieldName} className="border p-3 rounded">
-              <label className="block text-sm font-medium mb-2">
-                {getDocumentTypeName(docType)}
+              <label
+                htmlFor={inputId}
+                className="block text-sm font-medium mb-2"
+              >
+                {docLabel}
               </label>
               <input
+                id={inputId}
                 type="file"
+                title={`Upload ${docLabel}`}
+                aria-label={`Upload ${docLabel}`}
+                placeholder={`Choose ${docLabel} file`}
                 onChange={(e) =>
                   handleFileSelect(docType, e.target.files?.[0] || null)
                 }

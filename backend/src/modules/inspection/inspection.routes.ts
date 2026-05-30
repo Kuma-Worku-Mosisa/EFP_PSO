@@ -8,6 +8,7 @@ import {
   confirmFinalReport,
   uploadLeadSignature,
   uploadCommitteeSignature,
+  deleteCommitteeSignature,
   submitFieldReview,
 } from "./inspection.controller";
 
@@ -60,6 +61,13 @@ router.post(
   authenticate,
   authorize(["FIELD_REVIEWER", "admin", "system_admin"]),
   uploadCommitteeSignature,
+);
+
+router.delete(
+  "/:id/committee/:committeeId/signature",
+  authenticate,
+  authorize(["FIELD_REVIEWER", "admin", "system_admin"]),
+  deleteCommitteeSignature,
 );
 
 router.post(

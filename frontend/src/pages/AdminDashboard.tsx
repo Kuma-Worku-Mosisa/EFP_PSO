@@ -215,7 +215,7 @@ const Overview = () => {
           <h3 className="text-lg font-bold text-primary">
             {isAm ? "የፈቃድ ስርጭት" : "License Distribution"}
           </h3>
-          <div className="h-[300px] flex items-center justify-center">
+          <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
