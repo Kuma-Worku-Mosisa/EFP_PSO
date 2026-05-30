@@ -41,6 +41,7 @@ export default function AssignInspectionModal({
 
   useEffect(() => {
     if (!isOpen) return;
+
     let mounted = true;
     const load = async () => {
       setFetching(true);
@@ -142,8 +143,16 @@ export default function AssignInspectionModal({
             </p>
 
             <div className="space-y-3 mb-4">
-              <label className="block text-xs font-bold">Lead Inspector</label>
+              <label
+                htmlFor="assign-lead-inspector"
+                className="block text-xs font-bold"
+              >
+                Lead Inspector
+              </label>
               <select
+                id="assign-lead-inspector"
+                title="Select lead inspector"
+                aria-label="Lead inspector"
                 value={leadId ?? ""}
                 onChange={(e) => setLeadId(e.target.value || null)}
                 className="w-full border rounded p-2"
@@ -178,6 +187,8 @@ export default function AssignInspectionModal({
                     >
                       <input
                         type="checkbox"
+                        title={`${r.label} committee member`}
+                        aria-label={`${r.label} committee member`}
                         checked={committeeIds.includes(r.id)}
                         disabled={String(leadId) === String(r.id)}
                         onChange={() => toggleCommittee(r.id)}
@@ -192,9 +203,18 @@ export default function AssignInspectionModal({
             </div>
 
             <div className="space-y-3 mb-4">
-              <label className="block text-xs font-bold">Scheduled Date</label>
+              <label
+                htmlFor="assign-scheduled-date"
+                className="block text-xs font-bold"
+              >
+                Scheduled Date
+              </label>
               <input
+                id="assign-scheduled-date"
                 type="datetime-local"
+                title="Scheduled inspection date and time"
+                aria-label="Scheduled inspection date and time"
+                placeholder="Select inspection date and time"
                 value={scheduledAt}
                 onChange={(e) => setScheduledAt(e.target.value)}
                 className="w-full border rounded p-2"
