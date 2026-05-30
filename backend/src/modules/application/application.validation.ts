@@ -11,15 +11,6 @@ export const createApplicationSchema = z.object({
     kebele: z.string().min(1, "Kebele is required"),
     houseNumber: z.string().min(1, "House number is required"),
     specialLocation: z.string().optional().nullable(),
-    branchAddresses: z
-      .array(
-        z.object({
-          kebeleId: z.union([z.string(), z.number()]),
-          houseNumber: z.string().optional().nullable(),
-          specialLocation: z.string().optional().nullable(),
-        }),
-      )
-      .optional(),
 
     // Step 3: Resource Tracking
     numberOfOffices: z.preprocess(

@@ -657,6 +657,24 @@ export const ApplicationsReview = () => {
     return matchesTab && matchesSearch;
   });
 
+  const inferViewingStageFromApplication = (
+    app: any,
+  ): "selection" | "new" | "renewal" => {
+    const typeValue = normalizeText(
+      String(app?.applicationType || app?.type || ""),
+    );
+
+    if (typeValue.includes("renew")) {
+      return "renewal";
+    }
+
+    if (typeValue.includes("new")) {
+      return "new";
+    }
+
+    return "selection";
+  };
+
   const handleApproveApp = async (appId: number | string) => {
     try {
       await apiRequest(`/applications/${appId}/approve`, { method: "POST" });
@@ -3007,48 +3025,130 @@ export const ApplicationsReview = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
             <ReviewItem
               label="Trade Name"
-              value="Lion Guard Security"
+              value={selectedApp.organization?.tradeName || "-"}
               id="ren_trade_name"
             />
             <ReviewItem
               label="Trade Pre-registration"
-              value="pre_reg.pdf"
+              value={
+                getFileName(
+                  findOrganizationDocument(selectedApp, [
+                    "trade",
+                    "pre",
+                    "registration",
+                  ])?.fileUrl,
+                ) || "-"
+              }
               id="ren_pre_reg"
               isFile
+              fileUrl={
+                findOrganizationDocument(selectedApp, [
+                  "trade",
+                  "pre",
+                  "registration",
+                ])?.fileUrl
+              }
             />
             <ReviewItem
               label="Renewed License"
-              value="license_2024.pdf"
+              value={
+                getFileName(
+                  findOrganizationDocument(selectedApp, [
+                    "renewed",
+                    "trade",
+                    "license",
+                  ])?.fileUrl,
+                ) || "-"
+              }
               id="ren_license"
               isFile
+              fileUrl={
+                findOrganizationDocument(selectedApp, [
+                  "renewed",
+                  "trade",
+                  "license",
+                ])?.fileUrl
+              }
             />
             <ReviewItem
               label="Labor & Skills Bureau"
-              value="labor_doc.pdf"
+              value={
+                getFileName(
+                  findOrganizationDocument(selectedApp, [
+                    "labor",
+                    "skill",
+                    "bureau",
+                  ])?.fileUrl,
+                ) || "-"
+              }
               id="ren_labor"
               isFile
+              fileUrl={
+                findOrganizationDocument(selectedApp, [
+                  "labor",
+                  "skill",
+                  "bureau",
+                ])?.fileUrl
+              }
             />
             <ReviewItem
               label="Taxpayer Clearance"
-              value="tax_clearance.pdf"
+              value={
+                getFileName(
+                  findOrganizationDocument(selectedApp, ["tax", "clearance"])
+                    ?.fileUrl,
+                ) || "-"
+              }
               id="ren_tax"
               isFile
+              fileUrl={
+                findOrganizationDocument(selectedApp, ["tax", "clearance"])
+                  ?.fileUrl
+              }
             />
             <ReviewItem
               label="Insurance Coverage"
-              value="insurance_policy.pdf"
+              value={
+                getFileName(
+                  findOrganizationDocument(selectedApp, [
+                    "insurance",
+                    "coverage",
+                  ])?.fileUrl,
+                ) || "-"
+              }
               id="ren_insurance"
               isFile
+              fileUrl={
+                findOrganizationDocument(selectedApp, ["insurance", "coverage"])
+                  ?.fileUrl
+              }
             />
             <ReviewItem
               label="List of Tech Used"
-              value="tech_list.pdf"
+              value={
+                getFileName(
+                  findOrganizationDocument(selectedApp, [
+                    "tech",
+                    "list",
+                    "used",
+                  ])?.fileUrl,
+                ) || "-"
+              }
               id="ren_tech"
               isFile
+              fileUrl={
+                findOrganizationDocument(selectedApp, ["tech", "list", "used"])
+                  ?.fileUrl
+              }
             />
             <ReviewItem
               label="Capital (Level)"
-              value="Level A - 5M ETB"
+              value={
+                selectedApp.organization?.capitalAmount !== undefined &&
+                selectedApp.organization?.capitalAmount !== null
+                  ? String(selectedApp.organization.capitalAmount)
+                  : "-"
+              }
               id="ren_capital"
             />
           </div>
@@ -3065,48 +3165,78 @@ export const ApplicationsReview = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
             <ReviewItem
               label="Training Place"
-              value="Sub-site Academy"
+              value={selectedApp.training?.trainingAddress || "-"}
               id="ren_train_place"
             />
             <ReviewItem
               label="Training Provider"
-              value="Global Sec Academy"
+              value={selectedApp.training?.trainingBodyName || "-"}
               id="ren_train_provider"
             />
             <ReviewItem
               label="Days of Training"
-              value="30 Days"
+              value={
+                selectedApp.training?.trainingDurationDays !== undefined &&
+                selectedApp.training?.trainingDurationDays !== null
+                  ? `${selectedApp.training.trainingDurationDays} Days`
+                  : "-"
+              }
               id="ren_train_days"
             />
             <ReviewItem
               label="People (M/F/Total)"
-              value="24/12/36"
+              value={`${selectedApp.training?.totalTraineesMale ?? 0}/${selectedApp.training?.totalTraineesFemale ?? 0}/${(selectedApp.training?.totalTraineesMale ?? 0) + (selectedApp.training?.totalTraineesFemale ?? 0)}`}
               id="ren_train_people"
             />
             <ReviewItem
               label="Training Cert"
-              value="train_cert_batch.pdf"
+              value={
+                getFileName(selectedApp.training?.trainingCertificateUrl) || "-"
+              }
               id="ren_train_cert"
               isFile
+              fileUrl={selectedApp.training?.trainingCertificateUrl}
             />
             <ReviewItem
               label="No. of Offices"
-              value="3"
+              value={
+                selectedApp.organization?.numberOfOffices !== undefined &&
+                selectedApp.organization?.numberOfOffices !== null
+                  ? String(selectedApp.organization.numberOfOffices)
+                  : "-"
+              }
               id="ren_offices_count"
             />
             <ReviewItem
               label="Has Store House"
-              value="Yes"
+              value={
+                selectedApp.organization?.hasStoreHouse === undefined ||
+                selectedApp.organization?.hasStoreHouse === null
+                  ? "-"
+                  : selectedApp.organization.hasStoreHouse
+                    ? "Yes"
+                    : "No"
+              }
               id="ren_storehouse"
             />
             <ReviewItem
               label="No. of Computers"
-              value="12"
+              value={
+                selectedApp.organization?.numberOfComputers !== undefined &&
+                selectedApp.organization?.numberOfComputers !== null
+                  ? String(selectedApp.organization.numberOfComputers)
+                  : "-"
+              }
               id="ren_computers_count"
             />
             <ReviewItem
               label="No. of Vehicles"
-              value="4"
+              value={
+                selectedApp.organization?.numberOfVehicles !== undefined &&
+                selectedApp.organization?.numberOfVehicles !== null
+                  ? String(selectedApp.organization.numberOfVehicles)
+                  : "-"
+              }
               id="ren_vehicles_count"
             />
           </div>
@@ -3123,38 +3253,80 @@ export const ApplicationsReview = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
             <ReviewItem
               label="List of Employees"
-              value="staff_list.pdf"
+              value={
+                selectedApp.organization?.serviceContracts?.length !== undefined
+                  ? `${selectedApp.organization?.serviceContracts?.length || 0} service contract(s)`
+                  : "-"
+              }
               id="ren_employee_list"
-              isFile
             />
             <ReviewItem
               label="Guard Insurance Type"
-              value="Full Coverage Life"
+              value={
+                getFileName(
+                  findOrganizationDocument(selectedApp, [
+                    "insurance",
+                    "coverage",
+                  ])?.fileUrl,
+                ) || "-"
+              }
               id="ren_guard_ins"
             />
             <ReviewItem
               label="Job Classification"
-              value="standard_sop.pdf"
+              value={
+                getFileName(
+                  findOrganizationDocument(selectedApp, [
+                    "job",
+                    "classification",
+                  ])?.fileUrl,
+                ) || "-"
+              }
               id="ren_job_class"
               isFile
+              fileUrl={
+                findOrganizationDocument(selectedApp, ["job", "classification"])
+                  ?.fileUrl
+              }
             />
             <ReviewItem
               label="Guard Training Cert"
-              value="guards_training.pdf"
+              value={
+                getFileName(selectedApp.training?.trainingCertificateUrl) || "-"
+              }
               id="ren_guard_train"
               isFile
+              fileUrl={selectedApp.training?.trainingCertificateUrl}
             />
             <ReviewItem
               label="Payroll (Pay Slips)"
-              value="payroll_recent.pdf"
+              value={
+                getFileName(
+                  findOrganizationDocument(selectedApp, ["payroll", "pay slip"])
+                    ?.fileUrl,
+                ) || "-"
+              }
               id="ren_payroll"
               isFile
+              fileUrl={
+                findOrganizationDocument(selectedApp, ["payroll", "pay slip"])
+                  ?.fileUrl
+              }
             />
             <ReviewItem
               label="Social Security Slips"
-              value="soc_sec.pdf"
+              value={
+                getFileName(
+                  findOrganizationDocument(selectedApp, ["social", "security"])
+                    ?.fileUrl,
+                ) || "-"
+              }
               id="ren_social_sec"
               isFile
+              fileUrl={
+                findOrganizationDocument(selectedApp, ["social", "security"])
+                  ?.fileUrl
+              }
             />
           </div>
         </section>
@@ -3170,27 +3342,61 @@ export const ApplicationsReview = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
             <ReviewItem
               label="Service User Contract"
-              value="client_contracts.pdf"
+              value={
+                getFileName(
+                  selectedApp.organization?.serviceContracts?.[0]?.contractUrl,
+                ) || "-"
+              }
               id="ren_client_contract"
               isFile
+              fileUrl={
+                selectedApp.organization?.serviceContracts?.[0]?.contractUrl
+              }
             />
             <ReviewItem
               label="Office Lease (1yr left)"
-              value="office_lease.pdf"
+              value={
+                getFileName(
+                  findOrganizationDocument(selectedApp, ["office", "lease"])
+                    ?.fileUrl,
+                ) || "-"
+              }
               id="ren_office_lease"
               isFile
+              fileUrl={
+                findOrganizationDocument(selectedApp, ["office", "lease"])
+                  ?.fileUrl
+              }
             />
             <ReviewItem
               label="House Lease Agreement"
-              value="house_lease.pdf"
+              value={
+                getFileName(
+                  findOrganizationDocument(selectedApp, ["house", "lease"])
+                    ?.fileUrl,
+                ) || "-"
+              }
               id="ren_house_lease"
               isFile
+              fileUrl={
+                findOrganizationDocument(selectedApp, ["house", "lease"])
+                  ?.fileUrl
+              }
             />
             <ReviewItem
               label="Vehicle Lease Docs"
-              value="vehicle_leases.pdf"
+              value={
+                getFileName(
+                  findOrganizationDocument(selectedApp, ["vehicle", "lease"])
+                    ?.fileUrl,
+                ) || "-"
+              }
               id="ren_vehicle_lease"
               isFile
+              fileUrl={
+                findOrganizationDocument(selectedApp, ["vehicle", "lease"])
+                  ?.fileUrl
+              }
             />
           </div>
         </section>
@@ -3206,34 +3412,41 @@ export const ApplicationsReview = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
             <ReviewItem
               label="Fingerprint (M/F/T)"
-              value="150/50/200"
+              value={`${selectedApp.guardEducationStat?.grade_3_9_male ?? 0}/${selectedApp.guardEducationStat?.grade_3_9_female ?? 0}/${(selectedApp.guardEducationStat?.grade_3_9_male ?? 0) + (selectedApp.guardEducationStat?.grade_3_9_female ?? 0)}`}
               id="ren_stat_finger"
             />
             <ReviewItem
               label="Medical Certs (M/F/T)"
-              value="145/45/190"
+              value={`${selectedApp.guardEducationStat?.grade_10_12_male ?? 0}/${selectedApp.guardEducationStat?.grade_10_12_female ?? 0}/${(selectedApp.guardEducationStat?.grade_10_12_male ?? 0) + (selectedApp.guardEducationStat?.grade_10_12_female ?? 0)}`}
               id="ren_stat_med"
             />
             <ReviewItem
               label="Guarantee Proof (M/F/T)"
-              value="160/40/200"
+              value={`${selectedApp.guardEducationStat?.certificate_male ?? 0}/${selectedApp.guardEducationStat?.certificate_female ?? 0}/${(selectedApp.guardEducationStat?.certificate_male ?? 0) + (selectedApp.guardEducationStat?.certificate_female ?? 0)}`}
               id="ren_stat_guarantee"
             />
             <ReviewItem
               label="Kebele Support (M/F/T)"
-              value="155/45/200"
+              value={`${selectedApp.guardEducationStat?.diploma_male ?? 0}/${selectedApp.guardEducationStat?.diploma_female ?? 0}/${(selectedApp.guardEducationStat?.diploma_male ?? 0) + (selectedApp.guardEducationStat?.diploma_female ?? 0)}`}
               id="ren_stat_kebele"
             />
             <ReviewItem
               label="Training History (M/F/T)"
-              value="160/40/200"
+              value={`${selectedApp.training?.totalTraineesMale ?? 0}/${selectedApp.training?.totalTraineesFemale ?? 0}/${(selectedApp.training?.totalTraineesMale ?? 0) + (selectedApp.training?.totalTraineesFemale ?? 0)}`}
               id="ren_stat_trained"
             />
             <ReviewItem
               label="Applicant Address List"
-              value="address_list.pdf"
+              value={
+                getFileName(
+                  selectedApp.organization?.serviceContracts?.[0]?.contractUrl,
+                ) || "-"
+              }
               id="ren_address_list"
               isFile
+              fileUrl={
+                selectedApp.organization?.serviceContracts?.[0]?.contractUrl
+              }
             />
           </div>
         </section>
@@ -3249,38 +3462,34 @@ export const ApplicationsReview = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5">
             <ReviewItem
               label="Manager Changed?"
-              value="No"
+              value={selectedApp.manager ? "No" : "-"}
               id="ren_man_changed"
             />
             <ReviewItem
               label="Ops Head Changed?"
-              value="Yes"
+              value={selectedApp.operationsHead ? "No" : "-"}
               id="ren_ops_changed"
             />
             <ReviewItem
               label="Admin Head Changed?"
-              value="No"
+              value={selectedApp.adminHead ? "No" : "-"}
               id="ren_adm_changed"
             />
             <ReviewItem
               label="Employees Dismissed"
-              value="12"
+              value={"-"}
               id="ren_dismissed"
             />
-            <ReviewItem label="New Hires" value="25" id="ren_new_hires" />
+            <ReviewItem label="New Hires" value={"-"} id="ren_new_hires" />
             <ReviewItem
               label="Qualification Level"
-              value="First Grade"
+              value={selectedApp.type || "-"}
               id="ren_qual_level"
             />
-            <ReviewItem
-              label="Written Warning?"
-              value="None"
-              id="ren_warning"
-            />
+            <ReviewItem label="Written Warning?" value={"-"} id="ren_warning" />
             <ReviewItem
               label="Renewal Criteria Met?"
-              value="Yes"
+              value={currentApplicationReadyForApproval ? "Yes" : "No"}
               id="ren_met_criteria"
             />
           </div>
@@ -3302,102 +3511,230 @@ export const ApplicationsReview = () => {
               {renderPersonnelInfoSection({
                 accentClass: "bg-amber-500",
                 title: "Personal Information",
-                name: "Abdi Wahid",
-                gender: "Male",
-                citizenship: "Ethiopian",
+                name: getEmployeeDisplayName(selectedApp.manager),
+                gender: selectedApp.manager?.gender || "-",
+                citizenship: selectedApp.manager?.citizenship || "-",
                 phoneLabel: "Phone",
-                phoneValue: "+251 912",
+                phoneValue:
+                  selectedApp.manager?.user?.phone ||
+                  selectedApp.manager?.phone ||
+                  "-",
                 emailLabel: "Email",
-                emailValue: "abdi@lion.com",
+                emailValue:
+                  selectedApp.manager?.user?.email ||
+                  selectedApp.manager?.email ||
+                  "-",
                 addressTitle: "Address",
                 regionLabel: "Region",
-                regionValue: "Addis",
+                regionValue: getEmployeeAddressDetails(selectedApp.manager)
+                  .region,
                 zoneLabel: "Zone",
-                zoneValue: "Bole",
+                zoneValue: getEmployeeAddressDetails(selectedApp.manager).zone,
                 woredaLabel: "Woreda",
-                woredaValue: "02",
+                woredaValue: getEmployeeAddressDetails(selectedApp.manager)
+                  .woreda,
                 kebeleLabel: "Kebele",
-                kebeleValue: "05",
+                kebeleValue: getEmployeeAddressDetails(selectedApp.manager)
+                  .kebele,
                 specialLocationLabel: "Special Location",
-                specialLocationValue: "Bridge",
+                specialLocationValue: getEmployeeAddressDetails(
+                  selectedApp.manager,
+                ).specialLocation,
                 houseNumberLabel: "House Number",
-                houseNumberValue: "102",
+                houseNumberValue: getEmployeeAddressDetails(selectedApp.manager)
+                  .houseNumber,
                 educationLevelLabel: "Education Level",
-                educationLevelValue: "Degree",
+                educationLevelValue: getEmployeeEmploymentDetails(
+                  selectedApp.manager,
+                ).educationLevel,
                 workExpYearsLabel: "Work Exp. Years",
-                workExpYearsValue: "5",
+                workExpYearsValue: getEmployeeEmploymentDetails(
+                  selectedApp.manager,
+                ).workExpYears,
                 totalExpYearsLabel: "Total Exp. Years",
-                totalExpYearsValue: "8",
+                totalExpYearsValue: getEmployeeEmploymentDetails(
+                  selectedApp.manager,
+                ).totalExpYears,
                 isBlacklistedLabel: "Blacklisted",
-                isBlacklistedValue: "No",
+                isBlacklistedValue: getEmployeeEmploymentDetails(
+                  selectedApp.manager,
+                ).isBlacklisted,
               })}
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
                 <ReviewItem
                   label="Fingerprint from police"
                   id="ren_mgr_finger"
-                  value="mgr_finger.pdf"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.manager, ["fingerprint"])
+                        ?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.manager, ["fingerprint"])
+                      ?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="Medical result"
                   id="ren_mgr_med"
-                  value="mgr_med.pdf"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.manager, ["medical"])
+                        ?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.manager, ["medical"])?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="Training certificate"
                   id="ren_mgr_train"
-                  value="mgr_train.pdf"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.manager, ["training"])
+                        ?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.manager, ["training"])?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="Support letter (Kebele)"
                   id="ren_mgr_kebele"
-                  value="mgr_kb.pdf"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.manager, [
+                        "support",
+                        "kebele",
+                      ])?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.manager, ["support", "kebele"])
+                      ?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="Proof of collateral"
                   id="ren_mgr_coll"
-                  value="mgr_coll.pdf"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.manager, ["collateral"])
+                        ?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.manager, ["collateral"])
+                      ?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="Exp (Police/Def/Mgr Min 2yr)"
                   id="ren_mgr_exp"
-                  value="mgr_exp.pdf"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.manager, ["experience"])
+                        ?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.manager, ["experience"])
+                      ?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="Resignation record"
                   id="ren_mgr_resign"
-                  value="mgr_rs.pdf"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.manager, ["resignation"])
+                        ?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.manager, ["resignation"])
+                      ?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="Edu (Degree Min)"
                   id="ren_mgr_edu"
-                  value="mgr_edu.pdf"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.manager, ["education"])
+                        ?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.manager, ["education"])?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="National Id"
                   id="ren_mgr_nid"
-                  value="mgr_nid.pdf"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.manager, ["national id doc"])
+                        ?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.manager, ["national id doc"])
+                      ?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="Renewed ID/Passport"
                   id="ren_mgr_kid"
-                  value="mgr_kid.pdf"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.manager, [
+                        "renewed",
+                        "passport",
+                        "kebele",
+                      ])?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.manager, [
+                      "renewed",
+                      "passport",
+                      "kebele",
+                    ])?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="Org identification"
                   id="ren_mgr_oid"
-                  value="mgr_oid.pdf"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.manager, [
+                        "organization id",
+                        "organization identification",
+                      ])?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.manager, [
+                      "organization id",
+                      "organization identification",
+                    ])?.fileUrl
+                  }
                 />
               </div>
             </div>
@@ -3412,102 +3749,246 @@ export const ApplicationsReview = () => {
               {renderPersonnelInfoSection({
                 accentClass: "bg-blue-700",
                 title: "Personal Information",
-                name: "Selam Mengesha",
-                gender: "Female",
-                citizenship: "Ethiopian",
+                name: getEmployeeDisplayName(selectedApp.operationsHead),
+                gender: selectedApp.operationsHead?.gender || "-",
+                citizenship: selectedApp.operationsHead?.citizenship || "-",
                 phoneLabel: "Phone",
-                phoneValue: "+251 922",
+                phoneValue:
+                  selectedApp.operationsHead?.user?.phone ||
+                  selectedApp.operationsHead?.phone ||
+                  "-",
                 emailLabel: "Email",
-                emailValue: "selam@lion.com",
+                emailValue:
+                  selectedApp.operationsHead?.user?.email ||
+                  selectedApp.operationsHead?.email ||
+                  "-",
                 addressTitle: "Address",
                 regionLabel: "Region",
-                regionValue: "Addis",
+                regionValue: getEmployeeAddressDetails(
+                  selectedApp.operationsHead,
+                ).region,
                 zoneLabel: "Zone",
-                zoneValue: "Yeka",
+                zoneValue: getEmployeeAddressDetails(selectedApp.operationsHead)
+                  .zone,
                 woredaLabel: "Woreda",
-                woredaValue: "04",
+                woredaValue: getEmployeeAddressDetails(
+                  selectedApp.operationsHead,
+                ).woreda,
                 kebeleLabel: "Kebele",
-                kebeleValue: "10",
+                kebeleValue: getEmployeeAddressDetails(
+                  selectedApp.operationsHead,
+                ).kebele,
                 specialLocationLabel: "Special Location",
-                specialLocationValue: "Mall",
+                specialLocationValue: getEmployeeAddressDetails(
+                  selectedApp.operationsHead,
+                ).specialLocation,
                 houseNumberLabel: "House Number",
-                houseNumberValue: "203",
+                houseNumberValue: getEmployeeAddressDetails(
+                  selectedApp.operationsHead,
+                ).houseNumber,
                 educationLevelLabel: "Education Level",
-                educationLevelValue: "Degree",
+                educationLevelValue: getEmployeeEmploymentDetails(
+                  selectedApp.operationsHead,
+                ).educationLevel,
                 workExpYearsLabel: "Work Exp. Years",
-                workExpYearsValue: "4",
+                workExpYearsValue: getEmployeeEmploymentDetails(
+                  selectedApp.operationsHead,
+                ).workExpYears,
                 totalExpYearsLabel: "Total Exp. Years",
-                totalExpYearsValue: "7",
+                totalExpYearsValue: getEmployeeEmploymentDetails(
+                  selectedApp.operationsHead,
+                ).totalExpYears,
                 isBlacklistedLabel: "Blacklisted",
-                isBlacklistedValue: "No",
+                isBlacklistedValue: getEmployeeEmploymentDetails(
+                  selectedApp.operationsHead,
+                ).isBlacklisted,
               })}
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
                 <ReviewItem
                   label="Fingerprint from police"
                   id="ren_ops_finger"
-                  value="ops_finger.pdf"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.operationsHead, [
+                        "fingerprint",
+                      ])?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.operationsHead, ["fingerprint"])
+                      ?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="Medical result"
                   id="ren_ops_med"
-                  value="ops_med.pdf"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.operationsHead, ["medical"])
+                        ?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.operationsHead, ["medical"])
+                      ?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="Training certificate"
                   id="ren_ops_train"
-                  value="ops_train.pdf"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.operationsHead, ["training"])
+                        ?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.operationsHead, ["training"])
+                      ?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="Support letter (Kebele)"
                   id="ren_ops_kebele"
-                  value="ops_kb.pdf"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.operationsHead, [
+                        "support",
+                        "kebele",
+                      ])?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.operationsHead, [
+                      "support",
+                      "kebele",
+                    ])?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="Proof of collateral"
                   id="ren_ops_coll"
-                  value="ops_coll.pdf"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.operationsHead, [
+                        "collateral",
+                      ])?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.operationsHead, ["collateral"])
+                      ?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="Exp (Def/Police/Sec Law 2yr)"
                   id="ren_ops_exp"
-                  value="ops_exp.pdf"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.operationsHead, [
+                        "experience",
+                      ])?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.operationsHead, ["experience"])
+                      ?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="Resignation record"
                   id="ren_ops_resign"
-                  value="ops_rs.pdf"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.operationsHead, [
+                        "resignation",
+                      ])?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.operationsHead, ["resignation"])
+                      ?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="Edu (Degree Min)"
                   id="ren_ops_edu"
-                  value="ops_edu.pdf"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.operationsHead, ["education"])
+                        ?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.operationsHead, ["education"])
+                      ?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="National Id"
                   id="ren_ops_nid"
-                  value="ops_nid.pdf"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.operationsHead, [
+                        "national id doc",
+                      ])?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.operationsHead, [
+                      "national id doc",
+                    ])?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="Renewed ID/Passport"
                   id="ren_ops_kid"
-                  value="ops_kid.pdf"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.operationsHead, [
+                        "renewed",
+                        "passport",
+                        "kebele",
+                      ])?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.operationsHead, [
+                      "renewed",
+                      "passport",
+                      "kebele",
+                    ])?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="Org identification"
                   id="ren_ops_oid"
-                  value="ops_oid.pdf"
+                  value={
+                    getFileName(
+                      findEmployeeDoc(selectedApp.operationsHead, [
+                        "organization id",
+                        "organization identification",
+                      ])?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findEmployeeDoc(selectedApp.operationsHead, [
+                      "organization id",
+                      "organization identification",
+                    ])?.fileUrl
+                  }
                 />
               </div>
             </div>
@@ -3802,89 +4283,138 @@ export const ApplicationsReview = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
                 <ReviewItem
                   label="Full name"
-                  value="Elias Tadesse"
+                  value={
+                    selectedApp.applicantFullName ||
+                    selectedApp.user?.fullName ||
+                    "-"
+                  }
                   id="ren_grd_name"
                 />
-                <ReviewItem label="Gender" value="Male" id="ren_grd_gender" />
+                <ReviewItem
+                  label="Gender"
+                  value={selectedApp.manager?.gender || "-"}
+                  id="ren_grd_gender"
+                />
                 <ReviewItem
                   label="Citizenship"
-                  value="Ethiopian"
+                  value={selectedApp.manager?.citizenship || "-"}
                   id="ren_grd_citizen"
                 />
                 <ReviewItem
                   label="Phone / Email"
-                  value="+251 944 / elias@lion.com"
+                  value={`${selectedApp.organization?.phone || "-"} / ${selectedApp.organization?.email || "-"}`}
                   id="ren_grd_contact"
                 />
                 <ReviewItem
                   label="Address (R/Z/W/K/Loc/H)"
-                  value="Addis, Kolfe, 08, 22, School, 005"
+                  value={`${selectedApp.organization?.address?.kebele?.woreda?.zone?.region?.name || "-"}, ${selectedApp.organization?.address?.kebele?.woreda?.zone?.name || "-"}, ${selectedApp.organization?.address?.kebele?.woreda?.name || "-"}, ${selectedApp.organization?.address?.kebele?.name || "-"}, ${selectedApp.organization?.address?.specialLocation || "-"}, ${selectedApp.organization?.address?.houseNumber || "-"}`}
                   id="ren_grd_addr"
                 />
                 <ReviewItem
                   label="Fingerprint from police"
                   id="ren_grd_finger"
-                  value="grd_finger.pdf"
+                  value={
+                    getFileName(
+                      findOrganizationDocument(selectedApp, ["fingerprint"])
+                        ?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findOrganizationDocument(selectedApp, ["fingerprint"])
+                      ?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="Medical result"
                   id="ren_grd_med"
-                  value="grd_med.pdf"
+                  value={
+                    getFileName(
+                      findOrganizationDocument(selectedApp, ["medical"])
+                        ?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findOrganizationDocument(selectedApp, ["medical"])?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="Training certificate"
                   id="ren_grd_train"
-                  value="grd_train.pdf"
+                  value={
+                    getFileName(selectedApp.training?.trainingCertificateUrl) ||
+                    "-"
+                  }
                   isFile
+                  fileUrl={selectedApp.training?.trainingCertificateUrl}
                 />
                 <ReviewItem
                   label="Support letter (Kebele)"
                   id="ren_grd_kebele"
-                  value="grd_kb.pdf"
+                  value={
+                    getFileName(
+                      findOrganizationDocument(selectedApp, [
+                        "support",
+                        "kebele",
+                      ])?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findOrganizationDocument(selectedApp, ["support", "kebele"])
+                      ?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="Proof of collateral"
                   id="ren_grd_coll"
-                  value="grd_coll.pdf"
+                  value={
+                    getFileName(
+                      findOrganizationDocument(selectedApp, ["collateral"])
+                        ?.fileUrl,
+                    ) || "-"
+                  }
                   isFile
+                  fileUrl={
+                    findOrganizationDocument(selectedApp, ["collateral"])
+                      ?.fileUrl
+                  }
                 />
                 <ReviewItem
                   label="Exp (Admin 2+ yr / Degree)"
                   id="ren_grd_exp"
-                  value="grd_exp.pdf"
+                  value={"-"}
                   isFile
                 />
                 <ReviewItem
                   label="Resignation record"
                   id="ren_grd_resign"
-                  value="grd_rs.pdf"
+                  value={"-"}
                   isFile
                 />
                 <ReviewItem
                   label="Educational certificate"
                   id="ren_grd_edu"
-                  value="grd_edu.pdf"
+                  value={"-"}
                   isFile
                 />
                 <ReviewItem
                   label="National Id"
                   id="ren_grd_nid"
-                  value="grd_nid.pdf"
+                  value={"-"}
                   isFile
                 />
                 <ReviewItem
                   label="Renewed ID/Passport"
                   id="ren_grd_kid"
-                  value="grd_kid.pdf"
+                  value={"-"}
                   isFile
                 />
                 <ReviewItem
                   label="Org identification"
                   id="ren_grd_oid"
-                  value="grd_oid.pdf"
+                  value={"-"}
                   isFile
                 />
               </div>
@@ -3902,51 +4432,103 @@ export const ApplicationsReview = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
               <ReviewItem
                 label="Kebele ID / Passport Renewed"
-                value="Yes"
+                value={
+                  getFileName(
+                    findOrganizationDocument(selectedApp, [
+                      "renewed",
+                      "passport",
+                      "kebele",
+                    ])?.fileUrl,
+                  )
+                    ? "Yes"
+                    : "-"
+                }
                 id="ren_rec_id"
               />
               <ReviewItem
                 label="Fingerprint (Stat)"
-                value="Provided"
+                value={
+                  getFileName(
+                    findOrganizationDocument(selectedApp, ["fingerprint"])
+                      ?.fileUrl,
+                  )
+                    ? "Provided"
+                    : "-"
+                }
                 id="ren_rec_finger"
               />
               <ReviewItem
                 label="Guarantor Proof"
-                value="Provided"
+                value={
+                  getFileName(
+                    findOrganizationDocument(selectedApp, ["collateral"])
+                      ?.fileUrl,
+                  )
+                    ? "Provided"
+                    : "-"
+                }
                 id="ren_rec_guarantee"
               />
               <ReviewItem
                 label="Kebele Support Submited?"
-                value="Yes"
+                value={
+                  getFileName(
+                    findOrganizationDocument(selectedApp, ["support", "kebele"])
+                      ?.fileUrl,
+                  )
+                    ? "Yes"
+                    : "-"
+                }
                 id="ren_rec_kebele"
               />
               <ReviewItem
                 label="Employment Letter"
-                value="empl_letter.pdf"
+                value={
+                  getFileName(
+                    findOrganizationDocument(selectedApp, [
+                      "employment",
+                      "letter",
+                    ])?.fileUrl,
+                  ) || "-"
+                }
                 id="ren_rec_letter"
                 isFile
+                fileUrl={
+                  findOrganizationDocument(selectedApp, [
+                    "employment",
+                    "letter",
+                  ])?.fileUrl
+                }
               />
               <ReviewItem
                 label="Defense History (Years/Role)"
-                value="5 Years / Squad Leader"
+                value={"-"}
                 id="ren_rec_defense"
               />
               <ReviewItem
                 label="Police History (Years/Role)"
-                value="2 Years / Patrol"
+                value={"-"}
                 id="ren_rec_police"
               />
               <ReviewItem
                 label="Total Law Enforcement Years"
-                value="7 Years"
+                value={"-"}
                 id="ren_rec_total_yrs"
               />
               <ReviewItem
                 label="National Digital ID"
-                value="DIG-827361"
+                value={selectedApp.user?.faydaId || "-"}
                 id="ren_rec_digid"
               />
-              <ReviewItem label="Candidate Age" value="28" id="ren_rec_age" />
+              <ReviewItem
+                label="Candidate Age"
+                value={
+                  selectedApp.manager?.age
+                    ? String(selectedApp.manager.age)
+                    : "-"
+                }
+                id="ren_rec_age"
+              />
             </div>
           </section>
 
@@ -3961,32 +4543,32 @@ export const ApplicationsReview = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
               <ReviewItem
                 label="3rd to 9th Grade (M/F/T)"
-                value="40/10/50"
+                value={`${selectedApp.guardEducationStat?.grade_3_9_male ?? 0}/${selectedApp.guardEducationStat?.grade_3_9_female ?? 0}/${(selectedApp.guardEducationStat?.grade_3_9_male ?? 0) + (selectedApp.guardEducationStat?.grade_3_9_female ?? 0)}`}
                 id="ren_edu_3_9"
               />
               <ReviewItem
                 label="10th to 12th Grade (M/F/T)"
-                value="100/30/130"
+                value={`${selectedApp.guardEducationStat?.grade_10_12_male ?? 0}/${selectedApp.guardEducationStat?.grade_10_12_female ?? 0}/${(selectedApp.guardEducationStat?.grade_10_12_male ?? 0) + (selectedApp.guardEducationStat?.grade_10_12_female ?? 0)}`}
                 id="ren_edu_10_12"
               />
               <ReviewItem
                 label="Vocational Certificate (M/F/T)"
-                value="20/5/25"
+                value={`${selectedApp.guardEducationStat?.certificate_male ?? 0}/${selectedApp.guardEducationStat?.certificate_female ?? 0}/${(selectedApp.guardEducationStat?.certificate_male ?? 0) + (selectedApp.guardEducationStat?.certificate_female ?? 0)}`}
                 id="ren_edu_cert"
               />
               <ReviewItem
                 label="Diploma (M/F/T)"
-                value="15/5/20"
+                value={`${selectedApp.guardEducationStat?.diploma_male ?? 0}/${selectedApp.guardEducationStat?.diploma_female ?? 0}/${(selectedApp.guardEducationStat?.diploma_male ?? 0) + (selectedApp.guardEducationStat?.diploma_female ?? 0)}`}
                 id="ren_edu_diploma"
               />
               <ReviewItem
                 label="Degree (M/F/T)"
-                value="10/2/12"
+                value={`${selectedApp.guardEducationStat?.degree_male ?? 0}/${selectedApp.guardEducationStat?.degree_female ?? 0}/${(selectedApp.guardEducationStat?.degree_male ?? 0) + (selectedApp.guardEducationStat?.degree_female ?? 0)}`}
                 id="ren_edu_degree"
               />
               <ReviewItem
                 label="Second Degree (M/F/T)"
-                value="2/0/2"
+                value={`${selectedApp.guardEducationStat?.second_degree_male ?? 0}/${selectedApp.guardEducationStat?.second_degree_female ?? 0}/${(selectedApp.guardEducationStat?.second_degree_male ?? 0) + (selectedApp.guardEducationStat?.second_degree_female ?? 0)}`}
                 id="ren_edu_2nd"
               />
             </div>
@@ -4316,9 +4898,9 @@ export const ApplicationsReview = () => {
     setActiveActionMenuId(null);
 
     if (action === "preview") {
-      // open the audit preview modal (selection screen)
+      // Open the matching review screen directly when application type is known.
       setSelectedApp(app);
-      setViewingStage("selection");
+      setViewingStage(inferViewingStageFromApplication(app));
       return;
     }
 

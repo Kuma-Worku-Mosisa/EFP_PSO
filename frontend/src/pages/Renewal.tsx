@@ -27,11 +27,14 @@ import { mapLocalizedLocationRows } from "../lib/locationLabels";
 import { apiRequest } from "../lib/api";
 
 const renewalSchema = z.object({
-  region: z.string().min(1, "Region is required"),
-  zone: z.string().min(1, "Zone is required"),
-  woreda: z.string().min(1, "Woreda is required"),
-  kebele: z.string().min(1, "Kebele is required"),
-  houseNumber: z.string().min(1, "House number is required"),
+  certificateSerialNumber: z
+    .string()
+    .min(1, "Certificate serial number is required"),
+  region: z.string().optional(),
+  zone: z.string().optional(),
+  woreda: z.string().optional(),
+  kebele: z.string().optional(),
+  houseNumber: z.string().optional(),
   userContract: z.string().optional(),
   specialLocation: z.string().optional(),
   trainingPlace: z.string().optional(),
@@ -41,6 +44,23 @@ const renewalSchema = z.object({
   trainedFemale: z.string().optional(),
   notTrainedMale: z.string().optional(),
   notTrainedFemale: z.string().optional(),
+  offices: z.string().optional(),
+  capitalAmount: z.string().optional(),
+  storeHouse: z.string().optional(),
+  computers: z.string().optional(),
+  vehicles: z.string().optional(),
+  grade3to9Male: z.string().optional(),
+  grade3to9Female: z.string().optional(),
+  grade10to12Male: z.string().optional(),
+  grade10to12Female: z.string().optional(),
+  certificateMale: z.string().optional(),
+  certificateFemale: z.string().optional(),
+  diplomaMale: z.string().optional(),
+  diplomaFemale: z.string().optional(),
+  degreeMale: z.string().optional(),
+  degreeFemale: z.string().optional(),
+  secondDegreeMale: z.string().optional(),
+  secondDegreeFemale: z.string().optional(),
   assignedPersonnelCount: z.string().optional(),
   hiredCount: z.string().optional(),
 });
@@ -484,6 +504,17 @@ export const Renewal = () => {
   const { language } = useLanguage();
   const [step, setStep] = React.useState(1);
   const [isSubmitted, setIsSubmitted] = React.useState(false);
+  const [isCheckingEligibility, setIsCheckingEligibility] =
+    React.useState(false);
+  const [eligibilityError, setEligibilityError] = React.useState<string | null>(
+    null,
+  );
+  const [eligibleOrganization, setEligibleOrganization] = React.useState<{
+    id: number;
+    nameEnglish: string;
+    nameAmharic: string;
+    status: string;
+  } | null>(null);
   const [appStatus] = React.useState<
     "draft" | "pending" | "reviewing" | "correction"
   >("draft");
@@ -652,16 +683,94 @@ export const Renewal = () => {
     register,
     handleSubmit,
     watch,
+    getValues,
     formState: { isSubmitting },
   } = useForm<RenewalFormValues>({
     resolver: zodResolver(renewalSchema),
   });
 
+  const certificateSerialNumber = watch("certificateSerialNumber");
+
+  React.useEffect(() => {
+    setEligibleOrganization(null);
+    setEligibilityError(null);
+  }, [certificateSerialNumber]);
+
   const isFormLocked =
     isSubmitted || appStatus === "pending" || appStatus === "reviewing";
 
+  const reviewStoreHouse = (() => {
+    const value = watch("storeHouse");
+    if (value === "1") return language === "am" ? "አዎ" : "Yes";
+    if (value === "0") return language === "am" ? "አይ" : "No";
+    return "-";
+  })();
+
+  const getLocationName = (
+    value: string,
+    options: Array<{ id: number; name: string }>,
+  ) => {
+    if (!value) return "-";
+    const found = options.find((option) => String(option.id) === String(value));
+    return found?.name || value;
+  };
+
+  const getContractAddressLabel = (contract: ServiceContractEntry) => {
+    const regionName = getLocationName(contract.region, regionsList || []);
+    const zoneName = getLocationName(
+      contract.zone,
+      zonesByRegion[String(contract.region)] || [],
+    );
+    const woredaName = getLocationName(
+      contract.woreda,
+      woredasByZone[String(contract.zone)] || [],
+    );
+    const kebeleName = getLocationName(
+      contract.kebele,
+      kebelesByWoreda[String(contract.woreda)] || [],
+    );
+
+    return `${regionName}, ${zoneName}, ${woredaName}, ${kebeleName}`;
+  };
+
   const nextStep = async (e?: React.MouseEvent) => {
     if (e) e.preventDefault();
+
+    if (step === 1) {
+      const serial = String(getValues("certificateSerialNumber") || "").trim();
+
+      if (!serial) {
+        setEligibilityError(
+          language === "am"
+            ? "የምስክሩን ተከታታይ ቁጥር ያስገቡ"
+            : "Enter the certificate serial number",
+        );
+        return;
+      }
+
+      setIsCheckingEligibility(true);
+      setEligibilityError(null);
+
+      try {
+        const response = await apiRequest<any>("/renewals/validate", {
+          method: "POST",
+          body: JSON.stringify({ certificateSerialNumber: serial }),
+        });
+
+        setEligibleOrganization(response?.data?.organization || null);
+        setStep(2);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } catch (error: any) {
+        setEligibleOrganization(null);
+        setEligibilityError(
+          error?.message || "Unable to validate renewal eligibility",
+        );
+      } finally {
+        setIsCheckingEligibility(false);
+      }
+
+      return;
+    }
 
     if (step < 7) {
       setStep(step + 1);
@@ -676,13 +785,59 @@ export const Renewal = () => {
       nextStep();
       return;
     }
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsSubmitted(true);
+
+    const serial = String(getValues("certificateSerialNumber") || "").trim();
+    if (!serial) {
+      setEligibilityError("Certificate serial number is required");
+      return;
+    }
+
+    try {
+      const payload = {
+        ..._data,
+        serviceContracts,
+        uploadedFiles: Object.fromEntries(
+          Object.entries(uploadedFiles).map(([key, file]) => [
+            key,
+            file?.name || null,
+          ]),
+        ),
+        organization: eligibleOrganization,
+      };
+
+      const formData = new FormData();
+      formData.append("certificateSerialNumber", serial);
+      formData.append("renewalYear", String(new Date().getFullYear()));
+      formData.append("payload", JSON.stringify(payload));
+
+      Object.entries(uploadedFiles).forEach(([key, file]) => {
+        if (file) {
+          formData.append(key, file);
+        }
+      });
+
+      await apiRequest("/renewals", {
+        method: "POST",
+        body: formData,
+      });
+
+      setIsSubmitted(true);
+    } catch (error: any) {
+      setEligibilityError(
+        error?.message || "Failed to submit renewal application",
+      );
+    }
   };
 
   const t_renewal = {
     en: {
       title: "Renewal: Agency & Office Information",
+      certificateSerialNumber: "Certificate Serial Number",
+      certificateSerialPlaceholder: "Enter certificate serial number",
+      eligibilityHelp:
+        "The certificate and organization must be active before renewal can continue.",
+      verifyAndContinue: "Verify and Continue",
+      verifying: "Verifying...",
       region: "Region",
       zone: "Zone",
       woreda: "Woreda",
@@ -697,6 +852,7 @@ export const Renewal = () => {
       assetsTitle: "Assets & Facilities",
       assetsDesc: "Provide updated details about your physical assets.",
       offices: "Number of Offices",
+      capitalAmount: "Capital Amount",
       storeHouse: "Has Store House?",
       computers: "Number of Computers",
       vehicles: "Number of Vehicles",
@@ -729,12 +885,18 @@ export const Renewal = () => {
       continue: "Continue",
       submit: "Submit Renewal",
       processing: "Processing...",
+      selectStore: "Select Store",
       yes: "Yes",
       no: "No",
       met: "Met",
     },
     am: {
       title: "እድሳት፡ የተቋም እና የቢሮ መረጃ",
+      certificateSerialNumber: "የምስክር ተከታታይ ቁጥር",
+      certificateSerialPlaceholder: "የምስክር ተከታታይ ቁጥር ያስገቡ",
+      eligibilityHelp: "እድሳቱ ከመቀጠሉ በፊት የምስኩ እና የድርጅቱ ሁኔታ ንቁ መሆን አለበት።",
+      verifyAndContinue: "አረጋግጥ እና ቀጥል",
+      verifying: "በማረጋገጥ ላይ...",
       region: "ክልል",
       zone: "ዞን",
       woreda: "ወረዳ",
@@ -748,6 +910,7 @@ export const Renewal = () => {
       assetsTitle: "ንብረቶች እና መገልገያዎች",
       assetsDesc: "ስለ ቁሳዊ ንብረቶችዎ ወቅታዊ መረጃ ይስጡ።",
       offices: "የቢሮዎች ብዛት",
+      capitalAmount: "የካፒታል መጠን",
       storeHouse: "መጋዘን አለው?",
       computers: "የኮምፒውተሮች ብዛት",
       vehicles: "የተሸከርካሪዎች ብዛት",
@@ -777,6 +940,7 @@ export const Renewal = () => {
       continue: "ቀጥል",
       submit: "እድሳቱን አቅርብ",
       processing: "በማቀነባበር ላይ...",
+      selectStore: "ሱቅ ይምረጡ",
       yes: "አዎ",
       no: "አይ",
       met: "አሟልቷል",
@@ -785,6 +949,39 @@ export const Renewal = () => {
   };
 
   const curT = t_renewal[language as keyof typeof t_renewal] || t_renewal.en;
+
+  const educationLevels = [
+    {
+      label: language === "am" ? "ከ3ኛ እስከ 9ኛ ክፍል" : "3rd to 9th Grade",
+      maleKey: "grade3to9Male",
+      femaleKey: "grade3to9Female",
+    },
+    {
+      label: language === "am" ? "ከ10ኛ እስከ 12ኛ ክፍል" : "10th to 12th Grade",
+      maleKey: "grade10to12Male",
+      femaleKey: "grade10to12Female",
+    },
+    {
+      label: language === "am" ? "ሰርተፍኬት" : "Certificate",
+      maleKey: "certificateMale",
+      femaleKey: "certificateFemale",
+    },
+    {
+      label: language === "am" ? "ዲፕሎማ" : "Diploma",
+      maleKey: "diplomaMale",
+      femaleKey: "diplomaFemale",
+    },
+    {
+      label: language === "am" ? "ዲግሪ" : "Degree",
+      maleKey: "degreeMale",
+      femaleKey: "degreeFemale",
+    },
+    {
+      label: language === "am" ? "ሁለተኛ ዲግሪ" : "Second Degree",
+      maleKey: "secondDegreeMale",
+      femaleKey: "secondDegreeFemale",
+    },
+  ] as const;
 
   const steps = [
     { id: 1, title: language === "am" ? "መረጃ" : "Agency Info", icon: FileText },
@@ -893,6 +1090,39 @@ export const Renewal = () => {
                 <h3 className="text-2xl font-bold text-primary">
                   {curT.title}
                 </h3>
+                <p className="text-sm text-gray-500 max-w-2xl">
+                  {curT.eligibilityHelp}
+                </p>
+              </div>
+              <div className="space-y-4 max-w-xl">
+                <label className="text-xs font-black text-gray-500 uppercase tracking-widest">
+                  {curT.certificateSerialNumber}
+                </label>
+                <input
+                  {...register("certificateSerialNumber")}
+                  placeholder={curT.certificateSerialPlaceholder}
+                  className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
+                />
+                {eligibleOrganization && (
+                  <div className="rounded-2xl border border-green-100 bg-green-50 p-4 text-green-700 text-sm">
+                    <p className="font-black uppercase tracking-widest text-[10px] mb-1">
+                      Eligible Organization
+                    </p>
+                    <p className="font-bold">
+                      {language === "am"
+                        ? eligibleOrganization.nameAmharic
+                        : eligibleOrganization.nameEnglish}
+                    </p>
+                    <p className="text-xs text-green-600">
+                      Status: {eligibleOrganization.status}
+                    </p>
+                  </div>
+                )}
+                {eligibilityError && (
+                  <div className="rounded-2xl border border-red-100 bg-red-50 p-4 text-red-600 text-sm font-medium">
+                    {eligibilityError}
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
             </motion.div>
@@ -1002,6 +1232,24 @@ export const Renewal = () => {
                   </label>
                   <input
                     type="number"
+                    placeholder={
+                      language === "am" ? "ቁጥር ያስገቡ" : "Enter number"
+                    }
+                    {...register("offices")}
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500">
+                    {curT.capitalAmount}
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder={
+                      language === "am" ? "መጠኑን ያስገቡ" : "Enter amount"
+                    }
+                    {...register("capitalAmount")}
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
@@ -1009,9 +1257,13 @@ export const Renewal = () => {
                   <label className="text-xs font-bold text-gray-500">
                     {curT.storeHouse}
                   </label>
-                  <select className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary">
-                    <option value="yes">{curT.yes}</option>
-                    <option value="no">{curT.no}</option>
+                  <select
+                    {...register("storeHouse")}
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="">{curT.selectStore}</option>
+                    <option value="1">{curT.yes}</option>
+                    <option value="0">{curT.no}</option>
                   </select>
                 </div>
                 <div className="space-y-2">
@@ -1020,6 +1272,10 @@ export const Renewal = () => {
                   </label>
                   <input
                     type="number"
+                    placeholder={
+                      language === "am" ? "ቁጥር ያስገቡ" : "Enter number"
+                    }
+                    {...register("computers")}
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
@@ -1029,6 +1285,10 @@ export const Renewal = () => {
                   </label>
                   <input
                     type="number"
+                    placeholder={
+                      language === "am" ? "ቁጥር ያስገቡ" : "Enter number"
+                    }
+                    {...register("vehicles")}
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
@@ -1072,7 +1332,7 @@ export const Renewal = () => {
                         : "Security guard Warranty Form"
                     }
                     type="photo"
-                    file={uploadedFiles.warranty_form}
+                    file={uploadedFiles.security_guard_warranty_form}
                     onUpload={(file) =>
                       handleUpload("security_guard_warranty_form", file)
                     }
@@ -1423,29 +1683,22 @@ export const Renewal = () => {
               <div className="space-y-6 bg-gray-50 p-6 rounded-[32px]">
                 <h4 className="font-bold text-primary">{curT.eduTitle}</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {[
-                    language === "am" ? "ከ3ኛ እስከ 9ኛ ክፍል" : "3rd to 9th Grade",
-                    language === "am"
-                      ? "ከ10ኛ እስከ 12ኛ ክፍል"
-                      : "10th to 12th Grade",
-                    language === "am" ? "ሰርተፍኬት" : "Certificate",
-                    language === "am" ? "ዲፕሎማ" : "Diploma",
-                    language === "am" ? "ዲግሪ" : "Degree",
-                    language === "am" ? "ሁለተኛ ዲግሪ" : "Second Degree",
-                  ].map((level, i) => (
+                  {educationLevels.map((level, i) => (
                     <div key={i} className="space-y-2">
                       <label className="text-xs font-bold text-gray-500">
-                        {level}
+                        {level.label}
                       </label>
                       <div className="grid grid-cols-2 gap-2">
                         <input
                           type="number"
                           placeholder="M"
+                          {...register(level.maleKey)}
                           className="p-2 bg-white border border-gray-200 rounded-lg text-xs"
                         />
                         <input
                           type="number"
                           placeholder="F"
+                          {...register(level.femaleKey)}
                           className="p-2 bg-white border border-gray-200 rounded-lg text-xs"
                         />
                       </div>
@@ -1526,6 +1779,7 @@ export const Renewal = () => {
                               "id_sample",
                               "employment_form",
                               "warranty_form",
+                              "security_guard_warranty_form",
                               "logo",
                               "office_lease",
                               "house_lease",
@@ -1583,7 +1837,40 @@ export const Renewal = () => {
                       Edit Details
                     </button>
                   </div>
-                  <div className="p-8">
+                  <div className="p-8 space-y-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                      {[
+                        { label: curT.offices, value: watch("offices") || "-" },
+                        {
+                          label: curT.capitalAmount,
+                          value: watch("capitalAmount")
+                            ? `${watch("capitalAmount")} ETB`
+                            : "-",
+                        },
+                        { label: curT.storeHouse, value: reviewStoreHouse },
+                        {
+                          label: curT.computers,
+                          value: watch("computers") || "-",
+                        },
+                        {
+                          label: curT.vehicles,
+                          value: watch("vehicles") || "-",
+                        },
+                      ].map((item, index) => (
+                        <div
+                          key={index}
+                          className="p-4 bg-white rounded-2xl border border-gray-100 space-y-1"
+                        >
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                            {item.label}
+                          </p>
+                          <p className="text-sm font-bold text-primary truncate">
+                            {item.value}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {[
                         "uniform_sample",
@@ -1715,8 +2002,7 @@ export const Renewal = () => {
                             {contract.assignedPersonnelCount || "0"}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {contract.region || "-"}, {contract.zone || "-"},{" "}
-                            {contract.woreda || "-"}, {contract.kebele || "-"}
+                            {getContractAddressLabel(contract)}
                           </p>
                           <p className="text-xs font-bold text-green-600">
                             {uploadedFiles[`user_contract_${contract.id}`]
@@ -1812,16 +2098,21 @@ export const Renewal = () => {
             <button
               type="button"
               onClick={nextStep}
+              disabled={isCheckingEligibility}
               className="blue-gradient text-white px-10 py-4 rounded-2xl font-bold shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all flex items-center space-x-2"
             >
               <span>
-                {step === 6
-                  ? language === "am"
-                    ? "ባለሙያ ግምገማ"
-                    : "Review Application"
-                  : curT.continue}
+                {step === 1
+                  ? isCheckingEligibility
+                    ? curT.verifying
+                    : curT.verifyAndContinue
+                  : step === 6
+                    ? language === "am"
+                      ? "ባለሙያ ግምገማ"
+                      : "Review Application"
+                    : curT.continue}
               </span>
-              <ArrowRight className="w-5 h-5" />
+              {!isCheckingEligibility && <ArrowRight className="w-5 h-5" />}
             </button>
           )}
         </div>

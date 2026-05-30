@@ -18,6 +18,7 @@ import adminRoutes from "./modules/admin/audit.routes";
 import agreementRouter from "./modules/agreement/agreement.routes";
 import faqRoutes from "./modules/faqs/faq.routes";
 import inspectionRoutes from "./modules/inspection/inspection.routes";
+import renewalRoutes from "./modules/renewal/renewal.routes";
 
 const app = express();
 
@@ -67,6 +68,7 @@ app.use("/api/system-settings", settingsRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/agreements", agreementRouter);
 app.use("/api/inspections", inspectionRoutes);
+app.use("/api/renewals", renewalRoutes);
 app.use("/api", faqRoutes);
 
 // 6. Health Check / Root Route
@@ -113,7 +115,7 @@ app.listen(port, () => {
   console.log(`-----------------------------------------------`);
   console.log(` Backend running on http://localhost:${port}`);
   console.log(
-    ` Endpoints: /api/users, /api/location, /api/applications, /api/formal-requests, /api/positions, /api/certifications, /api/system-settings`,
+    ` Endpoints: /api/users, /api/location, /api/applications, /api/formal-requests, /api/positions, /api/certifications, /api/renewals, /api/system-settings`,
   );
   console.log(`-----------------------------------------------`);
 });

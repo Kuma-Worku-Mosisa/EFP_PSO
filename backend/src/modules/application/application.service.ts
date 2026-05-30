@@ -34,60 +34,6 @@ export class ApplicationService {
     });
   }
 
-  private static normalizeBranchAddressInputs(formData: any): Array<{
-    kebeleId: number;
-    houseNumber: string | null;
-    specialLocation: string | null;
-  }> {
-    const branchInputs = Array.isArray(formData?.branchAddresses)
-      ? formData.branchAddresses
-      : [];
-
-    const normalized = branchInputs
-      .map((branch: any) => {
-        const kebeleRaw =
-          branch?.kebeleId ?? branch?.kebele ?? branch?.kebele_id ?? null;
-        const kebeleId = Number(kebeleRaw);
-        if (!Number.isFinite(kebeleId) || kebeleId <= 0) {
-          return null;
-        }
-
-        return {
-          kebeleId,
-          houseNumber:
-            branch?.houseNumber ??
-            branch?.houseNo ??
-            branch?.house_number ??
-            null,
-          specialLocation:
-            branch?.specialLocation ?? branch?.locationDescription ?? null,
-        };
-      })
-      .filter(Boolean) as Array<{
-      kebeleId: number;
-      houseNumber: string | null;
-      specialLocation: string | null;
-    }>;
-
-    // Backward compatibility for old frontend payloads that only send branchOfficeName.
-    if (
-      normalized.length === 0 &&
-      typeof formData?.branchOfficeName === "string" &&
-      formData.branchOfficeName.trim()
-    ) {
-      const fallbackKebeleId = Number(formData?.kebele);
-      if (Number.isFinite(fallbackKebeleId) && fallbackKebeleId > 0) {
-        normalized.push({
-          kebeleId: fallbackKebeleId,
-          houseNumber: null,
-          specialLocation: formData.branchOfficeName.trim(),
-        });
-      }
-    }
-
-    return normalized;
-  }
-
   /**
    * Helper: Extract and organize files by role from uploadedFiles map
    * Expected format: {role}_{documentType} -> filePath
@@ -184,20 +130,6 @@ export class ApplicationService {
       }
 
       console.log("[DEBUG] Kebele validation passed");
-
-      const normalizedBranchAddresses =
-        this.normalizeBranchAddressInputs(formData);
-
-      for (const branch of normalizedBranchAddresses) {
-        const branchKebeleExists = await prisma.kebele.findUnique({
-          where: { id: branch.kebeleId },
-        });
-        if (!branchKebeleExists) {
-          throw new Error(
-            `Branch address kebele with ID ${branch.kebeleId} not found in database`,
-          );
-        }
-      }
 
       const parseBooleanFromInput = (value: unknown): boolean => {
         if (typeof value === "boolean") return value;
@@ -314,28 +246,6 @@ export class ApplicationService {
               status: "Pending",
             } as any,
           });
-
-          if (normalizedBranchAddresses.length > 0) {
-            const createdBranchAddressIds: number[] = [];
-
-            for (const branch of normalizedBranchAddresses) {
-              const branchAddress = await tx.address.create({
-                data: {
-                  kebeleId: branch.kebeleId,
-                  houseNumber: branch.houseNumber,
-                  specialLocation: branch.specialLocation,
-                },
-              });
-              createdBranchAddressIds.push(branchAddress.id);
-            }
-
-            await tx.organizationBranchAddress.createMany({
-              data: createdBranchAddressIds.map((addressId) => ({
-                organizationId: organization.id,
-                addressId,
-              })),
-            });
-          }
 
           // Audit: organization creation
           try {
@@ -1079,7 +989,7 @@ export class ApplicationService {
                   },
                 },
               },
-              branchAddresses: {
+              serviceContracts: {
                 include: {
                   address: {
                     include: {
@@ -1099,6 +1009,7 @@ export class ApplicationService {
                     },
                   },
                 },
+                orderBy: { createdAt: "desc" },
               },
               documents: true,
             },
@@ -1202,6 +1113,9 @@ export class ApplicationService {
           trainingDetails: {
             orderBy: { createdAt: "desc" },
           },
+          guardEducationStats: {
+            orderBy: { createdAt: "desc" },
+          },
           history: {
             orderBy: { changedAt: "desc" },
           },
@@ -1252,6 +1166,7 @@ export class ApplicationService {
       return rows.map((r) => {
         const organization = r.organization as any;
         const latestTraining = r.trainingDetails?.[0] as any;
+        const latestGuardEducationStat = r.guardEducationStats?.[0] as any;
         const organizationDocs = organization?.documents || [];
 
         const findOrganizationDocUrl = (documentName: string) => {
@@ -1287,11 +1202,6 @@ export class ApplicationService {
                   organization.nameEnglish || organization.nameAmharic || null,
                 headOfficeName:
                   organization.nameEnglish || organization.nameAmharic || null,
-                branchOfficeName:
-                  organization.branchAddresses
-                    ?.map((ba: any) => ba?.address?.specialLocation)
-                    .filter(Boolean)
-                    .join(", ") || null,
                 email: organization.email,
                 phone: organization.phone,
                 faxNumber: organization.faxNumber,
@@ -1376,72 +1286,48 @@ export class ApplicationService {
                         : null,
                     }
                   : null,
-                branchAddresses: (organization.branchAddresses || []).map(
-                  (branch: any) => ({
-                    id: branch.id,
-                    addressId: branch.addressId,
-                    createdAt: branch.createdAt,
-                    address: branch.address
+                documents: toFileList(organization.documents || []),
+                serviceContracts: (organization.serviceContracts || []).map(
+                  (contract: any) => ({
+                    id: contract.id,
+                    serviceUserName: contract.serviceUserName,
+                    contractUrl: contract.contractUrl,
+                    assignedPersonnelCount: contract.assignedPersonnelCount,
+                    address: contract.address
                       ? {
-                          houseNumber: branch.address.houseNumber,
-                          specialLocation: branch.address.specialLocation,
-                          kebele: branch.address.kebele
+                          houseNumber: contract.address.houseNumber,
+                          specialLocation: contract.address.specialLocation,
+                          kebele: contract.address.kebele
                             ? {
-                                id: branch.address.kebele.id,
-                                nameEnglish: branch.address.kebele.nameEnglish,
-                                nameAmharic: branch.address.kebele.nameAmharic,
                                 name:
-                                  branch.address.kebele.nameEnglish ||
-                                  branch.address.kebele.nameAmharic ||
+                                  contract.address.kebele.nameEnglish ||
+                                  contract.address.kebele.nameAmharic ||
                                   null,
-                                woreda: branch.address.kebele.woreda
+                                woreda: contract.address.kebele.woreda
                                   ? {
-                                      id: branch.address.kebele.woreda.id,
-                                      nameEnglish:
-                                        branch.address.kebele.woreda
-                                          .nameEnglish,
-                                      nameAmharic:
-                                        branch.address.kebele.woreda
-                                          .nameAmharic,
                                       name:
-                                        branch.address.kebele.woreda
+                                        contract.address.kebele.woreda
                                           .nameEnglish ||
-                                        branch.address.kebele.woreda
+                                        contract.address.kebele.woreda
                                           .nameAmharic ||
                                         null,
-                                      zone: branch.address.kebele.woreda.zone
+                                      zone: contract.address.kebele.woreda.zone
                                         ? {
-                                            id: branch.address.kebele.woreda
-                                              .zone.id,
-                                            nameEnglish:
-                                              branch.address.kebele.woreda.zone
-                                                .nameEnglish,
-                                            nameAmharic:
-                                              branch.address.kebele.woreda.zone
-                                                .nameAmharic,
                                             name:
-                                              branch.address.kebele.woreda.zone
-                                                .nameEnglish ||
-                                              branch.address.kebele.woreda.zone
-                                                .nameAmharic ||
+                                              contract.address.kebele.woreda
+                                                .zone.nameEnglish ||
+                                              contract.address.kebele.woreda
+                                                .zone.nameAmharic ||
                                               null,
-                                            region: branch.address.kebele.woreda
-                                              .zone.region
+                                            region: contract.address.kebele
+                                              .woreda.zone.region
                                               ? {
-                                                  id: branch.address.kebele
-                                                    .woreda.zone.region.id,
-                                                  nameEnglish:
-                                                    branch.address.kebele.woreda
-                                                      .zone.region.nameEnglish,
-                                                  nameAmharic:
-                                                    branch.address.kebele.woreda
-                                                      .zone.region.nameAmharic,
                                                   name:
-                                                    branch.address.kebele.woreda
-                                                      .zone.region
+                                                    contract.address.kebele
+                                                      .woreda.zone.region
                                                       .nameEnglish ||
-                                                    branch.address.kebele.woreda
-                                                      .zone.region
+                                                    contract.address.kebele
+                                                      .woreda.zone.region
                                                       .nameAmharic ||
                                                     null,
                                                 }
@@ -1456,7 +1342,6 @@ export class ApplicationService {
                       : null,
                   }),
                 ),
-                documents: toFileList(organization.documents || []),
               }
             : null,
           manager: serializeEmployee(r.manager),
@@ -1476,6 +1361,24 @@ export class ApplicationService {
                 ),
                 totalTraineesMale: latestTraining.totalTraineesMale,
                 totalTraineesFemale: latestTraining.totalTraineesFemale,
+              }
+            : null,
+          guardEducationStat: latestGuardEducationStat
+            ? {
+                id: latestGuardEducationStat.id,
+                grade_3_9_male: latestGuardEducationStat.grade_3_9_male,
+                grade_3_9_female: latestGuardEducationStat.grade_3_9_female,
+                grade_10_12_male: latestGuardEducationStat.grade_10_12_male,
+                grade_10_12_female: latestGuardEducationStat.grade_10_12_female,
+                certificate_male: latestGuardEducationStat.certificate_male,
+                certificate_female: latestGuardEducationStat.certificate_female,
+                diploma_male: latestGuardEducationStat.diploma_male,
+                diploma_female: latestGuardEducationStat.diploma_female,
+                degree_male: latestGuardEducationStat.degree_male,
+                degree_female: latestGuardEducationStat.degree_female,
+                second_degree_male: latestGuardEducationStat.second_degree_male,
+                second_degree_female:
+                  latestGuardEducationStat.second_degree_female,
               }
             : null,
           history: (r.history || []).map((entry: any) => ({
@@ -1729,27 +1632,6 @@ export class ApplicationService {
                         zone: {
                           include: {
                             region: true,
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-            branchAddresses: {
-              include: {
-                address: {
-                  include: {
-                    kebele: {
-                      include: {
-                        woreda: {
-                          include: {
-                            zone: {
-                              include: {
-                                region: true,
-                              },
-                            },
                           },
                         },
                       },

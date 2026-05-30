@@ -71,7 +71,6 @@ model Address {
   kebele          Kebele         @relation(fields: [kebeleId], references: [id], onUpdate: NoAction, map: "FK_Addresses_Kebeles")
   organizations   Organization[]
   employees       Employee[]
-  branchAddresses OrganizationBranchAddress[]
   serviceContracts ServiceContract[]
 
 
@@ -175,10 +174,10 @@ model Organization {
   employees       Employee[]
   applications    Application[]
   certifications  Certification[]
+  renewalApplications RenewalApplication[]
+  guardEducationStats GuardEducationLevelStat[]
   incidents       IncidentReport[]
   // agreements now relate through applications
-  // Tracks multiple secondary branch physical locations
-  branchAddresses OrganizationBranchAddress[]
   serviceContracts ServiceContract[]
 
   @@map("organizations")
@@ -202,19 +201,6 @@ model ServiceContract {
   address                Address      @relation(fields: [addressId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Contracts_Addresses")
 
   @@map("service_contracts")
-}
-
-model OrganizationBranchAddress {
-  id             Int      @id @default(autoincrement()) @map("branch_address_id")
-  organizationId Int      @map("organization_id")
-  addressId      Int      @map("address_id")
-  createdAt      DateTime @default(now()) @map("created_at") @db.DateTime
-  
-  // Relational mappings
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_OrgBranchAddresses_Organizations")
-  address      Address      @relation(fields: [addressId], references: [id], onUpdate: NoAction, map: "FK_OrgBranchAddresses_Addresses")
-
-  @@map("organization_branch_addresses")
 }
 
 model Agreement {
@@ -359,13 +345,10 @@ model Application {
   organizationId Int     @map("organization_id")
   type           String? @map("application_type") @db.VarChar(50)
   status         String? @map("application_status") @db.VarChar(50)
-
   managerId        Int? @map("manager_id")
   operationsHeadId Int? @map("operations_head_id")
   adminHeadId      Int? @map("admin_head_id")
-
   applicationDate DateTime @default(now()) @map("application_date") @db.DateTime
-
   // Relations
   user         User         @relation(fields: [userId], references: [id], onUpdate: NoAction, map: "FK_Apps_Users")
   organization Organization @relation(fields: [organizationId], references: [id], onUpdate: NoAction, map: "FK_Apps_Orgs")
@@ -378,12 +361,28 @@ model Application {
   // Tracking & Modules
   history         ApplicationTrackingHistory[]
   trainingDetails OrganizationTrainingDetail[]
+  guardEducationStats GuardEducationLevelStat[]
   inspections     Inspection[]
   payments        Payment[]
   certifications  Certification[]
   agreements      Agreement[]
 
   @@map("applications")
+}
+
+model RenewalApplication {
+  id                     Int      @id @default(autoincrement()) @map("renewal_application_id")
+  organizationId         Int      @map("organization_id")
+  type                   String?  @map("application_type") @db.VarChar(50)
+  sourceCertificationId  Int?     @map("source_certification_id")
+  renewalYear            Int?     @map("renewal_year")
+  createdAt              DateTime @default(now()) @map("created_at") @db.DateTime
+  updatedAt              DateTime @updatedAt @map("updated_at") @db.DateTime
+
+  organization           Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_RenewalApp_Organization")
+  sourceCertification    Certification? @relation("RenewalSourceCertification", fields: [sourceCertificationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_RenewalApp_Cert")
+
+  @@map("renewal_applications")
 }
 
 model ApplicationTrackingHistory {
@@ -407,10 +406,10 @@ model ApplicationTrackingHistory {
 model OrganizationTrainingDetail {
   id                     Int      @id @default(autoincrement()) @map("training_id")
   applicationId          Int?     @map("application_id")
-  trainingBodyName       String?  @map("training_body_name") @db.VarChar(255)
-  trainingAddress        String?  @map("training_address") @db.VarChar(Max)
-  trainingStartDate      DateTime @map("training_start_date") @db.Date
-  trainingEndDate        DateTime @map("training_end_date") @db.Date
+  trainingBodyName       String?  @map("training_body_name") @db.NVarChar(255)
+  trainingAddress        String?  @map("training_address") @db.NVarChar(Max)
+  trainingStartDate      DateTime? @map("training_start_date") @db.Date
+  trainingEndDate        DateTime? @map("training_end_date") @db.Date
   trainingDurationDays   Int?     @map("training_duration_days")
   totalTraineesMale      Int      @default(0) @map("total_trainees_male")
   totalTraineesFemale    Int      @default(0) @map("total_trainees_female")
@@ -525,6 +524,7 @@ model Certification {
 
   organization Organization? @relation(fields: [organizationId], references: [id], onUpdate: NoAction, map: "FK_Certs_Orgs")
   application  Application?  @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "FK_Certs_Apps")
+  renewalApplications RenewalApplication[] @relation("RenewalSourceCertification")
 
   @@map("certifications")
 }
