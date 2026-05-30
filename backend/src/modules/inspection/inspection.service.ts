@@ -395,6 +395,43 @@ export class InspectionService {
     });
   }
 
+  static async clearCommitteeSignature(input: {
+    inspectionId: number;
+    committeeId: number;
+    userId: number;
+    isAdmin: boolean;
+  }) {
+    const committee = await prisma.inspectionCommittee.findUnique({
+      where: { id: input.committeeId },
+      select: {
+        id: true,
+        inspectionId: true,
+        userId: true,
+        signatureUrl: true,
+      },
+    });
+
+    if (!committee || committee.inspectionId !== input.inspectionId) {
+      throw new Error(`Committee member ${input.committeeId} not found.`);
+    }
+
+    if (!input.isAdmin && committee.userId !== input.userId) {
+      throw new Error("You can only remove your own committee signature.");
+    }
+
+    const priorSignatureUrl = committee.signatureUrl || "";
+
+    const updated = await prisma.inspectionCommittee.update({
+      where: { id: committee.id },
+      data: {
+        signatureUrl: "",
+        signedAt: null,
+      },
+    });
+
+    return { ...updated, priorSignatureUrl };
+  }
+
   static async ensureCommitteeRowForUser(input: {
     inspectionId: number;
     userId: number;

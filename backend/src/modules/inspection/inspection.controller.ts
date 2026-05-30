@@ -333,6 +333,64 @@ export async function uploadCommitteeSignature(req: Request, res: Response) {
   });
 }
 
+export async function deleteCommitteeSignature(req: Request, res: Response) {
+  try {
+    const inspectionId = Number(req.params.id);
+    const committeeId = Number(req.params.committeeId);
+    const userId = Number(req.user?.userId ?? req.user?.id);
+
+    if (!Number.isFinite(inspectionId) || inspectionId <= 0) {
+      return ApiResponse.error(res, "Invalid inspection id.", 400);
+    }
+
+    if (!Number.isFinite(committeeId) || committeeId <= 0) {
+      return ApiResponse.error(res, "Invalid committee member id.", 400);
+    }
+
+    const result = await InspectionService.clearCommitteeSignature({
+      inspectionId,
+      committeeId,
+      userId,
+      isAdmin: isAdmin(req),
+    });
+
+    const priorUrl = (result as { priorSignatureUrl?: string }).priorSignatureUrl;
+    if (priorUrl?.startsWith("/uploads/")) {
+      const filePath = path.join(process.cwd(), priorUrl.replace(/^\//, ""));
+      if (fs.existsSync(filePath)) {
+        try {
+          fs.unlinkSync(filePath);
+        } catch {
+          // ignore file cleanup failure
+        }
+      }
+    }
+
+    const { priorSignatureUrl: _removed, ...committee } = result as {
+      priorSignatureUrl?: string;
+      [key: string]: unknown;
+    };
+
+    return ApiResponse.success(
+      res,
+      "Committee signature removed.",
+      committee,
+    );
+  } catch (error: any) {
+    console.error(
+      "[ERROR] deleteCommitteeSignature failed:",
+      error?.message || error,
+    );
+    const message = error?.message || "Failed to remove signature.";
+    const statusCode = message.includes("own committee signature")
+      ? 403
+      : message.includes("not found")
+        ? 404
+        : 500;
+    return ApiResponse.error(res, message, statusCode, error?.message);
+  }
+}
+
 export async function uploadLeadSignature(req: Request, res: Response) {
   const upload = createSignatureUploadMiddleware();
 
