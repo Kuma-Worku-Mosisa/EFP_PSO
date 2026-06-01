@@ -1595,6 +1595,9 @@ export const NewApplication = () => {
   >(null);
   const [accessBlockedTitle, setAccessBlockedTitle] = React.useState("");
   const [accessBlockedMessage, setAccessBlockedMessage] = React.useState("");
+  const [submissionError, setSubmissionError] = React.useState<string | null>(
+    null,
+  );
   const [openedFields] = React.useState<string[]>(() => {
     const defaultOpenedFields = ["trade_license", "kebele_id_m_2024"];
 
@@ -2334,7 +2337,14 @@ export const NewApplication = () => {
         ? String(watch("agencyNameAmharic") || watch("agencyName") || "")
         : String(watch("agencyName") || watch("agencyNameAmharic") || "");
 
-    const result = await uploadOrganizationDocuments(orgDisplayName, files);
+    const uploadOrganizationName = orgDisplayName.startsWith("organization/")
+      ? orgDisplayName
+      : `organization/${orgDisplayName}`;
+
+    const result = await uploadOrganizationDocuments(
+      uploadOrganizationName,
+      files,
+    );
 
     if (!result.success || !result.data?.uploadedFiles) {
       throw new Error(result.error || "File upload failed");
@@ -2354,6 +2364,7 @@ export const NewApplication = () => {
     //   return;
     // }
     try {
+      setSubmissionError(null);
       console.groupCollapsed("[DEBUG] Submitting Application - start");
       console.debug("Form values (raw):", data);
       console.debug("Uploaded files (keys):", Object.keys(uploadedFiles));
@@ -2434,11 +2445,35 @@ export const NewApplication = () => {
         body: JSON.stringify(payload),
       });
 
+      setSubmissionError(null);
       setIsSubmitted(true);
       console.info("[DEBUG] Submission completed — isSubmitted=true");
     } catch (err: any) {
       console.error("[DEBUG] Submission error:", err);
-      alert(err.message || "Failed to submit application.");
+
+      const errorMessage = String(
+        err?.message || "Failed to submit application.",
+      );
+      const isDuplicateIdentityError = errorMessage.includes(
+        "Fayda ID or Email already exists",
+      );
+      const isDuplicateOrganizationError = errorMessage.includes(
+        "An organization with this name already exists.",
+      );
+
+      if (isDuplicateIdentityError) {
+        setStep(5);
+        setSubmissionError(errorMessage);
+        return;
+      }
+
+      if (isDuplicateOrganizationError) {
+        setStep(1);
+        setSubmissionError(errorMessage);
+        return;
+      }
+
+      setSubmissionError(errorMessage);
     }
   };
 
@@ -2657,6 +2692,29 @@ export const NewApplication = () => {
         onSubmit={handleSubmit(onSubmit, onInvalid)}
         className="flex min-h-[600px] flex-col rounded-[28px] border border-gray-100 bg-white p-4 shadow-xl sm:rounded-[32px] sm:p-6 md:rounded-[40px] md:p-10 lg:p-12"
       >
+        {submissionError && (
+          <div className="mb-6 rounded-[24px] border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700 shadow-sm">
+            <p className="font-black uppercase tracking-widest text-[11px]">
+              Submission blocked
+            </p>
+            <p className="mt-1 font-medium">{submissionError}</p>
+            {submissionError.includes("Fayda ID or Email already exists") && (
+              <p className="mt-2 text-xs text-red-600">
+                Use a different Fayda ID or email address, or check whether the
+                existing personnel record should be updated instead.
+              </p>
+            )}
+            {submissionError.includes(
+              "An organization with this name already exists.",
+            ) && (
+              <p className="mt-2 text-xs text-red-600">
+                Change the organization name or verify whether this company has
+                already been submitted under a previous application.
+              </p>
+            )}
+          </div>
+        )}
+
         <AnimatePresence mode="wait">
           {step === 1 && (
             <motion.div

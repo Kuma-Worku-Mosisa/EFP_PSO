@@ -19,6 +19,16 @@ export default defineConfig(({ mode }) => {
       dedupe: ["react", "react-dom"],
     },
     server: {
+      proxy: {
+        "/api": {
+          target: "http://localhost:5000",
+          changeOrigin: true,
+        },
+        "/uploads": {
+          target: "http://localhost:5000",
+          changeOrigin: true,
+        },
+      },
       // Keep your existing HMR logic
       hmr: process.env.DISABLE_HMR !== "true",
     },

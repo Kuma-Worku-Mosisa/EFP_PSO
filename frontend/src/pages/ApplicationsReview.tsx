@@ -76,6 +76,76 @@ const buildDocumentCards = (
 const getOrganizationDocumentCards = (application?: any) =>
   buildDocumentCards(application?.organization?.documents || [], "org-grid");
 
+type ServiceContractCard = {
+  id: string;
+  contractId?: number | string;
+  serviceUserName: string;
+  contractUrl: string;
+  fileName: string;
+  assignedPersonnelCount?: number | null;
+  address?: any;
+};
+
+const getServiceContractCards = (application?: any): ServiceContractCard[] =>
+  (application?.organization?.serviceContracts || []).map(
+    (
+      contract: {
+        id?: number | string;
+        serviceUserName?: string;
+        contractUrl?: string;
+        assignedPersonnelCount?: number | null;
+        address?: any;
+      },
+      index: number,
+    ) => ({
+      id: `service-contract_${index}`,
+      contractId: contract?.id,
+      serviceUserName: contract?.serviceUserName || "Service Contract",
+      contractUrl: contract?.contractUrl || "",
+      fileName: getFileName(contract?.contractUrl),
+      assignedPersonnelCount: contract?.assignedPersonnelCount,
+      address: contract?.address,
+    }),
+  );
+
+const formatContractAddress = (address: any) => {
+  if (!address) return "-";
+
+  const region =
+    address?.kebele?.woreda?.zone?.region?.name ||
+    address?.kebele?.woreda?.zone?.region?.nameEnglish ||
+    address?.kebele?.woreda?.zone?.region?.nameAmharic ||
+    null;
+
+  const zone =
+    address?.kebele?.woreda?.zone?.name ||
+    address?.kebele?.woreda?.zone?.nameEnglish ||
+    address?.kebele?.woreda?.zone?.nameAmharic ||
+    null;
+
+  const woreda =
+    address?.kebele?.woreda?.name ||
+    address?.kebele?.woreda?.nameEnglish ||
+    address?.kebele?.woreda?.nameAmharic ||
+    null;
+
+  const kebele =
+    address?.kebele?.name ||
+    address?.kebele?.nameEnglish ||
+    address?.kebele?.nameAmharic ||
+    null;
+
+  const parts: string[] = [];
+  if (region) parts.push(String(region));
+  if (zone) parts.push(String(zone));
+  if (woreda) parts.push(String(woreda));
+  if (kebele) parts.push(String(kebele));
+  if (address?.specialLocation) parts.push(String(address.specialLocation));
+  if (address?.houseNumber) parts.push(String(address.houseNumber));
+
+  return parts.length > 0 ? parts.join(", ") : "-";
+};
+
 const findOrganizationDocument = (application: any, terms: string[]) => {
   const documents = getOrganizationDocumentCards(application);
   return documents.find((doc) =>
@@ -3024,11 +3094,6 @@ export const ApplicationsReview = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
             <ReviewItem
-              label="Trade Name"
-              value={selectedApp.organization?.tradeName || "-"}
-              id="ren_trade_name"
-            />
-            <ReviewItem
               label="Trade Pre-registration"
               value={
                 getFileName(
@@ -3146,11 +3211,50 @@ export const ApplicationsReview = () => {
               value={
                 selectedApp.organization?.capitalAmount !== undefined &&
                 selectedApp.organization?.capitalAmount !== null
-                  ? String(selectedApp.organization.capitalAmount)
+                  ? String(selectedApp.organization.capitalAmount + " ETB")
                   : "-"
               }
               id="ren_capital"
             />
+          </div>
+        </section>
+
+        {/* All Renewal Documents */}
+        <section className="space-y-6">
+          <div className="flex items-center space-x-3 px-4">
+            <div className="w-1.5 h-6 bg-slate-700 rounded-full" />
+            <h4 className="text-base font-black text-primary uppercase tracking-tight">
+              All Renewal Documents
+            </h4>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
+            {buildDocumentCards(
+              selectedApp.organization?.documents || [],
+              "ren_all_docs",
+            ).map((doc) => (
+              <ReviewItem
+                key={doc.id}
+                label={doc.label}
+                value={doc.fileName}
+                id={doc.id}
+                isFile
+                fileUrl={doc.fileUrl}
+                documentTarget={
+                  doc.documentId
+                    ? {
+                        scope: "organization",
+                        id: Number(doc.documentId),
+                        isVerified: doc.isVerified,
+                        verifiedAt: doc.verifiedAt ?? null,
+                      }
+                    : null
+                }
+                verificationKey={
+                  doc.documentId ? `organization:${doc.documentId}` : doc.id
+                }
+                initialVerified={doc.isVerified}
+              />
+            ))}
           </div>
         </section>
 
@@ -3331,6 +3435,70 @@ export const ApplicationsReview = () => {
           </div>
         </section>
 
+        {/* Service Contracts */}
+        <section className="space-y-6">
+          <div className="flex items-center space-x-3 px-4">
+            <div className="w-1.5 h-6 bg-emerald-700 rounded-full" />
+            <h4 className="text-base font-black text-primary uppercase tracking-tight">
+              Service Contracts
+            </h4>
+            <span className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-700">
+              {selectedApp.organization?.serviceContracts?.length || 0} service
+              contract(s)
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
+            {getServiceContractCards(selectedApp).length > 0 ? (
+              getServiceContractCards(selectedApp).map(
+                (contract: ServiceContractCard) => (
+                  <div key={contract.id} className="flex flex-col">
+                    <ReviewItem
+                      label={contract.serviceUserName || "Service Contract"}
+                      value={contract.fileName || "-"}
+                      id={contract.id}
+                      isFile
+                      fileUrl={contract.contractUrl}
+                      documentTarget={
+                        contract.contractId
+                          ? {
+                              scope: "organization",
+                              id: Number(contract.contractId),
+                              isVerified: false,
+                              verifiedAt: null,
+                            }
+                          : null
+                      }
+                      verificationKey={
+                        contract.contractId
+                          ? `organization:${contract.contractId}`
+                          : contract.id
+                      }
+                    />
+                    <div className="mt-2 text-sm text-gray-600">
+                      <div>
+                        <span className="font-black">Service User: </span>
+                        <span>{contract.serviceUserName || "-"}</span>
+                      </div>
+                      <div>
+                        <span className="font-black">Assigned Personnel: </span>
+                        <span>{contract.assignedPersonnelCount ?? "-"}</span>
+                      </div>
+                      <div className="truncate">
+                        <span className="font-black">Address: </span>
+                        <span>{formatContractAddress(contract.address)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ),
+              )
+            ) : (
+              <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-5 py-6 text-sm text-gray-500">
+                No service contracts found for this renewal application.
+              </div>
+            )}
+          </div>
+        </section>
+
         {/* Agreements & Leases */}
         <section className="space-y-6">
           <div className="flex items-center space-x-3 px-4">
@@ -3340,19 +3508,6 @@ export const ApplicationsReview = () => {
             </h4>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
-            <ReviewItem
-              label="Service User Contract"
-              value={
-                getFileName(
-                  selectedApp.organization?.serviceContracts?.[0]?.contractUrl,
-                ) || "-"
-              }
-              id="ren_client_contract"
-              isFile
-              fileUrl={
-                selectedApp.organization?.serviceContracts?.[0]?.contractUrl
-              }
-            />
             <ReviewItem
               label="Office Lease (1yr left)"
               value={
@@ -4534,43 +4689,104 @@ export const ApplicationsReview = () => {
 
           {/* Education Breakdown */}
           <section className="space-y-6">
-            <div className="flex items-center space-x-3 px-4">
+            <div className="flex items-center space-x-3 px-1">
               <div className="w-1.5 h-6 bg-pink-500 rounded-full" />
-              <h4 className="text-lg font-black text-primary uppercase tracking-tighter">
+              <h4 className="text-lg font-black uppercase tracking-tighter text-[#1A304A]">
                 Security Guards Education Level Breakdown
               </h4>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
-              <ReviewItem
-                label="3rd to 9th Grade (M/F/T)"
-                value={`${selectedApp.guardEducationStat?.grade_3_9_male ?? 0}/${selectedApp.guardEducationStat?.grade_3_9_female ?? 0}/${(selectedApp.guardEducationStat?.grade_3_9_male ?? 0) + (selectedApp.guardEducationStat?.grade_3_9_female ?? 0)}`}
-                id="ren_edu_3_9"
-              />
-              <ReviewItem
-                label="10th to 12th Grade (M/F/T)"
-                value={`${selectedApp.guardEducationStat?.grade_10_12_male ?? 0}/${selectedApp.guardEducationStat?.grade_10_12_female ?? 0}/${(selectedApp.guardEducationStat?.grade_10_12_male ?? 0) + (selectedApp.guardEducationStat?.grade_10_12_female ?? 0)}`}
-                id="ren_edu_10_12"
-              />
-              <ReviewItem
-                label="Vocational Certificate (M/F/T)"
-                value={`${selectedApp.guardEducationStat?.certificate_male ?? 0}/${selectedApp.guardEducationStat?.certificate_female ?? 0}/${(selectedApp.guardEducationStat?.certificate_male ?? 0) + (selectedApp.guardEducationStat?.certificate_female ?? 0)}`}
-                id="ren_edu_cert"
-              />
-              <ReviewItem
-                label="Diploma (M/F/T)"
-                value={`${selectedApp.guardEducationStat?.diploma_male ?? 0}/${selectedApp.guardEducationStat?.diploma_female ?? 0}/${(selectedApp.guardEducationStat?.diploma_male ?? 0) + (selectedApp.guardEducationStat?.diploma_female ?? 0)}`}
-                id="ren_edu_diploma"
-              />
-              <ReviewItem
-                label="Degree (M/F/T)"
-                value={`${selectedApp.guardEducationStat?.degree_male ?? 0}/${selectedApp.guardEducationStat?.degree_female ?? 0}/${(selectedApp.guardEducationStat?.degree_male ?? 0) + (selectedApp.guardEducationStat?.degree_female ?? 0)}`}
-                id="ren_edu_degree"
-              />
-              <ReviewItem
-                label="Second Degree (M/F/T)"
-                value={`${selectedApp.guardEducationStat?.second_degree_male ?? 0}/${selectedApp.guardEducationStat?.second_degree_female ?? 0}/${(selectedApp.guardEducationStat?.second_degree_male ?? 0) + (selectedApp.guardEducationStat?.second_degree_female ?? 0)}`}
-                id="ren_edu_2nd"
-              />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
+              {[
+                {
+                  educationLevelLabel: "3rd to 9th Grade",
+                  maleCount:
+                    selectedApp.guardEducationStat?.grade_3_9_male ?? 0,
+                  femaleCount:
+                    selectedApp.guardEducationStat?.grade_3_9_female ?? 0,
+                },
+                {
+                  educationLevelLabel: "10th to 12th Grade",
+                  maleCount:
+                    selectedApp.guardEducationStat?.grade_10_12_male ?? 0,
+                  femaleCount:
+                    selectedApp.guardEducationStat?.grade_10_12_female ?? 0,
+                },
+                {
+                  educationLevelLabel: "Vocational Certificate",
+                  maleCount:
+                    selectedApp.guardEducationStat?.certificate_male ?? 0,
+                  femaleCount:
+                    selectedApp.guardEducationStat?.certificate_female ?? 0,
+                },
+                {
+                  educationLevelLabel: "Diploma",
+                  maleCount: selectedApp.guardEducationStat?.diploma_male ?? 0,
+                  femaleCount:
+                    selectedApp.guardEducationStat?.diploma_female ?? 0,
+                },
+                {
+                  educationLevelLabel: "Degree",
+                  maleCount: selectedApp.guardEducationStat?.degree_male ?? 0,
+                  femaleCount:
+                    selectedApp.guardEducationStat?.degree_female ?? 0,
+                },
+                {
+                  educationLevelLabel: "Second Degree",
+                  maleCount:
+                    selectedApp.guardEducationStat?.second_degree_male ?? 0,
+                  femaleCount:
+                    selectedApp.guardEducationStat?.second_degree_female ?? 0,
+                },
+              ].map((educationItem, index) => {
+                const totalCount =
+                  educationItem.maleCount + educationItem.femaleCount;
+                return (
+                  <div
+                    key={index}
+                    className="border border-slate-200/60 dark:border-zinc-800/80 rounded-xl p-4 hover:shadow-sm transition-all duration-200 flex flex-col justify-between"
+                  >
+                    {/* Category Header */}
+                    <div className="text-sm font-bold tracking-tight mb-4 text-[#1A304A]">
+                      {educationItem.educationLevelLabel}
+                    </div>
+
+                    {/* Demographics Split Grid */}
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-zinc-800/60">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                          Male
+                        </span>
+                        <span className="text-sm font-extrabold text-[#1A304A]">
+                          {educationItem.maleCount}
+                        </span>
+                      </div>
+
+                      <div className="w-px h-7 bg-slate-100 dark:bg-zinc-800" />
+
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                          Female
+                        </span>
+                        <span className="text-sm font-extrabold text-[#1A304A]">
+                          {educationItem.femaleCount}
+                        </span>
+                      </div>
+
+                      <div className="w-px h-7 bg-slate-100 dark:bg-zinc-800" />
+
+                      <div className="flex flex-col items-end">
+                        <span className="text-[10px] font-bold text-pink-500 dark:text-pink-400 uppercase tracking-wider">
+                          Total
+                        </span>
+                        <span className="text-base font-black text-[#1A304A]">
+                          {totalCount}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </section>
         </div>
@@ -4755,7 +4971,7 @@ export const ApplicationsReview = () => {
                     <X className="w-6 h-6" />
                   </button>
                 </div>
-                <div className="flex-1 bg-gray-100 p-12 flex items-center justify-center">
+                <div className="flex-1 bg-gray-100 p-12 flex items-stretch justify-center overflow-auto">
                   {viewerFile.url ? (
                     viewerFile.type === "application/pdf" ? (
                       <iframe
@@ -4767,7 +4983,7 @@ export const ApplicationsReview = () => {
                       <img
                         src={viewerFile.url}
                         alt={viewerFile.name}
-                        className="max-w-full max-h-full object-contain rounded-[32px] shadow-2xl bg-white"
+                        className="h-full w-auto max-w-full object-contain rounded-[32px] shadow-2xl bg-white"
                       />
                     ) : (
                       <a

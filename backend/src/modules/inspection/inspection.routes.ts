@@ -5,6 +5,7 @@ import {
   finalizeInspection,
   getInspection,
   listInspections,
+  updateInspection,
   confirmFinalReport,
   uploadLeadSignature,
   uploadCommitteeSignature,
@@ -33,6 +34,13 @@ router.get(
   authenticate,
   authorize(["FIELD_REVIEWER", "admin", "system_admin"]),
   getInspection,
+);
+
+router.patch(
+  "/:id",
+  authenticate,
+  authorize(["admin", "system_admin"]),
+  updateInspection,
 );
 
 router.patch(

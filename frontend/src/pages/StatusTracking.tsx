@@ -1,5 +1,5 @@
 // filepath: frontend/src/pages/StatusTracking.tsx
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Clock, CheckCircle2, AlertCircle, Search, Shield } from "lucide-react";
 import { motion } from "motion/react";
 import { useSearchParams } from "react-router-dom";
@@ -23,6 +23,26 @@ type TrackingHistoryItem = {
   user?: TrackingUser | null;
 };
 
+type TrackingCommitteeMember = {
+  id: number;
+  userId?: number | null;
+  expertName?: string | null;
+  expertRole?: string | null;
+  signatureUrl?: string | null;
+  signedAt?: string | null;
+};
+
+type TrackingInspection = {
+  id: number;
+  scheduledDate?: string | null;
+  status?: string | null;
+  findingsSummary?: string | null;
+  expertOpinion?: string | null;
+  finalReportUrl?: string | null;
+  leadInspector?: TrackingUser | null;
+  committeeMembers?: TrackingCommitteeMember[];
+};
+
 type TrackingApplication = {
   applicationId?: number;
   id?: number;
@@ -30,9 +50,18 @@ type TrackingApplication = {
   applicationDate?: string | null;
   totalEvents?: number;
   history?: TrackingHistoryItem[];
+  inspection?: TrackingInspection | null;
+  inspections?: TrackingInspection[];
 };
 
-type TimelineStatus = "Approved" | "Rejected" | "Reviewing" | "Correction Requested" | "Pending" | "Other";
+type TimelineStatus =
+  | "Approved"
+  | "Rejected"
+  | "Reviewing"
+  | "Correction Requested"
+  | "Pending"
+  | "Completed"
+  | "Other";
 
 const STATUS_LABELS = {
   en: {
@@ -75,12 +104,9 @@ const STATUS_LABELS = {
     loading: "የማመልከቻ ሁኔታ እየተጫነ ነው...",
     empty: "እስካሁን የማመልከቻ ታሪክ አልተገኘም።",
     noApplication: "እስካሁን ማመልከቻ አላስገቡም።",
-    noApplicationHint:
-      "የመጀመሪያዎን ማመልከቻ ካስገቡ በኋላ የተገመገመው ሁኔታ እና ታሪኩ እዚህ ይታያል።",
-    noCurrentYear:
-      "በዚህ ዓመት የተጠረጠረ ማመልከቻ አልተገኘም።",
-    noCurrentYearHint:
-      "አዲስ ማመልከቻ ያስገቡ እና የዚህ ዓመት ክትትል ሁኔታ ይመልከቱ።",
+    noApplicationHint: "የመጀመሪያዎን ማመልከቻ ካስገቡ በኋላ የተገመገመው ሁኔታ እና ታሪኩ እዚህ ይታያል።",
+    noCurrentYear: "በዚህ ዓመት የተጠረጠረ ማመልከቻ አልተገኘም።",
+    noCurrentYearHint: "አዲስ ማመልከቻ ያስገቡ እና የዚህ ዓመት ክትትል ሁኔታ ይመልከቱ።",
     error: "የማመልከቻ ክትትል መረጃ መጫን አልተቻለም።",
     noRemarks: "ማብራሪያ አልተሰጠም።",
     submittedBy: "ያዘመነው",
@@ -106,7 +132,9 @@ const STATUS_LABELS = {
 } as const;
 
 const normalizeStatus = (value?: string | null): TimelineStatus => {
-  const normalized = String(value || "").trim().toLowerCase();
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
 
   if (!normalized) return "Pending";
   if (normalized.includes("approve")) return "Approved";
@@ -124,7 +152,69 @@ const formatDate = (value?: string | null, language?: string) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
 
-  return new Intl.DateTimeFormat(language === "am" ? "am-ET" : "en-US", {
+  // If Amharic selected, prefer Ethiopic calendar formatting when available
+  if (language === "am") {
+    // Use a deterministic Ethiopic date + Ethiopian clock conversion
+    const ethiopicMonthNames = [
+      "መስከረም",
+      "ጥቅምት",
+      "ህዳር",
+      "ታህሳስ",
+      "ጥር",
+      "የካቲት",
+      "መጋቢት",
+      "ሚያዝያ",
+      "ግንቦት",
+      "ሰኔ",
+      "መጋቢት",
+      "ሐምሌ",
+      "ነሐሴ",
+    ];
+
+    const pad = (n: number) => String(n).padStart(2, "0");
+
+    const gY = date.getFullYear();
+
+    const isGregorianLeap = (y: number) =>
+      y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0);
+
+    const newYearDay = isGregorianLeap(gY + 1) ? 12 : 11;
+    const startOfEthiopianYear = new Date(gY, 8, newYearDay);
+
+    let etYear: number;
+    let daysSinceStart: number;
+
+    if (date >= startOfEthiopianYear) {
+      etYear = gY - 7;
+      daysSinceStart = Math.floor(
+        (date.getTime() - startOfEthiopianYear.getTime()) / 86400000,
+      );
+    } else {
+      const prevNewYearDay = isGregorianLeap(gY) ? 12 : 11;
+      const prevStart = new Date(gY - 1, 8, prevNewYearDay);
+      etYear = gY - 8;
+      daysSinceStart = Math.floor(
+        (date.getTime() - prevStart.getTime()) / 86400000,
+      );
+    }
+
+    const etMonthIndex = Math.floor(daysSinceStart / 30);
+    const etDay = (daysSinceStart % 30) + 1;
+    const monthName =
+      ethiopicMonthNames[Math.max(0, Math.min(etMonthIndex, 12))] ||
+      ethiopicMonthNames[0];
+
+    const minutes = pad(date.getMinutes());
+
+    // Ethiopian clock: hour = (Gregorian hour + 6) % 12, display 12 for 0
+    const rawEthHour = (date.getHours() + 6) % 12;
+    const ethHourDisplay = rawEthHour === 0 ? 12 : rawEthHour;
+
+    return `${monthName} ${etDay}, ${etYear} ${ethHourDisplay}:${minutes} ሰዓት`;
+  }
+
+  // Default: English / Gregorian formatting
+  return new Intl.DateTimeFormat("en-US", {
     year: "numeric",
     month: "short",
     day: "2-digit",
@@ -133,9 +223,55 @@ const formatDate = (value?: string | null, language?: string) => {
   }).format(date);
 };
 
+const getDaysUntilInspection = (value?: string | null, language?: string) => {
+  if (!value) return null;
+
+  const target = new Date(value);
+  if (Number.isNaN(target.getTime())) return null;
+
+  const today = new Date();
+  const startOfToday = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  );
+  const startOfTarget = new Date(
+    target.getFullYear(),
+    target.getMonth(),
+    target.getDate(),
+  );
+  const diffDays = Math.round(
+    (startOfTarget.getTime() - startOfToday.getTime()) / 86400000,
+  );
+
+  const makeLabel = (en: string, am: string) => (language === "am" ? am : en);
+
+  if (diffDays === 0)
+    return { label: makeLabel("Today", "ዛሬ"), tone: "text-amber-700" };
+
+  if (diffDays > 0) {
+    const en = diffDays === 1 ? `1 day left` : `${diffDays} days left`;
+    const am = `በ${diffDays} ቀናት ውስጥ`;
+    return {
+      label: makeLabel(en, am),
+      tone: diffDays <= 2 ? "text-amber-700" : "text-emerald-700",
+    };
+  }
+
+  const overdueDays = Math.abs(diffDays);
+  const en =
+    overdueDays === 1 ? `1 day overdue` : `${overdueDays} days overdue`;
+  const am = `${overdueDays} ቀናት በፊት ያልተካለ`;
+  return {
+    label: makeLabel(en, am),
+    tone: "text-red-700",
+  };
+};
+
 const getStatusTone = (status: TimelineStatus) => {
   switch (status) {
     case "Approved":
+    case "Completed":
       return {
         badge: "bg-green-50 text-green-700 border-green-100",
         pill: "bg-green-100 text-green-700",
@@ -183,6 +319,7 @@ const getStatusTone = (status: TimelineStatus) => {
 const getStatusIcon = (status: TimelineStatus) => {
   switch (status) {
     case "Approved":
+    case "Completed":
       return <CheckCircle2 className="w-8 h-8" />;
     case "Rejected":
       return <AlertCircle className="w-8 h-8" />;
@@ -193,6 +330,32 @@ const getStatusIcon = (status: TimelineStatus) => {
     default:
       return <Clock className="w-8 h-8" />;
   }
+};
+
+const formatInspectionLabel = (inspection?: TrackingInspection | null) => {
+  if (!inspection) return "-";
+  return `Inspection #${inspection.id}`;
+};
+
+const getInspectionStatusLabel = (value?: string | null) => {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
+  if (!normalized) return "Pending";
+  if (normalized.includes("approve")) return "Approved";
+  if (normalized.includes("reject")) return "Rejected";
+  if (normalized.includes("correction")) return "Correction Requested";
+  if (normalized.includes("review") || normalized.includes("progress")) {
+    return "Reviewing";
+  }
+  if (
+    normalized.includes("completed") ||
+    normalized.includes("field_reviewed")
+  ) {
+    return "Completed";
+  }
+  if (normalized.includes("sched")) return "Pending";
+  return "Other";
 };
 
 export const StatusTracking = () => {
@@ -213,6 +376,21 @@ export const StatusTracking = () => {
     const parsed = Number(raw);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
   }, [searchParams]);
+
+  const latestInspection = useMemo(() => {
+    const inspection =
+      application?.inspection ?? application?.inspections?.[0] ?? null;
+    if (!inspection) return null;
+
+    const sortedCommittee = [...(inspection.committeeMembers || [])].sort(
+      (left, right) => (left.id || 0) - (right.id || 0),
+    );
+
+    return {
+      ...inspection,
+      committeeMembers: sortedCommittee,
+    };
+  }, [application]);
 
   useEffect(() => {
     let active = true;
@@ -238,6 +416,12 @@ export const StatusTracking = () => {
             totalEvents: Number(data?.totalEvents ?? history.length),
             status: history[0]?.statusState ?? null,
             history,
+            inspection: data?.inspection ?? null,
+            inspections: Array.isArray(data?.inspections)
+              ? data.inspections
+              : data?.inspection
+                ? [data.inspection]
+                : [],
           });
         } else {
           const history = Array.isArray(data?.history) ? data.history : [];
@@ -249,6 +433,12 @@ export const StatusTracking = () => {
             applicationDate: data?.applicationDate ?? null,
             totalEvents: history.length,
             history,
+            inspection: data?.inspection ?? data?.inspections?.[0] ?? null,
+            inspections: Array.isArray(data?.inspections)
+              ? data.inspections
+              : data?.inspection
+                ? [data.inspection]
+                : [],
           });
         }
       } catch (requestError) {
@@ -261,7 +451,10 @@ export const StatusTracking = () => {
           (requestError as { message?: string } | null)?.message || "",
         ).toLowerCase();
 
-        if (!applicationIdParam && (statusCode === 404 || message.includes("not found"))) {
+        if (
+          !applicationIdParam &&
+          (statusCode === 404 || message.includes("not found"))
+        ) {
           setApplication(null);
           setNoApplicationYet(true);
         } else {
@@ -342,6 +535,21 @@ export const StatusTracking = () => {
   const showCurrentYearNotice =
     !loading && !error && !hasCurrentYearApplication && !!application;
   const showNoApplicationCard = !loading && !error && noApplicationYet;
+  const inspectionStatus = getInspectionStatusLabel(latestInspection?.status);
+  const inspectionTone = getStatusTone(inspectionStatus);
+  const inspectionCountdown = getDaysUntilInspection(
+    latestInspection?.scheduledDate,
+    language,
+  );
+
+  const committeeMembersExcludingLead =
+    latestInspection?.committeeMembers?.filter((m) => {
+      const leadId = latestInspection?.leadInspector?.id;
+      const leadName = latestInspection?.leadInspector?.fullName?.trim();
+      if (leadId && m.userId) return m.userId !== leadId;
+      if (leadName && m.expertName) return m.expertName.trim() !== leadName;
+      return true;
+    });
 
   return (
     <div className="max-w-4xl mx-auto space-y-12">
@@ -357,22 +565,119 @@ export const StatusTracking = () => {
         >
           <Clock className="w-4 h-4" />
           <span className="text-xs font-bold uppercase tracking-wider">
-            {curT.status[
-              currentStatus === "Approved"
-                ? "approved"
-                : currentStatus === "Rejected"
-                  ? "rejected"
-                  : currentStatus === "Correction Requested"
-                    ? "correction"
-                    : currentStatus === "Reviewing"
-                      ? "reviewing"
-                      : currentStatus === "Pending"
-                        ? "pending"
-                        : "other"
-            ]}
+            {
+              curT.status[
+                currentStatus === "Approved"
+                  ? "approved"
+                  : currentStatus === "Rejected"
+                    ? "rejected"
+                    : currentStatus === "Correction Requested"
+                      ? "correction"
+                      : currentStatus === "Reviewing"
+                        ? "reviewing"
+                        : currentStatus === "Pending"
+                          ? "pending"
+                          : "other"
+              ]
+            }
           </span>
         </div>
       </div>
+
+      {latestInspection ? (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm"
+        >
+          <div className="flex flex-col gap-4 border-b border-gray-100 p-6 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                {language === "am" ? "የተመደበ ምርመራ" : "Assigned Inspection"}
+              </p>
+              <h4 className="mt-2 text-xl font-bold text-primary">
+                {formatInspectionLabel(latestInspection)}
+              </h4>
+              <p className="mt-1 text-sm text-gray-500">
+                {formatDate(latestInspection.scheduledDate, language)}
+              </p>
+            </div>
+            <span
+              className={`inline-flex w-fit items-center rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider ${inspectionTone.badge}`}
+            >
+              {inspectionStatus}
+            </span>
+          </div>
+
+          <div className="grid gap-4 p-6 md:grid-cols-2">
+            <div className="rounded-2xl bg-gray-50 p-4">
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                {language === "am" ? "ቀጠሮ ቀን" : "Scheduled Date"}
+              </p>
+              <p className="mt-2 text-sm font-semibold text-gray-800">
+                {formatDate(latestInspection.scheduledDate, language)}
+              </p>
+              {inspectionCountdown ? (
+                <p
+                  className={`mt-1 text-xs font-bold ${inspectionCountdown.tone}`}
+                >
+                  {inspectionCountdown.label}
+                </p>
+              ) : null}
+            </div>
+            <div className="rounded-2xl bg-gray-50 p-4">
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                {language === "am" ? "ዋና ባለሞያ" : "Lead Inspector"}
+              </p>
+              <p className="mt-2 text-sm font-semibold text-gray-800">
+                {latestInspection.leadInspector?.fullName?.trim() ||
+                  latestInspection.leadInspector?.username?.trim() ||
+                  (language === "am" ? "አልተመደበም" : "Unassigned")}
+              </p>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-100 p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                  {language === "am" ? "ኮሚቴ አባላት" : "Assigned Committee"}
+                </p>
+                <p className="mt-1 text-sm text-gray-500">
+                  {committeeMembersExcludingLead?.length || 0}{" "}
+                  {language === "am" ? "አባላት" : "members"}
+                </p>
+              </div>
+            </div>
+
+            {committeeMembersExcludingLead?.length ? (
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                {committeeMembersExcludingLead.map((member) => (
+                  <div
+                    key={member.id}
+                    className="rounded-2xl border border-gray-100 bg-gray-50 p-4"
+                  >
+                    <p className="font-semibold text-gray-800">
+                      {member.expertName ||
+                        (language === "am" ? "ኮሚቴ አባል" : "Committee Member")}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {member.expertRole ||
+                        (language === "am" ? "ሚና አልተገለጸም" : "No role provided")}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-4 rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+                {language === "am"
+                  ? "እስካሁን የተመደቡ ኮሚቴ አባላት የሉም።"
+                  : "No committee members have been assigned yet."}
+              </p>
+            )}
+          </div>
+        </motion.div>
+      ) : null}
 
       <div className="relative space-y-12">
         <div className="absolute top-0 left-8 w-1 h-full bg-gray-100 -z-10" />
@@ -541,19 +846,21 @@ export const StatusTracking = () => {
                   <span
                     className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${step.statusTone.pill}`}
                   >
-                    {curT.status[
-                      step.status === "Approved"
-                        ? "approved"
-                        : step.status === "Rejected"
-                          ? "rejected"
-                          : step.status === "Correction Requested"
-                            ? "correction"
-                            : step.status === "Reviewing"
-                              ? "reviewing"
-                              : step.status === "Pending"
-                                ? "pending"
-                                : "other"
-                    ]}
+                    {
+                      curT.status[
+                        step.status === "Approved"
+                          ? "approved"
+                          : step.status === "Rejected"
+                            ? "rejected"
+                            : step.status === "Correction Requested"
+                              ? "correction"
+                              : step.status === "Reviewing"
+                                ? "reviewing"
+                                : step.status === "Pending"
+                                  ? "pending"
+                                  : "other"
+                      ]
+                    }
                   </span>
                 </div>
                 <p className="text-gray-600 leading-relaxed text-sm">

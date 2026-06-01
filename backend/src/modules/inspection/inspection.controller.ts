@@ -56,7 +56,9 @@ const createSignatureUploadMiddleware = () => {
 const createReportUploadMiddleware = () => {
   const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-      const inspectionId = String(req.params.id || req.params.inspectionId || "");
+      const inspectionId = String(
+        req.params.id || req.params.inspectionId || "",
+      );
       const uploadDir = path.join(
         process.cwd(),
         "uploads",
@@ -226,6 +228,68 @@ export async function submitFieldReview(req: Request, res: Response) {
   }
 }
 
+export async function updateInspection(req: Request, res: Response) {
+  try {
+    if (!isAdmin(req)) {
+      return ApiResponse.error(res, "Admin access required.", 403);
+    }
+
+    const inspectionId = Number(req.params.id);
+    if (!Number.isFinite(inspectionId) || inspectionId <= 0) {
+      return ApiResponse.error(res, "Invalid inspection id.", 400);
+    }
+
+    const leadInspectorId = req.body?.leadInspectorId
+      ? Number(req.body.leadInspectorId)
+      : undefined;
+    const committeeMemberIds = Array.isArray(req.body?.committeeMemberIds)
+      ? req.body.committeeMemberIds
+          .map((v: any) => Number(v))
+          .filter((n: number) => Number.isFinite(n) && n > 0)
+      : undefined;
+    const scheduledDate = req.body?.scheduledDate
+      ? new Date(String(req.body.scheduledDate))
+      : undefined;
+
+    if (scheduledDate !== undefined && Number.isNaN(scheduledDate.getTime())) {
+      return ApiResponse.error(res, "Valid scheduledDate is required.", 400);
+    }
+
+    if (scheduledDate && scheduledDate.getTime() < Date.now()) {
+      return ApiResponse.error(
+        res,
+        "Scheduled date must be current time or a future date.",
+        400,
+      );
+    }
+
+    const updated = await InspectionService.updateInspection(
+      inspectionId,
+      Number(req.user?.userId ?? req.user?.id),
+      {
+        leadInspectorId:
+          leadInspectorId === undefined
+            ? undefined
+            : Number.isFinite(leadInspectorId)
+              ? leadInspectorId
+              : null,
+        committeeMemberIds,
+        scheduledDate: scheduledDate ?? undefined,
+      },
+    );
+
+    return ApiResponse.success(res, "Inspection updated.", updated);
+  } catch (error: any) {
+    console.error("[ERROR] updateInspection failed:", error?.message || error);
+    return ApiResponse.error(
+      res,
+      "Failed to update inspection.",
+      500,
+      error?.message,
+    );
+  }
+}
+
 export async function finalizeInspection(req: Request, res: Response) {
   try {
     if (!isAdmin(req)) {
@@ -354,7 +418,8 @@ export async function deleteCommitteeSignature(req: Request, res: Response) {
       isAdmin: isAdmin(req),
     });
 
-    const priorUrl = (result as { priorSignatureUrl?: string }).priorSignatureUrl;
+    const priorUrl = (result as { priorSignatureUrl?: string })
+      .priorSignatureUrl;
     if (priorUrl?.startsWith("/uploads/")) {
       const filePath = path.join(process.cwd(), priorUrl.replace(/^\//, ""));
       if (fs.existsSync(filePath)) {
@@ -371,11 +436,7 @@ export async function deleteCommitteeSignature(req: Request, res: Response) {
       [key: string]: unknown;
     };
 
-    return ApiResponse.success(
-      res,
-      "Committee signature removed.",
-      committee,
-    );
+    return ApiResponse.success(res, "Committee signature removed.", committee);
   } catch (error: any) {
     console.error(
       "[ERROR] deleteCommitteeSignature failed:",
@@ -514,13 +575,12 @@ export async function confirmFinalReport(req: Request, res: Response) {
         finalReportUrl,
       });
 
-      return ApiResponse.success(
-        res,
-        "Final report confirmed.",
-        result,
-      );
+      return ApiResponse.success(res, "Final report confirmed.", result);
     } catch (error: any) {
-      console.error("[ERROR] confirmFinalReport failed:", error?.message || error);
+      console.error(
+        "[ERROR] confirmFinalReport failed:",
+        error?.message || error,
+      );
 
       if (req.file?.path && fs.existsSync(req.file.path)) {
         try {
@@ -531,10 +591,11 @@ export async function confirmFinalReport(req: Request, res: Response) {
       }
 
       const message = error?.message || "Failed to confirm final report.";
-      const statusCode =
-        message.includes("Only the lead inspector") ? 403 :
-        message.includes("must sign first") ? 400 :
-        500;
+      const statusCode = message.includes("Only the lead inspector")
+        ? 403
+        : message.includes("must sign first")
+          ? 400
+          : 500;
 
       return ApiResponse.error(res, message, statusCode, error?.message);
     }

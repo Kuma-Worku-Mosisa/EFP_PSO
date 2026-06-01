@@ -3,6 +3,7 @@ import prisma from "../../lib/prisma";
 import {
   ensureOrganizationFolders,
   getRelativeFilePath,
+  sanitizeFolderSegment,
 } from "../../middleware/fileUpload";
 import {
   parseFieldName,
@@ -160,6 +161,57 @@ export class ApplicationService {
         orgFolderPath,
       );
 
+      const movePersonnelDocumentsIntoNameFolder = (
+        prefix: "manager" | "ops" | "admin",
+        fullName: string | null | undefined,
+      ) => {
+        const safeFullName = sanitizeFolderSegment(String(fullName || ""));
+
+        if (!safeFullName || safeFullName === "unknown") {
+          return;
+        }
+
+        const roleFolder =
+          prefix === "ops"
+            ? "operations"
+            : prefix === "admin"
+              ? "administrator"
+              : "manager";
+
+        for (const [key, rawValue] of Object.entries(uploadedFiles || {})) {
+          if (!rawValue || !key.startsWith(`${prefix}_`)) {
+            continue;
+          }
+
+          const relativePath = String(rawValue).replace(/^\/+/, "");
+          const normalizedPath = relativePath.replace(/\\/g, "/");
+          const pathParts = normalizedPath.split("/").filter(Boolean);
+          const roleIndex = pathParts.findIndex((part) => part === roleFolder);
+
+          if (roleIndex === -1 || !pathParts[roleIndex + 1]) {
+            continue;
+          }
+
+          if (pathParts[roleIndex + 1] === safeFullName) {
+            continue;
+          }
+
+          const fileName = pathParts[pathParts.length - 1];
+          const targetPathParts = pathParts.slice(0, roleIndex + 1);
+          const targetRelativePath = [
+            ...targetPathParts,
+            safeFullName,
+            fileName,
+          ].join("/");
+
+          const moved = moveDocumentFile(relativePath, targetRelativePath);
+          if (moved) {
+            uploadedFiles[key] = getDocumentUrl(targetRelativePath);
+            movedFinalPaths.push(targetRelativePath);
+          }
+        }
+      };
+
       // Move staged files from _tmp to final location before transaction.
       const movedFinalPaths: string[] = [];
       const stagedPrefix = "/uploads/_tmp/";
@@ -200,6 +252,10 @@ export class ApplicationService {
           movedSources.add(relTemp);
         }
       }
+
+      movePersonnelDocumentsIntoNameFolder("manager", currentUser.fullName);
+      movePersonnelDocumentsIntoNameFolder("ops", formData.ops?.fullName);
+      movePersonnelDocumentsIntoNameFolder("admin", formData.admin?.fullName);
 
       const uploadedFileUrls =
         movedFinalPaths.length > 0
@@ -1399,7 +1455,33 @@ export class ApplicationService {
   static async getApplicationTrackingHistory(applicationId: number) {
     const application = await prisma.application.findUnique({
       where: { id: applicationId },
-      select: { id: true },
+      select: {
+        id: true,
+        inspections: {
+          orderBy: [{ scheduledDate: "desc" }, { id: "desc" }],
+          take: 1,
+          include: {
+            leadInspector: {
+              select: {
+                id: true,
+                fullName: true,
+                username: true,
+                email: true,
+              },
+            },
+            committeeMembers: {
+              select: {
+                id: true,
+                userId: true,
+                expertName: true,
+                expertRole: true,
+                signatureUrl: true,
+                signedAt: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!application) {
@@ -1413,6 +1495,18 @@ export class ApplicationService {
       applicationId,
       totalEvents: history.length,
       history,
+      inspection: application.inspections?.[0]
+        ? {
+            id: application.inspections[0].id,
+            scheduledDate: application.inspections[0].scheduledDate,
+            status: application.inspections[0].status,
+            findingsSummary: application.inspections[0].findingsSummary,
+            expertOpinion: application.inspections[0].expertOpinion,
+            finalReportUrl: application.inspections[0].finalReportUrl,
+            leadInspector: application.inspections[0].leadInspector,
+            committeeMembers: application.inspections[0].committeeMembers,
+          }
+        : null,
     };
   }
 
@@ -1638,6 +1732,29 @@ export class ApplicationService {
                     },
                   },
                 },
+              },
+            },
+          },
+        },
+        inspections: {
+          orderBy: [{ scheduledDate: "desc" }, { id: "desc" }],
+          include: {
+            leadInspector: {
+              select: {
+                id: true,
+                fullName: true,
+                username: true,
+                email: true,
+              },
+            },
+            committeeMembers: {
+              select: {
+                id: true,
+                userId: true,
+                expertName: true,
+                expertRole: true,
+                signatureUrl: true,
+                signedAt: true,
               },
             },
           },

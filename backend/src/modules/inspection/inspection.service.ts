@@ -41,6 +41,21 @@ export class InspectionService {
                 nameAmharic: true,
               },
             },
+            manager: {
+              select: {
+                id: true,
+                user: {
+                  select: {
+                    id: true,
+                    fullName: true,
+                    username: true,
+                    email: true,
+                    phone: true,
+                    faydaId: true,
+                  },
+                },
+              },
+            },
           },
         },
         leadInspector: {
@@ -123,6 +138,20 @@ export class InspectionService {
                         },
                       },
                     },
+                  },
+                },
+              },
+            },
+            manager: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    fullName: true,
+                    username: true,
+                    email: true,
+                    phone: true,
+                    faydaId: true,
                   },
                 },
               },
@@ -517,6 +546,111 @@ export class InspectionService {
               : "CORRECTION_REQUESTED",
       },
     });
+  }
+
+  static async updateInspection(
+    inspectionId: number,
+    adminUserId: number,
+    input: {
+      scheduledDate?: Date | undefined;
+      leadInspectorId?: number | null | undefined;
+      committeeMemberIds?: number[] | undefined;
+    },
+  ) {
+    const inspection = await prisma.inspection.findUnique({
+      where: { id: inspectionId },
+      include: { committeeMembers: { select: { id: true, userId: true } } },
+    });
+
+    if (!inspection) {
+      throw new Error(`Inspection ${inspectionId} not found`);
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const data: any = {};
+      if (input.scheduledDate !== undefined)
+        data.scheduledDate = input.scheduledDate;
+      if (input.leadInspectorId !== undefined)
+        data.leadInspectorId = input.leadInspectorId ?? null;
+
+      const updatedInspection = await tx.inspection.update({
+        where: { id: inspectionId },
+        data,
+      });
+
+      // Update committee membership if provided
+      if (
+        input.committeeMemberIds !== undefined ||
+        input.leadInspectorId !== undefined
+      ) {
+        const desiredSet = new Set<number>();
+        const leadId =
+          input.leadInspectorId !== undefined
+            ? input.leadInspectorId
+            : inspection.leadInspectorId;
+        if (leadId && Number.isFinite(leadId)) desiredSet.add(leadId as number);
+        if (Array.isArray(input.committeeMemberIds)) {
+          input.committeeMemberIds.forEach((id) => {
+            if (Number.isFinite(id)) desiredSet.add(id);
+          });
+        }
+
+        const desiredIds = Array.from(desiredSet);
+
+        const existing = await tx.inspectionCommittee.findMany({
+          where: { inspectionId },
+        });
+        const existingByUser = new Map<
+          number,
+          { id: number; userId: number }
+        >();
+        existing.forEach((row) =>
+          existingByUser.set(row.userId, { id: row.id, userId: row.userId }),
+        );
+
+        const toAdd = desiredIds.filter((id) => !existingByUser.has(id));
+        const toRemove = existing
+          .filter((r) => !desiredSet.has(r.userId))
+          .map((r) => r.id);
+
+        if (toAdd.length > 0) {
+          const users = await tx.user.findMany({
+            where: { id: { in: toAdd } },
+            select: {
+              id: true,
+              fullName: true,
+              user_roles: {
+                include: { roles: { select: { role_name: true } } },
+              },
+            },
+          });
+
+          const committeeData = users.map((user) => ({
+            inspectionId,
+            userId: user.id,
+            expertName: user.fullName || "",
+            expertRole:
+              user.user_roles[0]?.roles?.role_name || "Field Reviewer",
+            signatureUrl: "",
+            signedAt: null,
+          }));
+
+          if (committeeData.length > 0) {
+            await tx.inspectionCommittee.createMany({ data: committeeData });
+          }
+        }
+
+        if (toRemove.length > 0) {
+          await tx.inspectionCommittee.deleteMany({
+            where: { id: { in: toRemove } },
+          });
+        }
+      }
+
+      return updatedInspection;
+    });
+
+    return result;
   }
 }
 

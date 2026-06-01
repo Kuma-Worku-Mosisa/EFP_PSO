@@ -14,7 +14,8 @@ export const translations = {
       badge: "Official Federal Police Portal",
       titleLine1: "FEDERAL POLICE PRIVATE SECURITY",
       titleLine2: "AGENCY LICENSING",
-      subtitle: "Ensuring safety and security through professional licensing and management.",
+      subtitle:
+        "Ensuring safety and security through professional licensing and management.",
       applyNow: "Start Application Now",
       trackStatus: "Track Status",
       login: "Login",
@@ -23,7 +24,7 @@ export const translations = {
         securityOversight: "National Security Oversight",
         realTimeLicensing: "Real-time Licensing",
         complianceGrid: "Automated Compliance Grid",
-        clearanceActive: "Security Clearance Active"
+        clearanceActive: "Security Clearance Active",
       },
       stats: {
         agencies: "Registered Agencies",
@@ -33,8 +34,8 @@ export const translations = {
         agenciesVal: "450+",
         personnelVal: "25,000+",
         licensesVal: "380+",
-        regionsVal: "11"
-      }
+        regionsVal: "11",
+      },
     },
     services: {
       badge: "Our Services",
@@ -53,44 +54,65 @@ export const translations = {
       learnMore: "Learn More",
       getStarted: "Get Started",
       items: [
-        { 
-          title: "New License Application", 
+        {
+          title: "New License Application",
           desc: "Digital application process for establishing a new private security agency.",
-          features: ["Online Document Submission", "Fayda ID Verification", "Digital Fee Payment"]
+          features: [
+            "Online Document Submission",
+            "Fayda ID Verification",
+            "Digital Fee Payment",
+          ],
         },
-        { 
-          title: "License Renewal", 
+        {
+          title: "License Renewal",
           desc: "Application to renew existing operational licenses every two years.",
-          features: ["Compliance Check", "Personnel Update", "Automatic Notifications"]
+          features: [
+            "Compliance Check",
+            "Personnel Update",
+            "Automatic Notifications",
+          ],
         },
-        { 
-          title: "Public News & Announcements", 
+        {
+          title: "Public News & Announcements",
           desc: "Stay updated with latest federal security bulletins and official news.",
-          features: ["Real-time Alerts", "Official Statements", "News Archive"]
+          features: ["Real-time Alerts", "Official Statements", "News Archive"],
         },
-        { 
-          title: "Training Center Accreditation", 
+        {
+          title: "Training Center Accreditation",
           desc: "Certification and licensing for private security training institutions.",
-          features: ["Curriculum Review", "Instructor Vetting", "Certification Oversight"]
+          features: [
+            "Curriculum Review",
+            "Instructor Vetting",
+            "Certification Oversight",
+          ],
         },
-        { 
-          title: "Digital Payment", 
+        {
+          title: "Digital Payment",
           desc: "Secure payments via TeleBirr and major Ethiopian banks.",
-          features: ["TeleBirr Integration", "CBE Birr", "Bank Transfers"]
+          features: ["TeleBirr Integration", "CBE Birr", "Bank Transfers"],
         },
-        { 
-          title: "Consultancy", 
+        {
+          title: "Consultancy",
           desc: "Expert guidance on security regulations and compliance.",
-          features: ["Regulatory Advice", "Security Audits", "Compliance Support"]
+          features: [
+            "Regulatory Advice",
+            "Security Audits",
+            "Compliance Support",
+          ],
         },
-      ]
+      ],
     },
     fayda: {
       badge: "Mandatory Requirement",
       title: "Fayda ID Integration",
       desc: "As per the new federal regulations, all private security agency managers and personnel must have a verified Fayda ID (National ID) to apply for or renew licenses.",
-      features: ['Verified Identity', 'Biometric Security', 'Centralized Database', 'Fraud Prevention'],
-      btn: "View All Requirements"
+      features: [
+        "Verified Identity",
+        "Biometric Security",
+        "Centralized Database",
+        "Fraud Prevention",
+      ],
+      btn: "View All Requirements",
     },
     rules: {
       title: "Public Documents, Rules & Regulations",
@@ -98,54 +120,98 @@ export const translations = {
         { title: "Private Security Proclamation", size: "2.4 MB" },
         { title: "Operational Standards 2024", size: "1.8 MB" },
         { title: "Personnel Vetting Code", size: "1.1 MB" },
-        { title: "Agency Licensing Directive", size: "3.2 MB" }
+        { title: "Agency Licensing Directive", size: "3.2 MB" },
       ],
       learnMore: "Learn More About Compliance",
       pdfFormat: "PDF FORMAT",
-      download: "Download"
+      download: "Download",
     },
     trust: {
       badge: "Security Excellence",
       alpha: "Security Protocol Alpha",
-      alphaDesc: "Orchestrating encrypted verification layers across the national compliance ecosystem.",
+      alphaDesc:
+        "Orchestrating encrypted verification layers across the national compliance ecosystem.",
       title: "Unified Security, Global Standards",
       desc: "Forging a future where every private security officer is a pillar of national peace through elite digital oversight.",
       networkTitle: "National Network",
-      networkDesc: "Distributed data synchronization across all 11 regional commands.",
+      networkDesc:
+        "Distributed data synchronization across all 11 regional commands.",
       digitalTitle: "Digital Core",
-      digitalDesc: "Autonomous verification engines reducing processing time by 80%."
+      digitalDesc:
+        "Autonomous verification engines reducing processing time by 80%.",
     },
     faq: {
       title: "Common Questions",
       subtitle: "Frequently Asked Questions",
       searchPlaceholder: "Search for answers...",
       stillQuestions: "Still have questions?",
-      stillQuestionsSub: "If you couldn't find the answer you were looking for, please contact our support team for further assistance.",
+      stillQuestionsSub:
+        "If you couldn't find the answer you were looking for, please contact our support team for further assistance.",
       contactSupport: "Contact Support",
       visitOffice: "Visit Office",
       categories: {
         general: "General",
         licensing: "Licensing",
         technical: "Technical",
-        payment: "Payment"
+        payment: "Payment",
       },
       items: [
-        { q: "How long does the licensing process take?", a: "The standard processing time is 15-30 working days after all documents are verified and the physical bureau inspection is completed.", cat: "licensing" },
-        { q: "Why is Fayda ID required?", a: "Fayda ID helps verify identities digitally and reduce security risks through biometric integration.", cat: "general" },
-        { q: "How often should I renew the license?", a: "Private security agency licenses must be renewed every two years.", cat: "licensing" },
-        { q: "Is it mandatory to show uniform samples?", a: "Yes, agency uniforms must be pre-approved to ensure they do not resemble Federal Police uniforms.", cat: "licensing" },
-        { q: "What payment methods are accepted?", a: "We accept TeleBirr, CBE Birr, and direct bank transfers from all major commercial banks.", cat: "payment" },
-        { q: "What should I do if I forget my password?", a: "You can use the 'Forgot Password' link on the login page to reset it via your registered email or phone number.", cat: "technical" },
-        { q: "Can I track my application status online?", a: "Yes, you can track your application status in real-time through your agency dashboard.", cat: "technical" },
-      ]
+        {
+          q: "How long does the licensing process take?",
+          a: "The standard processing time is 15-30 working days after all documents are verified and the physical bureau inspection is completed.",
+          cat: "licensing",
+        },
+        {
+          q: "Why is Fayda ID required?",
+          a: "Fayda ID helps verify identities digitally and reduce security risks through biometric integration.",
+          cat: "general",
+        },
+        {
+          q: "How often should I renew the license?",
+          a: "Private security agency licenses must be renewed every two years.",
+          cat: "licensing",
+        },
+        {
+          q: "Is it mandatory to show uniform samples?",
+          a: "Yes, agency uniforms must be pre-approved to ensure they do not resemble Federal Police uniforms.",
+          cat: "licensing",
+        },
+        {
+          q: "What payment methods are accepted?",
+          a: "We accept TeleBirr, CBE Birr, and direct bank transfers from all major commercial banks.",
+          cat: "payment",
+        },
+        {
+          q: "What should I do if I forget my password?",
+          a: "You can use the 'Forgot Password' link on the login page to reset it via your registered email or phone number.",
+          cat: "technical",
+        },
+        {
+          q: "Can I track my application status online?",
+          a: "Yes, you can track your application status in real-time through your agency dashboard.",
+          cat: "technical",
+        },
+      ],
     },
     contact: {
       badge: "Get In Touch",
       title: "Contact Our Team",
       info: {
-        phone: { title: "Call Us", sub: "Mon-Fri, 8:30 AM - 5:30 PM", val: "0115540528" },
-        email: { title: "Email Us", sub: "We'll respond within 24 hours", val: "support@federalpolice.gov.et" },
-        visit: { title: "Visit Us", detail: "Addis Ababa, Mexico Square", sub: "Ethiopian Federal Police Commission HQ" }
+        phone: {
+          title: "Call Us",
+          sub: "Mon-Fri, 8:30 AM - 5:30 PM",
+          val: "0115540528",
+        },
+        email: {
+          title: "Email Us",
+          sub: "We'll respond within 24 hours",
+          val: "support@federalpolice.gov.et",
+        },
+        visit: {
+          title: "Visit Us",
+          detail: "Addis Ababa, Mexico Square",
+          sub: "Ethiopian Federal Police Commission HQ",
+        },
       },
       form: {
         name: "Full Name",
@@ -156,15 +222,15 @@ export const translations = {
           name: "Full Name",
           email: "Email Address",
           subject: "How can we help?",
-          message: "Your message here..."
+          message: "Your message here...",
         },
-        submit: "Send Message"
+        submit: "Send Message",
       },
       map: {
         title: "Ethiopian Federal Police HQ",
         desc: "Addis Ababa, Mexico Square. Visit us for physical document verification and inquiries.",
-        btn: "Get Directions"
-      }
+        btn: "Get Directions",
+      },
     },
     footer: {
       desc: "Ensuring national security through professional oversight and licensing of private security agencies in Ethiopia.",
@@ -172,7 +238,7 @@ export const translations = {
       legal: "Legal",
       privacy: "Privacy Policy",
       terms: "Terms of Service",
-      copyright: "© 2026 Ethiopian Federal Police. All rights reserved."
+      copyright: "© 2026 Ethiopian Federal Police. All rights reserved.",
     },
     requirements: {
       title: "General Requirements",
@@ -206,8 +272,8 @@ export const translations = {
             "Employment form (photo)",
             "Employment warranty form (photo)",
             "Logo of organization (photo)",
-            "Training status (Manual, Address, Days, Body, Certificate)"
-          ]
+            "Training status (Manual, Address, Days, Body, Certificate)",
+          ],
         },
         {
           title: "Manager, Operation and Administrative head requirements",
@@ -225,24 +291,26 @@ export const translations = {
             "Educational certificate (Minimum degree)",
             "Fayda / National ID (Mandatory)",
             "Renewed Kebele ID or Passport (One of them mandatory)",
-            "Organization identification"
-          ]
-        }
+            "Organization identification",
+          ],
+        },
       ],
       notes: [
         "All documents must be in PDF format.",
         "Ensure your Fayda ID number is valid and verified.",
         "Physical office inspection will be conducted after document verification.",
-        "License fees are payable only after application approval."
-      ]
+        "License fees are payable only after application approval.",
+      ],
     },
     register: {
       title: "User Registration",
       subtitle: "Please provide your details to create an account",
       success: "Registration Successful!",
-      successSub: "Your account has been created. You will be redirected to the login page shortly.",
+      successSub:
+        "Your account has been created. You will be redirected to the login page shortly.",
       joinNetwork: "Join the Federal Network",
-      joinNetworkSub: "Create your account to start the licensing process and manage your personnel through our unified platform.",
+      joinNetworkSub:
+        "Create your account to start the licensing process and manage your personnel through our unified platform.",
       firstName: "First Name",
       middleName: "Middle Name",
       lastName: "Last Name",
@@ -259,10 +327,19 @@ export const translations = {
       submitting: "Creating Account...",
       alreadyAccount: "Already have an account?",
       features: [
-        { title: "Official Licensing", desc: "Get your federal police approved license digitally." },
-        { title: "Personnel Tracking", desc: "Manage and verify your staff with Fayda ID." },
-        { title: "Real-time Updates", desc: "Track your application status at every step." }
-      ]
+        {
+          title: "Official Licensing",
+          desc: "Get your federal police approved license digitally.",
+        },
+        {
+          title: "Personnel Tracking",
+          desc: "Manage and verify your staff with Fayda ID.",
+        },
+        {
+          title: "Real-time Updates",
+          desc: "Track your application status at every step.",
+        },
+      ],
     },
     auth: {
       userLogin: "User Login",
@@ -294,6 +371,7 @@ export const translations = {
       licenseManagement: "License Management",
       reports: "Reports",
       hrmsReports: "HRMS Reports",
+      inspections: "Manage Inspections",
       gps: "GPS Tracking",
       agencies: "Agencies Management",
       applications: "Applications Review",
@@ -337,9 +415,11 @@ export const translations = {
         fayda: "Fayda ID Enforcement",
         faydaDesc: "Require national ID for all individual background checks.",
         expiry: "Intelligent Expiry Alerts",
-        expiryDesc: "Automated SMS orchestration 30 days prior to license burnout.",
+        expiryDesc:
+          "Automated SMS orchestration 30 days prior to license burnout.",
         audit: "Audit Log Retention",
-        auditDesc: "Maintain immutable logs for 5 years per federal regulation.",
+        auditDesc:
+          "Maintain immutable logs for 5 years per federal regulation.",
       },
       security: {
         hardening: "Hardening & Access",
@@ -386,7 +466,8 @@ export const translations = {
         wipeLogs: "Wipe Audit Logs",
         failover: "Initiate Failover Mode",
       },
-      alertSuccess: "Settings updated successfully! Changes are now live across the system.",
+      alertSuccess:
+        "Settings updated successfully! Changes are now live across the system.",
     },
     hrmsReports: {
       title: "Agencies HRMS Reports",
@@ -413,11 +494,26 @@ export const translations = {
         viewReport: "View Report",
       },
       reportTypes: {
-        monthly: { name: "Monthly Performance", desc: "Statistical overview of agency activities." },
-        personnel: { name: "Personnel Documents", desc: "Background checks and legal IDs of guards." },
-        payroll: { name: "Payroll & Benefits", desc: "Wages, insurance, and social security compliance." },
-        incidents: { name: "Crime & Incidents", desc: "Reported crimes or disciplinary actions by staff." },
-        training: { name: "Training Certs", desc: "Certification status of all security personnel." },
+        monthly: {
+          name: "Monthly Performance",
+          desc: "Statistical overview of agency activities.",
+        },
+        personnel: {
+          name: "Personnel Documents",
+          desc: "Background checks and legal IDs of guards.",
+        },
+        payroll: {
+          name: "Payroll & Benefits",
+          desc: "Wages, insurance, and social security compliance.",
+        },
+        incidents: {
+          name: "Crime & Incidents",
+          desc: "Reported crimes or disciplinary actions by staff.",
+        },
+        training: {
+          name: "Training Certs",
+          desc: "Certification status of all security personnel.",
+        },
       },
       success: "HRMS Report downloaded successfully!",
     },
@@ -441,7 +537,7 @@ export const translations = {
       active: "Active",
       inactive: "Inactive",
       suspended: "Suspended",
-    }
+    },
   },
   am: {
     nav: {
@@ -467,7 +563,7 @@ export const translations = {
         securityOversight: "ብሄራዊ የደህንነት ቁጥጥር",
         realTimeLicensing: "የእውነተኛ ጊዜ ፈቃድ",
         complianceGrid: "አውቶማቲክ የተገዢነት ስርዓት",
-        clearanceActive: "የደህንነት ፍቃድ ንቁ ነው"
+        clearanceActive: "የደህንነት ፍቃድ ንቁ ነው",
       },
       stats: {
         agencies: "የተመዘገቡ ኤጀንሲዎች",
@@ -477,8 +573,8 @@ export const translations = {
         agenciesVal: "450+",
         personnelVal: "25,000+",
         licensesVal: "380+",
-        regionsVal: "11"
-      }
+        regionsVal: "11",
+      },
     },
     services: {
       badge: "አገልግሎቶቻችን",
@@ -497,44 +593,53 @@ export const translations = {
       learnMore: "ተጨማሪ ያንብቡ",
       getStarted: "አሁኑኑ ይጀምሩ",
       items: [
-        { 
-          title: "አዲስ የፈቃድ ማመልከቻ", 
+        {
+          title: "አዲስ የፈቃድ ማመልከቻ",
           desc: "አዲስ የግል ደህንነት ኤጀንሲ ለመክፈት የሚቀርብ ዲጂታል ማመልከቻ።",
-          features: ["የመስመር ላይ ሰነድ ማስገባት", "የፋይዳ መታወቂያ ማረጋገጫ", "ዲጂታል የክፍያ ስርዓት"]
+          features: [
+            "የመስመር ላይ ሰነድ ማስገባት",
+            "የፋይዳ መታወቂያ ማረጋገጫ",
+            "ዲጂታል የክፍያ ስርዓት",
+          ],
         },
-        { 
-          title: "የፈቃድ እድሳት", 
+        {
+          title: "የፈቃድ እድሳት",
           desc: "ያለውን ፈቃድ በየሁለት ዓመቱ ለማደስ የሚቀርብ ማመልከቻ።",
-          features: ["የተገዢነት ማረጋገጫ", "የሰራተኞች መረጃ ማሻሻያ", "አውቶማቲክ ማሳወቂያዎች"]
+          features: ["የተገዢነት ማረጋገጫ", "የሰራተኞች መረጃ ማሻሻያ", "አውቶማቲክ ማሳወቂያዎች"],
         },
-        { 
-          title: "የሕዝብ ዜና እና ማስታወቂያዎች", 
+        {
+          title: "የሕዝብ ዜና እና ማስታወቂያዎች",
           desc: "የቅርብ ጊዜ የፌዴራል የደህንነት መግለጫዎችን እና ይፋዊ ዜናዎችን ይከታተሉ።",
-          features: ["የእውነተኛ ጊዜ ማንቂያዎች", "ይፋዊ መግለጫዎች", "የዜና መዝገብ"]
+          features: ["የእውነተኛ ጊዜ ማንቂያዎች", "ይፋዊ መግለጫዎች", "የዜና መዝገብ"],
         },
-        { 
-          title: "የሥልጠና ማዕከል እውቅና", 
+        {
+          title: "የሥልጠና ማዕከል እውቅና",
           desc: "ለግል የደህንነት ስልጠና ተቋማት የምስክር ወረቀት እና ፈቃድ መስጠት።",
-          features: ["የስርአተ ትምህርት ግምገማ", "የአሰልጣኞች ማጣሪያ", "የምስክር ወረቀት ቁጥጥር"]
+          features: ["የስርአተ ትምህርት ግምገማ", "የአሰልጣኞች ማጣሪያ", "የምስክር ወረቀት ቁጥጥር"],
         },
-        { 
-          title: "ዲጂታል ክፍያ", 
+        {
+          title: "ዲጂታል ክፍያ",
           desc: "በቴሌብር እና በዋና ዋና የኢትዮጵያ ባንኮች ደህንነቱ የተጠበቀ ክፍያ ይፈጽሙ።",
-          features: ["የቴሌብር ውህደት", "ሲቢኢ ብር", "የባንክ ዝውውር"]
+          features: ["የቴሌብር ውህደት", "ሲቢኢ ብር", "የባንክ ዝውውር"],
         },
-        { 
-          title: "ምክክር", 
+        {
+          title: "ምክክር",
           desc: "በደህንነት ደንቦች እና ተገዢነት ላይ የባለሙያ መመሪያ።",
-          features: ["የቁጥጥር ምክር", "የደህንነት ኦዲት", "የተገዢነት ድጋፍ"]
+          features: ["የቁጥጥር ምክር", "የደህንነት ኦዲት", "የተገዢነት ድጋፍ"],
         },
-      ]
+      ],
     },
     fayda: {
       badge: "ግዴታ መስፈርት",
       title: "የፋይዳ መታወቂያ ውህደት",
       desc: "በአዲሱ የፌዴራል ደንብ መሠረት ሁሉም የግል ደህንነት ኤጀንሲ ሥራ አስኪያጆች እና ሠራተኞች ለፈቃድ ለማመልከት ወይም ለማደስ የተረጋገጠ የፋይዳ መታወቂያ (ብሔራዊ መታወቂያ) ሊኖራቸው ይገባል።",
-      features: ['የተረጋገጠ ማንነት', 'ባዮሜትሪክ ደህንነት', 'ማዕከላዊ የውሂብ ጎታ', 'የማጭበርበር መከላከል'],
-      btn: "ሁሉንም መስፈርቶች ይመልከቱ"
+      features: [
+        "የተረጋገጠ ማንነት",
+        "ባዮሜትሪክ ደህንነት",
+        "ማዕከላዊ የውሂብ ጎታ",
+        "የማጭበርበር መከላከል",
+      ],
+      btn: "ሁሉንም መስፈርቶች ይመልከቱ",
     },
     rules: {
       title: "የሕዝብ ሰነዶች፣ ደንቦች እና መመሪያዎች",
@@ -542,11 +647,11 @@ export const translations = {
         { title: "የግል ደህንነት አዋጅ", size: "2.4 MB" },
         { title: "የአሰራር ደረጃዎች 2024", size: "1.8 MB" },
         { title: "የሰራተኞች ምርመራ ኮድ", size: "1.1 MB" },
-        { title: "የኤጀንሲ ፈቃድ መመሪያ", size: "3.2 MB" }
+        { title: "የኤጀንሲ ፈቃድ መመሪያ", size: "3.2 MB" },
       ],
       learnMore: "ስለ ደንቦች የበለጠ ይረዱ",
       pdfFormat: "PDF ፎርማት",
-      download: "ያውርዱ"
+      download: "ያውርዱ",
     },
     trust: {
       badge: "የላቀ ደህንነት",
@@ -557,39 +662,80 @@ export const translations = {
       networkTitle: "ብሄራዊ ተደራሽነት",
       networkDesc: "በሁሉም ክልሎች የተቀናጀ የክትትል ስርዓት።",
       digitalTitle: "ዲጂታል ፈጠራ",
-      digitalDesc: "ዘመናዊ እና ፈጣን የፈቃድ አሰጣጥ ሂደት።"
+      digitalDesc: "ዘመናዊ እና ፈጣን የፈቃድ አሰጣጥ ሂደት።",
     },
     faq: {
       title: "የተለመዱ ጥያቄዎች",
       subtitle: "ተደጋጋሚ ጥያቄዎች",
       searchPlaceholder: "መልሶችን ይፈልጉ...",
       stillQuestions: "አሁንም ጥያቄዎች አሉዎት?",
-      stillQuestionsSub: "የሚፈልጉትን መልስ ካላገኙ፣ እባክዎን ለተጨማሪ እርዳታ የድጋፍ ቡድናችንን ያነጋግሩ።",
+      stillQuestionsSub:
+        "የሚፈልጉትን መልስ ካላገኙ፣ እባክዎን ለተጨማሪ እርዳታ የድጋፍ ቡድናችንን ያነጋግሩ።",
       contactSupport: "ድጋፍ ሰጪን ያግኙ",
       visitOffice: "ቢሮ ይጎብኙ",
       categories: {
         general: "አጠቃላይ",
         licensing: "የፈቃድ አሰጣጥ",
         technical: "ቴክኒካዊ",
-        payment: "ክፍያ"
+        payment: "ክፍያ",
       },
       items: [
-        { q: "የፈቃድ ሂደቱ ምን ያህል ጊዜ ይወስዳል?", a: "መደበኛው የሂደት ጊዜ ሁሉም ሰነዶች ከተረጋገጡ እና የአካል ቢሮ ፍተሻ ከተጠናቀቀ በኋላ ከ15-30 የሥራ ቀናት ነው።", cat: "licensing" },
-        { q: "የፋይዳ መታወቂያ ለምን አስፈለገ?", a: "የፋይዳ መታወቂያ የግለሰቦችን ማንነት በዲጂታል መንገድ ለማረጋገጥ እና የደህንነት ስጋቶችን ለመቀነስ ይረዳል።", cat: "general" },
-        { q: "የፈቃድ እድሳት በየስንት ጊዜው ነው?", a: "የግል ደህንነት ኤጀንሲ ፈቃድ በየሁለት ዓመቱ መታደስ አለበት።", cat: "licensing" },
-        { q: "የደንብ ልብስ ናሙና ማሳየት ግዴታ ነው?", a: "አዎ፣ የኤጀንሲው የደንብ ልብስ ከፌዴራል ፖሊስ የደንብ ልብስ ጋር እንዳይመሳሰል በቅድሚያ መጽደቅ አለበት።", cat: "licensing" },
-        { q: "ምን ዓይነት የክፍያ ዘዴዎች ተቀባይነት አላቸው?", a: "ቴሌብር፣ ሲቢኢ ብር እና ከሁሉም ዋና ዋና የንግድ ባንኮች የቀጥታ የባንክ ዝውውሮችን እንቀበላለን።", cat: "payment" },
-        { q: "የይለፍ ቃሌን ብረሳ ምን ማድረግ አለብኝ?", a: "በተመዘገቡበት የኢሜል አድራሻ ወይም ስልክ ቁጥር በመጠቀም የይለፍ ቃልዎን ለመቀየር በመግቢያ ገጹ ላይ ያለውን 'የይለፍ ቃል ረስተዋል' የሚለውን ሊንክ መጠቀም ይችላሉ።", cat: "technical" },
-        { q: "የማመልከቻ ሁኔታዬን በመስመር ላይ መከታተል እችላለሁ?", a: "አዎ፣ የእርስዎን የማመልከቻ ሁኔታ በኤጀንሲ ዳሽቦርድዎ በኩል በቅጽበት መከታተል ይችላሉ።", cat: "technical" },
-      ]
+        {
+          q: "የፈቃድ ሂደቱ ምን ያህል ጊዜ ይወስዳል?",
+          a: "መደበኛው የሂደት ጊዜ ሁሉም ሰነዶች ከተረጋገጡ እና የአካል ቢሮ ፍተሻ ከተጠናቀቀ በኋላ ከ15-30 የሥራ ቀናት ነው።",
+          cat: "licensing",
+        },
+        {
+          q: "የፋይዳ መታወቂያ ለምን አስፈለገ?",
+          a: "የፋይዳ መታወቂያ የግለሰቦችን ማንነት በዲጂታል መንገድ ለማረጋገጥ እና የደህንነት ስጋቶችን ለመቀነስ ይረዳል።",
+          cat: "general",
+        },
+        {
+          q: "የፈቃድ እድሳት በየስንት ጊዜው ነው?",
+          a: "የግል ደህንነት ኤጀንሲ ፈቃድ በየሁለት ዓመቱ መታደስ አለበት።",
+          cat: "licensing",
+        },
+        {
+          q: "የደንብ ልብስ ናሙና ማሳየት ግዴታ ነው?",
+          a: "አዎ፣ የኤጀንሲው የደንብ ልብስ ከፌዴራል ፖሊስ የደንብ ልብስ ጋር እንዳይመሳሰል በቅድሚያ መጽደቅ አለበት።",
+          cat: "licensing",
+        },
+        {
+          q: "ምን ዓይነት የክፍያ ዘዴዎች ተቀባይነት አላቸው?",
+          a: "ቴሌብር፣ ሲቢኢ ብር እና ከሁሉም ዋና ዋና የንግድ ባንኮች የቀጥታ የባንክ ዝውውሮችን እንቀበላለን።",
+          cat: "payment",
+        },
+        {
+          q: "የይለፍ ቃሌን ብረሳ ምን ማድረግ አለብኝ?",
+          a: "በተመዘገቡበት የኢሜል አድራሻ ወይም ስልክ ቁጥር በመጠቀም የይለፍ ቃልዎን ለመቀየር በመግቢያ ገጹ ላይ ያለውን 'የይለፍ ቃል ረስተዋል' የሚለውን ሊንክ መጠቀም ይችላሉ።",
+          cat: "technical",
+        },
+        {
+          q: "የማመልከቻ ሁኔታዬን በመስመር ላይ መከታተል እችላለሁ?",
+          a: "አዎ፣ የእርስዎን የማመልከቻ ሁኔታ በኤጀንሲ ዳሽቦርድዎ በኩል በቅጽበት መከታተል ይችላሉ።",
+          cat: "technical",
+        },
+      ],
     },
     contact: {
       badge: "ያግኙን",
       title: "ቡድናችንን ያነጋግሩ",
       info: {
-        phone: { title: "ይደውሉልን", sub: "ከሰኞ-አርብ፣ ከጠዋቱ 2:30 - ከሰዓት 11:30", val: "0115540528" },
-        email: { title: "ኢሜል ያድርጉልን", sub: "በ24 ሰዓታት ውስጥ ምላሽ እንሰጣለን", val: "support@federalpolice.gov.et" },
-        visit: { title: "ይጎብኙን", detail: "አዲስ አበባ፣ ሜክሲኮ አደባባይ", sub: "የኢትዮጵያ ፌዴራል ፖሊስ ኮሚሽን ዋና መሥሪያ ቤት" }
+        phone: {
+          title: "ይደውሉልን",
+          sub: "ከሰኞ-አርብ፣ ከጠዋቱ 2:30 - ከሰዓት 11:30",
+          val: "0115540528",
+        },
+        email: {
+          title: "ኢሜል ያድርጉልን",
+          sub: "በ24 ሰዓታት ውስጥ ምላሽ እንሰጣለን",
+          val: "support@federalpolice.gov.et",
+        },
+        visit: {
+          title: "ይጎብኙን",
+          detail: "አዲስ አበባ፣ ሜክሲኮ አደባባይ",
+          sub: "የኢትዮጵያ ፌዴራል ፖሊስ ኮሚሽን ዋና መሥሪያ ቤት",
+        },
       },
       form: {
         name: "ሙሉ ስም",
@@ -600,15 +746,15 @@ export const translations = {
           name: "ሙሉ ስም",
           email: "የኢሜል አድራሻ",
           subject: "እንዴት ልንረዳዎ እንችላለን?",
-          message: "መልዕክትዎን እዚህ ይጻፉ..."
+          message: "መልዕክትዎን እዚህ ይጻፉ...",
         },
-        submit: "መልዕክት ላክ"
+        submit: "መልዕክት ላክ",
       },
       map: {
         title: "የኢትዮጵያ ፌዴራል ፖሊስ ዋና መሥሪያ ቤት",
         desc: "አዲስ አበባ፣ ሜክሲኮ አደባባይ። ለአካል ሰነድ ማረጋገጫ እና ጥያቄዎች ይጎብኙን።",
-        btn: "አቅጣጫዎችን ያግኙ"
-      }
+        btn: "አቅጣጫዎችን ያግኙ",
+      },
     },
     footer: {
       desc: "በኢትዮጵያ ውስጥ የግል ደህንነት ኤጀንሲዎችን ሙያዊ ቁጥጥር እና ፈቃድ በመስጠት ብሔራዊ ደህንነትን ማረጋገጥ።",
@@ -616,7 +762,7 @@ export const translations = {
       legal: "ህጋዊ",
       privacy: "የግላዊነት ፖሊሲ",
       terms: "የአጠቃቀም ውል",
-      copyright: "© 2026 የኢትዮጵያ ፌዴራል ፖሊስ። መብቱ በህግ የተጠበቀ ነው።"
+      copyright: "© 2026 የኢትዮጵያ ፌዴራል ፖሊስ። መብቱ በህግ የተጠበቀ ነው።",
     },
     register: {
       title: "የተጠቃሚ ምዝገባ",
@@ -624,7 +770,8 @@ export const translations = {
       success: "ምዝገባው ተሳክቷል!",
       successSub: "የተጠቃሚ መለያዎ ተፈጥሯል። በቅርቡ ወደ መግቢያ ገጽ ይዛወራሉ።",
       joinNetwork: "የፌዴራል መረቡን ይቀላቀሉ",
-      joinNetworkSub: "የ licensing ሂደቱን ለመጀመር እና ሰራተኞችዎን በጋራ ፖርታላችን ለማስተዳደር ይመዝገቡ።",
+      joinNetworkSub:
+        "የ licensing ሂደቱን ለመጀመር እና ሰራተኞችዎን በጋራ ፖርታላችን ለማስተዳደር ይመዝገቡ።",
       firstName: "የመጀመሪያ ስም",
       middleName: "የአባት ስም",
       lastName: "የአያት ስም",
@@ -643,8 +790,8 @@ export const translations = {
       features: [
         { title: "ይፋዊ ፈቃድ", desc: "በፌዴራል ፖሊስ የጸደቀ ፈቃድዎን በዲጂታል መንገድ ያግኙ።" },
         { title: "የሰራተኞች ክትትል", desc: "ሰራተኞችዎን በፋይዳ መታወቂያ ያስተዳድሩ እና ያረጋግጡ።" },
-        { title: "የእውነተኛ ጊዜ ዝመናዎች", desc: "የማመልከቻዎን ሁኔታ በየደረጃው ይከታተሉ።" }
-      ]
+        { title: "የእውነተኛ ጊዜ ዝመናዎች", desc: "የማመልከቻዎን ሁኔታ በየደረጃው ይከታተሉ።" },
+      ],
     },
     requirements: {
       title: "አጠቃላይ መስፈርቶች",
@@ -679,8 +826,8 @@ export const translations = {
             "የቅጥር ቅጽ (በፎቶ)",
             "የቅጥር ዋስትና ቅጽ (በፎቶ)",
             "የድርጅቱ አርማ (በፎቶ)",
-            "የስልጠና ሁኔታ (ማኑዋል፣ አድራሻ፣ ቀናት፣ አካል፣ ሰርተፍኬት)"
-          ]
+            "የስልጠና ሁኔታ (ማኑዋል፣ አድራሻ፣ ቀናት፣ አካል፣ ሰርተፍኬት)",
+          ],
         },
         {
           title: "የሥራ አስኪያጅ፣ የሥራ ማስኬጃ እና የአስተዳደር ኃላፊ መስፈርቶች",
@@ -698,16 +845,16 @@ export const translations = {
             "የትምህርት ማስረጃ (ቢያንስ ዲግሪ)",
             "ፋይዳ / ብሔራዊ መታወቂያ (ግዴታ)",
             "የታደሰ የቀበሌ መታወቂያ ወይም ፓስፖርት (ከሁለቱ አንዱ ግዴታ)",
-            "የድርጅት መታወቂያ"
-          ]
-        }
+            "የድርጅት መታወቂያ",
+          ],
+        },
       ],
       notes: [
         "ሁሉም ሰነዶች በፒዲኤፍ (PDF) ቅርጸት መሆን አለባቸው።",
         "የፋይዳ መታወቂያ ቁጥርዎ ትክክለኛ መሆኑን ያረጋግጡ።",
         "የቢሮ ፍተሻ የሚከናወነው ሰነዶች ከተረጋገጡ በኋላ ነው።",
-        "የፈቃድ ክፍያ የሚፈጸመው ማመልከቻው ተቀባይነት ካገኘ በኋላ ነው።"
-      ]
+        "የፈቃድ ክፍያ የሚፈጸመው ማመልከቻው ተቀባይነት ካገኘ በኋላ ነው።",
+      ],
     },
     auth: {
       userLogin: "የተጠቃሚ መግቢያ",
@@ -739,6 +886,7 @@ export const translations = {
       licenseManagement: "የፈቃድ አስተዳደር",
       reports: "ሪፖርቶች",
       hrmsReports: "የHRMS ሪፖርቶች",
+      inspections: "ምርመራ አስተዳደር",
       gps: "የጂፒኤስ ክትትል",
       agencies: "የኤጀንሲዎች አስተዳደር",
       applications: "የማመልከቻዎች ግምገማ",
@@ -858,11 +1006,26 @@ export const translations = {
         viewReport: "ሪፖርቱን ተመልከት",
       },
       reportTypes: {
-        monthly: { name: "የወርሃዊ አፈጻጸም", desc: "የኤጀንሲው እንቅስቃሴዎች ስታቲስቲካዊ አጠቃላይ እይታ።" },
-        personnel: { name: "የሰራተኞች ሰነዶች", desc: "የጥበቃ ሰራተኞች የጀርባ ምርመራ እና ህጋዊ መታወቂያዎች።" },
-        payroll: { name: "የደመወዝ እና ጥቅማጥቅሞች", desc: "ደመወዝ፣ ዋስትና እና የማህበራዊ ዋስትና ተገዢነት።" },
-        incidents: { name: "ወንጀል እና ክስተቶች", desc: "በሰራተኞች የተፈጸሙ ወንጀሎች ወይም የዲሲፕሊን እርምጃዎች።" },
-        training: { name: "የስልጠና ምስክር ወረቀቶች", desc: "የሁሉም የደህንነት ሰራተኞች የስልጠና ሁኔታ።" },
+        monthly: {
+          name: "የወርሃዊ አፈጻጸም",
+          desc: "የኤጀንሲው እንቅስቃሴዎች ስታቲስቲካዊ አጠቃላይ እይታ።",
+        },
+        personnel: {
+          name: "የሰራተኞች ሰነዶች",
+          desc: "የጥበቃ ሰራተኞች የጀርባ ምርመራ እና ህጋዊ መታወቂያዎች።",
+        },
+        payroll: {
+          name: "የደመወዝ እና ጥቅማጥቅሞች",
+          desc: "ደመወዝ፣ ዋስትና እና የማህበራዊ ዋስትና ተገዢነት።",
+        },
+        incidents: {
+          name: "ወንጀል እና ክስተቶች",
+          desc: "በሰራተኞች የተፈጸሙ ወንጀሎች ወይም የዲሲፕሊን እርምጃዎች።",
+        },
+        training: {
+          name: "የስልጠና ምስክር ወረቀቶች",
+          desc: "የሁሉም የደህንነት ሰራተኞች የስልጠና ሁኔታ።",
+        },
       },
       success: "የHRMS ሪፖርቱ በተሳካ ሁኔታ ወርዷል!",
     },
@@ -886,8 +1049,8 @@ export const translations = {
       active: "ንቁ",
       inactive: "ቦዝኗል",
       suspended: "የታገደ",
-    }
-  }
+    },
+  },
 };
 
-export type Language = 'en' | 'am';
+export type Language = "en" | "am";

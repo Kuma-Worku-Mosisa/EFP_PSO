@@ -3,21 +3,14 @@
  * Provides detailed error messages for debugging and professional error handling.
  */
 
-export const API_BASE = import.meta.env.DEV
-  ? "http://localhost:5000/api"
-  : "/api";
+export const API_BASE = import.meta.env.DEV ? "/api" : "/api";
 const IS_DEV = import.meta.env.DEV;
 
 export function resolveBackendAssetUrl(assetPath?: string | null): string {
   if (!assetPath) return "";
   if (/^(https?:|data:|blob:)/i.test(assetPath)) return assetPath;
 
-  const normalizedPath = assetPath.startsWith("/")
-    ? assetPath
-    : `/${assetPath}`;
-  const backendOrigin = API_BASE.replace(/\/api\/?$/, "");
-
-  return `${backendOrigin}${normalizedPath}`;
+  return assetPath.startsWith("/") ? assetPath : `/${assetPath}`;
 }
 
 interface ApiErrorResponse {

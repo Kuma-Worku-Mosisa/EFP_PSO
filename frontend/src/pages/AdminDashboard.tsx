@@ -23,6 +23,7 @@ import {
   Files,
   HelpCircle,
   MessageSquare,
+  ClipboardCheck,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useLanguage } from "../context/LanguageContext";
@@ -61,6 +62,7 @@ import PositionManagement from "./PositionManagement";
 import FormalRequestManager from "../components/FormalRequestManager";
 import AdminAgreementManager from "./admin/AdminAgreementManager";
 import AdminAgreementDetail from "./admin/AdminAgreementDetail";
+import { AdminInspections } from "./AdminInspections";
 
 const Overview = () => {
   const { language } = useLanguage();
@@ -429,6 +431,11 @@ export const AdminDashboard = () => {
       path: "/admin/applications",
     },
     {
+      icon: <ClipboardCheck className="w-5 h-5" />,
+      label: t.dashboard.inspections,
+      path: "/admin/inspections",
+    },
+    {
       icon: <ShieldCheck className="w-5 h-5" />,
       label: t.dashboard.licenseManagement,
       path: "/admin/licenses",
@@ -516,6 +523,7 @@ export const AdminDashboard = () => {
         <Route index element={<Overview />} />
         <Route path="agencies" element={<AgenciesManagement />} />
         <Route path="applications" element={<ApplicationsReview />} />
+        <Route path="inspections" element={<AdminInspections />} />
         <Route path="licenses" element={<LicenseManagement />} />
         <Route path="licenses/:certificateId?" element={<LicenseViewer />} />
         <Route path="gps" element={<GPSTracking />} />

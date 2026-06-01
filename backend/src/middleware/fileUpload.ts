@@ -5,6 +5,7 @@ import crypto from "crypto";
 
 // Define the base upload directory
 const UPLOAD_BASE_DIR = path.join(process.cwd(), "uploads");
+const ORGANIZATION_ROOT_FOLDER = "organization";
 
 // Ensure base upload directory exists
 if (!fs.existsSync(UPLOAD_BASE_DIR)) {
@@ -29,6 +30,37 @@ const sanitizeFilenamePrefix = (value: string) =>
     .replace(/^_+|_+$/g, "")
     .toLowerCase() || "file";
 
+export const sanitizeFolderSegment = (value: string) =>
+  value
+    .normalize("NFKD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/[\\/?:*"<>|]/g, "_")
+    .replace(/\s+/g, " ")
+    .replace(/_+/g, "_")
+    .trim() || "unknown";
+
+export const resolveOrganizationFolderName = (organizationName: string) => {
+  const trimmed = String(organizationName || "").trim();
+  const withoutUploadsPrefix = trimmed.replace(/^uploads[\\/]+/i, "");
+  const parts = withoutUploadsPrefix
+    .split(/[\\/]+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (parts[0]?.toLowerCase() === ORGANIZATION_ROOT_FOLDER) {
+    parts.shift();
+  }
+
+  return sanitizeFolderSegment(parts.join(" ") || withoutUploadsPrefix);
+};
+
+export const resolveOrganizationUploadDir = (organizationName: string) =>
+  path.join(
+    UPLOAD_BASE_DIR,
+    ORGANIZATION_ROOT_FOLDER,
+    resolveOrganizationFolderName(organizationName),
+  );
+
 export const buildPrefixedFilename = (
   prefix: string,
   originalName: string,
@@ -48,7 +80,7 @@ export const buildPrefixedFilename = (
  * uploads/{organizationName}/{role}/
  */
 export const ensureOrganizationFolders = (organizationName: string) => {
-  const orgDir = path.join(UPLOAD_BASE_DIR, organizationName);
+  const orgDir = resolveOrganizationUploadDir(organizationName);
 
   // Create organization root folder
   if (!fs.existsSync(orgDir)) {
@@ -78,7 +110,10 @@ export const createMulterStorage = (organizationName: string, role: string) => {
         return cb(new Error(`Invalid role: ${role}`));
       }
 
-      const uploadDir = path.join(UPLOAD_BASE_DIR, organizationName, role);
+      const uploadDir = path.join(
+        resolveOrganizationUploadDir(organizationName),
+        role,
+      );
 
       // Ensure directory exists
       if (!fs.existsSync(uploadDir)) {
@@ -169,8 +204,11 @@ export const createOrganizationDocumentsUploader = () => {
       }
 
       // Store uploads directly in the final organization folder to save space
-      // and avoid double-moving files. Path: uploads/{organizationName}/{role}
-      const uploadDir = path.join(UPLOAD_BASE_DIR, organizationName, role);
+      // and avoid double-moving files. Path: uploads/organization/{organizationName}/{role}
+      const uploadDir = path.join(
+        resolveOrganizationUploadDir(organizationName),
+        role,
+      );
 
       if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });
@@ -200,7 +238,9 @@ export const getRelativeFilePath = (
   role: string,
   filename: string,
 ): string => {
-  return `uploads/${organizationName}/${role}/${filename}`;
+  return `uploads/${ORGANIZATION_ROOT_FOLDER}/${resolveOrganizationFolderName(
+    organizationName,
+  )}/${role}/${filename}`;
 };
 
 /**
@@ -211,7 +251,9 @@ export const getRelativeTempFilePath = (
   role: string,
   filename: string,
 ): string => {
-  return `uploads/_tmp/${organizationName}/${role}/${filename}`;
+  return `uploads/_tmp/${ORGANIZATION_ROOT_FOLDER}/${resolveOrganizationFolderName(
+    organizationName,
+  )}/${role}/${filename}`;
 };
 
 /**

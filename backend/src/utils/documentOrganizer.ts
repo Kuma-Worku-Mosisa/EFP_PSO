@@ -4,6 +4,7 @@ import {
   ensureOrganizationFolders,
   getRelativeFilePath,
   VALID_ROLES,
+  resolveOrganizationUploadDir,
 } from "../middleware/fileUpload";
 
 export interface DocumentMapping {
@@ -86,7 +87,7 @@ export const listOrganizationDocuments = (
   organizationName: string,
 ): { [key: string]: string[] } => {
   const documents: { [key: string]: string[] } = {};
-  const uploadDir = path.join(process.cwd(), "uploads", organizationName);
+  const uploadDir = resolveOrganizationUploadDir(organizationName);
 
   if (!fs.existsSync(uploadDir)) {
     return documents;
@@ -170,7 +171,7 @@ export const archiveOrganizationDocuments = (
   organizationName: string,
   archiveName: string,
 ): boolean => {
-  const sourceDir = path.join(process.cwd(), "uploads", organizationName);
+  const sourceDir = resolveOrganizationUploadDir(organizationName);
   const archiveDir = path.join(process.cwd(), "archives", archiveName);
 
   if (!fs.existsSync(sourceDir)) {

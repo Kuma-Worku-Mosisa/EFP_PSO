@@ -73,6 +73,16 @@ export const submitApplication = async (req: Request, res: Response) => {
 
     // Handle specific Prisma errors (like unique constraint violations for FaydaID or Email)
     if (error.code === "P2002") {
+      const modelName = String(error?.meta?.modelName || "");
+
+      if (modelName === "Organization") {
+        return ApiResponse.error(
+          res,
+          "An organization with this name already exists.",
+          409,
+        );
+      }
+
       return ApiResponse.error(
         res,
         "A user or employee with this Fayda ID or Email already exists.",
