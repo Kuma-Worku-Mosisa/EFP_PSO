@@ -279,7 +279,12 @@ export const Agreement = () => {
     setLoading(true);
     setError(null);
     try {
-      const appRes = await apiRequest<any>("/applications/me");
+      const appRes = await apiRequest<any>("/applications/me").catch((error: any) => {
+        if (error?.statusCode === 404) {
+          return null;
+        }
+        throw error;
+      });
       const appData = appRes?.data as ApplicationPayload;
       setApplication(appData);
 

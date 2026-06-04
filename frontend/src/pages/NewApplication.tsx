@@ -2445,6 +2445,21 @@ export const NewApplication = () => {
         body: JSON.stringify(payload),
       });
 
+      // Notify admins about the new application submission
+      try {
+        await apiRequest("/notifications/notify-application-submission", {
+          method: "POST",
+          body: JSON.stringify({
+            organizationName: data.agencyName || "Unknown Organization",
+            organizationNameAm: data.agencyNameAmharic || data.agencyName || "Unknown Organization",
+            applicationType: "New Application",
+          }),
+        });
+      } catch (notificationError) {
+        console.error("Failed to notify admins:", notificationError);
+        // Don't block the submission if notification fails
+      }
+
       setSubmissionError(null);
       setIsSubmitted(true);
       console.info("[DEBUG] Submission completed — isSubmitted=true");

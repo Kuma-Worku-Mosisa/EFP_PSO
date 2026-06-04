@@ -70,6 +70,7 @@ model Address {
   
   kebele          Kebele         @relation(fields: [kebeleId], references: [id], onUpdate: NoAction, map: "FK_Addresses_Kebeles")
   organizations   Organization[]
+  branches        OrganizationBranch[] 
   employees       Employee[]
   serviceContracts ServiceContract[]
 
@@ -111,6 +112,7 @@ model User {
   historyLogs     ApplicationTrackingHistory[]
   inspectionCommittees InspectionCommittee[]
   createdFaqs     Faq[]                        @relation("FaqCreator")
+  notifications Notification[]
 
   @@map("users")
 }
@@ -128,6 +130,21 @@ model user_roles {
   users   User  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_UserRoles_Users")
 
   @@id([user_id, role_id], map: "PK_UserRoles")
+}
+
+model Notification {
+  id               Int      @id @default(autoincrement()) @map("notification_id")
+  recipientUserId  Int      @map("recipient_user_id") // Target user being notified
+  notificationType String   @map("notification_type") @db.VarChar(50) // APPROVED, REJECTED, INSPECTION, EXPIRY_30, CRITICAL, etc.
+  alertTitle       String   @map("alert_title") @db.NVarChar(255)
+  alertMessage     String   @map("alert_message") @db.NVarChar(Max)
+  isReadByRecipient Boolean @default(false) @map("is_read_by_recipient")
+  
+  createdAt        DateTime @default(now()) @map("created_at") @db.DateTime
+
+  // Relations
+  recipientUser    User     @relation(fields: [recipientUserId], references: [id], onDelete: Cascade, map: "FK_Notifications_Users")
+  @@map("notifications")
 }
 
 model FormalRequest {
@@ -169,7 +186,8 @@ model Organization {
   // Relations
   address         Address?                    @relation(fields: [addressId], references: [id], onUpdate: NoAction, map: "FK_Organizations_Addresses")
   parentOrg       Organization?               @relation("OrgHierarchy", fields: [parentOrgId], references: [id], onUpdate: NoAction, onDelete: NoAction, map: "FK_Organizations_Parent")
-  childOrgs       Organization[]              @relation("OrgHierarchy")
+  childOrgs       Organization[]             @relation("OrgHierarchy")
+  branches          OrganizationBranch[]
   documents       OrganizationDocument[]
   employees       Employee[]
   applications    Application[]
@@ -182,6 +200,22 @@ model Organization {
 
   @@map("organizations")
 }
+
+
+model OrganizationBranch {
+  id             Int          @id @default(autoincrement()) @map("branch_id")
+  organizationId Int          @map("organization_id")
+  addressId      Int          @map("address_id")
+  branchName     String?      @map("branch_name") @db.NVarChar(255) // Optional: e.g., "Main Office", "Hawassa Branch"
+  
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, map: "FK_Branches_Organizations")
+  address        Address      @relation(fields: [addressId], references: [id], onDelete: Cascade, map: "FK_Branches_Addresses")
+
+  @@map("organization_branches")
+}
+
+
 
 model ServiceContract {
   id                     Int          @id @default(autoincrement()) @map("contract_id")
@@ -625,4 +659,31 @@ model AuditLog {
   user User? @relation("UserAuditLogs", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_AuditLogs_Users")
 
   @@map("audit_logs")
+}
+
+
+model PaymentTransaction {
+  id             String         @id @default(uuid())
+  outTradeNo     String         @unique // Keep this unique!
+  transactionId  String?                // REMOVED @unique HERE so multiple PENDING entries can stay null
+  amount         Decimal        @db.Decimal(10, 2)
+  status         String         @default("PENDING")
+  licenseId      Int
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  
+  refunds        RefundLedger[]
+}
+
+model RefundLedger {
+  id               String             @id @default(uuid())
+  refundRequestNo  String             @unique // Generated tracking key (refund_request_no)
+  telebirrRefundId String?            @unique // refund_order_id returned by Telebirr
+  paymentId        String
+  payment          PaymentTransaction @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  actualAmount     Decimal            @db.Decimal(10, 2)
+  reason           String?
+  status           String             @default("REFUNDING") // REFUNDING, REFUND_SUCCESS, REFUND_FAILED, REFUND_DUPLICATED
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
 }

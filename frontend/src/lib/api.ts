@@ -3,7 +3,11 @@
  * Provides detailed error messages for debugging and professional error handling.
  */
 
-export const API_BASE = import.meta.env.DEV ? "/api" : "/api";
+// 1. Point to your backend port 5000 explicitly
+export const API_BASE = import.meta.env.DEV 
+  ? "http://localhost:5000/api" 
+  : "/api"; // Keep /api for production (where frontend/backend are served together)
+
 const IS_DEV = import.meta.env.DEV;
 
 export function resolveBackendAssetUrl(assetPath?: string | null): string {

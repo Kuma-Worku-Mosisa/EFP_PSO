@@ -1,15 +1,17 @@
 // filepath: src/server.ts
 import dotenv from "dotenv";
-dotenv.config();
 import express from "express";
 import sql from "mssql";
 import cors from "cors";
 import path from "path";
 
+// Force load the configuration matrix
+dotenv.config();
+
 // 1. Import Routes
 import userRoutes from "./modules/user/user.routes";
 import locationRoutes from "./modules/location/location.routes";
-import applicationRoutes from "./modules/application/application.routes"; // Linked to your new module
+import applicationRoutes from "./modules/application/application.routes";
 import formalRequestRoutes from "./modules/formalRequest/formalRequest.routes";
 import positionRoutes from "./modules/position/position.routes";
 import certificationRoutes from "./modules/certification/certification.routes";
@@ -19,17 +21,19 @@ import agreementRouter from "./modules/agreement/agreement.routes";
 import faqRoutes from "./modules/faqs/faq.routes";
 import inspectionRoutes from "./modules/inspection/inspection.routes";
 import renewalRoutes from "./modules/renewal/renewal.routes";
+import paymentRouter from "./modules/payment/payment.routes";
+// 🔔 NOTIFICATION MODULE IMPORTS: Added the routes and the background automation loop
+import notificationRoutes from "./modules/notification/notification.routes";
+import { runNotificationCronWorker } from "./modules/notification/notification.worker";
 
 const app = express();
 
 // 2. Middleware
 app.use(cors());
-// Increased limit for large multi-step form payloads and document metadata
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // Serve uploaded files as static assets
-// Files stored in: uploads/{organizationName}/{role}/{filename}
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // 3. Database Configuration for SQL Server
@@ -37,7 +41,9 @@ const requiredEnvVars = ["DB_SERVER", "DB_NAME", "DB_USER", "DB_PASSWORD"];
 const missingVars = requiredEnvVars.filter((v) => !process.env[v]);
 
 if (missingVars.length > 0) {
-  throw new Error(`Missing required environment variables: ${missingVars.join(", ")}`);
+  throw new Error(
+    `Missing required environment variables: ${missingVars.join(", ")}`,
+  );
 }
 
 const dbConfig = {
@@ -67,7 +73,7 @@ app.get("/api/employees", async (req, res) => {
 // 5. Modular API Routes
 app.use("/api/location", locationRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/applications", applicationRoutes); // Now active
+app.use("/api/applications", applicationRoutes);
 app.use("/api/formal-requests", formalRequestRoutes);
 app.use("/api/positions", positionRoutes);
 app.use("/api/certifications", certificationRoutes);
@@ -77,6 +83,9 @@ app.use("/api/agreements", agreementRouter);
 app.use("/api/inspections", inspectionRoutes);
 app.use("/api/renewals", renewalRoutes);
 app.use("/api", faqRoutes);
+app.use("/api/payments", paymentRouter);
+// 🔔 MOUNT NOTIFICATION API ENDPOINTS: Exposed for dashboard feed requests
+app.use("/api/notifications", notificationRoutes);
 
 // 6. Health Check / Root Route
 app.get("/", (req, res) => {
@@ -88,7 +97,6 @@ app.get("/verify/:serial", (req, res) => {
   const raw = Array.isArray(req.params.serial)
     ? req.params.serial[0]
     : req.params.serial;
-  // Ensure we only forward the serial segment
   const serial = raw.includes("/")
     ? raw.replace(/\/$/, "").split("/").pop()
     : raw;
@@ -98,7 +106,7 @@ app.get("/verify/:serial", (req, res) => {
   );
 });
 
-// 7. Error Handling Middleware (Catches unhandled errors across the app)
+// 7. Error Handling Middleware
 app.use(
   (
     err: any,
@@ -117,12 +125,16 @@ app.use(
   },
 );
 
+// 🚀 INITIALIZE BACKGROUND AUTOMATION: Start the daily midnight lookahead engine
+runNotificationCronWorker();
+
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
   console.log(`-----------------------------------------------`);
   console.log(` Backend running on http://localhost:${port}`);
+  console.log(` Status: Daily Certificate Expiry Cron Worker Online`);
   console.log(
-    ` Endpoints: /api/users, /api/location, /api/applications, /api/formal-requests, /api/positions, /api/certifications, /api/renewals, /api/system-settings`,
+    ` Endpoints Ready: /api/users, /api/certifications, /api/notifications`,
   );
   console.log(`-----------------------------------------------`);
 });

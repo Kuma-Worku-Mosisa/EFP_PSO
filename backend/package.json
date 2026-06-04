@@ -6,6 +6,7 @@
     "@prisma/adapter-mssql": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@types/multer": "^2.1.0",
+    "africastalking": "^0.7.9",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -14,6 +15,8 @@
     "msnodesqlv8": "^5.1.9",
     "mssql": "^12.5.0",
     "multer": "^2.1.1",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^8.0.7",
     "tedious": "^19.2.1",
     "zod": "^4.4.3"
   },
@@ -24,7 +27,11 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mssql": "^12.3.0",
     "@types/node": "^25.6.0",
+    "@types/node-cron": "^3.0.11",
+    "@types/nodemailer": "^8.0.0",
     "prisma": "^7.8.0",
-    "tsx": "^4.21.0"
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
   }
 }

@@ -769,7 +769,7 @@ export const LicenseViewer = () => {
 
                   <p className="text-[9.5px] text-[var(--safe-gray-400)] italic mt-5 leading-relaxed">
                     ይህ የብቃት ማረጋገጫ ምስክር ወረቀት በፌዴራል ፖሊስ ኮሚሽን መመሪያ ቁጥር 01/2003 መሠረት
-                    የተሰጠ ነው። ተቋሙ በመመሪያው በተጠቀሱት ውሎችና ግዴታዎች መሠረት የግል የጥበቃ አገልግሎት
+                    የተሰጠ ነው። ተቋሙ በመመሪያ በተጠቀሱት ውሎችና ግዴታዎች መሠረት የግል ጥበቃ አገልግሎት
                     ለመስጠት ፈቃድ ተሰጥቶታል። / This Certificate is issued pursuant to
                     directive No. 01/2003 of the Federal Police Commission. The
                     agency is authorized to provide private security services as

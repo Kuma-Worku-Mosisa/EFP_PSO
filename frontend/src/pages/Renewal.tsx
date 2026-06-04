@@ -821,6 +821,24 @@ export const Renewal = () => {
         body: formData,
       });
 
+      // Notify admins about the renewal application submission
+      try {
+        console.log("[Renewal] Notifying admins about renewal submission");
+        console.log("[Renewal] Organization:", eligibleOrganization?.nameEnglish);
+        await apiRequest("/notifications/notify-application-submission", {
+          method: "POST",
+          body: JSON.stringify({
+            organizationName: eligibleOrganization?.nameEnglish || "Unknown Organization",
+            organizationNameAm: eligibleOrganization?.nameAmharic || eligibleOrganization?.nameEnglish || "Unknown Organization",
+            applicationType: "Renewal Application",
+          }),
+        });
+        console.log("[Renewal] Admin notification sent successfully");
+      } catch (notificationError) {
+        console.error("[Renewal] Failed to notify admins:", notificationError);
+        // Don't block the submission if notification fails
+      }
+
       setIsSubmitted(true);
     } catch (error: any) {
       setEligibilityError(

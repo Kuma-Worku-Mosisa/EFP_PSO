@@ -195,7 +195,6 @@ export const getUsersByRole = async (roleName: string) => {
           roles: {
             role_name: {
               equals: normalized,
-              mode: "insensitive",
             },
           },
         },

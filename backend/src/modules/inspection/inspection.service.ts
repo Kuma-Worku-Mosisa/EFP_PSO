@@ -1,6 +1,7 @@
 import prisma from "../../lib/prisma";
 import { ApplicationTrackingService } from "../application/application-tracking.service";
 import { ApplicationService } from "../application/application.service";
+import { NotificationService } from "../notification/notification.service";
 
 export type InspectionDecision = "APPROVE" | "REJECT" | "CORRECTION_REQUESTED";
 
@@ -273,6 +274,35 @@ export class InspectionService {
       input.createdByUserId,
       "Inspection scheduled by admin.",
     );
+
+    // Notify the applicant that an inspection has been scheduled
+    try {
+      const application = await prisma.application.findUnique({
+        where: { id: input.applicationId },
+        include: { organization: true },
+      });
+
+      if (application && application.userId) {
+        const orgName =
+          application.organization?.nameEnglish ||
+          application.organization?.nameAmharic ||
+          "Your Organization";
+        const inspectionDateStr = new Date(
+          input.scheduledDate,
+        ).toLocaleString();
+
+        await NotificationService.sendBilingualAlert(
+          Number(application.userId),
+          "INSPECTION",
+          {
+            organizationName: orgName,
+            inspectionDate: inspectionDateStr,
+          },
+        );
+      }
+    } catch (notifyErr) {
+      console.error("[Notification Error] createInspection:", notifyErr);
+    }
 
     return inspection;
   }

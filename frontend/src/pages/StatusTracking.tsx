@@ -404,8 +404,18 @@ export const StatusTracking = () => {
         const endpoint = applicationIdParam
           ? `/applications/${applicationIdParam}/history`
           : "/applications/me";
-        const response = await apiRequest(endpoint);
+        const response = await apiRequest(endpoint).catch((error: any) => {
+          if (error?.statusCode === 404 && !applicationIdParam) {
+            setNoApplicationYet(true);
+            return null;
+          }
+          throw error;
+        });
         const data = (response as any)?.data ?? response;
+
+        if (!response && !applicationIdParam) {
+          return;
+        }
 
         if (!active) return;
 

@@ -1,5 +1,6 @@
 // filepath: src/modules/application/application.service.ts
 import prisma from "../../lib/prisma";
+import { NotificationService } from "../notification/notification.service";
 import {
   ensureOrganizationFolders,
   getRelativeFilePath,
@@ -741,8 +742,11 @@ export class ApplicationService {
         throw new Error(`Application ${applicationId} not found`);
       }
 
-      if (String(application.status).toLowerCase() === "approved") {
-        const error = new Error("Application is already approved.") as Error & {
+      const currentStatus = String(application.status).toLowerCase();
+      if (currentStatus === "approved" || currentStatus === "rejected") {
+        const error = new Error(
+          `Application cannot be approved as it is already ${currentStatus}.`,
+        ) as Error & {
           statusCode?: number;
         };
         error.statusCode = 409;
@@ -794,6 +798,7 @@ export class ApplicationService {
       console.log("[DEBUG] Current application status:", application.status);
 
       // Update application status and organization status atomically
+      let issuedCertificate: any = null;
       const result = await prisma.$transaction(async (tx) => {
         const updatedApp = await tx.application.update({
           where: { id: applicationId },
@@ -816,7 +821,7 @@ export class ApplicationService {
           userId,
         );
 
-        await CertificationService.issueCertificate(
+        issuedCertificate = await CertificationService.issueCertificate(
           {
             applicationId,
             organizationId: application.organizationId,
@@ -833,6 +838,28 @@ export class ApplicationService {
         "[DEBUG] Notifying stakeholders (simulated) for application:",
         applicationId,
       );
+      // Send real notification to applicant (if present)
+      try {
+        const recipientId = application.userId;
+        const orgNameEn =
+          application.organization?.nameEnglish || "Your Organization";
+        const orgNameAm = application.organization?.nameAmharic || "ድርጅትዎ";
+
+        if (recipientId) {
+          void NotificationService.sendBilingualAlert(
+            Number(recipientId),
+            "APPROVED",
+            {
+              organizationName: orgNameEn,
+              organizationNameAm: orgNameAm,
+              certificateSerial:
+                issuedCertificate?.certificateSerialNumber || "N/A",
+            },
+          );
+        }
+      } catch (notifyErr) {
+        console.error("[Notification Error] approveApplication:", notifyErr);
+      }
       return result;
     } catch (error: any) {
       console.error(
@@ -858,6 +885,17 @@ export class ApplicationService {
 
       if (!application) {
         throw new Error(`Application ${applicationId} not found`);
+      }
+
+      const currentStatus = String(application.status).toLowerCase();
+      if (currentStatus === "approved" || currentStatus === "rejected") {
+        const error = new Error(
+          `Application cannot be rejected as it is already ${currentStatus}.`,
+        ) as Error & {
+          statusCode?: number;
+        };
+        error.statusCode = 409;
+        throw error;
       }
 
       console.log("[DEBUG] Current application status:", application.status);
@@ -892,6 +930,28 @@ export class ApplicationService {
         "[DEBUG] Notifying applicant (simulated) for application:",
         applicationId,
       );
+      // Send real notification to applicant about rejection
+      try {
+        const recipientId = application.userId;
+        const orgNameEn =
+          application.organization?.nameEnglish || "Your Organization";
+        const orgNameAm = application.organization?.nameAmharic || "ድርጅትዎ";
+
+        if (recipientId) {
+          await NotificationService.sendBilingualAlert(
+            Number(recipientId),
+            "REJECTED",
+            {
+              organizationName: orgNameEn,
+              organizationNameAm: orgNameAm,
+              customDetailsEn: remarks,
+              customDetailsAm: remarks,
+            },
+          );
+        }
+      } catch (notifyErr) {
+        console.error("[Notification Error] rejectApplication:", notifyErr);
+      }
       return result;
     } catch (error: any) {
       console.error(
@@ -920,6 +980,17 @@ export class ApplicationService {
 
       if (!application) {
         throw new Error(`Application ${applicationId} not found`);
+      }
+
+      const currentStatus = String(application.status).toLowerCase();
+      if (currentStatus === "approved" || currentStatus === "rejected") {
+        const error = new Error(
+          `Application cannot be corrected as it is already ${currentStatus}.`,
+        ) as Error & {
+          statusCode?: number;
+        };
+        error.statusCode = 409;
+        throw error;
       }
 
       const result = await prisma.$transaction(async (tx) => {
@@ -975,6 +1046,17 @@ export class ApplicationService {
 
       if (!application) {
         throw new Error(`Application ${applicationId} not found`);
+      }
+
+      const currentStatus = String(application.status).toLowerCase();
+      if (currentStatus === "approved" || currentStatus === "rejected") {
+        const error = new Error(
+          `Application cannot be marked as under review as it is already ${currentStatus}.`,
+        ) as Error & {
+          statusCode?: number;
+        };
+        error.statusCode = 409;
+        throw error;
       }
 
       const result = await prisma.$transaction(async (tx) => {
