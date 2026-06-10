@@ -5,6 +5,7 @@ import {
   validateRenewalEligibilitySchema,
 } from "./renewal.validation";
 import { RenewalService } from "./renewal.service";
+import { isRenewalValidationError } from "./renewal.errors";
 import { fileFilter } from "../../middleware/fileUpload";
 
 const getAuthenticatedUserId = (req: Request) => {
@@ -18,22 +19,41 @@ const renewalUploader = multer({
   limits: { fileSize: 10 * 1024 * 1024 },
 });
 
+const handleRenewalError = (res: Response, error: unknown, fallback: string) => {
+  if (isRenewalValidationError(error)) {
+    return res.status(error.statusCode).json({
+      success: false,
+      code: error.code,
+      message: error.message,
+    });
+  }
+
+  return res.status(400).json({
+    success: false,
+    message: error instanceof Error ? error.message : fallback,
+  });
+};
+
 export const validateRenewalEligibility = async (
   req: Request,
   res: Response,
 ) => {
   try {
     const validated = validateRenewalEligibilitySchema.parse(req.body);
+    const userId = getAuthenticatedUserId(req);
+
     const data = await RenewalService.validateEligibility(
       validated.certificateSerialNumber,
+      userId,
     );
 
     return res.status(200).json({ success: true, data });
-  } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error?.message || "Failed to validate renewal eligibility",
-    });
+  } catch (error: unknown) {
+    return handleRenewalError(
+      res,
+      error,
+      "Failed to validate renewal eligibility",
+    );
   }
 };
 
@@ -44,6 +64,7 @@ export const createRenewalApplication = async (req: Request, res: Response) => {
     if (!Number.isFinite(submittedByUserId)) {
       return res.status(401).json({
         success: false,
+        code: "AUTHENTICATION_REQUIRED",
         message: "Authentication required",
       });
     }
@@ -64,11 +85,12 @@ export const createRenewalApplication = async (req: Request, res: Response) => {
     });
 
     return res.status(201).json({ success: true, data });
-  } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error?.message || "Failed to create renewal application",
-    });
+  } catch (error: unknown) {
+    return handleRenewalError(
+      res,
+      error,
+      "Failed to create renewal application",
+    );
   }
 };
 

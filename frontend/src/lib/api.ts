@@ -3,6 +3,8 @@
  * Provides detailed error messages for debugging and professional error handling.
  */
 
+// filepath: frontend/src/lib/api.ts
+
 // 1. Point to your backend port 5000 explicitly
 export const API_BASE = import.meta.env.DEV 
   ? "http://localhost:5000/api" 
@@ -20,16 +22,18 @@ export function resolveBackendAssetUrl(assetPath?: string | null): string {
 interface ApiErrorResponse {
   message?: string;
   error?: string;
+  code?: string;
   errors?: Record<string, any>;
   statusCode?: number;
 }
 
-class ApiError extends Error {
+export class ApiError extends Error {
   constructor(
     public statusCode: number | null,
     public endpoint: string,
     message: string,
     public details?: Record<string, any>,
+    public code?: string,
   ) {
     super(message);
     this.name = "ApiError";
@@ -141,7 +145,13 @@ export async function apiRequest<T = any>(
         response: data,
       });
 
-      throw new ApiError(res.status, endpoint, fullMessage, data?.errors);
+      throw new ApiError(
+        res.status,
+        endpoint,
+        fullMessage,
+        data?.errors,
+        data?.code,
+      );
     }
 
     if (IS_DEV) {

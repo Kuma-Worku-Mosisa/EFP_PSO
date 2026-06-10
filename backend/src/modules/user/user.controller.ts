@@ -51,6 +51,35 @@ export const getAllUsers = async (req: Request, res: Response) => {
 };
 
 /**
+ * Returns a single user profile by ID for administrative inspection workflows.
+ */
+export const getUserByIdHandler = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return ApiResponse.error(res, "User ID is required", 400);
+    }
+
+    const user = await UserService.getUserById(id);
+    return ApiResponse.success(res, "User retrieved successfully", user);
+  } catch (error: any) {
+    if (error?.code === "NOT_FOUND") {
+      return ApiResponse.error(res, error.message, 404);
+    }
+    if (error?.code === "BAD_REQUEST") {
+      return ApiResponse.error(res, error.message, 400);
+    }
+
+    return ApiResponse.error(
+      res,
+      "Failed to retrieve user",
+      500,
+      error?.message ?? String(error),
+    );
+  }
+};
+
+/**
  * Returns the authenticated user's own profile for client-side prefill and account-driven workflows.
  */
 export const getCurrentUserHandler = async (req: Request, res: Response) => {
@@ -172,6 +201,15 @@ export const loginHandler = async (req: Request, res: Response) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return ApiResponse.error(res, "Invalid username or password", 401);
+    }
+
+    const normalizedStatus = String(user.status ?? "").toUpperCase();
+    if (normalizedStatus !== "ACTIVE") {
+      const message =
+        normalizedStatus === "SUSPENDED"
+          ? "Your account has been suspended. Contact your administrator."
+          : "Your account is inactive. Contact your administrator.";
+      return ApiResponse.error(res, message, 403);
     }
 
     const roles = user.user_roles?.map((ur) => ur.roles.role_name) || [];

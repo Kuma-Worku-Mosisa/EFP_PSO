@@ -131,6 +131,32 @@ export class ApplicationService {
         }
       }
 
+      const branchAddresses = (Array.isArray(formData.branchAddresses)
+        ? formData.branchAddresses
+        : []
+      )
+        .filter((branch: any) => branch?.kebeleId)
+        .map((branch: any) => ({
+          kebeleId: Number(branch.kebeleId),
+          houseNumber: normalizeOptionalText(branch.houseNumber),
+          specialLocation: normalizeOptionalText(branch.specialLocation),
+        }));
+
+      for (const branch of branchAddresses) {
+        if (!Number.isFinite(branch.kebeleId) || branch.kebeleId <= 0) {
+          throw new Error("Each branch address must include a valid kebele");
+        }
+
+        const exists = await prisma.kebele.findUnique({
+          where: { id: branch.kebeleId },
+        });
+        if (!exists) {
+          throw new Error(
+            `Branch kebele with ID ${branch.kebeleId} not found in database`,
+          );
+        }
+      }
+
       console.log("[DEBUG] Kebele validation passed");
 
       const parseBooleanFromInput = (value: unknown): boolean => {
@@ -322,6 +348,30 @@ export class ApplicationService {
             });
           } catch (e) {
             console.warn("[WARN] Audit log failed for organization create", e);
+          }
+
+          // 2b. Create optional branch addresses (zero or more)
+          if (branchAddresses.length > 0) {
+            console.log(
+              "[DEBUG] Creating organization branches:",
+              branchAddresses.length,
+            );
+            for (const branch of branchAddresses) {
+              const branchAddress = await tx.address.create({
+                data: {
+                  kebeleId: branch.kebeleId,
+                  houseNumber: branch.houseNumber,
+                  specialLocation: branch.specialLocation,
+                },
+              });
+
+              await tx.organizationBranch.create({
+                data: {
+                  organizationId: organization.id,
+                  addressId: branchAddress.id,
+                },
+              });
+            }
           }
 
           // 3. Helper Function: Register Personnel (Address -> User -> Employee -> Docs)
@@ -1149,6 +1199,27 @@ export class ApplicationService {
                 },
                 orderBy: { createdAt: "desc" },
               },
+              branches: {
+                include: {
+                  address: {
+                    include: {
+                      kebele: {
+                        include: {
+                          woreda: {
+                            include: {
+                              zone: {
+                                include: {
+                                  region: true,
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
               documents: true,
             },
           },
@@ -1282,6 +1353,61 @@ export class ApplicationService {
             : null,
         }));
 
+      const serializeAddress = (address: any) => {
+        if (!address) return null;
+
+        return {
+          houseNumber: address.houseNumber,
+          specialLocation: address.specialLocation,
+          kebele: address.kebele
+            ? {
+                name:
+                  address.kebele.nameEnglish ||
+                  address.kebele.nameAmharic ||
+                  null,
+                nameEnglish: address.kebele.nameEnglish,
+                nameAmharic: address.kebele.nameAmharic,
+                woreda: address.kebele.woreda
+                  ? {
+                      name:
+                        address.kebele.woreda.nameEnglish ||
+                        address.kebele.woreda.nameAmharic ||
+                        null,
+                      nameEnglish: address.kebele.woreda.nameEnglish,
+                      nameAmharic: address.kebele.woreda.nameAmharic,
+                      zone: address.kebele.woreda.zone
+                        ? {
+                            name:
+                              address.kebele.woreda.zone.nameEnglish ||
+                              address.kebele.woreda.zone.nameAmharic ||
+                              null,
+                            nameEnglish: address.kebele.woreda.zone.nameEnglish,
+                            nameAmharic: address.kebele.woreda.zone.nameAmharic,
+                            region: address.kebele.woreda.zone.region
+                              ? {
+                                  name:
+                                    address.kebele.woreda.zone.region
+                                      .nameEnglish ||
+                                    address.kebele.woreda.zone.region
+                                      .nameAmharic ||
+                                    null,
+                                  nameEnglish:
+                                    address.kebele.woreda.zone.region
+                                      .nameEnglish,
+                                  nameAmharic:
+                                    address.kebele.woreda.zone.region
+                                      .nameAmharic,
+                                }
+                              : null,
+                          }
+                        : null,
+                    }
+                  : null,
+              }
+            : null,
+        };
+      };
+
       const serializeEmployee = (employee: any) => {
         if (!employee) return null;
 
@@ -1353,77 +1479,13 @@ export class ApplicationService {
                 logoUrl: findOrganizationDocUrl("organization logo"),
                 uniformSampleUrl: findOrganizationDocUrl("uniform sample"),
                 idCardSampleUrl: findOrganizationDocUrl("id card sample"),
-                address: organization.address
-                  ? {
-                      houseNumber: organization.address.houseNumber,
-                      specialLocation: organization.address.specialLocation,
-                      kebele: organization.address.kebele
-                        ? {
-                            name:
-                              organization.address.kebele.nameEnglish ||
-                              organization.address.kebele.nameAmharic ||
-                              null,
-                            nameEnglish:
-                              organization.address.kebele.nameEnglish,
-                            nameAmharic:
-                              organization.address.kebele.nameAmharic,
-                            woreda: organization.address.kebele.woreda
-                              ? {
-                                  name:
-                                    organization.address.kebele.woreda
-                                      .nameEnglish ||
-                                    organization.address.kebele.woreda
-                                      .nameAmharic ||
-                                    null,
-                                  nameEnglish:
-                                    organization.address.kebele.woreda
-                                      .nameEnglish,
-                                  nameAmharic:
-                                    organization.address.kebele.woreda
-                                      .nameAmharic,
-                                  zone: organization.address.kebele.woreda.zone
-                                    ? {
-                                        name:
-                                          organization.address.kebele.woreda
-                                            .zone.nameEnglish ||
-                                          organization.address.kebele.woreda
-                                            .zone.nameAmharic ||
-                                          null,
-                                        nameEnglish:
-                                          organization.address.kebele.woreda
-                                            .zone.nameEnglish,
-                                        nameAmharic:
-                                          organization.address.kebele.woreda
-                                            .zone.nameAmharic,
-                                        region: organization.address.kebele
-                                          .woreda.zone.region
-                                          ? {
-                                              name:
-                                                organization.address.kebele
-                                                  .woreda.zone.region
-                                                  .nameEnglish ||
-                                                organization.address.kebele
-                                                  .woreda.zone.region
-                                                  .nameAmharic ||
-                                                null,
-                                              nameEnglish:
-                                                organization.address.kebele
-                                                  .woreda.zone.region
-                                                  .nameEnglish,
-                                              nameAmharic:
-                                                organization.address.kebele
-                                                  .woreda.zone.region
-                                                  .nameAmharic,
-                                            }
-                                          : null,
-                                      }
-                                    : null,
-                                }
-                              : null,
-                          }
-                        : null,
-                    }
-                  : null,
+                address: serializeAddress(organization.address),
+                branchAddresses: (organization.branches || []).map(
+                  (branch: any) => ({
+                    id: branch.id,
+                    address: serializeAddress(branch.address),
+                  }),
+                ),
                 documents: toFileList(organization.documents || []),
                 serviceContracts: (organization.serviceContracts || []).map(
                   (contract: any) => ({
@@ -1431,53 +1493,7 @@ export class ApplicationService {
                     serviceUserName: contract.serviceUserName,
                     contractUrl: contract.contractUrl,
                     assignedPersonnelCount: contract.assignedPersonnelCount,
-                    address: contract.address
-                      ? {
-                          houseNumber: contract.address.houseNumber,
-                          specialLocation: contract.address.specialLocation,
-                          kebele: contract.address.kebele
-                            ? {
-                                name:
-                                  contract.address.kebele.nameEnglish ||
-                                  contract.address.kebele.nameAmharic ||
-                                  null,
-                                woreda: contract.address.kebele.woreda
-                                  ? {
-                                      name:
-                                        contract.address.kebele.woreda
-                                          .nameEnglish ||
-                                        contract.address.kebele.woreda
-                                          .nameAmharic ||
-                                        null,
-                                      zone: contract.address.kebele.woreda.zone
-                                        ? {
-                                            name:
-                                              contract.address.kebele.woreda
-                                                .zone.nameEnglish ||
-                                              contract.address.kebele.woreda
-                                                .zone.nameAmharic ||
-                                              null,
-                                            region: contract.address.kebele
-                                              .woreda.zone.region
-                                              ? {
-                                                  name:
-                                                    contract.address.kebele
-                                                      .woreda.zone.region
-                                                      .nameEnglish ||
-                                                    contract.address.kebele
-                                                      .woreda.zone.region
-                                                      .nameAmharic ||
-                                                    null,
-                                                }
-                                              : null,
-                                          }
-                                        : null,
-                                    }
-                                  : null,
-                              }
-                            : null,
-                        }
-                      : null,
+                    address: serializeAddress(contract.address),
                   }),
                 ),
               }
@@ -1808,6 +1824,27 @@ export class ApplicationService {
                         zone: {
                           include: {
                             region: true,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            branches: {
+              include: {
+                address: {
+                  include: {
+                    kebele: {
+                      include: {
+                        woreda: {
+                          include: {
+                            zone: {
+                              include: {
+                                region: true,
+                              },
+                            },
                           },
                         },
                       },

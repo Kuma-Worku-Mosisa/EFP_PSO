@@ -4,6 +4,7 @@ import {
   registerHandler,
   loginHandler,
   getAllUsers,
+  getUserByIdHandler,
   getCurrentUserHandler,
   updateProfileHandler,
   changePasswordHandler,
@@ -58,6 +59,12 @@ router.get(
   authenticate,
   authorize(["system_admin", "super_admin", "admin"]),
   getRolesHandler,
+);
+router.get(
+  "/:id",
+  authenticate,
+  authorize(["system_admin", "super_admin"]),
+  getUserByIdHandler,
 );
 // Access control revocation route
 router.patch(

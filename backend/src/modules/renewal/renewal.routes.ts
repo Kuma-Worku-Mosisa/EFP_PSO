@@ -8,7 +8,7 @@ import { authenticate } from "../../middleware/auth";
 
 const router = Router();
 
-router.post("/validate", validateRenewalEligibility);
+router.post("/validate", authenticate, validateRenewalEligibility);
 router.post("/", authenticate, uploadRenewalFiles, createRenewalApplication);
 
 export default router;

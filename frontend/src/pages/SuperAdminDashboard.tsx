@@ -37,11 +37,9 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-import { UserManagement } from "./UserManagement";
 import { AdminSettings } from "./AdminSettings";
 import { AdminReports } from "./AdminReports";
 import { Profile } from "./Profile";
-import { AgenciesManagement } from "./AgenciesManagement";
 import { ApplicationsReview } from "./ApplicationsReview";
 import { LicenseManagement } from "./LicenseManagement";
 import { LicenseViewer } from "./LicenseViewer";
@@ -311,11 +309,6 @@ export const SuperAdminDashboard = () => {
       label: "Global Overview",
       path: "/super-admin/dashboard",
     },
-    {
-      icon: <Users className="w-5 h-5" />,
-      label: "User Management",
-      path: "/super-admin/dashboard/users",
-    },
 
     // Admin Monitor Section
     { label: "Admin Monitoring", isHeader: true },
@@ -399,12 +392,10 @@ export const SuperAdminDashboard = () => {
     >
       <Routes>
         <Route index element={<SuperOverview />} />
-        <Route path="users" element={<UserManagement />} />
         <Route path="audit" element={<AdminReports />} />
         <Route path="profile" element={<Profile />} />
 
         {/* Admin Mirrored Routes ... */}
-        <Route path="admin-agencies" element={<AgenciesManagement />} />
         <Route path="admin-apps" element={<ApplicationsReview />} />
         <Route path="admin-licenses" element={<LicenseManagement />} />
         <Route

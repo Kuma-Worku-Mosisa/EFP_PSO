@@ -3,6 +3,13 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { ApiResponse } from "../utils/apiResponse";
 
+const normalizeRole = (role: unknown) =>
+  String(role ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
 /**
  * Global authentication middleware extracting and normalizing signed incoming JWT tokens.
  */
@@ -30,11 +37,11 @@ export const authenticate = (
 
     // Normalize string tokens or pre-formatted arrays cleanly into a standard string array
     const roles: string[] = Array.isArray(rawRoles)
-      ? rawRoles
+      ? rawRoles.map(normalizeRole).filter(Boolean)
       : typeof rawRoles === "string"
         ? rawRoles
             .split(",")
-            .map((role: string) => role.trim())
+            .map((role: string) => normalizeRole(role))
             .filter(Boolean)
         : [];
 
@@ -68,10 +75,10 @@ export const authorize = (allowedRoles: string[]) => {
 
     // Evaluate matching constraints against the user's active permissions matrix
     const normalizedAllowedRoles = allowedRoles.map((role) =>
-      String(role).toLowerCase(),
+      normalizeRole(role),
     );
     const hasAccess = req.user.roles.some((role) =>
-      normalizedAllowedRoles.includes(String(role).toLowerCase()),
+      normalizedAllowedRoles.includes(normalizeRole(role)),
     );
 
     if (!hasAccess) {

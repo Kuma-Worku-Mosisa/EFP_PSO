@@ -113,14 +113,30 @@ export default function NotificationDropdown({
     }
   };
 
-  // Completely wipe local context and synchronize with remote
+  const handleDeleteNotification = async (notificationId: number) => {
+    try {
+      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+      if (activeInspectorNode) {
+        setActiveInspectorNode(null);
+      }
+      await apiRequest(`/notifications/${notificationId}`, {
+        method: "DELETE",
+      });
+    } catch (error) {
+      console.error(`Failed to delete notification ${notificationId}:`, error);
+      fetchLiveFeed();
+    }
+  };
+
   const handleClearAllFeed = async () => {
     try {
       setNotifications([]);
-      // If your backend supports a full hard bulk delete endpoint for feeds:
-      // await apiRequest(`/notifications/feed/clear/${userId}`, { method: "DELETE" });
+      await apiRequest(`/notifications/feed/clear/${userId}`, {
+        method: "DELETE",
+      });
     } catch (error) {
-      console.error("Failed to clear local feed context:", error);
+      console.error("Failed to clear notification feed:", error);
+      fetchLiveFeed();
     }
   };
 
@@ -330,6 +346,21 @@ export default function NotificationDropdown({
                             <CheckCheck className="w-3.5 h-3.5" />
                           </button>
                         )}
+
+                        <button
+                          title={
+                            currentLang === "en"
+                              ? "Delete notification"
+                              : "ማሳወቂያውን ሰርዝ"
+                          }
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteNotification(item.id);
+                          }}
+                          className="p-1.5 rounded-lg bg-gray-100 hover:bg-red-50 hover:text-red-600 text-gray-400 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
                   );

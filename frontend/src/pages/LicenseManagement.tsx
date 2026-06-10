@@ -65,6 +65,9 @@ export const LicenseManagement = () => {
   const isAdmin = !!user?.roles?.some((r) =>
     String(r).toLowerCase().includes("admin"),
   );
+  const isLicensingAuthority = !!user?.roles?.some(
+    (r) => String(r).toLowerCase() === "licensing_authority",
+  );
   const [selectedCertByOwner, setSelectedCertByOwner] = useState<
     Record<string | number, number>
   >({});
@@ -315,7 +318,10 @@ export const LicenseManagement = () => {
       try {
         setLoadingLicenses(true);
         setLoadError(null);
-        const response = await apiRequest("/certifications");
+        const endpoint = isLicensingAuthority
+          ? "/certifications/stamped-certificates"
+          : "/certifications";
+        const response = await apiRequest(endpoint);
         const records = Array.isArray((response as any)?.data)
           ? (response as any).data
           : Array.isArray(response)

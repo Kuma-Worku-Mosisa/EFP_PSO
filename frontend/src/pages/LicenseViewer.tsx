@@ -5,13 +5,20 @@ import { useLanguage } from "../context/LanguageContext";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { useParams, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { apiRequest, resolveBackendAssetUrl } from "../lib/api";
+import { AutoDismissToast, ToastType } from "../components/AutoDismissToast";
 
-// Helper to convert OKLCH strings to safe sRGB colors for html2canvas
+// Helper to convert OKLCH/OKLAB strings to safe sRGB colors for html2canvas
 const convertOklchStringToRgb = (str: string): string => {
-  if (typeof str !== "string" || !str.includes("oklch")) return str;
+  if (
+    typeof str !== "string" ||
+    (!str.includes("oklch") && !str.includes("oklab"))
+  )
+    return str;
 
-  return str.replace(/oklch\(([^)]+)\)/g, (match, content) => {
+  // Handle OKLCH colors
+  let result = str.replace(/oklch\(([^)]+)\)/g, (match, content) => {
     try {
       const parts = content.split("/");
       const colorParts = parts[0].trim().split(/\s+/);
@@ -80,6 +87,77 @@ const convertOklchStringToRgb = (str: string): string => {
       return match;
     }
   });
+
+  // Handle OKLAB colors
+  result = result.replace(/oklab\(([^)]+)\)/g, (match, content) => {
+    try {
+      const parts = content.split("/");
+      const colorParts = parts[0].trim().split(/\s+/);
+      const alphaPart = parts[1] ? parts[1].trim() : null;
+
+      if (colorParts.length < 3) return match;
+
+      let L = parseFloat(colorParts[0]);
+      if (colorParts[0].includes("%")) {
+        L = parseFloat(colorParts[0]) / 100;
+      }
+
+      let a_val = parseFloat(colorParts[1]);
+      if (colorParts[1].includes("%")) {
+        a_val = (parseFloat(colorParts[1]) / 100) * 0.4;
+      }
+
+      let b_val = parseFloat(colorParts[2]);
+      if (colorParts[2].includes("%")) {
+        b_val = (parseFloat(colorParts[2]) / 100) * 0.4;
+      }
+
+      let a: number | undefined = undefined;
+      if (alphaPart) {
+        if (alphaPart.includes("%")) {
+          a = parseFloat(alphaPart) / 100;
+        } else {
+          a = parseFloat(alphaPart);
+        }
+      }
+
+      // Convert OKLAB to LMS
+      const l_lms = L + 0.3963377774 * a_val + 0.2158037573 * b_val;
+      const m_lms = L - 0.1055613458 * a_val - 0.0638541128 * b_val;
+      const s_lms = L - 0.0894841775 * a_val - 1.291485548 * b_val;
+
+      const l_lin = l_lms * l_lms * l_lms;
+      const m_lin = m_lms * m_lms * m_lms;
+      const s_lin = s_lms * s_lms * s_lms;
+
+      const rVal =
+        l_lin * 4.0767416621 + m_lin * -3.3077115913 + s_lin * 0.2309699292;
+      const gVal =
+        l_lin * -1.2684380046 + m_lin * 2.6097574011 + s_lin * -0.3413193965;
+      const bVal =
+        l_lin * -0.0041960863 + m_lin * -0.7034186147 + s_lin * 1.707614701;
+
+      const toSRGB = (v: number) => {
+        const value =
+          v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
+        return Math.max(0, Math.min(255, Math.round(value * 255)));
+      };
+
+      const red = toSRGB(rVal);
+      const green = toSRGB(gVal);
+      const blue = toSRGB(bVal);
+
+      if (a !== undefined) {
+        return `rgba(${red}, ${green}, ${blue}, ${a})`;
+      }
+      return `rgb(${red}, ${green}, ${blue})`;
+    } catch (e) {
+      console.error("Failed to parse oklab color:", content, e);
+      return match;
+    }
+  });
+
+  return result;
 };
 
 // Recursively copies computed styles as flat inline styles on the cloned DOM nodes
@@ -92,7 +170,10 @@ const inlineStylesRecursively = (originalEl: Element, clonedEl: Element) => {
         for (let i = 0; i < computed.length; i++) {
           const prop = computed[i];
           let val = computed.getPropertyValue(prop);
-          if (typeof val === "string" && val.includes("oklch")) {
+          if (
+            typeof val === "string" &&
+            (val.includes("oklch") || val.includes("oklab"))
+          ) {
             val = convertOklchStringToRgb(val);
           }
           clonedStyle.setProperty(
@@ -118,6 +199,109 @@ const inlineStylesRecursively = (originalEl: Element, clonedEl: Element) => {
   }
 };
 
+const getCertificateFileName = (cert: any) => {
+  const rawName =
+    cert?.organization?.nameEnglish ||
+    cert?.organization?.nameAmharic ||
+    cert?.organization?.name ||
+    cert?.certificateSerialNumber ||
+    "license";
+
+  const sanitized = String(rawName)
+    .trim()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-zA-Z0-9-_]/g, "")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .toLowerCase();
+
+  return `${sanitized || "license"}_license.pdf`;
+};
+
+const getEthiopicLicenseNumber = (
+  serial?: string,
+  issueDate?: string | Date | null,
+) => {
+  if (!serial) return "-";
+
+  const match = serial.match(/^(.*?-)(\d{4})(-.*)$/);
+  if (!match) return serial;
+
+  let ethYear: number | null = null;
+  if (issueDate) {
+    try {
+      const d = new Date(issueDate);
+      if (!Number.isNaN(d.getTime())) {
+        ethYear = convertToEthiopicDate(d).year;
+      }
+    } catch {
+      ethYear = null;
+    }
+  }
+
+  if (ethYear === null) {
+    const rawYear = Number(match[2]);
+    ethYear = Number.isNaN(rawYear) ? null : rawYear - 8;
+  }
+
+  if (ethYear === null) return serial;
+  return `${match[1]}${ethYear}${match[3]}`;
+};
+
+const convertToEthiopicDate = (gregorianDate: Date) => {
+  const utc = (date: Date) =>
+    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+  const isGregorianLeap = (year: number) =>
+    year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+
+  const year = gregorianDate.getFullYear();
+  const newYearDay = isGregorianLeap(year) ? 12 : 11;
+  const newYearUtc = Date.UTC(year, 8, newYearDay);
+
+  let ethYear: number;
+  let deltaDays: number;
+
+  if (utc(gregorianDate) >= newYearUtc) {
+    ethYear = year - 7;
+    deltaDays = Math.floor((utc(gregorianDate) - newYearUtc) / 86400000);
+  } else {
+    const prevYear = year - 1;
+    const prevNewYearDay = isGregorianLeap(prevYear) ? 12 : 11;
+    const prevNewYearUtc = Date.UTC(prevYear, 8, prevNewYearDay);
+    ethYear = prevYear - 7;
+    deltaDays = Math.floor((utc(gregorianDate) - prevNewYearUtc) / 86400000);
+  }
+
+  const ethMonth = Math.floor(deltaDays / 30) + 1;
+  const ethDay = (deltaDays % 30) + 1;
+  return { day: ethDay, month: ethMonth, year: ethYear };
+};
+
+const formatDate = (raw?: string | Date | null, locale: "am" | "en" = "en") => {
+  if (!raw) return "-";
+  try {
+    const d = new Date(raw);
+
+    if (locale === "am") {
+      try {
+        const formatted = new Intl.DateTimeFormat("am-ET-u-ca-ethiopic", {
+          year: "numeric",
+          month: "numeric",
+          day: "numeric",
+        }).format(d);
+        return `${formatted} E.C.`;
+      } catch {
+        const eth = convertToEthiopicDate(d);
+        return `${eth.day}/${eth.month}/${eth.year} E.C.`;
+      }
+    }
+
+    return d.toLocaleDateString();
+  } catch {
+    return String(raw);
+  }
+};
+
 export const LicenseViewer = () => {
   const { language } = useLanguage();
   const params = useParams();
@@ -130,9 +314,94 @@ export const LicenseViewer = () => {
     "text-sm font-medium text-primary leading-6 font-sans antialiased";
   const [scale, setScale] = React.useState(1);
   const [isDownloading, setIsDownloading] = React.useState(false);
+  const [isSigning, setIsSigning] = React.useState(false);
+  const [isStamping, setIsStamping] = React.useState(false);
+  const [showSignModal, setShowSignModal] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [signFile, setSignFile] = React.useState<File | null>(null);
+  const [signSignaturePreviewUrl, setSignSignaturePreviewUrl] = React.useState<
+    string | null
+  >(null);
+  const [signSignaturePreviewIsObjectUrl, setSignSignaturePreviewIsObjectUrl] =
+    React.useState(false);
+  const [showSignPreview, setShowSignPreview] = React.useState(false);
+  const [showStampModal, setShowStampModal] = React.useState(false);
+  const stampFileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [stampFile, setStampFile] = React.useState<File | null>(null);
+  const [stampPreviewUrl, setStampPreviewUrl] = React.useState<string | null>(
+    null,
+  );
+  const [stampPreviewIsObjectUrl, setStampPreviewIsObjectUrl] =
+    React.useState(false);
+  const [showStampPreview, setShowStampPreview] = React.useState(false);
+  const [toast, setToast] = React.useState<{
+    isOpen: boolean;
+    type: ToastType;
+    message: string;
+  }>({
+    isOpen: false,
+    type: "success",
+    message: "",
+  });
+  const [signFullNameEn, setSignFullNameEn] = React.useState("");
+  const [signFullNameAm, setSignFullNameAm] = React.useState("");
+  const [signPositionId, setSignPositionId] = React.useState<number | null>(
+    null,
+  );
+  const [positions, setPositions] = React.useState<any[]>([]);
   const [cert, setCert] = React.useState<any>(null);
   const [loadingCert, setLoadingCert] = React.useState(false);
   const [loadError, setLoadError] = React.useState<string | null>(null);
+  const { user } = useAuth();
+  const normalizedRoles = (user?.roles || []).map((role: string) =>
+    String(role).toLowerCase(),
+  );
+  const signerRoles = (
+    cert?.signedByOfficial?.userRoles?.length
+      ? cert.signedByOfficial.userRoles
+      : normalizedRoles
+  ).map((role: string) => String(role).toLowerCase());
+  const isSignedBySuperAdmin = signerRoles.some(
+    (role: string) =>
+      role.includes("super_admin") || role.includes("superadmin"),
+  );
+  const isSignedByAdmin =
+    !isSignedBySuperAdmin &&
+    signerRoles.some((role: string) => role.includes("admin"));
+  const isSignedByLicensingAuthority =
+    !isSignedBySuperAdmin &&
+    !isSignedByAdmin &&
+    signerRoles.some((role: string) => role === "licensing_authority");
+  const isAuthorizedSigner = normalizedRoles.some(
+    (role: string) => role.includes("admin") || role === "licensing_authority",
+  );
+  const isLicensingAuthority = normalizedRoles.some(
+    (role: string) => role === "licensing_authority",
+  );
+  const signatureAuthorityTitleLines = cert?.signedByOfficial
+    ? isSignedBySuperAdmin
+      ? [
+          "የጦር መሳሪያ እና የጥበቃ",
+          "ተቋማት ቁጥጥር መምረያ ሓላፈ",
+          "Fire arms & security Institution",
+          "Monitoring Department Head",
+        ]
+      : isSignedByAdmin
+        ? [
+            "የጥበ/አገ/ሰጪ/ድር/ቁጥ/",
+            "ወና ክፍል ሓለፍ",
+            "Sec/serve/Org/Control/",
+            "Main Section Head",
+          ]
+        : isSignedByLicensingAuthority
+          ? [
+              "የሽማግሌ እና የፈቃድ",
+              "ማስፈሪያ አቅራቢ",
+              "Licensing Authority",
+              "Certification Stamp Officer",
+            ]
+          : []
+    : [];
 
   React.useEffect(() => {
     const handleResize = () => {
@@ -172,7 +441,10 @@ export const LicenseViewer = () => {
 
         const idRaw = (params as any)?.certificateId;
         if (!idRaw) {
-          const listResp = await apiRequest("/certifications");
+          const endpoint = isLicensingAuthority
+            ? "/certifications/pending-stamps"
+            : "/certifications";
+          const listResp = await apiRequest(endpoint);
           const listData =
             listResp && (listResp as any).data
               ? (listResp as any).data
@@ -210,21 +482,6 @@ export const LicenseViewer = () => {
       active = false;
     };
   }, [params, location]);
-
-  const formatDate = (
-    raw?: string | Date | null,
-    locale: "am" | "en" = "en",
-  ) => {
-    if (!raw) return "-";
-    try {
-      const d = new Date(raw);
-      return locale === "am"
-        ? d.toLocaleDateString("am-ET")
-        : d.toLocaleDateString();
-    } catch {
-      return String(raw);
-    }
-  };
 
   const formatLevel = (level?: any, locale: "am" | "en" = "en") => {
     if (level === null || level === undefined || level === "") {
@@ -289,6 +546,203 @@ export const LicenseViewer = () => {
   const getSpecialLocation = (org: any) => {
     if (!org || !org.address?.specialLocation) return "";
     return String(org.address.specialLocation);
+  };
+
+  const fetchPositions = async () => {
+    try {
+      const resp = await apiRequest<{ success: boolean; data: any[] }>(
+        "/efp-positions",
+      );
+      const data = resp && (resp as any).data ? (resp as any).data : resp;
+      setPositions(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.warn("Failed to load EFP positions", e);
+    }
+  };
+
+  const fetchCurrentOfficial = async () => {
+    try {
+      const resp = await apiRequest<{ success: boolean; data: any }>(
+        "/certifications/current-official",
+      );
+      const data = resp && (resp as any).data ? (resp as any).data : resp;
+      if (data) {
+        setSignFullNameEn(data.fullName || user?.fullName || "");
+        setSignFullNameAm(data.fullNameAm || "");
+        setSignPositionId(data.efpPositionId ?? null);
+        setSignSignaturePreviewUrl(
+          data.signatureUrl ? resolveBackendAssetUrl(data.signatureUrl) : null,
+        );
+        setSignSignaturePreviewIsObjectUrl(false);
+        setShowSignPreview(false);
+      } else {
+        setSignFullNameEn(user?.fullName || "");
+        setSignFullNameAm("");
+        setSignPositionId(null);
+        setSignSignaturePreviewUrl(null);
+        setSignSignaturePreviewIsObjectUrl(false);
+        setShowSignPreview(false);
+      }
+    } catch (e) {
+      console.warn("Failed to load current official details", e);
+      setSignFullNameEn(user?.fullName || "");
+      setSignFullNameAm("");
+      setSignPositionId(null);
+      setSignSignaturePreviewUrl(null);
+      setSignSignaturePreviewIsObjectUrl(false);
+    }
+  };
+
+  React.useEffect(() => {
+    return () => {
+      if (signSignaturePreviewIsObjectUrl && signSignaturePreviewUrl) {
+        URL.revokeObjectURL(signSignaturePreviewUrl);
+      }
+    };
+  }, [signSignaturePreviewUrl, signSignaturePreviewIsObjectUrl]);
+
+  const handleSubmitSign = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!cert?.id || isSigning) return;
+    if (!signFullNameAm || !signPositionId) {
+      setToast({
+        isOpen: true,
+        type: "error",
+        message:
+          language === "am"
+            ? "ስምና ቦታ ያስገቡ"
+            : "Please provide name and position",
+      });
+      return;
+    }
+
+    try {
+      setIsSigning(true);
+      const form = new FormData();
+      if (signFile) form.append("signature", signFile);
+      form.append("fullNameEn", signFullNameEn);
+      form.append("fullNameAm", signFullNameAm);
+      form.append("positionId", String(signPositionId));
+
+      const response = await apiRequest(
+        `/certifications/${cert.id}/sign-with-official`,
+        {
+          method: "POST",
+          body: form,
+        } as any,
+      );
+
+      const updated =
+        response && (response as any).data ? (response as any).data : response;
+      setCert({
+        ...updated,
+        applicantPhotoUrl: resolveBackendAssetUrl(updated?.applicantPhotoUrl),
+      });
+      setShowSignModal(false);
+      setSignFile(null);
+      setSignSignaturePreviewUrl(null);
+      setSignSignaturePreviewIsObjectUrl(false);
+      setShowSignPreview(false);
+      setSignFullNameAm("");
+      setSignFullNameEn("");
+      setSignPositionId(null);
+      setToast({
+        isOpen: true,
+        type: "success",
+        message:
+          language === "am"
+            ? "ሰርተፊኬቱ ተፈረምኗል።"
+            : "Certificate signed successfully.",
+      });
+    } catch (err: any) {
+      console.error("Failed to sign certificate with payload", err);
+      setToast({
+        isOpen: true,
+        type: "error",
+        message:
+          (err && err.message) ||
+          (language === "am" ? "ማስፈረም አልተሳካም" : "Signing failed"),
+      });
+    } finally {
+      setIsSigning(false);
+    }
+  };
+
+  const handleStampCertificate = async () => {
+    // Open the stamp upload modal and prepopulate with existing stamp if available
+    if (!cert?.id || isStamping) return;
+    setShowStampModal(true);
+    // If a stamp already exists, show it in the preview
+    if (cert?.signedByOfficial?.stampUrl) {
+      setStampPreviewUrl(
+        resolveBackendAssetUrl(cert.signedByOfficial.stampUrl),
+      );
+      setStampPreviewIsObjectUrl(false);
+      setShowStampPreview(true);
+    }
+  };
+
+  const handleSubmitStamp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!cert?.id || isStamping) return;
+
+    const isUsingExistingStamp = !!stampPreviewUrl && !stampPreviewIsObjectUrl;
+    if (!stampFile && !isUsingExistingStamp) {
+      setToast({
+        isOpen: true,
+        type: "error",
+        message:
+          language === "am" ? "እባክዎ ስም ፎቶ ይምረጡ" : "Please select a stamp image",
+      });
+      return;
+    }
+
+    try {
+      setIsStamping(true);
+      const form = new FormData();
+      if (stampFile) {
+        form.append("stamp", stampFile);
+      }
+
+      const response = await apiRequest(`/certifications/${cert.id}/stamp`, {
+        method: "POST",
+        body: form,
+      } as any);
+
+      const updated =
+        response && (response as any).data ? (response as any).data : response;
+      setCert({
+        ...updated,
+        applicantPhotoUrl: resolveBackendAssetUrl(updated?.applicantPhotoUrl),
+      });
+      setShowStampModal(false);
+      setStampFile(null);
+      setStampPreviewUrl(null);
+      setStampPreviewIsObjectUrl(false);
+      setShowStampPreview(false);
+      // Also reset modal state when closing
+      setTimeout(() => {
+        setStampPreviewUrl(null);
+        setShowStampPreview(false);
+      }, 100);
+      setToast({
+        isOpen: true,
+        type: "success",
+        message:
+          language === "am" ? "ማስፈረሚ ተሳካ" : "Certificate stamped successfully.",
+      });
+    } catch (err: any) {
+      console.error("Failed to stamp certificate", err);
+      setToast({
+        isOpen: true,
+        type: "error",
+        message:
+          (err && err.message) ||
+          (language === "am" ? "ማስፈረም አልተሳካም" : "Stamping failed"),
+      });
+    } finally {
+      setIsStamping(false);
+    }
   };
 
   if (loadingCert) {
@@ -440,14 +894,17 @@ export const LicenseViewer = () => {
         undefined,
         "FAST",
       );
-      pdf.save("Abyssinia_Security_Agency_License.pdf");
+      pdf.save(getCertificateFileName(cert));
     } catch (error) {
       console.error("Error generating PDF:", error);
-      alert(
-        language === "am"
-          ? 'PDF ማውረድ አልተሳካም። እባክዎ "አትም" የሚለውን አማራጭ ይጠቀሙ።'
-          : "Failed to generate PDF. Please try using the Print option instead.",
-      );
+      setToast({
+        isOpen: true,
+        type: "error",
+        message:
+          language === "am"
+            ? 'PDF ማውረድ አልተሳካም። እባክዎ "አትም" የሚለውን አማራጭ ይጠቀሙ።'
+            : "Failed to generate PDF. Please try using the Print option instead.",
+      });
     } finally {
       if (container && container.parentNode) {
         container.parentNode.removeChild(container);
@@ -542,7 +999,7 @@ export const LicenseViewer = () => {
                 <div className="flex justify-between items-start mb-8">
                   {/* Top Left: Federal Police Logo */}
                   <div className="flex flex-col items-center">
-                    <div className="w-34 h-34 bg-white rounded-full flex items-center justify-center p-1 border-4 border-[var(--safe-secondary-20)] shadow-sm">
+                    <div className="w-35 h-35 bg-white rounded-full flex items-center justify-center border-[var(--safe-secondary-20)] shadow-sm">
                       <img
                         src="https://upload.wikimedia.org/wikipedia/commons/3/30/Federal_Police_Commission_of_Ethiopia_Coat_of_Arms_and_Logo.png"
                         alt="Federal Police Logo"
@@ -561,7 +1018,7 @@ export const LicenseViewer = () => {
                   </div>
 
                   {/* Top Center: Ethiopian Flag */}
-                  <div className="w-44 h-28 bg-white rounded-xl flex items-center justify-center p-1 border-2 border-[var(--safe-secondary-20)] shadow-sm mt-2 overflow-hidden">
+                  <div className="w-44 h-28 bg-white rounded-xl flex items-center justify-center p-1 shadow-sm mt-2 overflow-hidden">
                     <img
                       src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Flag_of_Ethiopia.svg/640px-Flag_of_Ethiopia.svg.png"
                       alt="Ethiopian Flag"
@@ -584,7 +1041,7 @@ export const LicenseViewer = () => {
                   </div>
 
                   {/* Top Right: Applicant Photo Space */}
-                  <div className="applicant-photo-frame w-36 h-44 border-2 border-dashed border-[var(--safe-secondary-30)] rounded-lg flex flex-col items-center justify-center bg-[var(--safe-secondary-10)] text-[var(--safe-secondary-500)] p-1.5 text-center">
+                  <div className="applicant-photo-frame w-36 h-40 border-2 border-solid border-[var(--safe-secondary-30)] rounded-lg flex flex-col items-center justify-center bg-[var(--safe-secondary-10)] text-[var(--safe-secondary-500)] text-center">
                     {cert?.applicantPhotoUrl ? (
                       <img
                         src={resolveBackendAssetUrl(cert.applicantPhotoUrl)}
@@ -695,7 +1152,10 @@ export const LicenseViewer = () => {
                         <span
                           className={`${valueClass} font-black text-[#C5A022] tracking-widest uppercase`}
                         >
-                          {cert?.certificateSerialNumber || "-"}
+                          {getEthiopicLicenseNumber(
+                            cert?.certificateSerialNumber,
+                            cert?.issueDate,
+                          )}
                         </span>
                       </div>
                     </div>
@@ -745,14 +1205,18 @@ export const LicenseViewer = () => {
                       <div className="border-b border-[var(--safe-secondary-10)] pb-1.5">
                         <span className={labelClass}>Date of Issued: </span>
                         <span className={valueClass}>
-                          {formatDate(cert?.issueDate, "en")}
+                          {cert?.expiryDate
+                            ? `${formatDate(cert.issueDate, "en")} G.C.`
+                            : "-"}
                         </span>
                       </div>
 
                       <div className="border-b border-[var(--safe-secondary-10)] pb-1.5">
                         <span className={labelClass}>Date of Expired: </span>
                         <span className={valueClass}>
-                          {formatDate(cert?.expiryDate, "en")}
+                          {cert?.expiryDate
+                            ? `${formatDate(cert.expiryDate, "en")} G.C.`
+                            : "-"}
                         </span>
                       </div>
 
@@ -778,69 +1242,325 @@ export const LicenseViewer = () => {
                 </div>
 
                 {/* Bottom Section: Signatures & QR */}
-                <div className="mt-auto pt-4 flex justify-between items-end">
-                  {/* Signature Area */}
-                  <div className="space-y-3">
-                    <div className="w-56 h-24 border-b-2 border-[var(--safe-secondary-30)] relative flex items-center justify-center">
-                      {/* Stamp Placeholder */}
-                      <div className="absolute -top-4 -right-12 w-20 h-20 border-4 border-[var(--safe-secondary-30)] rounded-full flex items-center justify-center rotate-12 pointer-events-none">
-                        <div className="text-[7px] font-bold text-[var(--safe-secondary-30)] text-center uppercase">
-                          የፌዴራል ፖሊስ
-                          <br />
-                          ኮሚሽን ማህተም
-                          <br />
-                          STAMP
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-[9px] text-gray-400 font-bold uppercase">
-                          የኮሚሽነሩ ፊርማ
-                        </p>
-                        <p className="text-[10px] text-gray-400 italic">
-                          Commissioner's Signature
-                        </p>
-                      </div>
-                    </div>
-                    <p className="text-[9px] font-bold text-primary uppercase tracking-tighter">
-                      የፌዴራል ፖሊስ ኮሚሽነር / Commissioner of Federal Police
-                    </p>
-                  </div>
-
-                  {/* Bottom Right: QR Code Space */}
-                  <div className="bg-white p-3 border-4 border-primary rounded-2xl shadow-xl z-30 mb-2 mr-2">
-                    <div className="w-32 h-32 flex flex-col items-center justify-center text-primary">
-                      {cert?.qrCodeValue ? (
-                        <a
-                          href={cert.qrCodeValue}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex flex-col items-center justify-center"
-                        >
+                <div className="mt-auto pt-4">
+                  <div className="flex justify-between items-start gap-0">
+                    <div className="flex-1 min-w-[150px] max-w-[180px] rounded-3xl  p-1 text-center text-primary">
+                      <div className="mx-auto h-34 w-34 rounded-full bg-white shadow-inner flex items-center justify-center text-xs font-black uppercase tracking-[0.2em] text-primary overflow-hidden">
+                        {cert?.stampedByUserId &&
+                        cert?.signedByOfficial?.stampUrl ? (
                           <img
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(
-                              cert.qrCodeValue,
-                            )}`}
-                            alt={
-                              language === "am"
-                                ? "የፈቃድ እይታ QR"
-                                : "License verification QR"
-                            }
-                            className="w-28 h-28 mb-1 object-contain"
+                            src={resolveBackendAssetUrl(
+                              cert.signedByOfficial.stampUrl,
+                            )}
+                            alt={language === "am" ? "ማስፈረሚ" : "Stamp"}
+                            className="max-w-full max-h-full object-contain"
                             referrerPolicy="no-referrer"
                           />
-                          <span className="text-[8px] font-black uppercase tracking-tighter text-center leading-tight">
-                            Verify License
-                          </span>
-                        </a>
-                      ) : (
-                        <>
-                          <QrCode className="w-16 h-16 mb-1" />
-                          <span className="text-[8px] font-black uppercase tracking-tighter text-center leading-tight">
-                            Verify License
-                          </span>
-                        </>
+                        ) : !cert?.stampedByUserId && isLicensingAuthority ? (
+                          <button
+                            disabled={isStamping}
+                            onClick={handleStampCertificate}
+                            className="px-3 py-2 bg-[#00305F] text-white rounded-lg text-[9px] font-bold hover:bg-[#00284d] transition-all disabled:opacity-70 disabled:cursor-not-allowed disabled:cursor-not-allowed cursor-pointer whitespace-nowrap"
+                          >
+                            {isStamping
+                              ? language === "am"
+                                ? "በማስፈረም..."
+                                : "Stamping..."
+                              : language === "am"
+                                ? "ማስፈረሚ"
+                                : "Stamp Certificate"}
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className="flex-[2] rounded-3xl bg-white p-4">
+                      <div className="space-y-1 text-left">
+                        <div className="text-[13px] font-bold text-primary text-center">
+                          {cert?.signedByOfficial?.fullNameAm || "—"}
+                        </div>
+                        <div className="text-[13px] font-bold text-primary text-center">
+                          {cert?.signedByOfficial?.fullName || "—"}
+                        </div>
+                      </div>
+                      <div className="mt-4 space-y-1">
+                        <div className="text-[13px] font-bold text-primary text-center">
+                          {cert?.signedByOfficial?.positionAmharic || "—"}
+                        </div>
+                        <div className="text-[13px] font-bold text-primary text-center">
+                          {cert?.signedByOfficial?.positionEnglish || "—"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex-[0.9] min-w-[140px] rounded-3xl bg-white p-3 flex flex-col items-center justify-between">
+                      <div className="w-full max-h-28 flex items-center justify-center -mt-[30px]">
+                        <div className="w-full h-full rounded-3xl p-2 flex items-center justify-center">
+                          {cert?.signedByOfficial?.signatureUrl ? (
+                            <img
+                              src={resolveBackendAssetUrl(
+                                cert.signedByOfficial.signatureUrl,
+                              )}
+                              alt={language === "am" ? "ፊርማ" : "Signature"}
+                              className="max-w-full max-h-full object-contain"
+                              referrerPolicy="no-referrer"
+                            />
+                          ) : (
+                            <div className="text-center">
+                              <p className="text-[9px] text-gray-400 font-bold uppercase">
+                                {language === "am"
+                                  ? "የታረገ ፊርማ"
+                                  : "Authorized Signature"}
+                              </p>
+                              <p className="text-[10px] text-gray-400 italic">
+                                {cert?.signedByOfficial
+                                  ? cert.signedByOfficial.fullName
+                                  : language === "am"
+                                    ? "እየታረገ ላይ"
+                                    : "Pending signature"}
+                              </p>
+                            </div>
+                          )}
+
+                          {showStampModal && (
+                            <div className="fixed inset-0 z-[70] grid place-items-center bg-black/40 p-4">
+                              <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
+                                <div className="flex items-center justify-between">
+                                  <h3 className="text-lg font-bold">
+                                    {language === "am"
+                                      ? "ማስፈረሚ ፎቶ ይጨምሩ"
+                                      : "Upload Stamp Image"}
+                                  </h3>
+                                  <button
+                                    onClick={() => {
+                                      setShowStampModal(false);
+                                      setShowStampPreview(false);
+                                      // Only clear new uploads, not existing stamp preview
+                                      if (stampPreviewIsObjectUrl) {
+                                        setStampPreviewUrl(null);
+                                        setStampFile(null);
+                                      }
+                                    }}
+                                    className="text-sm text-gray-500"
+                                  >
+                                    {language === "am" ? "ዝጋ" : "Close"}
+                                  </button>
+                                </div>
+                                <form
+                                  className="mt-4 space-y-4"
+                                  onSubmit={handleSubmitStamp}
+                                >
+                                  <div>
+                                    <label className="block text-sm font-semibold text-gray-700">
+                                      {language === "am"
+                                        ? "ማስፈረሚ ፎቶ"
+                                        : "Stamp Image"}
+                                    </label>
+                                    <input
+                                      ref={stampFileInputRef}
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={(e) => {
+                                        const file =
+                                          e.target.files?.[0] || null;
+                                        if (
+                                          stampPreviewIsObjectUrl &&
+                                          stampPreviewUrl
+                                        ) {
+                                          URL.revokeObjectURL(stampPreviewUrl);
+                                        }
+                                        if (file) {
+                                          setStampFile(file);
+                                          setStampPreviewUrl(
+                                            URL.createObjectURL(file),
+                                          );
+                                          setStampPreviewIsObjectUrl(true);
+                                          setShowStampPreview(false);
+                                        } else {
+                                          setStampFile(null);
+                                          setStampPreviewUrl(null);
+                                          setStampPreviewIsObjectUrl(false);
+                                          setShowStampPreview(false);
+                                        }
+                                      }}
+                                      className="hidden"
+                                    />
+                                    <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-gray-500">
+                                      {stampPreviewUrl ? (
+                                        <>
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              setShowStampPreview((p) => !p)
+                                            }
+                                            className="rounded-lg bg-primary px-3 py-1 text-white text-xs font-semibold hover:bg-primary/90"
+                                          >
+                                            {showStampPreview
+                                              ? language === "am"
+                                                ? "ይቅር"
+                                                : "Hide preview"
+                                              : language === "am"
+                                                ? "እይታ"
+                                                : "Preview"}
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              stampFileInputRef.current?.click()
+                                            }
+                                            className="rounded-lg border border-gray-300 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                                          >
+                                            {language === "am"
+                                              ? "ቀይር"
+                                              : "Change"}
+                                          </button>
+                                          <span className="text-xs text-gray-400">
+                                            {stampFile?.name ||
+                                              (language === "am"
+                                                ? "ቀድሞ የተወሰደ ፎቶ"
+                                                : "Existing stamp available")}
+                                          </span>
+                                        </>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            stampFileInputRef.current?.click()
+                                          }
+                                          className="rounded-lg bg-primary px-3 py-2 text-white text-xs font-semibold hover:bg-primary/90"
+                                        >
+                                          {language === "am"
+                                            ? "ፎቶ ይጨምሩ"
+                                            : "Upload stamp"}
+                                        </button>
+                                      )}
+                                    </div>
+                                    {stampPreviewUrl && showStampPreview && (
+                                      <div className="mt-3 w-full overflow-hidden rounded-xl border border-gray-200">
+                                        <img
+                                          src={stampPreviewUrl}
+                                          alt={
+                                            language === "am"
+                                              ? "የማስፈረሚ እይታ"
+                                              : "Stamp preview"
+                                          }
+                                          className="object-contain mx-auto"
+                                          style={{
+                                            minWidth: 160,
+                                            maxWidth: 420,
+                                            minHeight: 120,
+                                            maxHeight: 260,
+                                          }}
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex justify-end gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setShowStampModal(false);
+                                        setShowStampPreview(false);
+                                        // Only clear new uploads, not existing stamp preview
+                                        if (stampPreviewIsObjectUrl) {
+                                          setStampPreviewUrl(null);
+                                          setStampFile(null);
+                                        }
+                                      }}
+                                      className="px-4 py-2 bg-white border rounded-lg"
+                                    >
+                                      {language === "am" ? "ተመለስ" : "Cancel"}
+                                    </button>
+                                    <button
+                                      type="submit"
+                                      disabled={isStamping}
+                                      className="px-4 py-2 bg-emerald-600 text-white rounded-lg"
+                                    >
+                                      {isStamping
+                                        ? language === "am"
+                                          ? "በማስፈረም ላይ..."
+                                          : "Stamping..."
+                                        : language === "am"
+                                          ? "ማስፈረሚ ይሙሉ"
+                                          : "Stamp Certificate"}
+                                    </button>
+                                  </div>
+                                </form>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {signatureAuthorityTitleLines.length > 0 && (
+                        <div className=" min-w-[140px] w-full text-center text-[10px] leading-tight font-semibold text-primary space-y-1 mr-2 -mt-[10px]">
+                          {signatureAuthorityTitleLines.map((line, index) => (
+                            <div key={index}>{line}</div>
+                          ))}
+                        </div>
                       )}
                     </div>
+
+                    <div className="bg-white p-3 border-4 border-primary rounded-2xl shadow-xl z-30 mb-2 mr-[-2px] ml-auto min-w-[120px]">
+                      <div className="w-32 h-32 flex flex-col items-center justify-center text-primary">
+                        {cert?.qrCodeValue ? (
+                          <a
+                            href={cert.qrCodeValue}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex flex-col items-center justify-center"
+                          >
+                            <img
+                              src={`https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(
+                                cert.qrCodeValue,
+                              )}`}
+                              alt={
+                                language === "am"
+                                  ? "የፈቃድ እይታ QR"
+                                  : "License verification QR"
+                              }
+                              className="w-28 h-28 mb-1 object-contain"
+                              referrerPolicy="no-referrer"
+                            />
+                            <span className="text-[8px] font-black uppercase tracking-tighter text-center leading-tight">
+                              Verify License
+                            </span>
+                          </a>
+                        ) : (
+                          <>
+                            <QrCode className="w-16 h-16 mb-1" />
+                            <span className="text-[8px] font-black uppercase tracking-tighter text-center leading-tight">
+                              Verify License
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 space-y-3">
+                    {cert?.signedByOfficial ? (
+                      cert?.stampedAt ? null : isLicensingAuthority ? null : null
+                    ) : isAuthorizedSigner ? (
+                      <button
+                        disabled={isSigning}
+                        onClick={() => {
+                          setSignFullNameAm("");
+                          setSignPositionId(null);
+                          fetchPositions();
+                          fetchCurrentOfficial();
+                          setShowSignModal(true);
+                        }}
+                        className="mt-3 inline-flex items-center justify-center px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary/90 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                      >
+                        {isSigning
+                          ? language === "am"
+                            ? "በማስፈረም ላይ..."
+                            : "Signing..."
+                          : language === "am"
+                            ? "ፈቃድ ይፈርሙ"
+                            : "Sign Certificate"}
+                      </button>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -853,6 +1573,13 @@ export const LicenseViewer = () => {
           </div>
         </div>
       </div>
+
+      <AutoDismissToast
+        isOpen={toast.isOpen}
+        type={toast.type}
+        message={toast.message}
+        onClose={() => setToast((prev) => ({ ...prev, isOpen: false }))}
+      />
 
       <style
         dangerouslySetInnerHTML={{
@@ -973,6 +1700,191 @@ export const LicenseViewer = () => {
       `,
         }}
       />
+      {showSignModal && (
+        <div className="fixed inset-0 z-[60] grid place-items-center bg-black/40 p-4">
+          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-lg">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold">
+                {language === "am"
+                  ? "ፊርማ ይጨምሩ"
+                  : "Upload Signature and Details"}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowSignModal(false);
+                  setShowSignPreview(false);
+                }}
+                className="text-sm text-gray-500"
+              >
+                {language === "am" ? "ዝጋ" : "Close"}
+              </button>
+            </div>
+            <form className="mt-4 space-y-4" onSubmit={handleSubmitSign}>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700">
+                  {language === "am" ? "ፊርማ ፎቶ" : "Signature Photo"}
+                </label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    if (
+                      signSignaturePreviewIsObjectUrl &&
+                      signSignaturePreviewUrl
+                    ) {
+                      URL.revokeObjectURL(signSignaturePreviewUrl);
+                    }
+                    if (file) {
+                      setSignFile(file);
+                      setSignSignaturePreviewUrl(URL.createObjectURL(file));
+                      setSignSignaturePreviewIsObjectUrl(true);
+                      setShowSignPreview(false);
+                    } else {
+                      setSignFile(null);
+                      setSignSignaturePreviewUrl(null);
+                      setSignSignaturePreviewIsObjectUrl(false);
+                      setShowSignPreview(false);
+                    }
+                  }}
+                  className="hidden"
+                />
+                <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-gray-500">
+                  {signSignaturePreviewUrl ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setShowSignPreview((prev) => !prev)}
+                        className="rounded-lg bg-primary px-3 py-1 text-white text-xs font-semibold hover:bg-primary/90"
+                      >
+                        {showSignPreview
+                          ? language === "am"
+                            ? "ይቅር"
+                            : "Hide preview"
+                          : language === "am"
+                            ? "እይታ"
+                            : "Preview"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="rounded-lg border border-gray-300 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                      >
+                        {language === "am" ? "ቀይር" : "Change"}
+                      </button>
+                      <span className="text-xs text-gray-400">
+                        {signFile?.name ||
+                          (language === "am"
+                            ? "ቀድሞ የተወሰደ ፎቶ"
+                            : "Existing signature available")}
+                      </span>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="rounded-lg bg-primary px-3 py-2 text-white text-xs font-semibold hover:bg-primary/90"
+                    >
+                      {language === "am" ? "ፊርማ ይጨምሩ" : "Upload signature"}
+                    </button>
+                  )}
+                </div>
+                {signSignaturePreviewUrl && showSignPreview && (
+                  <div className="mt-3 w-full overflow-hidden rounded-xl border border-gray-200">
+                    <img
+                      src={signSignaturePreviewUrl}
+                      alt={language === "am" ? "የፊርማ እይታ" : "Signature preview"}
+                      className="object-contain mx-auto"
+                      style={{
+                        minWidth: 160,
+                        maxWidth: 420,
+                        minHeight: 120,
+                        maxHeight: 260,
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700">
+                  {language === "am" ? "ሙሉ ስም (እንግሊዝኛ)" : "Full name (English)"}
+                </label>
+                <input
+                  value={signFullNameEn}
+                  readOnly
+                  className="w-full mt-2 rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-gray-700 cursor-not-allowed"
+                  placeholder={
+                    language === "am"
+                      ? "Full name in English"
+                      : "Full name in English"
+                  }
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700">
+                  {language === "am" ? "ሙሉ ስም (አማርኛ)" : "Full name (Amharic)"}
+                </label>
+                <input
+                  value={signFullNameAm}
+                  onChange={(e) => setSignFullNameAm(e.target.value)}
+                  className="w-full mt-2 rounded-lg border px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700">
+                  {language === "am"
+                    ? "የፌዴራል ፖሊስ ቦታ"
+                    : "Federal Police Position"}
+                </label>
+                <select
+                  value={signPositionId ?? ""}
+                  onChange={(e) =>
+                    setSignPositionId(
+                      e.target.value ? Number(e.target.value) : null,
+                    )
+                  }
+                  className="w-full mt-2 rounded-lg border px-3 py-2"
+                >
+                  <option value="">
+                    {language === "am" ? "ቦታ ይምረጡ" : "Select position"}
+                  </option>
+                  {positions.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nameEnglish} — {p.nameAmharic}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSignModal(false);
+                    setShowSignPreview(false);
+                  }}
+                  className="px-4 py-2 bg-white border rounded-lg"
+                >
+                  {language === "am" ? "ተመለስ" : "Cancel"}
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSigning}
+                  className="px-4 py-2 bg-primary text-white rounded-lg"
+                >
+                  {isSigning
+                    ? language === "am"
+                      ? "በማስፈረም..."
+                      : "Signing..."
+                    : language === "am"
+                      ? "ፈቃድ ይፈርሙ"
+                      : "Sign Certificate"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

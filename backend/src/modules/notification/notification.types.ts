@@ -5,7 +5,8 @@ export type NotificationType =
   | "INSPECTION"
   | "EXPIRY_ALERT"
   | "CRITICAL_ISSUE"
-  | "NEW_APPLICATION";
+  | "NEW_APPLICATION"
+  | "CERT_SIGNED";
 
 export interface NotificationContext {
   organizationName?: string; // English name
@@ -68,6 +69,29 @@ export const getBilingualTemplate = (
         titleAm: "📋 አዲስ ማመልከቻ ለ ግምገማ ቀርቧል",
         msgEn: `A new application has been submitted and requires your review.\n\n📋 Application Details:\n• Organization: ${ctx.organizationName || "Not specified"}\n• Application Type: ${ctx.customDetailsEn || "New Application"}\n• Submitted: Today\n\n📝 Next Steps:\n1. Review the application details in the portal\n2. Verify all submitted documents\n3. Conduct initial assessment\n4. Schedule inspection if required\n\nPlease log in to the admin portal to review this application.`,
         msgAm: `አዲስ ማመልከቻ ቀርቧል እና ለ ግምገማ ይፈልጋል።\n\n📋 የ ማመልከቻ ዝርዝር:\n• ድርጅት: ${ctx.organizationNameAm || ctx.organizationName || "አልተገለጸም"}\n• የ ማመልከቻ ዓይነት: ${ctx.customDetailsAm || "አዲስ ማመልከቻ"}\n• ቀርቧል: ዛሬ\n\n📝 ቀጣይ ደረጃዎች:\n1. የ ማመልከቻ ዝርዝር በ ወንጌል ዩኢ ውስጥ ይመልከቱ\n2. ሁሉንም የ ቀረቡ ሰነዶች ያረጋግጡ\n3. የ መጀመሪያ ግምገማ ያካሂዱ\n4. ከ ተፈለገ ምርመራ ይቀጥሩ\n\nእባክዎ ይህን ማመልከቻ ለ ማመልከቻ ወደ አስተዳደር ወንጌል ዩኢ ይግቡ እና ይመልከቱ።`,
+      };
+    case "CERT_SIGNED":
+      return {
+        titleEn: "🔖 Certificate Signed — Stamping Required",
+        titleAm: "🔖 ሰርቲፍኬት ጸደቀ — ማቀዝቀዣ ይፈልጋል",
+        msgEn: `A certificate for "${ctx.organizationName || "(unknown)"}" (Serial: ${ctx.certificateSerial || "—"}) has been signed by an administrative official and awaits stamping by the Licensing Authority.
+
+      Action required:
+      • Review the signed certificate
+      • Apply official stamp if documents are correct
+      • Confirm stamping in the portal
+
+      Certificate: ${ctx.certificateSerial || "(unknown)"}
+      Organization: ${ctx.organizationName || "(unknown)"}`,
+        msgAm: `ለ "${ctx.organizationNameAm || ctx.organizationName || "(ያልታወቀ)"}" የተሰጠ ሰርቲፍኬት (ቁጥር: ${ctx.certificateSerial || "—"}) በ አዋጅ ሠራተኛ ጸድቋል እና ለ ማቀዝቀዣ በ ፈቃድ ፈቃድ ወደ ሊሲንስ ባለሥልጣን ይገኛል።
+
+      እርምጃ ያስፈልጋል:
+      • የተሰጠውን ሰርቲፍኬት ይገምግሙ
+      • ሰረዘ ወይም የማቀዝቀዣ ማስፈረድ ከሆነ ይቀርቡ
+      • በ ፖርታል ውስጥ የማቀዝቀዣ ማረጋገጫ ያድርጉ
+
+      ሰርቲፍኬት: ${ctx.certificateSerial || "(ያልታወቀ)"}
+      ድርጅት: ${ctx.organizationNameAm || ctx.organizationName || "(ያልታወቀ)"}`,
       };
   }
 };

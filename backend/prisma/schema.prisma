@@ -1,6 +1,5 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -10,70 +9,69 @@ datasource db {
 // Note: SQL Server connector does not support Prisma enums.
 // Using a string `status` column with a default value instead.
 model Region {
-  id           Int    @id(map: "PK__regions__01146BAEBE221DD1") @default(autoincrement()) @map("region_id")
-  
+  id Int @id(map: "PK__regions__01146BAEBE221DD1") @default(autoincrement()) @map("region_id")
+
   // Dual language support with NVarChar
-  nameAmharic  String @unique @map("region_name_am") @db.NVarChar(150)
-  nameEnglish  String @unique @map("region_name_en") @db.VarChar(150) // English characters stay safe in standard VarChar
-  
-  zones        Zone[]
+  nameAmharic String @unique @map("region_name_am") @db.NVarChar(150)
+  nameEnglish String @unique @map("region_name_en") @db.VarChar(150) // English characters stay safe in standard VarChar
+
+  zones Zone[]
 
   @@map("regions")
 }
 
 model Zone {
-  id           Int      @id(map: "PK__zones__80B401DF6769EBAD") @default(autoincrement()) @map("zone_id")
-  regionId     Int      @map("region_id")
-  
-  nameAmharic  String   @map("zone_name_am") @db.NVarChar(100)
-  nameEnglish  String   @map("zone_name_en") @db.VarChar(100)
-  
-  woredas      Woreda[]
-  region       Region   @relation(fields: [regionId], references: [id], onUpdate: NoAction, map: "FK_Zones_Regions")
+  id       Int @id(map: "PK__zones__80B401DF6769EBAD") @default(autoincrement()) @map("zone_id")
+  regionId Int @map("region_id")
+
+  nameAmharic String @map("zone_name_am") @db.NVarChar(100)
+  nameEnglish String @map("zone_name_en") @db.VarChar(100)
+
+  woredas Woreda[]
+  region  Region   @relation(fields: [regionId], references: [id], onUpdate: NoAction, map: "FK_Zones_Regions")
 
   @@map("zones")
 }
 
 model Woreda {
-  id           Int      @id(map: "PK__woredas__024DE9E7AD1B218E") @default(autoincrement()) @map("woreda_id")
-  zoneId       Int      @map("zone_id")
-  
-  nameAmharic  String   @map("woreda_name_am") @db.NVarChar(100)
-  nameEnglish  String   @map("woreda_name_en") @db.VarChar(100)
-  
-  kebeles      Kebele[]
-  zone         Zone     @relation(fields: [zoneId], references: [id], onUpdate: NoAction, map: "FK_Woredas_Zones")
+  id     Int @id(map: "PK__woredas__024DE9E7AD1B218E") @default(autoincrement()) @map("woreda_id")
+  zoneId Int @map("zone_id")
+
+  nameAmharic String @map("woreda_name_am") @db.NVarChar(100)
+  nameEnglish String @map("woreda_name_en") @db.VarChar(100)
+
+  kebeles Kebele[]
+  zone    Zone     @relation(fields: [zoneId], references: [id], onUpdate: NoAction, map: "FK_Woredas_Zones")
 
   @@map("woredas")
 }
 
 model Kebele {
-  id           Int       @id(map: "PK__kebeles__E44A705322F18FA2") @default(autoincrement()) @map("kebele_id")
-  woredaId     Int       @map("woreda_id")
-  
-  nameAmharic  String    @map("kebele_name_am") @db.NVarChar(100)
-  nameEnglish  String    @map("kebele_name_en") @db.VarChar(100)
-  
-  addresses    Address[]
-  woreda       Woreda    @relation(fields: [woredaId], references: [id], onUpdate: NoAction, map: "FK_Kebeles_Woredas")
+  id       Int @id(map: "PK__kebeles__E44A705322F18FA2") @default(autoincrement()) @map("kebele_id")
+  woredaId Int @map("woreda_id")
+
+  nameAmharic String @map("kebele_name_am") @db.NVarChar(100)
+  nameEnglish String @map("kebele_name_en") @db.VarChar(100)
+
+  addresses Address[]
+  woreda    Woreda    @relation(fields: [woredaId], references: [id], onUpdate: NoAction, map: "FK_Kebeles_Woredas")
 
   @@map("kebeles")
 }
 
 model Address {
-  id              Int            @id(map: "PK__addresse__CAA247C865086651") @default(autoincrement()) @map("address_id")
-  kebeleId        Int            @map("kebele_id")
-  houseNumber     String?        @map("house_number") @db.VarChar(50) // House numbers stay standard alphanumerics
-  
-  // Special locations often hold descriptive Ge'ez pointers (e.g., "ከሀረማያ ዩኒቨርሲቲ ጀርባ")
-  specialLocation String?        @map("special_location") @db.NVarChar(Max) 
-  
-  kebele          Kebele         @relation(fields: [kebeleId], references: [id], onUpdate: NoAction, map: "FK_Addresses_Kebeles")
-  organizations   Organization[]
-  branches        OrganizationBranch[] 
-  employees       Employee[]
-  serviceContracts ServiceContract[]
+  id          Int     @id(map: "PK__addresse__CAA247C865086651") @default(autoincrement()) @map("address_id")
+  kebeleId    Int     @map("kebele_id")
+  houseNumber String? @map("house_number") @db.VarChar(50) // House numbers stay standard alphanumerics
 
+  // Special locations often hold descriptive Ge'ez pointers (e.g., "ከሀረማያ ዩኒቨርሲቲ ጀርባ")
+  specialLocation String? @map("special_location") @db.NVarChar(Max)
+
+  kebele           Kebele               @relation(fields: [kebeleId], references: [id], onUpdate: NoAction, map: "FK_Addresses_Kebeles")
+  organizations    Organization[]
+  branches         OrganizationBranch[]
+  employees        Employee[]
+  serviceContracts ServiceContract[]
 
   @@map("addresses")
 }
@@ -102,19 +100,49 @@ model User {
   user_roles user_roles[]
 
   // Add these back-relation fields:
-  applications    Application[] // Fixes the missing opposite relation error
-  formalRequests  FormalRequest[]
-  auditLogs       AuditLog[]                   @relation("UserAuditLogs")
-  employee        Employee?
-  inspections     Inspection[]                 @relation("LeadInspector")
-  incidentReports IncidentReport[]             @relation("IncidentReporter")
-  issuedPenalties IncidentPenalty[]            @relation("PenaltyIssuer")
-  historyLogs     ApplicationTrackingHistory[]
+  official             Official?
+  applications         Application[] // Fixes the missing opposite relation error
+  formalRequests       FormalRequest[]
+  auditLogs            AuditLog[]                   @relation("UserAuditLogs")
+  employee             Employee?
+  inspections          Inspection[]                 @relation("LeadInspector")
+  incidentReports      IncidentReport[]             @relation("IncidentReporter")
+  issuedPenalties      IncidentPenalty[]            @relation("PenaltyIssuer")
+  historyLogs          ApplicationTrackingHistory[]
   inspectionCommittees InspectionCommittee[]
-  createdFaqs     Faq[]                        @relation("FaqCreator")
-  notifications Notification[]
+  createdFaqs          Faq[]                        @relation("FaqCreator")
+  notifications        Notification[]
+  certifications       Certification[]              @relation("CertificationStampedBy")
 
   @@map("users")
+}
+
+model FederalPolicePosition {
+  id          Int        @id @default(autoincrement()) @map("efp_position_id")
+  nameEnglish String     @map("en_name") @db.NVarChar(100)
+  nameAmharic String     @map("am_name") @db.NVarChar(100)
+  officials   Official[]
+
+  @@unique([nameEnglish, nameAmharic])
+  @@map("federal_police_positions")
+}
+
+model Official {
+  id            Int      @id @default(autoincrement()) @map("official_id")
+  userId        Int      @unique @map("user_id") // Links to User.id
+  efpPositionId Int      @map("position_id")
+  fullNameAm    String   @map("full_name_am") @db.NVarChar(250)
+  signatureUrl  String?  @map("signature_url") @db.VarChar(MAX) // Use MAX if using SQL Server
+  stampUrl      String?  @map("stamp_url") @db.VarChar(MAX) // Use MAX if using SQL Server
+  isStamped     Boolean  @default(false)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  position       FederalPolicePosition @relation(fields: [efpPositionId], references: [id])
+  user           User                  @relation(fields: [userId], references: [id])
+  certifications Certification[]
+
+  @@map("officials")
 }
 
 model roles {
@@ -133,17 +161,16 @@ model user_roles {
 }
 
 model Notification {
-  id               Int      @id @default(autoincrement()) @map("notification_id")
-  recipientUserId  Int      @map("recipient_user_id") // Target user being notified
-  notificationType String   @map("notification_type") @db.VarChar(50) // APPROVED, REJECTED, INSPECTION, EXPIRY_30, CRITICAL, etc.
-  alertTitle       String   @map("alert_title") @db.NVarChar(255)
-  alertMessage     String   @map("alert_message") @db.NVarChar(Max)
-  isReadByRecipient Boolean @default(false) @map("is_read_by_recipient")
-  
-  createdAt        DateTime @default(now()) @map("created_at") @db.DateTime
-
+  id                Int      @id @default(autoincrement()) @map("notification_id")
+  recipientUserId   Int      @map("recipient_user_id") // Target user being notified
+  notificationType  String   @map("notification_type") @db.VarChar(50) // APPROVED, REJECTED, INSPECTION, EXPIRY_30, CRITICAL, etc.
+  alertTitle        String   @map("alert_title") @db.NVarChar(255)
+  alertMessage      String   @map("alert_message") @db.NVarChar(Max)
+  isReadByRecipient Boolean  @default(false) @map("is_read_by_recipient")
+  createdAt         DateTime @default(now()) @map("created_at") @db.DateTime
   // Relations
-  recipientUser    User     @relation(fields: [recipientUserId], references: [id], onDelete: Cascade, map: "FK_Notifications_Users")
+  recipientUser     User     @relation(fields: [recipientUserId], references: [id], onDelete: Cascade, map: "FK_Notifications_Users")
+
   @@map("notifications")
 }
 
@@ -162,9 +189,8 @@ model FormalRequest {
 
 model Organization {
   id          Int     @id @default(autoincrement()) @map("organization_id")
-  nameAmharic      String  @unique @map("organization_name_am") @db.NVarChar(255)
-  nameEnglish      String  @unique @map("organization_name_en") @db.NVarChar(255)
-  parentOrgId Int?    @map("parent_org_id")
+  nameAmharic String  @unique @map("organization_name_am") @db.NVarChar(255)
+  nameEnglish String  @unique @map("organization_name_en") @db.VarChar(255)
   email       String  @unique @map("email_address") @db.VarChar(255)
   phone       String  @map("phone_number") @db.VarChar(50)
   faxNumber   String? @map("fax_number") @db.VarChar(50)
@@ -184,55 +210,50 @@ model Organization {
   createdAt DateTime @default(now()) @map("created_at") @db.DateTime
 
   // Relations
-  address         Address?                    @relation(fields: [addressId], references: [id], onUpdate: NoAction, map: "FK_Organizations_Addresses")
-  parentOrg       Organization?               @relation("OrgHierarchy", fields: [parentOrgId], references: [id], onUpdate: NoAction, onDelete: NoAction, map: "FK_Organizations_Parent")
-  childOrgs       Organization[]             @relation("OrgHierarchy")
-  branches          OrganizationBranch[]
-  documents       OrganizationDocument[]
-  employees       Employee[]
-  applications    Application[]
-  certifications  Certification[]
+  address             Address?                  @relation(fields: [addressId], references: [id], onUpdate: NoAction, map: "FK_Organizations_Addresses")
+  branches            OrganizationBranch[]
+  documents           OrganizationDocument[]
+  employees           Employee[]
+  applications        Application[]
+  certifications      Certification[]
   renewalApplications RenewalApplication[]
   guardEducationStats GuardEducationLevelStat[]
-  incidents       IncidentReport[]
+  incidents           IncidentReport[]
   // agreements now relate through applications
-  serviceContracts ServiceContract[]
+  serviceContracts    ServiceContract[]
 
   @@map("organizations")
 }
 
-
 model OrganizationBranch {
-  id             Int          @id @default(autoincrement()) @map("branch_id")
-  organizationId Int          @map("organization_id")
-  addressId      Int          @map("address_id")
-  branchName     String?      @map("branch_name") @db.NVarChar(255) // Optional: e.g., "Main Office", "Hawassa Branch"
-  
-  // Relations
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, map: "FK_Branches_Organizations")
-  address        Address      @relation(fields: [addressId], references: [id], onDelete: Cascade, map: "FK_Branches_Addresses")
+  id             Int @id @default(autoincrement()) @map("branch_id")
+  organizationId Int @map("organization_id")
+  addressId      Int @map("address_id")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Branches_Organizations")
+  address      Address      @relation(fields: [addressId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Branches_Addresses")
 
   @@map("organization_branches")
 }
 
-
-
 model ServiceContract {
-  id                     Int          @id @default(autoincrement()) @map("contract_id")
-  organizationId         Int          @map("organization_id")                     // Foreign key to Organization table
-  serviceUserName        String       @map("service_user_name") @db.NVarChar(255) // The specific client/user name (e.g., Ethio Logistics PLC)
-  contractUrl            String       @map("contract_url") @db.VarChar(Max)       // Digital contract document link
-  addressId              Int          @map("address_id")                          // Foreign key to Address table
-  assignedPersonnelCount Int          @map("assigned_personnel_count")
-  
-  // Metadata & Audit Trail
-  createdAt              DateTime     @default(now()) @map("created_at") @db.DateTime
-  updatedAt              DateTime     @default(now()) @map("updated_at") @db.DateTime
+  id                     Int    @id @default(autoincrement()) @map("contract_id")
+  organizationId         Int    @map("organization_id") // Foreign key to Organization table
+  serviceUserName        String @map("service_user_name") @db.NVarChar(255) // The specific client/user name (e.g., Ethio Logistics PLC)
+  contractUrl            String @map("contract_url") @db.VarChar(Max) // Digital contract document link
+  addressId              Int    @map("address_id") // Foreign key to Address table
+  assignedPersonnelCount Int    @map("assigned_personnel_count")
 
-  // Relations
+  // Lifecycle & Status Management
+  // Recommended values: "Active", "Expired", "Terminated", "Pending_Renewal"
+  status    String   @default("Active") @map("contract_status") @db.VarChar(50)
+  // Metadata & Audit Trail
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime
+  updatedAt DateTime @default(now()) @map("updated_at") @db.DateTime
+
   // Explicit NoAction rules keep SQL Server happy by avoiding loop collisions
-  organization           Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Contracts_Organizations")
-  address                Address      @relation(fields: [addressId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Contracts_Addresses")
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Contracts_Organizations")
+  address      Address      @relation(fields: [addressId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Contracts_Addresses")
 
   @@map("service_contracts")
 }
@@ -262,15 +283,14 @@ model Agreement {
 // DELETE the 'enum OrgDocumentType' block entirely from your file.
 
 model OrganizationDocument {
-  id             Int        @id @default(autoincrement()) @map("org_doc_id")
-  organizationId Int        @map("organization_id")
-  documentType   String     @map("document_type") @db.VarChar(50)
-  fileUrl        String     @map("file_url") @db.VarChar(Max)
-  // New Professional Verification Fields
-  isVerified     Boolean    @default(false) @map("is_verified")
-  verifiedAt     DateTime?  @map("verified_at") @db.DateTime 
-  expiryDate     DateTime?  @map("expiry_date") @db.Date
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, map: "FK_OrgDocs_Organizations")
+  id             Int          @id @default(autoincrement()) @map("org_doc_id")
+  organizationId Int          @map("organization_id")
+  documentType   String       @map("document_type") @db.VarChar(50)
+  fileUrl        String       @map("file_url") @db.VarChar(Max)
+  isVerified     Boolean      @default(false) @map("is_verified")
+  verifiedAt     DateTime?    @map("verified_at") @db.DateTime
+  expiryDate     DateTime?    @map("expiry_date") @db.Date
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, map: "FK_OrgDocs_Organizations")
 
   @@map("organization_documents")
 }
@@ -326,13 +346,13 @@ model Position {
 }
 
 model PositionRequirement {
-  id                        Int      @id @default(autoincrement()) @map("position_requirement_id")
-  positionId                Int      @map("position_id")
-  level                     Int?     @map("level")
-  requiredEducationLevel    String?  @map("required_education_level") @db.VarChar(100)
-  minimumExperienceYears    Int?     @map("minimum_experience_years")
-  requiredWorkExperienceYears Int?    @map("required_work_experience_years")
-  position                  Position @relation(fields: [positionId], references: [id], onDelete: Cascade, map: "FK_PosReq_Positions")
+  id                          Int      @id @default(autoincrement()) @map("position_requirement_id")
+  positionId                  Int      @map("position_id")
+  level                       Int?     @map("level")
+  requiredEducationLevel      String?  @map("required_education_level") @db.VarChar(100)
+  minimumExperienceYears      Int?     @map("minimum_experience_years")
+  requiredWorkExperienceYears Int?     @map("required_work_experience_years")
+  position                    Position @relation(fields: [positionId], references: [id], onDelete: Cascade, map: "FK_PosReq_Positions")
 
   @@map("position_requirements")
 }
@@ -342,13 +362,13 @@ model PositionRequirement {
 // ==========================================
 
 model EmployeeEducationDocument {
-  id                    Int      @id @default(autoincrement()) @map("education_documents_id")
-  employeeId            Int      @map("employee_id")
-  educationDocumentType String   @map("education_document_type") @db.VarChar(100)
-  fileUrl               String   @map("education_document_file_url") @db.VarChar(Max)
-  isVerified            Boolean  @default(false) @map("is_verified")
+  id                    Int       @id @default(autoincrement()) @map("education_documents_id")
+  employeeId            Int       @map("employee_id")
+  educationDocumentType String    @map("education_document_type") @db.VarChar(100)
+  fileUrl               String    @map("education_document_file_url") @db.VarChar(Max)
+  isVerified            Boolean   @default(false) @map("is_verified")
   verifiedAt            DateTime? @map("verified_at") @db.DateTime
-  uploadedAt            DateTime @default(now()) @map("uploaded_at") @db.DateTime
+  uploadedAt            DateTime  @default(now()) @map("uploaded_at") @db.DateTime
 
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade, map: "FK_EduDocs_Employees")
 
@@ -356,13 +376,13 @@ model EmployeeEducationDocument {
 }
 
 model EmployeeDocument {
-  id           Int      @id @default(autoincrement()) @map("document_id")
-  employeeId   Int      @map("employee_id")
-  documentType String   @map("document_type") @db.VarChar(100)
-  fileUrl      String   @map("document_file_url") @db.VarChar(Max)
-  isVerified   Boolean  @default(false) @map("is_verified")
+  id           Int       @id @default(autoincrement()) @map("document_id")
+  employeeId   Int       @map("employee_id")
+  documentType String    @map("document_type") @db.VarChar(100)
+  fileUrl      String    @map("document_file_url") @db.VarChar(Max)
+  isVerified   Boolean   @default(false) @map("is_verified")
   verifiedAt   DateTime? @map("verified_at") @db.DateTime
-  uploadedAt   DateTime @default(now()) @map("uploaded_at") @db.DateTime
+  uploadedAt   DateTime  @default(now()) @map("uploaded_at") @db.DateTime
 
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade, map: "FK_EmpDocs_Employees")
 
@@ -374,18 +394,18 @@ model EmployeeDocument {
 // ==========================================
 
 model Application {
-  id             Int     @id @default(autoincrement()) @map("application_id")
-  userId         Int     @map("user_id")
-  organizationId Int     @map("organization_id")
-  type           String? @map("application_type") @db.VarChar(50)
-  status         String? @map("application_status") @db.VarChar(50)
-  managerId        Int? @map("manager_id")
-  operationsHeadId Int? @map("operations_head_id")
-  adminHeadId      Int? @map("admin_head_id")
-  applicationDate DateTime @default(now()) @map("application_date") @db.DateTime
+  id               Int          @id @default(autoincrement()) @map("application_id")
+  userId           Int          @map("user_id")
+  organizationId   Int          @map("organization_id")
+  type             String?      @map("application_type") @db.VarChar(50)
+  status           String?      @map("application_status") @db.VarChar(50)
+  managerId        Int?         @map("manager_id")
+  operationsHeadId Int?         @map("operations_head_id")
+  adminHeadId      Int?         @map("admin_head_id")
+  applicationDate  DateTime     @default(now()) @map("application_date") @db.DateTime
   // Relations
-  user         User         @relation(fields: [userId], references: [id], onUpdate: NoAction, map: "FK_Apps_Users")
-  organization Organization @relation(fields: [organizationId], references: [id], onUpdate: NoAction, map: "FK_Apps_Orgs")
+  user             User         @relation(fields: [userId], references: [id], onUpdate: NoAction, map: "FK_Apps_Users")
+  organization     Organization @relation(fields: [organizationId], references: [id], onUpdate: NoAction, map: "FK_Apps_Orgs")
 
   // Updated with onDelete: NoAction to prevent SQL Server Cyclic Dependency errors
   manager        Employee? @relation("ManagerRole", fields: [managerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Apps_Manager")
@@ -393,28 +413,28 @@ model Application {
   adminHead      Employee? @relation("AdminHeadRole", fields: [adminHeadId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Apps_AdminHead")
 
   // Tracking & Modules
-  history         ApplicationTrackingHistory[]
-  trainingDetails OrganizationTrainingDetail[]
+  history             ApplicationTrackingHistory[]
+  trainingDetails     OrganizationTrainingDetail[]
   guardEducationStats GuardEducationLevelStat[]
-  inspections     Inspection[]
-  payments        Payment[]
-  certifications  Certification[]
-  agreements      Agreement[]
+  inspections         Inspection[]
+  payments            Payment[]
+  certifications      Certification[]
+  agreements          Agreement[]
 
   @@map("applications")
 }
 
 model RenewalApplication {
-  id                     Int      @id @default(autoincrement()) @map("renewal_application_id")
-  organizationId         Int      @map("organization_id")
-  type                   String?  @map("application_type") @db.VarChar(50)
-  sourceCertificationId  Int?     @map("source_certification_id")
-  renewalYear            Int?     @map("renewal_year")
-  createdAt              DateTime @default(now()) @map("created_at") @db.DateTime
-  updatedAt              DateTime @updatedAt @map("updated_at") @db.DateTime
+  id                    Int      @id @default(autoincrement()) @map("renewal_application_id")
+  organizationId        Int      @map("organization_id")
+  type                  String?  @map("application_type") @db.VarChar(50)
+  sourceCertificationId Int?     @map("source_certification_id")
+  renewalYear           Int?     @map("renewal_year")
+  createdAt             DateTime @default(now()) @map("created_at") @db.DateTime
+  updatedAt             DateTime @updatedAt @map("updated_at") @db.DateTime
 
-  organization           Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_RenewalApp_Organization")
-  sourceCertification    Certification? @relation("RenewalSourceCertification", fields: [sourceCertificationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_RenewalApp_Cert")
+  organization        Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_RenewalApp_Organization")
+  sourceCertification Certification? @relation("RenewalSourceCertification", fields: [sourceCertificationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_RenewalApp_Cert")
 
   @@map("renewal_applications")
 }
@@ -438,18 +458,18 @@ model ApplicationTrackingHistory {
 // ==========================================
 
 model OrganizationTrainingDetail {
-  id                     Int      @id @default(autoincrement()) @map("training_id")
-  applicationId          Int?     @map("application_id")
-  trainingBodyName       String?  @map("training_body_name") @db.NVarChar(255)
-  trainingAddress        String?  @map("training_address") @db.NVarChar(Max)
+  id                     Int       @id @default(autoincrement()) @map("training_id")
+  applicationId          Int?      @map("application_id")
+  trainingBodyName       String?   @map("training_body_name") @db.NVarChar(255)
+  trainingAddress        String?   @map("training_address") @db.NVarChar(Max)
   trainingStartDate      DateTime? @map("training_start_date") @db.Date
   trainingEndDate        DateTime? @map("training_end_date") @db.Date
-  trainingDurationDays   Int?     @map("training_duration_days")
-  totalTraineesMale      Int      @default(0) @map("total_trainees_male")
-  totalTraineesFemale    Int      @default(0) @map("total_trainees_female")
-  totalNotTraineesMale   Int      @default(0) @map("total_not_trainees_male")
-  totalNotTraineesFemale Int      @default(0) @map("total_not_trainees_female")
-  createdAt              DateTime @default(now()) @map("created_at") @db.DateTime
+  trainingDurationDays   Int?      @map("training_duration_days")
+  totalTraineesMale      Int       @default(0) @map("total_trainees_male")
+  totalTraineesFemale    Int       @default(0) @map("total_trainees_female")
+  totalNotTraineesMale   Int       @default(0) @map("total_not_trainees_male")
+  totalNotTraineesFemale Int       @default(0) @map("total_not_trainees_female")
+  createdAt              DateTime  @default(now()) @map("created_at") @db.DateTime
 
   application Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade, map: "FK_Training_Apps")
 
@@ -458,31 +478,31 @@ model OrganizationTrainingDetail {
 
 // Statistics for Security Guards' Education Levels per organization
 model GuardEducationLevelStat {
-  id                          Int       @id @default(autoincrement()) @map("guard_edu_stat_id")
-  organizationId              Int       @map("organization_id")
-  applicationId               Int?      @map("application_id")
-  reportingDate               DateTime? @map("reporting_date") @db.DateTime
+  id             Int       @id @default(autoincrement()) @map("guard_edu_stat_id")
+  organizationId Int       @map("organization_id")
+  applicationId  Int?      @map("application_id")
+  reportingDate  DateTime? @map("reporting_date") @db.DateTime
 
-  grade_3_9_male              Int       @default(0) @map("grade_3_9_male")
-  grade_3_9_female            Int       @default(0) @map("grade_3_9_female")
+  grade_3_9_male   Int @default(0) @map("grade_3_9_male")
+  grade_3_9_female Int @default(0) @map("grade_3_9_female")
 
-  grade_10_12_male            Int       @default(0) @map("grade_10_12_male")
-  grade_10_12_female          Int       @default(0) @map("grade_10_12_female")
+  grade_10_12_male   Int @default(0) @map("grade_10_12_male")
+  grade_10_12_female Int @default(0) @map("grade_10_12_female")
 
-  certificate_male            Int       @default(0) @map("certificate_male")
-  certificate_female          Int       @default(0) @map("certificate_female")
+  certificate_male   Int @default(0) @map("certificate_male")
+  certificate_female Int @default(0) @map("certificate_female")
 
-  diploma_male                Int       @default(0) @map("diploma_male")
-  diploma_female              Int       @default(0) @map("diploma_female")
+  diploma_male   Int @default(0) @map("diploma_male")
+  diploma_female Int @default(0) @map("diploma_female")
 
-  degree_male                 Int       @default(0) @map("degree_male")
-  degree_female               Int       @default(0) @map("degree_female")
+  degree_male   Int @default(0) @map("degree_male")
+  degree_female Int @default(0) @map("degree_female")
 
-  second_degree_male          Int       @default(0) @map("second_degree_male")
-  second_degree_female        Int       @default(0) @map("second_degree_female")
+  second_degree_male   Int @default(0) @map("second_degree_male")
+  second_degree_female Int @default(0) @map("second_degree_female")
 
-  createdAt                   DateTime  @default(now()) @map("created_at") @db.DateTime
-  updatedAt                   DateTime  @updatedAt @map("updated_at") @db.DateTime
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime
 
   // Relations
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_GuardEduStats_Orgs")
@@ -522,8 +542,8 @@ model InspectionCommittee {
   signatureUrl String?   @map("signature_url") @db.VarChar(Max)
   signedAt     DateTime? @map("signed_at") @db.DateTime
 
-  inspection   Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Committee_Inspections")
-  user         User       @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Committee_Users")
+  inspection Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Committee_Inspections")
+  user       User       @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Committee_Users")
 
   @@map("inspection_committee")
 }
@@ -546,18 +566,24 @@ model Payment {
 }
 
 model Certification {
-  id                      Int      @id @default(autoincrement()) @map("certification_id")
-  organizationId          Int?     @map("organization_id")
-  applicationId           Int?     @map("application_id")
-  certificateSerialNumber String?  @unique @map("certificate_serial_number") @db.VarChar(100)
-  level                   Int?     @map("certification_level")
-  issueDate               DateTime @map("issue_date") @db.Date
-  expiryDate              DateTime @map("expiry_date") @db.Date
-  qrCodeValue             String?  @unique @map("qr_code_value") @db.VarChar(255)
-  status                  String?  @map("certification_status") @db.VarChar(50)
+  id                      Int       @id @default(autoincrement()) @map("certification_id")
+  organizationId          Int?      @map("organization_id")
+  applicationId           Int?      @map("application_id")
+  signedByOfficialId      Int?      @map("signed_by_official_id")
+  certificateSerialNumber String?   @unique @map("certificate_serial_number") @db.VarChar(100)
+  level                   Int?      @map("certification_level")
+  issueDate               DateTime  @map("issue_date") @db.Date
+  expiryDate              DateTime  @map("expiry_date") @db.Date
+  signedAt                DateTime? @map("signed_at") @db.DateTime
+  stampedByUserId         Int?      @map("stamped_by_user_id")
+  stampedAt               DateTime? @map("stamped_at") @db.DateTime
+  qrCodeValue             String?   @unique @map("qr_code_value") @db.VarChar(255)
+  status                  String?   @map("certification_status") @db.VarChar(50)
 
-  organization Organization? @relation(fields: [organizationId], references: [id], onUpdate: NoAction, map: "FK_Certs_Orgs")
-  application  Application?  @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "FK_Certs_Apps")
+  organization        Organization?        @relation(fields: [organizationId], references: [id], onUpdate: NoAction, map: "FK_Certs_Orgs")
+  stampedByUser       User?                @relation("CertificationStampedBy", fields: [stampedByUserId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Certs_StampedByUsers")
+  application         Application?         @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "FK_Certs_Apps")
+  signedByOfficial    Official?            @relation(fields: [signedByOfficialId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Certs_Officials")
   renewalApplications RenewalApplication[] @relation("RenewalSourceCertification")
 
   @@map("certifications")
@@ -571,13 +597,13 @@ model IncidentReport {
   id                   Int      @id @default(autoincrement()) @map("report_id")
   organizationId       Int?     @map("organization_id")
   employeeId           Int?     @map("employee_id")
-  crimeCategory        String   @map("crime_category") @db.VarChar(100)
+  crimeCategory        String   @map("crime_category") @db.NVarChar(500)
   incidentDate         DateTime @map("incident_date") @db.DateTime
-  locationOfIncident   String   @map("location_of_incident") @db.VarChar(Max)
-  incidentDescription  String   @map("incident_description") @db.VarChar(Max)
+  locationOfIncident   String   @map("location_of_incident") @db.NVarChar(Max)
+  incidentDescription  String   @map("incident_description") @db.NVarChar(Max)
   reportedAt           DateTime @default(now()) @map("reported_at") @db.DateTime
   isReportedWithin24h  Boolean? @map("is_reported_within_24h")
-  localPoliceStation   String?  @map("local_police_station_name") @db.VarChar(255)
+  localPoliceStation   String?  @map("local_police_station_name") @db.NVarChar(255)
   localPoliceRefNumber String?  @map("local_police_reference_number") @db.VarChar(100)
   reportDocumentUrl    String?  @map("report_document_url") @db.VarChar(Max)
   federalPoliceStatus  String?  @default("Pending Review") @map("federal_police_status") @db.VarChar(50)
@@ -596,9 +622,9 @@ model IncidentPenalty {
   id             Int      @id @default(autoincrement()) @map("penalty_id")
   reportId       Int      @map("report_id")
   issuedByUserId Int?     @map("issued_by_user_id")
-  penaltyType    String?  @map("penalty_type") @db.VarChar(100)
+  penaltyType    String?  @map("penalty_type") @db.NVarChar(500)
   amount         Decimal? @db.Decimal(18, 2)
-  description    String?  @db.VarChar(Max)
+  description    String?  @db.NVarChar(Max)
   issuedDate     DateTime @default(now()) @map("issued_date")
 
   // Relations
@@ -661,18 +687,17 @@ model AuditLog {
   @@map("audit_logs")
 }
 
-
 model PaymentTransaction {
-  id             String         @id @default(uuid())
-  outTradeNo     String         @unique // Keep this unique!
-  transactionId  String?                // REMOVED @unique HERE so multiple PENDING entries can stay null
-  amount         Decimal        @db.Decimal(10, 2)
-  status         String         @default("PENDING")
-  licenseId      Int
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  
-  refunds        RefundLedger[]
+  id            String   @id @default(uuid())
+  outTradeNo    String   @unique // Keep this unique!
+  transactionId String? // REMOVED @unique HERE so multiple PENDING entries can stay null
+  amount        Decimal  @db.Decimal(10, 2)
+  status        String   @default("PENDING")
+  licenseId     Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  refunds RefundLedger[]
 }
 
 model RefundLedger {

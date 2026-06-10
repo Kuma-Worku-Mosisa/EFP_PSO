@@ -24,6 +24,7 @@ import {
   HelpCircle,
   MessageSquare,
   ClipboardCheck,
+  Building2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useLanguage } from "../context/LanguageContext";
@@ -42,7 +43,7 @@ import {
 } from "recharts";
 
 import { GPSTracking } from "./GPSTracking";
-import { AgenciesManagement } from "./AgenciesManagement";
+import OrganizationDashboard from "./admin/OrganizationsDashboard";
 import { ApplicationsReview } from "./ApplicationsReview";
 import { AdminReports } from "./AdminReports";
 import SystemSettings from "./admin/system-settings";
@@ -59,6 +60,7 @@ import { ManageFAQ } from "./ManageFAQ";
 import { Communications } from "./Communications";
 import { Notifications } from "./Notifications";
 import PositionManagement from "./PositionManagement";
+import EFPPositionManagement from "./admin/EFPPositionManagement";
 import FormalRequestManager from "../components/FormalRequestManager";
 import AdminAgreementManager from "./admin/AdminAgreementManager";
 import AdminAgreementDetail from "./admin/AdminAgreementDetail";
@@ -418,7 +420,7 @@ export const AdminDashboard = () => {
     {
       icon: <Users className="w-5 h-5" />,
       label: t.dashboard.agencies,
-      path: "/admin/agencies",
+      path: "/admin/organizations",
     },
     {
       icon: <FileCheck className="w-5 h-5" />,
@@ -454,6 +456,11 @@ export const AdminDashboard = () => {
       icon: <Briefcase className="w-5 h-5" />,
       label: isAm ? "የቦታ አስተዳደር" : "Position Management",
       path: "/admin/positions",
+    },
+    {
+      icon: <ShieldCheck className="w-5 h-5" />,
+      label: isAm ? "የEFP ቦታ አስተዳደር" : "EFP Position Management",
+      path: "/admin/efp-positions",
     },
     {
       icon: <FileCheck className="w-5 h-5" />,
@@ -521,7 +528,7 @@ export const AdminDashboard = () => {
     >
       <Routes>
         <Route index element={<Overview />} />
-        <Route path="agencies" element={<AgenciesManagement />} />
+        <Route path="organizations" element={<OrganizationDashboard />} />
         <Route path="applications" element={<ApplicationsReview />} />
         <Route path="inspections" element={<AdminInspections />} />
         <Route path="licenses" element={<LicenseManagement />} />
@@ -529,6 +536,7 @@ export const AdminDashboard = () => {
         <Route path="gps" element={<GPSTracking />} />
         <Route path="reports" element={<AdminReports />} />
         <Route path="positions" element={<PositionManagement />} />
+        <Route path="efp-positions" element={<EFPPositionManagement />} />
         <Route path="hrms-reports" element={<HRMSReports />} />
         <Route path="agreements" element={<AdminAgreementManager />} />
         <Route

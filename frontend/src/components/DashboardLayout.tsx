@@ -54,7 +54,8 @@ export const DashboardLayout = ({
 
   // Logic to determine the primary role for UI display
   const isSuperAdmin = user?.roles.includes("super_admin");
-  const isAdmin = user?.roles.includes("admin");
+  const isLicensingAuthority = user?.roles.includes("licensing_authority");
+  const isAdmin = !isLicensingAuthority && user?.roles.includes("admin");
   const isAgency = user?.roles.includes("agency");
   const isFieldReviewer = user?.roles.includes("field_reviewer");
 
@@ -310,9 +311,13 @@ export const DashboardLayout = ({
                   <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">
                     {isSuperAdmin
                       ? "Super Admin"
-                      : isAdmin
-                        ? "Police Admin"
-                        : "Agency Manager"}
+                      : isLicensingAuthority
+                        ? "Licensing Authority"
+                        : isFieldReviewer
+                          ? "Field Reviewer"
+                          : isAdmin
+                            ? "Police Admin"
+                            : "Agency Manager"}
                   </p>
                 </div>
                 <div className="w-9 h-9 lg:w-10 lg:h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary font-black border-2 border-secondary overflow-hidden">
@@ -356,13 +361,15 @@ export const DashboardLayout = ({
                     <div className="p-2">
                       <Link
                         to={
-                          isAgency
-                            ? "/dashboard/profile"
-                            : isSuperAdmin
-                              ? "/super-admin/profile"
+                          isSuperAdmin
+                            ? "/super-admin/profile"
+                            : isLicensingAuthority
+                              ? "/licensing-authority/profile"
                               : isFieldReviewer
                                 ? "/field-reviewer/profile"
-                                : "/admin/profile"
+                                : isAgency
+                                  ? "/dashboard/profile"
+                                  : "/admin/profile"
                         }
                         onClick={() => setShowProfile(false)}
                         className="w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 text-sm text-gray-600"

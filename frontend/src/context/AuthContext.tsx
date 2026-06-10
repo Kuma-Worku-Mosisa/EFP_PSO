@@ -6,6 +6,7 @@ import {
   useEffect,
 } from "react";
 import { apiRequest, resolveBackendAssetUrl } from "../lib/api";
+import { normalizeRoles } from "../lib/utils";
 
 // 1. Interface matching your Prisma User model exactly
 interface User {
@@ -53,9 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // 3. Real Login: Now takes the user object and token from your backend
   const login = (userData: any, authToken: string) => {
-    const normalizedRoles = Array.isArray(userData.roles)
-      ? userData.roles.map((role: string) => String(role).toLowerCase())
-      : [];
+    const normalizedRoles = normalizeRoles(userData.roles);
 
     // Generate initials automatically from the real fullName
     const initials = userData.fullName

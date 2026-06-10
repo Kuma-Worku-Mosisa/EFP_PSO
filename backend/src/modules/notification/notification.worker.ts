@@ -17,7 +17,7 @@ export const sweepAndNotifyExpiringCertifications = async () => {
     // Flips certificates that passed midnight to EXPIRED so they must re-apply/re-pay via Chapa
     const expiredResult = await prisma.certification.updateMany({
       where: {
-        status: "ACTIVE",
+        status: { in: ["Active", "ACTIVE"] },
         expiryDate: {
           lt: today,
         },
@@ -41,7 +41,7 @@ export const sweepAndNotifyExpiringCertifications = async () => {
     // Fetch certifications expiring within our warning window
     const activeCertifications = await prisma.certification.findMany({
       where: {
-        status: "ACTIVE",
+        status: { in: ["Active", "ACTIVE"] },
         expiryDate: {
           gte: today,
           lte: maxLookaheadDate,

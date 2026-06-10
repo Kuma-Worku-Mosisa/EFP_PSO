@@ -1,6 +1,24 @@
 //filepath: frontend/src/pages/systemAdmin/audit-logs.tsx
 import React, { useState, useEffect } from "react";
+import { X, Loader2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { API_BASE, resolveBackendAssetUrl } from "../../lib/api";
+
+interface ActorUser {
+  id: number;
+  username: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  faydaId: string;
+  photoUrl: string | null;
+  status: string;
+  createdAt: string;
+  user_roles?: {
+    role_id: number;
+    roles: { role_name: string };
+  }[];
+}
 
 // System Admin Audit Log Viewer — protected: requires `system_admin` role
 export default function AuditLogViewer() {
@@ -19,7 +37,63 @@ export default function AuditLogViewer() {
   const [fromDate, setFromDate] = useState<string>("");
   const [actionFilter, setActionFilter] = useState<string>("");
 
+  const [actorModalOpen, setActorModalOpen] = useState(false);
+  const [actorLoading, setActorLoading] = useState(false);
+  const [actorError, setActorError] = useState<string | null>(null);
+  const [actorDetails, setActorDetails] = useState<ActorUser | null>(null);
+  const [selectedActorId, setSelectedActorId] = useState<number | null>(null);
+
   const isSystemAdmin = Boolean(user?.roles?.includes("system_admin"));
+
+  const unwrapApiData = <T,>(payload: unknown): T => {
+    if (payload && typeof payload === "object" && "success" in payload) {
+      const envelope = payload as { success: boolean; data: T };
+      return envelope.success ? envelope.data : (payload as T);
+    }
+    return payload as T;
+  };
+
+  const closeActorModal = () => {
+    setActorModalOpen(false);
+    setActorDetails(null);
+    setActorError(null);
+    setSelectedActorId(null);
+    setActorLoading(false);
+  };
+
+  const openActorDetails = async (userId: number) => {
+    setSelectedActorId(userId);
+    setActorModalOpen(true);
+    setActorLoading(true);
+    setActorError(null);
+    setActorDetails(null);
+
+    try {
+      const response = await fetch(`${API_BASE}/users/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        const message =
+          payload?.message ||
+          payload?.error ||
+          `Failed to load actor details (HTTP ${response.status})`;
+        setActorError(message);
+        return;
+      }
+
+      setActorDetails(unwrapApiData<ActorUser>(payload));
+    } catch (error) {
+      console.error("Failed to fetch actor details", error);
+      setActorError("Unable to load actor details. Please try again.");
+    } finally {
+      setActorLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!isAuthenticated || !isSystemAdmin) {
@@ -278,9 +352,18 @@ export default function AuditLogViewer() {
                   </td>
                   <td className="p-4">
                     {log.userId ? (
-                      <span className="bg-gray-100 px-2 py-1 rounded text-xs font-mono border">
-                        ID: {log.userId}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="bg-gray-100 px-2 py-1 rounded text-xs font-mono border">
+                          ID: {log.userId}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => openActorDetails(log.userId)}
+                          className="text-blue-600 hover:text-blue-800 font-medium text-xs transition-colors whitespace-nowrap"
+                        >
+                          View Details
+                        </button>
+                      </div>
                     ) : (
                       <span className="text-gray-400 italic">
                         System / Anonymous
@@ -338,6 +421,153 @@ export default function AuditLogViewer() {
           </tbody>
         </table>
       </div>
+      {/* Actor Details Modal */}
+      {actorModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
+            <div className="bg-primary text-white px-5 py-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold tracking-widest uppercase text-white/80">
+                  Actor Details
+                </p>
+                <p className="text-sm font-semibold mt-0.5">
+                  User ID #{selectedActorId}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeActorModal}
+                className="p-1 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                aria-label="Close actor details"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              {actorLoading && (
+                <div className="flex items-center justify-center py-10 text-gray-500 gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span className="text-sm">Loading actor profile...</span>
+                </div>
+              )}
+
+              {!actorLoading && actorError && (
+                <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                  {actorError}
+                </div>
+              )}
+
+              {!actorLoading && !actorError && actorDetails && (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    {actorDetails.photoUrl ? (
+                      <img
+                        src={resolveBackendAssetUrl(actorDetails.photoUrl)}
+                        alt={actorDetails.fullName || actorDetails.username}
+                        className="w-14 h-14 rounded-full object-cover border"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.display =
+                            "none";
+                        }}
+                      />
+                    ) : (
+                      <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center text-primary font-bold text-lg border">
+                        {actorDetails.fullName?.charAt(0) ||
+                          actorDetails.username?.charAt(0) ||
+                          "?"}
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-bold text-gray-900">
+                        {actorDetails.fullName || "—"}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        @{actorDetails.username}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                        Email
+                      </p>
+                      <p className="text-sm mt-1 text-gray-800">
+                        {actorDetails.email || "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                        Phone
+                      </p>
+                      <p className="text-sm mt-1 text-gray-800">
+                        {actorDetails.phone || "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                        Fayda ID
+                      </p>
+                      <p className="text-sm mt-1 text-gray-800 font-mono">
+                        {actorDetails.faydaId || "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                        Role
+                      </p>
+                      <p className="text-sm mt-1 text-gray-800 capitalize">
+                        {(
+                          actorDetails.user_roles?.[0]?.roles?.role_name ||
+                          "Unassigned"
+                        ).replace(/_/g, " ")}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                        Status
+                      </p>
+                      <span
+                        className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                          actorDetails.status === "Active"
+                            ? "bg-green-100 text-green-700"
+                            : actorDetails.status === "Suspended"
+                              ? "bg-amber-100 text-amber-700"
+                              : "bg-gray-100 text-gray-500"
+                        }`}
+                      >
+                        {actorDetails.status || "—"}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                        Account Created
+                      </p>
+                      <p className="text-sm mt-1 text-gray-800">
+                        {actorDetails.createdAt
+                          ? new Date(actorDetails.createdAt).toLocaleString()
+                          : "—"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-gray-50 px-6 py-3 flex justify-end border-t">
+              <button
+                type="button"
+                onClick={closeActorModal}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-primary hover:opacity-90 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Pagination */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-gray-600">

@@ -1,6 +1,13 @@
 import { Response, NextFunction } from "express";
 import { ApiResponse } from "../utils/apiResponse";
 
+const normalizeRole = (role: unknown) =>
+  String(role ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
 /**
  * Middleware to restrict access based on user roles.
  * Must be used AFTER the authenticate middleware.
@@ -16,11 +23,9 @@ export const authorize = (allowedRoles: string[]) => {
     const userRoles: string[] = req.user.roles || [];
 
     // 3. Check if the user has at least one of the required roles
-    const normalizedAllowedRoles = allowedRoles.map((role) =>
-      String(role).toLowerCase(),
-    );
+    const normalizedAllowedRoles = allowedRoles.map(normalizeRole);
     const hasPermission = userRoles.some((role) =>
-      normalizedAllowedRoles.includes(String(role).toLowerCase()),
+      normalizedAllowedRoles.includes(normalizeRole(role)),
     );
 
     if (!hasPermission) {

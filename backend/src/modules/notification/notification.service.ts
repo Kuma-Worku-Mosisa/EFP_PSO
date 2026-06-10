@@ -352,11 +352,45 @@ export class NotificationService {
 
   /**
    * Updates a single targeted alert block visibility state to read.
+   * Only the recipient may mark their own notification.
    */
-  static async markAsRead(notificationId: number) {
+  static async markAsRead(notificationId: number, recipientUserId: number) {
+    const notification = await prisma.notification.findFirst({
+      where: { id: notificationId, recipientUserId },
+    });
+    if (!notification) {
+      throw new Error("Notification not found or access denied.");
+    }
     return await prisma.notification.update({
       where: { id: notificationId },
       data: { isReadByRecipient: true },
+    });
+  }
+
+  /**
+   * Permanently removes a notification owned by the recipient user.
+   */
+  static async deleteUserNotification(
+    notificationId: number,
+    recipientUserId: number,
+  ) {
+    const notification = await prisma.notification.findFirst({
+      where: { id: notificationId, recipientUserId },
+    });
+    if (!notification) {
+      throw new Error("Notification not found or access denied.");
+    }
+    return await prisma.notification.delete({
+      where: { id: notificationId },
+    });
+  }
+
+  /**
+   * Removes all notifications for a specific recipient user.
+   */
+  static async deleteAllUserNotifications(recipientUserId: number) {
+    return await prisma.notification.deleteMany({
+      where: { recipientUserId },
     });
   }
 
@@ -379,7 +413,9 @@ export class NotificationService {
       for (const role of adminRoles) {
         console.log(`[Notification Service] Fetching users with role: ${role}`);
         const users = await getUsersByRole(role);
-        console.log(`[Notification Service] Found ${users.length} users with role: ${role}`);
+        console.log(
+          `[Notification Service] Found ${users.length} users with role: ${role}`,
+        );
         adminUsers.push(...users);
       }
 
@@ -426,6 +462,80 @@ export class NotificationService {
         error.stack,
       );
       throw error;
+    }
+  }
+
+  /**
+   * Notify all users with role `licensing_authority` when a certificate
+   * has been signed by an admin or super_admin.
+   * This will avoid duplicate sends within a 24h window for the same certificate
+   * by checking for an existing similar notification message.
+   */
+  static async notifyLicensingAuthoritiesForSignedCertificate(
+    certificationId: number,
+  ) {
+    try {
+      const cert = await prisma.certification.findUnique({
+        where: { id: certificationId },
+        include: {
+          signedByOfficial: {
+            include: {
+              user: { include: { user_roles: { include: { roles: true } } } },
+            },
+          },
+          organization: { select: { nameEnglish: true, nameAmharic: true } },
+        },
+      });
+
+      if (!cert || !cert.signedByOfficial) return;
+
+      const signerRoles =
+        cert.signedByOfficial.user?.user_roles?.map((ur: any) =>
+          String(ur.roles.role_name || "").toLowerCase(),
+        ) || [];
+
+      // Only notify licensing authorities when the signer is an admin-like user
+      const adminLike = signerRoles.some(
+        (r: string) =>
+          r === "admin" || r === "super_admin" || r.includes("admin"),
+      );
+      if (!adminLike) return;
+
+      const orgName = cert.organization?.nameEnglish || null;
+      const orgNameAm = cert.organization?.nameAmharic || null;
+      const serial = cert.certificateSerialNumber || null;
+
+      const laUsers = await getUsersByRole("licensing_authority");
+      if (!laUsers || laUsers.length === 0) return;
+
+      const now = new Date();
+      const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+      for (const user of laUsers) {
+        // Basic idempotency: avoid duplicate notifications for same cert within 24h
+        const existing = await prisma.notification.findFirst({
+          where: {
+            recipientUserId: user.id,
+            alertMessage: { contains: serial ?? "" },
+            createdAt: { gte: twentyFourHoursAgo },
+          },
+        });
+
+        if (existing) continue;
+
+        await NotificationService.sendBilingualAlert(user.id, "CERT_SIGNED", {
+          organizationName: orgName || undefined,
+          organizationNameAm: orgNameAm || undefined,
+          certificateSerial: serial || undefined,
+          customDetailsEn: `Certificate ${serial || "(unknown)"} was signed and requires stamping.`,
+          customDetailsAm: `ሰርቲፍኬት ${serial || "(ያልታወቀ)"} ጸድቋል እና ማቀዝቀዣ ይፈልጋል።`,
+        });
+      }
+    } catch (err) {
+      console.error(
+        "[Notification Service] Failed to notify licensing authorities:",
+        err,
+      );
     }
   }
 }

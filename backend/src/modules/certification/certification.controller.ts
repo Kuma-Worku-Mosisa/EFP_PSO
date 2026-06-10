@@ -8,6 +8,7 @@ import {
 } from "./certification.validation";
 import { CertificationService } from "./certification.service";
 import prisma from "../../lib/prisma";
+import { NotificationService } from "../notification/notification.service";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
@@ -45,7 +46,14 @@ const getAuthenticatedUserId = (req: Request) => {
   return Number(requester?.userId ?? requester?.id ?? NaN);
 };
 
-const hasAdminAccess = (req: Request) => {
+const normalizeRole = (role: unknown) =>
+  String(role ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+const getNormalizedRoles = (req: Request) => {
   const rolesValue = (req as any).user?.roles;
   const roles = Array.isArray(rolesValue)
     ? rolesValue
@@ -56,7 +64,17 @@ const hasAdminAccess = (req: Request) => {
           .filter(Boolean)
       : [];
 
-  return roles.some((role) => String(role).toLowerCase().includes("admin"));
+  return roles.map(normalizeRole);
+};
+
+const hasAdminAccess = (req: Request) => {
+  return getNormalizedRoles(req).some((role) => {
+    return role.includes("admin") || role === "licensing_authority";
+  });
+};
+
+const isLicensingAuthority = (req: Request) => {
+  return getNormalizedRoles(req).some((role) => role === "licensing_authority");
 };
 
 const ensureDirectory = (dirPath: string) => {
@@ -130,6 +148,138 @@ export const listCertifications = async (req: Request, res: Response) => {
   }
 };
 
+export const listPendingStampCertificates = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const requesterId = getAuthenticatedUserId(req);
+    if (!Number.isFinite(requesterId)) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Authentication required" });
+    }
+
+    if (!isLicensingAuthority(req)) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden: licensing authority access required",
+      });
+    }
+
+    const data = await CertificationService.getPendingStampCertificates();
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    console.error("listPendingStampCertificates error:", error);
+    res.status(500).json({
+      success: false,
+      message: (error as any)?.message || "Server Error",
+    });
+  }
+};
+
+export const listStampedCertificates = async (req: Request, res: Response) => {
+  try {
+    const requesterId = getAuthenticatedUserId(req);
+    if (!Number.isFinite(requesterId)) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Authentication required" });
+    }
+
+    if (!isLicensingAuthority(req)) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden: licensing authority access required",
+      });
+    }
+
+    const data = await CertificationService.getStampedCertificates();
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    console.error("listStampedCertificates error:", error);
+    res.status(500).json({
+      success: false,
+      message: (error as any)?.message || "Server Error",
+    });
+  }
+};
+
+export const stampCertification = async (req: Request, res: Response) => {
+  try {
+    const requesterId = getAuthenticatedUserId(req);
+    if (!Number.isFinite(requesterId)) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Authentication required" });
+    }
+
+    if (!isLicensingAuthority(req)) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden: licensing authority access required",
+      });
+    }
+
+    const certId = parseRouteId(req.params.id);
+
+    const uploadDir = path.join(
+      process.cwd(),
+      "uploads",
+      "certifications",
+      String(certId),
+    );
+    ensureDirectory(uploadDir);
+
+    const storage = multer.diskStorage({
+      destination: (_req, _file, cb) => cb(null, uploadDir),
+      filename: (_req, file, cb) =>
+        cb(null, buildPrefixedFilename("stamp", file.originalname)),
+    });
+
+    const upload = multer({
+      storage,
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }).single("stamp");
+
+    upload(req as any, res as any, async (err: any) => {
+      if (err) {
+        return res.status(400).json({
+          success: false,
+          message: err?.message || "Failed to upload stamp",
+        });
+      }
+
+      try {
+        const file = (req as any).file as Express.Multer.File | undefined;
+        const relativePath = file
+          ? `/uploads/certifications/${certId}/${file.filename}`
+          : null;
+
+        const data = await CertificationService.stampCertificate(
+          certId,
+          requesterId,
+          relativePath,
+        );
+
+        return res.status(200).json({ success: true, data });
+      } catch (e: any) {
+        console.error("stampCertification handler error:", e);
+        return res.status(500).json({
+          success: false,
+          message: e?.message || "Stamping Failed",
+        });
+      }
+    });
+  } catch (error: any) {
+    console.error("stampCertification error:", error);
+    res.status(500).json({
+      success: false,
+      message: (error as any)?.message || "Stamping Failed",
+    });
+  }
+};
+
 export const updateCertification = async (req: Request, res: Response) => {
   try {
     const validated = updateCertSchema.parse(req.body);
@@ -177,7 +327,8 @@ export const uploadApplicantPhoto = async (req: Request, res: Response) => {
     }
 
     const certId = parseRouteId(req.params.id);
-    const applicantUserId = await CertificationService.getApplicantUserId(certId);
+    const applicantUserId =
+      await CertificationService.getApplicantUserId(certId);
 
     if (!applicantUserId) {
       return res
@@ -412,6 +563,213 @@ export const verifyCertification = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: error.message || "Verification failed",
+    });
+  }
+};
+
+export const signCertification = async (req: Request, res: Response) => {
+  try {
+    const requesterId = getAuthenticatedUserId(req);
+    if (!Number.isFinite(requesterId)) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Authentication required" });
+    }
+
+    if (!hasAdminAccess(req)) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Forbidden: admin access required" });
+    }
+
+    const certId = parseRouteId(req.params.id);
+    const data = await CertificationService.signCertificate(
+      certId,
+      requesterId,
+    );
+    res.status(200).json({ success: true, data });
+  } catch (error: any) {
+    console.error("signCertification error:", error);
+    res.status(500).json({
+      success: false,
+      message: (error as any)?.message || "Signing Failed",
+    });
+  }
+};
+
+export const signCertificationWithOfficial = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const requesterId = getAuthenticatedUserId(req);
+    if (!Number.isFinite(requesterId)) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Authentication required" });
+    }
+
+    if (!hasAdminAccess(req)) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Forbidden: admin access required" });
+    }
+
+    const certId = parseRouteId(req.params.id);
+
+    const cert = await prisma.certification.findUnique({
+      where: { id: certId },
+    });
+    if (!cert) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Certificate not found" });
+    }
+
+    const uploadDir = path.join(
+      process.cwd(),
+      "uploads",
+      "officials",
+      String(requesterId),
+    );
+    ensureDirectory(uploadDir);
+
+    const storage = multer.diskStorage({
+      destination: (_req, _file, cb) => cb(null, uploadDir),
+      filename: (_req, file, cb) =>
+        cb(
+          null,
+          buildPrefixedFilename("official_signature", file.originalname),
+        ),
+    });
+
+    const upload = multer({
+      storage,
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }).single("signature");
+
+    upload(req as any, res as any, async (err: any) => {
+      if (err) {
+        return res.status(400).json({
+          success: false,
+          message: err?.message || "Failed to upload signature",
+        });
+      }
+
+      const file = (req as any).file as Express.Multer.File | undefined;
+      const relativePath = file
+        ? `/uploads/officials/${requesterId}/${file.filename}`
+        : null;
+
+      const fullNameAm =
+        String((req as any).body.fullNameAm || "").trim() || null;
+      const positionIdRaw = (req as any).body.positionId;
+      const positionId = positionIdRaw ? Number(positionIdRaw) : null;
+
+      if (!fullNameAm) {
+        return res.status(400).json({
+          success: false,
+          message: "Amharic full name (fullNameAm) is required",
+        });
+      }
+
+      if (!positionId || Number.isNaN(positionId)) {
+        return res.status(400).json({
+          success: false,
+          message: "positionId is required and must be a valid id",
+        });
+      }
+
+      const position = await prisma.federalPolicePosition.findUnique({
+        where: { id: positionId },
+      });
+      if (!position) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Selected position not found" });
+      }
+
+      // Create or update Official for this user
+      let official = await prisma.official.findUnique({
+        where: { userId: requesterId },
+      });
+      if (official) {
+        official = await prisma.official.update({
+          where: { id: official.id },
+          data: {
+            fullNameAm,
+            efpPositionId: positionId,
+            ...(relativePath ? { signatureUrl: relativePath } : {}),
+          },
+        });
+      } else {
+        official = await prisma.official.create({
+          data: {
+            userId: requesterId,
+            efpPositionId: positionId,
+            fullNameAm,
+            signatureUrl: relativePath,
+          },
+        });
+      }
+
+      // Sign the certificate
+      await prisma.certification.update({
+        where: { id: certId },
+        data: { signedByOfficialId: official.id, signedAt: new Date() },
+      });
+
+      // Notify licensing authority users if signer is admin/super_admin
+      try {
+        await NotificationService.notifyLicensingAuthoritiesForSignedCertificate(
+          certId,
+        );
+      } catch (err) {
+        console.error(
+          "Failed to notify licensing authorities after sign:",
+          err,
+        );
+      }
+
+      const updated = await CertificationService.getFullDetails(certId);
+      return res.status(200).json({ success: true, data: updated });
+    });
+  } catch (error: any) {
+    console.error("signCertificationWithOfficial error:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: error?.message || "Signing failed" });
+  }
+};
+
+export const getCurrentOfficial = async (req: Request, res: Response) => {
+  try {
+    const requesterId = getAuthenticatedUserId(req);
+    if (!Number.isFinite(requesterId)) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Authentication required" });
+    }
+
+    try {
+      const official =
+        await CertificationService.getCurrentOfficial(requesterId);
+      return res.status(200).json({ success: true, data: official });
+    } catch (innerError: any) {
+      if (
+        String(innerError?.message || "")
+          .toLowerCase()
+          .includes("not registered as a federal police official")
+      ) {
+        return res.status(200).json({ success: true, data: null });
+      }
+      throw innerError;
+    }
+  } catch (error: any) {
+    console.error("getCurrentOfficial error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error?.message || "Failed to load official",
     });
   }
 };

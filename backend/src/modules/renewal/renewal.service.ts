@@ -2,6 +2,8 @@ import prisma from "../../lib/prisma";
 import fs from "fs/promises";
 import path from "path";
 import { buildPrefixedFilename } from "../../middleware/fileUpload";
+import { RenewalValidationError } from "./renewal.errors";
+import { CertificationService } from "../certification/certification.service";
 
 type UploadedRenewalFile = {
   fieldname: string;
@@ -204,22 +206,172 @@ const isActiveStatus = (value: unknown) =>
     .trim()
     .toLowerCase() === "active";
 
-const isCertificateValid = (cert: {
+const isCertificateValidForRenewal = (cert: {
   status?: string | null;
   expiryDate: Date;
 }) => {
   const normalizedStatus = String(cert.status ?? "Active")
     .trim()
     .toLowerCase();
-  const isExpired = new Date(cert.expiryDate).getTime() < Date.now();
 
-  return normalizedStatus === "active" && !isExpired;
+  if (normalizedStatus === "revoked" || normalizedStatus === "suspended") {
+    return false;
+  }
+
+  // Valid through the expiry calendar day; stale EXPIRED status is corrected via sync.
+  return !CertificationService.isPastExpiryDay(cert.expiryDate);
+};
+
+/**
+ * Renewal opens after 11/12 of the certificate validity window (issue → expiry).
+ * For a 12-month cert this is ~11 months after issue; shorter certs scale proportionally
+ * so renewal is always possible before expiry (e.g. issue 8/27/2026, expiry 5/30/2027).
+ */
+const RENEWAL_OPEN_VALIDITY_FRACTION = 11 / 12;
+
+const startOfDay = (date: Date) => {
+  const normalized = new Date(date);
+  normalized.setHours(0, 0, 0, 0);
+  return normalized;
+};
+
+/** Normalize SQL @db.Date values without timezone day-shift. */
+const toCertCalendarDate = (value: Date | string) => {
+  const parsed = new Date(value);
+  if (!Number.isFinite(parsed.getTime())) {
+    throw new Error("Invalid certificate date.");
+  }
+  return startOfDay(
+    new Date(
+      parsed.getUTCFullYear(),
+      parsed.getUTCMonth(),
+      parsed.getUTCDate(),
+    ),
+  );
+};
+
+const getEarliestRenewalSubmitDate = (issueDate: Date, expiryDate: Date) => {
+  const issue = toCertCalendarDate(issueDate);
+  const expiry = toCertCalendarDate(expiryDate);
+
+  if (expiry.getTime() <= issue.getTime()) {
+    throw new Error("Certificate expiry date must be after the issue date.");
+  }
+
+  const validityMs = expiry.getTime() - issue.getTime();
+  const renewalOpensAt =
+    issue.getTime() + validityMs * RENEWAL_OPEN_VALIDITY_FRACTION;
+
+  return startOfDay(new Date(renewalOpensAt));
+};
+
+const hasRenewalForCalendarYear = async (
+  organizationId: number,
+  renewalYear: number,
+) => {
+  const renewalRow = await prisma.renewalApplication.findFirst({
+    where: { organizationId, renewalYear },
+  });
+  if (renewalRow) return true;
+
+  const yearStart = new Date(renewalYear, 0, 1);
+  const yearEnd = new Date(renewalYear + 1, 0, 1);
+
+  const applicationRow = await prisma.application.findFirst({
+    where: {
+      organizationId,
+      type: "Renewal",
+      applicationDate: { gte: yearStart, lt: yearEnd },
+    },
+  });
+
+  return Boolean(applicationRow);
+};
+
+const assertRenewalSubmissionAllowed = async (params: {
+  organizationId: number;
+  issueDate: Date;
+  expiryDate: Date;
+  renewalYear: number;
+}) => {
+  const today = startOfDay(new Date());
+  const earliestSubmitDate = getEarliestRenewalSubmitDate(
+    params.issueDate,
+    params.expiryDate,
+  );
+
+  if (today < earliestSubmitDate) {
+    throw new RenewalValidationError(
+      "RENEWAL_TOO_EARLY",
+      `Renewal can only be submitted during the final month of your certificate validity period. Earliest date: ${earliestSubmitDate.toISOString().slice(0, 10)}.`,
+    );
+  }
+
+  const alreadySubmitted = await hasRenewalForCalendarYear(
+    params.organizationId,
+    params.renewalYear,
+  );
+
+  if (alreadySubmitted) {
+    throw new RenewalValidationError(
+      "RENEWAL_ALREADY_SUBMITTED",
+      `You have already submitted a renewal application for ${params.renewalYear}. Only one renewal application is allowed per calendar year.`,
+      409,
+    );
+  }
+};
+
+const resolveOrganizationIdsForUser = async (userId: number) => {
+  const organizationIds = new Set<number>();
+
+  const applications = await prisma.application.findMany({
+    where: { userId },
+    select: { organizationId: true },
+    distinct: ["organizationId"],
+  });
+
+  for (const application of applications) {
+    if (application.organizationId) {
+      organizationIds.add(application.organizationId);
+    }
+  }
+
+  const employee = await prisma.employee.findUnique({
+    where: { userId },
+    select: { organizationId: true },
+  });
+
+  if (employee?.organizationId) {
+    organizationIds.add(employee.organizationId);
+  }
+
+  return Array.from(organizationIds);
 };
 
 export class RenewalService {
-  static async validateEligibility(certificateSerialNumber: string) {
+  static async validateEligibility(
+    certificateSerialNumber: string,
+    userId: number,
+  ) {
+    if (!Number.isFinite(userId)) {
+      throw new RenewalValidationError(
+        "AUTHENTICATION_REQUIRED",
+        "Authentication is required to verify renewal eligibility.",
+        401,
+      );
+    }
+
+    const normalizedSerial = certificateSerialNumber.trim();
+
+    if (!normalizedSerial) {
+      throw new RenewalValidationError(
+        "CERTIFICATE_NOT_FOUND",
+        "Please enter a valid certificate serial number.",
+      );
+    }
+
     const certification = await prisma.certification.findUnique({
-      where: { certificateSerialNumber },
+      where: { certificateSerialNumber: normalizedSerial },
       include: {
         organization: {
           select: {
@@ -233,37 +385,92 @@ export class RenewalService {
     });
 
     if (!certification) {
-      throw new Error("Certificate serial number not found");
+      throw new RenewalValidationError(
+        "CERTIFICATE_NOT_FOUND",
+        "No certificate was found with this serial number. Check the number printed on your license document and try again.",
+        404,
+      );
     }
 
-    if (!certification.organization) {
-      throw new Error("Organization linked to the certificate was not found");
+    const syncedCertification =
+      await CertificationService.syncExpiryStatus(certification);
+
+    if (!syncedCertification.organization) {
+      throw new RenewalValidationError(
+        "CERTIFICATE_NOT_LINKED",
+        "This certificate is not linked to an organization. Contact EFP-PSO support for assistance.",
+      );
     }
 
-    if (!isActiveStatus(certification.organization.status)) {
-      throw new Error("Organization is not active");
+    const userOrganizationIds = await resolveOrganizationIdsForUser(userId);
+
+    if (userOrganizationIds.length === 0) {
+      throw new RenewalValidationError(
+        "NO_ORGANIZATION",
+        "Your account is not linked to a licensed organization. Complete your license application before submitting a renewal.",
+        403,
+      );
     }
 
-    if (!isCertificateValid(certification)) {
-      throw new Error("Certificate is not active");
+    if (!userOrganizationIds.includes(syncedCertification.organization.id)) {
+      throw new RenewalValidationError(
+        "CERTIFICATE_NOT_OWNED",
+        "This certificate serial number does not belong to your organization. Enter the serial number from your own active license.",
+        403,
+      );
     }
+
+    if (!isActiveStatus(syncedCertification.organization.status)) {
+      throw new RenewalValidationError(
+        "ORGANIZATION_INACTIVE",
+        "Your organization is not active. Contact EFP-PSO support before submitting a renewal.",
+      );
+    }
+
+    if (!isCertificateValidForRenewal(syncedCertification)) {
+      throw new RenewalValidationError(
+        "CERTIFICATE_INACTIVE",
+        "Your certificate is expired or inactive. Contact EFP-PSO support for assistance.",
+      );
+    }
+
+    const renewalYear = new Date().getFullYear();
+    await assertRenewalSubmissionAllowed({
+      organizationId: syncedCertification.organization.id,
+      issueDate: syncedCertification.issueDate,
+      expiryDate: syncedCertification.expiryDate,
+      renewalYear,
+    });
+
+    const earliestSubmitDate = getEarliestRenewalSubmitDate(
+      syncedCertification.issueDate,
+      syncedCertification.expiryDate,
+    );
 
     return {
-      organizationId: certification.organization.id,
-      certificateId: certification.id,
-      certificateSerialNumber: certification.certificateSerialNumber,
+      organizationId: syncedCertification.organization.id,
+      certificateId: syncedCertification.id,
+      certificateSerialNumber: syncedCertification.certificateSerialNumber,
       organization: {
-        id: certification.organization.id,
-        nameAmharic: certification.organization.nameAmharic,
-        nameEnglish: certification.organization.nameEnglish,
-        status: certification.organization.status,
+        id: syncedCertification.organization.id,
+        nameAmharic: syncedCertification.organization.nameAmharic,
+        nameEnglish: syncedCertification.organization.nameEnglish,
+        status: syncedCertification.organization.status,
       },
       certification: {
-        id: certification.id,
-        status: certification.status,
-        level: certification.level,
-        issueDate: certification.issueDate,
-        expiryDate: certification.expiryDate,
+        id: syncedCertification.id,
+        status: syncedCertification.status,
+        level: syncedCertification.level,
+        issueDate: syncedCertification.issueDate,
+        expiryDate: syncedCertification.expiryDate,
+      },
+      renewalPolicy: {
+        renewalYear,
+        issueDate: syncedCertification.issueDate,
+        expiryDate: syncedCertification.expiryDate,
+        earliestSubmitDate,
+        validityFractionBeforeRenewal: RENEWAL_OPEN_VALIDITY_FRACTION,
+        canSubmit: true,
       },
     };
   }
@@ -277,9 +484,17 @@ export class RenewalService {
   }) {
     const eligibility = await this.validateEligibility(
       input.certificateSerialNumber,
+      input.submittedByUserId,
     );
 
     const renewalYear = input.renewalYear || new Date().getFullYear();
+
+    await assertRenewalSubmissionAllowed({
+      organizationId: eligibility.organizationId,
+      issueDate: new Date(eligibility.certification.issueDate),
+      expiryDate: new Date(eligibility.certification.expiryDate),
+      renewalYear,
+    });
     const payloadObject = parseJsonPayload(input.payload ?? "{}");
     const payload = JSON.stringify(payloadObject);
     const files = input.files || [];

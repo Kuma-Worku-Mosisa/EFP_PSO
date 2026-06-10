@@ -2,9 +2,10 @@
 import React from "react";
 import { Routes, Route, Link } from "react-router-dom";
 import { DashboardLayout } from "../../components/DashboardLayout";
-import { LayoutDashboard, FileCheck, MapPin } from "lucide-react";
+import { LayoutDashboard, FileCheck, MapPin, Users } from "lucide-react";
 import AuditLogViewer from "./audit-logs";
 import LocationManager from "./LocationManager";
+import { UserManagement } from "../UserManagement";
 import { useLanguage } from "../../context/LanguageContext";
 
 const Overview: React.FC = () => {
@@ -60,6 +61,11 @@ export const SystemAdminDashboard: React.FC = () => {
       path: "/system-admin/dashboard",
     },
     {
+      icon: <Users className="w-5 h-5" />,
+      label: isAm ? "የተጠቃሚዎች አስተዳደር" : "User Management",
+      path: "/system-admin/users",
+    },
+    {
       icon: <FileCheck className="w-5 h-5" />,
       label: isAm ? "የስርዓት መዝገቦች" : "Audit Logs",
       path: "/system-admin/audit-logs",
@@ -79,6 +85,7 @@ export const SystemAdminDashboard: React.FC = () => {
       <Routes>
         <Route index element={<Overview />} />
         <Route path="dashboard" element={<Overview />} />
+        <Route path="users" element={<UserManagement />} />
         <Route path="audit-logs" element={<AuditLogViewer />} />
         <Route path="manage-address" element={<LocationManager />} />
         <Route path="*" element={<Overview />} />

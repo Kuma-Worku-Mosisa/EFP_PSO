@@ -16,6 +16,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 
 import { apiRequest } from "../../../lib/api";
+import { normalizeRoles } from "../../../lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
@@ -26,6 +27,15 @@ const loginSchema = z.object({
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
+
+const normalizeStatusFromApi = (raw?: string) => {
+  if (!raw) return "Inactive";
+  const up = String(raw).toUpperCase();
+  if (up === "ACTIVE") return "Active";
+  if (up === "INACTIVE") return "Inactive";
+  if (up === "SUSPENDED") return "Suspended";
+  return up.charAt(0) + up.slice(1).toLowerCase();
+};
 
 export const Login = () => {
   const { t } = useLanguage();
@@ -64,11 +74,21 @@ export const Login = () => {
       });
 
       const { user, token } = res.data;
+      const normalizedStatus = normalizeStatusFromApi(user.status);
+
+      if (normalizedStatus !== "Active") {
+        setLoginError(
+          normalizedStatus === "Suspended"
+            ? "Your account has been suspended. Contact your administrator."
+            : "Your account is inactive. Contact your administrator.",
+        );
+        return;
+      }
+
       const normalizedUser = {
         ...user,
-        roles: Array.isArray(user.roles)
-          ? user.roles.map((role: string) => String(role).toLowerCase())
-          : [],
+        status: normalizedStatus,
+        roles: normalizeRoles(user.roles),
       };
 
       login(normalizedUser, token);
@@ -79,6 +99,8 @@ export const Login = () => {
         navigate("/system-admin/dashboard");
       } else if (normalizedUser.roles?.includes("super_admin")) {
         navigate("/super-admin/dashboard");
+      } else if (normalizedUser.roles?.includes("licensing_authority")) {
+        navigate("/licensing-authority");
       } else if (normalizedUser.roles?.includes("admin")) {
         navigate("/admin");
       } else if (normalizedUser.roles?.includes("field_reviewer")) {

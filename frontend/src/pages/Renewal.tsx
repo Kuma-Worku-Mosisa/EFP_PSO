@@ -24,7 +24,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { cn } from "../lib/utils";
 import { mapLocalizedLocationRows } from "../lib/locationLabels";
-import { apiRequest } from "../lib/api";
+import { apiRequest, ApiError } from "../lib/api";
 
 const renewalSchema = z.object({
   certificateSerialNumber: z
@@ -66,6 +66,126 @@ const renewalSchema = z.object({
 });
 
 type RenewalFormValues = z.infer<typeof renewalSchema>;
+
+type RenewalPolicyInfo = {
+  renewalYear: number;
+  issueDate: string;
+  expiryDate: string;
+  earliestSubmitDate: string;
+  canSubmit: boolean;
+};
+
+const formatPolicyDate = (value: string, language: "en" | "am") => {
+  const parsed = new Date(value);
+  const calendar = new Date(
+    parsed.getUTCFullYear(),
+    parsed.getUTCMonth(),
+    parsed.getUTCDate(),
+  );
+  return calendar.toLocaleDateString(language === "am" ? "am-ET" : "en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
+
+const getRenewalErrorCode = (error: unknown): string | undefined => {
+  if (error instanceof ApiError) return error.code;
+  if (error && typeof error === "object" && "code" in error) {
+    return String((error as { code?: string }).code);
+  }
+  return undefined;
+};
+
+const mapRenewalEligibilityError = (
+  message: string,
+  language: "en" | "am",
+  code?: string,
+): string => {
+  switch (code) {
+    case "CERTIFICATE_NOT_FOUND":
+      return language === "am"
+        ? "በዚህ ተከታታይ ቁጥር ምስክር አልተገኘም። በፈቃድዎ ላይ ያለውን ቁጥር ያረጋግጡ።"
+        : "No certificate was found with this serial number. Check the number printed on your license document.";
+    case "CERTIFICATE_NOT_LINKED":
+      return language === "am"
+        ? "ይህ ምስክር ከድርጅት ጋር አልተገናኘም። ድጋፍ ለማግኘት EFP-PSOን ያግኙ።"
+        : "This certificate is not linked to an organization. Contact EFP-PSO support.";
+    case "NO_ORGANIZATION":
+      return language === "am"
+        ? "መለያዎ ከተፈቀደ ድርጅት ጋር አልተገናኘም። እድሳት ከመቀጠልዎ በፊት የፈቃድ ማመልከቻዎን ያጠናቅቁ።"
+        : "Your account is not linked to a licensed organization. Complete your license application before renewing.";
+    case "CERTIFICATE_NOT_OWNED":
+      return language === "am"
+        ? "ይህ የምስክር ቁጥር ለድርጅትዎ አይደለም። የራስዎን ንቁ ፈቃድ ቁጥር ያስገቡ።"
+        : "This certificate does not belong to your organization. Enter the serial number from your own license.";
+    case "ORGANIZATION_INACTIVE":
+      return language === "am"
+        ? "ድርጅትዎ ንቁ አይደለም። እድሳት ከመቀጠልዎ በፊት EFP-PSOን ያግኙ።"
+        : "Your organization is not active. Contact EFP-PSO support before renewing.";
+    case "CERTIFICATE_INACTIVE":
+      return language === "am"
+        ? "ምስክርዎ ጊዜው አልፏል ወይም ንቁ አይደለም። EFP-PSOን ያግኙ።"
+        : "Your certificate is expired or inactive. Contact EFP-PSO support.";
+    case "RENEWAL_ALREADY_SUBMITTED":
+      return language === "am"
+        ? "ለዚህ የቀን መቁጠሪያ ዓመት አስቀድመው የእድሳት ማመልከቻ አስገብተዋል። በአንድ ዓመት አንድ ማመልከቻ ብቻ ይፈቀዳል።"
+        : "You have already submitted a renewal application for this calendar year.";
+    case "RENEWAL_TOO_EARLY":
+      return language === "am"
+        ? "እድሳት በምስክርዎ የሚያበቃበት ወራት ውስጥ ብቻ ሊቀርብ ይችላል።"
+        : "Renewal opens in the final month before your certificate expires.";
+    case "AUTHENTICATION_REQUIRED":
+      return language === "am"
+        ? "እባክዎ ወደ መለያዎ ይግቡ እና እንደገና ይሞክሩ።"
+        : "Please sign in to your account and try again.";
+    default:
+      break;
+  }
+
+  const lower = message.toLowerCase();
+
+  if (
+    lower.includes("validity period") ||
+    lower.includes("earliest date") ||
+    lower.includes("11 months")
+  ) {
+    const dateMatch = message.match(/(\d{4}-\d{2}-\d{2})/);
+    const dateLabel = dateMatch
+      ? formatPolicyDate(dateMatch[1], language)
+      : null;
+    return language === "am"
+      ? dateLabel
+        ? `እድሳት በምስክርዎ የሚያበቃበት ወራት ውስጥ ብቻ ሊቀርብ ይችላል። የመጀመሪያ ቀን፡ ${dateLabel}።`
+        : "እድሳት በምስክርዎ የሚያበቃበት ወራት ውስጥ ብቻ ሊቀርብ ይችላል።"
+      : dateLabel
+        ? `Renewal opens in the final month before your certificate expires. Earliest date: ${dateLabel}.`
+        : "Renewal opens in the final month before your certificate expires.";
+  }
+
+  if (
+    lower.includes("does not belong") ||
+    lower.includes("not belong to your organization")
+  ) {
+    return language === "am"
+      ? "ይህ የምስክር ቁጥር ለድርጅትዎ አይደለም። የራስዎን ንቁ ፈቃድ ቁጥር ያስገቡ።"
+      : "This certificate does not belong to your organization. Enter the serial number from your own license.";
+  }
+
+  if (lower.includes("no certificate was found") || lower.includes("not found")) {
+    return language === "am"
+      ? "በዚህ ተከታታይ ቁጥር ምስክር አልተገኘም። በፈቃድዎ ላይ ያለውን ቁጥር ያረጋግጡ።"
+      : "No certificate was found with this serial number. Check the number on your license document.";
+  }
+
+  if (lower.includes("already been submitted") || lower.includes("per calendar year")) {
+    return language === "am"
+      ? "ለዚህ የቀን መቁጠሪያ ዓመት አስቀድመው የእድሳት ማመልከቻ አስገብተዋል።"
+      : "You have already submitted a renewal application for this calendar year.";
+  }
+
+  return message;
+};
 
 type ServiceContractEntry = {
   id: number;
@@ -515,6 +635,8 @@ export const Renewal = () => {
     nameAmharic: string;
     status: string;
   } | null>(null);
+  const [renewalPolicy, setRenewalPolicy] =
+    React.useState<RenewalPolicyInfo | null>(null);
   const [appStatus] = React.useState<
     "draft" | "pending" | "reviewing" | "correction"
   >("draft");
@@ -693,6 +815,7 @@ export const Renewal = () => {
 
   React.useEffect(() => {
     setEligibleOrganization(null);
+    setRenewalPolicy(null);
     setEligibilityError(null);
   }, [certificateSerialNumber]);
 
@@ -757,13 +880,36 @@ export const Renewal = () => {
           body: JSON.stringify({ certificateSerialNumber: serial }),
         });
 
+        const policy = response?.data?.renewalPolicy as
+          | RenewalPolicyInfo
+          | undefined;
+
+        if (policy && policy.canSubmit === false) {
+          setEligibleOrganization(null);
+          setRenewalPolicy(null);
+          setEligibilityError(
+            language === "am"
+              ? "እድሳት ማመልከት አልተፈቀደም።"
+              : "Renewal submission is not allowed at this time.",
+          );
+          return;
+        }
+
         setEligibleOrganization(response?.data?.organization || null);
+        setRenewalPolicy(policy ?? null);
         setStep(2);
         window.scrollTo({ top: 0, behavior: "smooth" });
-      } catch (error: any) {
+      } catch (error: unknown) {
         setEligibleOrganization(null);
+        setRenewalPolicy(null);
         setEligibilityError(
-          error?.message || "Unable to validate renewal eligibility",
+          mapRenewalEligibilityError(
+            error instanceof Error
+              ? error.message
+              : "Unable to validate renewal eligibility",
+            language as "en" | "am",
+            getRenewalErrorCode(error),
+          ),
         );
       } finally {
         setIsCheckingEligibility(false);
@@ -780,6 +926,15 @@ export const Renewal = () => {
 
   const onSubmit = async (_data: RenewalFormValues) => {
     if (isFormLocked) return;
+    if (!eligibleOrganization) {
+      setEligibilityError(
+        language === "am"
+          ? "እባክዎ የምስክር ቁጥርዎን ያረጋግጡ ከመቀጠልዎ በፊት።"
+          : "Please verify your certificate before submitting.",
+      );
+      setStep(1);
+      return;
+    }
     if (step !== 7) {
       // If somehow triggered before step 7, just advance
       nextStep();
@@ -840,10 +995,17 @@ export const Renewal = () => {
       }
 
       setIsSubmitted(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
       setEligibilityError(
-        error?.message || "Failed to submit renewal application",
+        mapRenewalEligibilityError(
+          error instanceof Error
+            ? error.message
+            : "Failed to submit renewal application",
+          language as "en" | "am",
+          getRenewalErrorCode(error),
+        ),
       );
+      setStep(1);
     }
   };
 
@@ -853,7 +1015,13 @@ export const Renewal = () => {
       certificateSerialNumber: "Certificate Serial Number",
       certificateSerialPlaceholder: "Enter certificate serial number",
       eligibilityHelp:
-        "The certificate and organization must be active before renewal can continue.",
+        "Your certificate and organization must be active. Renewal opens in the final month of your certificate period (from issue to expiry date), and only one renewal application is allowed per calendar year.",
+      renewalPolicyTitle: "Renewal eligibility",
+      certificateIssued: "Certificate issued",
+      certificateExpires: "Certificate expires",
+      renewalOpens: "Renewal opens",
+      renewalYearLimit: "Calendar year",
+      renewalYearLimitValue: "One renewal application per year",
       verifyAndContinue: "Verify and Continue",
       verifying: "Verifying...",
       region: "Region",
@@ -912,7 +1080,14 @@ export const Renewal = () => {
       title: "እድሳት፡ የተቋም እና የቢሮ መረጃ",
       certificateSerialNumber: "የምስክር ተከታታይ ቁጥር",
       certificateSerialPlaceholder: "የምስክር ተከታታይ ቁጥር ያስገቡ",
-      eligibilityHelp: "እድሳቱ ከመቀጠሉ በፊት የምስኩ እና የድርጅቱ ሁኔታ ንቁ መሆን አለበት።",
+      eligibilityHelp:
+        "ምስክሩ እና ድርጅቱ ንቁ መሆን አለባቸው። እድሳት ከምስክር ወጣበት እስከ የሚያበቃበት ቀን ድረስ በመጨረሻው ወር ይከፈታል፣ ለእያንዳንዱ የቀን መቁጠሪያ ዓመት አንድ የእድሳት ማመልከቻ ብቻ ይፈቀዳል።",
+      renewalPolicyTitle: "የእድሳት ብቁነት",
+      certificateIssued: "ምስክር የወጣበት ቀን",
+      certificateExpires: "ምስክር የሚያበቃበት ቀን",
+      renewalOpens: "እድሳት የሚከፈትበት",
+      renewalYearLimit: "የቀን መቁጠሪያ ዓመት",
+      renewalYearLimitValue: "በአንድ ዓመት አንድ የእድሳት ማመልከቻ",
       verifyAndContinue: "አረጋግጥ እና ቀጥል",
       verifying: "በማረጋገጥ ላይ...",
       region: "ክልል",
@@ -1095,6 +1270,27 @@ export const Renewal = () => {
         onSubmit={handleSubmit(onSubmit)}
         className="bg-white rounded-[40px] shadow-xl p-6 md:p-12 border border-gray-100 min-h-[600px] flex flex-col"
       >
+        {renewalPolicy && step > 1 && (
+          <div className="mb-8 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-blue-900 text-sm space-y-1">
+            <p className="font-black uppercase tracking-widest text-[10px]">
+              {curT.renewalPolicyTitle}
+            </p>
+            <p className="text-xs">
+              {curT.certificateIssued}:{" "}
+              {formatPolicyDate(renewalPolicy.issueDate, language as "en" | "am")}
+              {" · "}
+              {curT.certificateExpires}:{" "}
+              {formatPolicyDate(renewalPolicy.expiryDate, language as "en" | "am")}
+              {" · "}
+              {curT.renewalOpens}:{" "}
+              {formatPolicyDate(
+                renewalPolicy.earliestSubmitDate,
+                language as "en" | "am",
+              )}
+            </p>
+          </div>
+        )}
+
         <AnimatePresence mode="wait">
           {step === 1 && (
             <motion.div
@@ -1121,10 +1317,36 @@ export const Renewal = () => {
                   placeholder={curT.certificateSerialPlaceholder}
                   className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
                 />
+                {renewalPolicy && (
+                  <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-blue-900 text-sm space-y-2">
+                    <p className="font-black uppercase tracking-widest text-[10px]">
+                      {curT.renewalPolicyTitle}
+                    </p>
+                    <p>
+                      <span className="font-bold">{curT.certificateIssued}:</span>{" "}
+                      {formatPolicyDate(renewalPolicy.issueDate, language as "en" | "am")}
+                    </p>
+                    <p>
+                      <span className="font-bold">{curT.certificateExpires}:</span>{" "}
+                      {formatPolicyDate(renewalPolicy.expiryDate, language as "en" | "am")}
+                    </p>
+                    <p>
+                      <span className="font-bold">{curT.renewalOpens}:</span>{" "}
+                      {formatPolicyDate(
+                        renewalPolicy.earliestSubmitDate,
+                        language as "en" | "am",
+                      )}
+                    </p>
+                    <p>
+                      <span className="font-bold">{curT.renewalYearLimit}:</span>{" "}
+                      {renewalPolicy.renewalYear} — {curT.renewalYearLimitValue}
+                    </p>
+                  </div>
+                )}
                 {eligibleOrganization && (
                   <div className="rounded-2xl border border-green-100 bg-green-50 p-4 text-green-700 text-sm">
                     <p className="font-black uppercase tracking-widest text-[10px] mb-1">
-                      Eligible Organization
+                      {language === "am" ? "ብቁ ድርጅት" : "Eligible Organization"}
                     </p>
                     <p className="font-bold">
                       {language === "am"
@@ -1132,7 +1354,7 @@ export const Renewal = () => {
                         : eligibleOrganization.nameEnglish}
                     </p>
                     <p className="text-xs text-green-600">
-                      Status: {eligibleOrganization.status}
+                      {curT.status}: {eligibleOrganization.status}
                     </p>
                   </div>
                 )}
@@ -2106,8 +2328,8 @@ export const Renewal = () => {
           {step === 7 ? (
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="blue-gradient text-white px-10 py-4 rounded-2xl font-bold shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all flex items-center space-x-2"
+              disabled={isSubmitting || !eligibleOrganization}
+              className="blue-gradient text-white px-10 py-4 rounded-2xl font-bold shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all flex items-center space-x-2 disabled:opacity-50 disabled:pointer-events-none"
             >
               <span>{isSubmitting ? curT.processing : curT.submit}</span>
               {!isSubmitting && <ArrowRight className="w-5 h-5" />}

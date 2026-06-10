@@ -4,6 +4,11 @@ import { ApiResponse } from "../../utils/apiResponse";
 import { NotificationService } from "./notification.service";
 import { NotificationType } from "./notification.types";
 
+function getAuthUserId(req: Request): number | null {
+  const id = req.user?.userId ?? req.user?.id;
+  return id != null ? Number(id) : null;
+}
+
 export class NotificationController {
   /**
    * Retrieves the dynamic live notification feed array for an authenticated user,
@@ -17,6 +22,15 @@ export class NotificationController {
           res,
           "Missing recipient userId reference key.",
           400,
+        );
+      }
+
+      const authUserId = getAuthUserId(req);
+      if (!authUserId || authUserId !== Number(userId)) {
+        return ApiResponse.error(
+          res,
+          "You can only view your own notifications.",
+          403,
         );
       }
 
@@ -54,8 +68,14 @@ export class NotificationController {
         );
       }
 
+      const authUserId = getAuthUserId(req);
+      if (!authUserId) {
+        return ApiResponse.error(res, "Authentication required.", 401);
+      }
+
       const updatedLog = await NotificationService.markAsRead(
         Number(notificationId),
+        authUserId,
       );
 
       return ApiResponse.success(
@@ -64,9 +84,94 @@ export class NotificationController {
         updatedLog,
       );
     } catch (error: any) {
+      const status =
+        error.message === "Notification not found or access denied." ? 404 : 500;
       return ApiResponse.error(
         res,
         "Could not finalize item clear transaction.",
+        status,
+        error.message,
+      );
+    }
+  }
+
+  /**
+   * Permanently deletes a single notification belonging to the authenticated user.
+   */
+  static async deleteNotification(req: Request, res: Response) {
+    try {
+      const { notificationId } = req.params;
+      if (!notificationId) {
+        return ApiResponse.error(
+          res,
+          "Notification item index ID parameter is required.",
+          400,
+        );
+      }
+
+      const authUserId = getAuthUserId(req);
+      if (!authUserId) {
+        return ApiResponse.error(res, "Authentication required.", 401);
+      }
+
+      const deleted = await NotificationService.deleteUserNotification(
+        Number(notificationId),
+        authUserId,
+      );
+
+      return ApiResponse.success(
+        res,
+        "Notification deleted successfully.",
+        deleted,
+      );
+    } catch (error: any) {
+      const status =
+        error.message === "Notification not found or access denied." ? 404 : 500;
+      return ApiResponse.error(
+        res,
+        "Could not delete notification.",
+        status,
+        error.message,
+      );
+    }
+  }
+
+  /**
+   * Clears all notifications for the authenticated user (must match route userId).
+   */
+  static async clearUserFeed(req: Request, res: Response) {
+    try {
+      const { userId } = req.params;
+      if (!userId) {
+        return ApiResponse.error(
+          res,
+          "Missing recipient userId reference key.",
+          400,
+        );
+      }
+
+      const authUserId = getAuthUserId(req);
+      if (!authUserId || authUserId !== Number(userId)) {
+        return ApiResponse.error(
+          res,
+          "You can only clear your own notifications.",
+          403,
+        );
+      }
+
+      const result = await NotificationService.deleteAllUserNotifications(
+        authUserId,
+      );
+
+      return ApiResponse.success(
+        res,
+        "All notifications cleared successfully.",
+        { deletedCount: result.count },
+      );
+    } catch (error: any) {
+      return ApiResponse.error(
+        res,
+        "Could not clear notification feed.",
         500,
         error.message,
       );

@@ -22,9 +22,11 @@ import faqRoutes from "./modules/faqs/faq.routes";
 import inspectionRoutes from "./modules/inspection/inspection.routes";
 import renewalRoutes from "./modules/renewal/renewal.routes";
 import paymentRouter from "./modules/payment/payment.routes";
+import efpPositionRoutes from "./modules/efpPosition/efpPosition.routes";
 // 🔔 NOTIFICATION MODULE IMPORTS: Added the routes and the background automation loop
 import notificationRoutes from "./modules/notification/notification.routes";
 import { runNotificationCronWorker } from "./modules/notification/notification.worker";
+import organizationRoutes from "./modules/organization/organization.routes";
 
 const app = express();
 
@@ -76,6 +78,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/formal-requests", formalRequestRoutes);
 app.use("/api/positions", positionRoutes);
+app.use("/api/efp-positions", efpPositionRoutes);
 app.use("/api/certifications", certificationRoutes);
 app.use("/api/system-settings", settingsRoutes);
 app.use("/api/admin", adminRoutes);
@@ -86,6 +89,7 @@ app.use("/api", faqRoutes);
 app.use("/api/payments", paymentRouter);
 // 🔔 MOUNT NOTIFICATION API ENDPOINTS: Exposed for dashboard feed requests
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/organizations", organizationRoutes);
 
 // 6. Health Check / Root Route
 app.get("/", (req, res) => {
@@ -134,7 +138,7 @@ app.listen(port, () => {
   console.log(` Backend running on http://localhost:${port}`);
   console.log(` Status: Daily Certificate Expiry Cron Worker Online`);
   console.log(
-    ` Endpoints Ready: /api/users, /api/certifications, /api/notifications`,
+    ` Endpoints Ready: /api/users, /api/certifications, /api/notifications, /api/organizations`,
   );
   console.log(`-----------------------------------------------`);
 });
