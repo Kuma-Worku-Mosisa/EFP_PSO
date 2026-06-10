@@ -18,6 +18,8 @@ import {
   Trash2,
   ShieldCheck,
   Plus,
+  Search,
+  ChevronDown,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useForm, useFieldArray, useWatch } from "react-hook-form";
@@ -304,10 +306,12 @@ const FormInput = ({
   name,
   placeholder,
   type = "text",
+  inputMode,
   error,
   required = true,
   disabled = false,
   isOpenedForEdit = false,
+  onChange,
 }: {
   label: string;
   value?: string;
@@ -315,11 +319,15 @@ const FormInput = ({
   name: string;
   placeholder?: string;
   type?: string;
+  inputMode?: string;
   error?: any;
   required?: boolean;
   disabled?: boolean;
   isOpenedForEdit?: boolean;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) => {
+  const { language } = useLanguage();
+  const fiOpt = language === "am" ? "አማራጭ" : "Optional";
   const isFilled = value && value.length > 0;
   const autoPlaceholder =
     placeholder ||
@@ -344,7 +352,7 @@ const FormInput = ({
                 : "text-amber-700 bg-amber-50",
             )}
           >
-            {required ? "*" : "Optional"}
+            {required ? "*" : fiOpt}
           </span>
         </label>
         {isFilled && !error && (
@@ -354,14 +362,27 @@ const FormInput = ({
             className="flex items-center space-x-1.5 text-[10px] text-green-500 font-black uppercase tracking-widest"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Verified</span>
           </motion.div>
         )}
       </div>
       <div className="relative">
         <input
-          {...register(name)}
+          {...(() => {
+            const reg = register(name);
+            if (onChange) {
+              const origOnChange = reg.onChange;
+              return {
+                ...reg,
+                onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+                  onChange(e);
+                  origOnChange(e);
+                },
+              };
+            }
+            return reg;
+          })()}
           type={type}
+          inputMode={inputMode ?? "text"}
           disabled={disabled && !isOpenedForEdit}
           className={cn(
             "w-full p-4 transition-all duration-300 outline-none border-2 text-primary font-bold shadow-sm",
@@ -400,137 +421,238 @@ const FormInput = ({
   );
 };
 
-type Kebele = {
+type LocationOption = {
   id: number;
   name: string;
-  nameEnglish?: string;
-  nameAmharic?: string;
-  woredaId: number;
+};
+
+const SearchableLocationSelect = ({
+  label,
+  placeholder,
+  searchPlaceholder,
+  value,
+  options,
+  disabled = false,
+  onChange,
+  onOpen,
+  onClear,
+}: {
+  label: string;
+  placeholder: string;
+  searchPlaceholder: string;
+  value: string;
+  options: LocationOption[];
+  disabled?: boolean;
+  onChange: (value: string) => void;
+  onOpen?: () => void;
+  onClear?: () => void;
+}) => {
+  const { language } = useLanguage();
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  const selectedOption = options.find(
+    (option) => String(option.id) === String(value),
+  );
+
+  React.useEffect(() => {
+    if (!isOpen) {
+      setSearchTerm("");
+    }
+  }, [isOpen]);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredOptions = options.filter((option) => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return true;
+    return option.name.toLowerCase().includes(term);
+  });
+
+  return (
+    <div ref={containerRef} className="space-y-2 text-left relative">
+      <label className="text-[11px] font-black text-gray-500 uppercase tracking-widest">
+        {label}
+      </label>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => {
+          if (disabled) return;
+          setIsOpen((prev) => !prev);
+          onOpen?.();
+        }}
+        className={cn(
+          "w-full p-4 pr-12 rounded-2xl border text-left flex items-center justify-between gap-3 transition-all relative",
+          disabled
+            ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"
+            : "bg-white border-gray-200 hover:border-primary focus:border-primary",
+        )}
+      >
+        <span
+          className={cn(
+            "truncate",
+            selectedOption ? "text-primary font-medium" : "text-gray-400",
+          )}
+        >
+          {selectedOption?.name || placeholder}
+        </span>
+        <span className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2 text-gray-400">
+          {selectedOption ? (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onClear?.();
+              }}
+              className="p-1 rounded-full hover:bg-red-50 hover:text-red-600 transition-all"
+              aria-label={`Clear ${label}`}
+            >
+              <X className="w-4 h-4" />
+            </button>
+          ) : (
+            <ChevronDown className="w-4 h-4" />
+          )}
+        </span>
+      </button>
+
+      {isOpen && !disabled && (
+        <div className="absolute left-0 right-0 top-full z-20 mt-2 rounded-2xl border border-gray-200 bg-white shadow-2xl overflow-hidden">
+          <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-3 bg-gray-50">
+            <Search className="w-4 h-4 text-gray-400 shrink-0" />
+            <input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder={searchPlaceholder}
+              className="w-full bg-transparent outline-none text-sm text-primary placeholder:text-gray-400"
+              autoFocus
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm("")}
+                className="shrink-0 p-1.5 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                aria-label="Clear search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          <div className="max-h-56 overflow-auto p-2">
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => {
+                    onChange(String(option.id));
+                    setIsOpen(false);
+                  }}
+                  className={cn(
+                    "w-full text-left px-3 py-3 rounded-xl text-sm transition-all",
+                    String(option.id) === String(value)
+                      ? "bg-primary text-white font-bold"
+                      : "hover:bg-gray-100 text-gray-700",
+                  )}
+                >
+                  {option.name}
+                </button>
+              ))
+            ) : (
+              <div className="px-3 py-4 text-sm text-gray-400 text-center">
+                {searchTerm
+                  ? (language === "am" ? "ምንም አማራጭ አልተገኘም" : "No matching options")
+                  : (language === "am" ? "ምንም አማራጭ የለም" : "No options available")}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 // --- Dynamic Location Data ---
-type Region = {
-  id: number;
-  name: string;
-  nameEnglish?: string;
-  nameAmharic?: string;
-};
-type Zone = {
-  id: number;
-  name: string;
-  nameEnglish?: string;
-  nameAmharic?: string;
-  regionId: number;
-};
-type Woreda = {
-  id: number;
-  name: string;
-  nameEnglish?: string;
-  nameAmharic?: string;
-  zoneId: number;
-};
 type PositionOption = { id: number; name: string };
 
 function useLocationData() {
-  const [regions, setRegions] = React.useState<Region[]>([]);
-  const [zones, setZones] = React.useState<Zone[]>([]);
-  const [woredas, setWoredas] = React.useState<Woreda[]>([]);
-  const [kebeles, setKebeles] = React.useState<Kebele[]>([]);
-  const [loading, setLoading] = React.useState(false);
-  const [regionId, setRegionId] = React.useState<number | null>(null);
-  const [zoneId, setZoneId] = React.useState<number | null>(null);
-  const [woredaId, setWoredaId] = React.useState<number | null>(null);
-
+  const [regions, setRegions] = React.useState<LocationOption[]>([]);
+  const [zonesByRegion, setZonesByRegion] = React.useState<Record<string, LocationOption[]>>({});
+  const [woredasByZone, setWoredasByZone] = React.useState<Record<string, LocationOption[]>>({});
+  const [kebelesByWoreda, setKebelesByWoreda] = React.useState<Record<string, LocationOption[]>>({});
   const { language } = useLanguage();
 
   React.useEffect(() => {
-    setLoading(true);
     apiRequest<any>("/location/regions")
       .then((res) => {
-        const mapped = mapLocalizedLocationRows(
-          res.data || [],
-          language,
-        ) as Region[];
+        const mapped = mapLocalizedLocationRows(res.data || [], language) as LocationOption[];
         setRegions(mapped);
       })
-      .finally(() => setLoading(false));
+      .catch(() => setRegions([]));
   }, [language]);
 
-  React.useEffect(() => {
-    if (regionId) {
-      setLoading(true);
-      apiRequest<any>(`/location/regions/${regionId}/zones`)
-        .then((res) => {
-          const mapped = mapLocalizedLocationRows(res.data || [], language).map(
-            (row: any) => ({
-              ...row,
-              regionId: Number(row.regionId ?? row.region_id),
-            }),
-          ) as Zone[];
-          setZones(mapped);
-        })
-        .finally(() => setLoading(false));
-    } else {
-      setZones([]);
-    }
-    setZoneId(null);
-    setWoredas([]);
-    setWoredaId(null);
-    setKebeles([]);
-  }, [language, regionId]);
+  const loadZones = async (regionId: string | number) => {
+    if (!regionId) return;
+    const key = String(regionId);
+    if (zonesByRegion[key]) return;
+    try {
+      const res = await apiRequest<any>(`/location/regions/${regionId}/zones`);
+      const mapped = mapLocalizedLocationRows(res.data || [], language) as LocationOption[];
+      setZonesByRegion((prev) => ({ ...prev, [key]: mapped }));
+    } catch (e) { /* ignore */ }
+  };
 
-  React.useEffect(() => {
-    if (zoneId) {
-      setLoading(true);
-      apiRequest<any>(`/location/zones/${zoneId}/woredas`)
-        .then((res) => {
-          const mapped = mapLocalizedLocationRows(res.data || [], language).map(
-            (row: any) => ({
-              ...row,
-              zoneId: Number(row.zoneId ?? row.zone_id),
-            }),
-          ) as Woreda[];
-          setWoredas(mapped);
-        })
-        .finally(() => setLoading(false));
-    } else {
-      setWoredas([]);
-    }
-    setWoredaId(null);
-    setKebeles([]);
-  }, [language, zoneId]);
+  const loadWoredas = async (zoneId: string | number) => {
+    if (!zoneId) return;
+    const key = String(zoneId);
+    if (woredasByZone[key]) return;
+    try {
+      const res = await apiRequest<any>(`/location/zones/${zoneId}/woredas`);
+      const mapped = mapLocalizedLocationRows(res.data || [], language) as LocationOption[];
+      setWoredasByZone((prev) => ({ ...prev, [key]: mapped }));
+    } catch (e) { /* ignore */ }
+  };
 
-  React.useEffect(() => {
-    if (woredaId) {
-      setLoading(true);
-      apiRequest<any>(`/location/woredas/${woredaId}/kebeles`)
-        .then((res) => {
-          const mapped = mapLocalizedLocationRows(res.data || [], language).map(
-            (row: any) => ({
-              ...row,
-              woredaId: Number(row.woredaId ?? row.woreda_id),
-            }),
-          ) as Kebele[];
-          setKebeles(mapped);
-        })
-        .finally(() => setLoading(false));
-    } else {
-      setKebeles([]);
-    }
-  }, [language, woredaId]);
+  const loadKebeles = async (woredaId: string | number) => {
+    if (!woredaId) return;
+    const key = String(woredaId);
+    if (kebelesByWoreda[key]) return;
+    try {
+      const res = await apiRequest<any>(`/location/woredas/${woredaId}/kebeles`);
+      const mapped = mapLocalizedLocationRows(res.data || [], language) as LocationOption[];
+      setKebelesByWoreda((prev) => ({ ...prev, [key]: mapped }));
+    } catch (e) { /* ignore */ }
+  };
 
   return {
     regions,
-    zones,
-    woredas,
-    kebeles,
-    loading,
-    setRegionId,
-    setZoneId,
-    setWoredaId,
-    regionId,
-    zoneId,
-    woredaId,
+    zonesByRegion,
+    woredasByZone,
+    kebelesByWoreda,
+    loadZones,
+    loadWoredas,
+    loadKebeles,
+    // backward-compatible flat arrays (used by review section)
+    get zones() { return Object.values(zonesByRegion).flat(); },
+    get woredas() { return Object.values(woredasByZone).flat(); },
+    get kebeles() { return Object.values(kebelesByWoreda).flat(); },
+    setRegionId: loadZones,
+    setZoneId: loadWoredas,
+    setWoredaId: loadKebeles,
   };
 }
 
@@ -557,9 +679,11 @@ const FormSelect = ({
   value?: string | number;
   placeholder?: string;
 }) => {
+  const { language } = useLanguage();
+  const fsOpt = language === "am" ? "አማራጭ" : "Optional";
   const computedPlaceholder = required
     ? placeholder
-    : `${placeholder} (optional)`;
+    : `${placeholder} (${language === "am" ? "አማራጭ" : "optional"})`;
 
   // Obtain register helpers once to support controlled selects
   const reg = register ? register(name) : undefined;
@@ -577,7 +701,7 @@ const FormSelect = ({
                 : "text-amber-700 bg-amber-50",
             )}
           >
-            {required ? "*" : "Optional"}
+            {required ? "*" : fsOpt}
           </span>
         </label>
       </div>
@@ -628,6 +752,14 @@ const FormSelect = ({
   );
 };
 
+const uploadLbl = (lang: string) => {
+  const m: Record<string, Record<string, string>> = {
+    en: { uploaded: "Uploaded", selectFile: "Select File", optional: "Optional", docHint: "PDF, DOCX Max 5MB", photoHint: "JPG, PNG Max 2MB" },
+    am: { uploaded: "ተሰቅሏል", selectFile: "ፋይል ይምረጡ", optional: "አማራጭ", docHint: "ፒዲኤፍ፣ ዶክስ ከፍተኛ 5ሜባ", photoHint: "ጄፒጂ፣ ፒኤንጂ ከፍተኛ 2ሜባ" },
+  };
+  return m[lang] || m.en;
+};
+
 const FileUpload = ({
   label,
   type = "document",
@@ -649,6 +781,8 @@ const FileUpload = ({
   disabled?: boolean;
   isOpenedForEdit?: boolean;
 }) => {
+  const { language } = useLanguage();
+  const lbl = uploadLbl(language);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
 
@@ -672,113 +806,118 @@ const FileUpload = ({
   const isDisabled = disabled && !isOpenedForEdit;
 
   return (
-    <div
-      className={cn(
-        "group relative rounded-[28px] border-2 transition-all duration-500 p-5",
-        file
-          ? "bg-white border-solid border-green-200 shadow-lg shadow-green-500/5 ring-4 ring-green-50/30"
-          : "bg-gray-50/50 border-dashed border-gray-200 hover:border-primary/40 hover:bg-white cursor-pointer hover:shadow-xl",
-        isOpenedForEdit &&
-          "border-amber-400 bg-amber-50/20 ring-4 ring-amber-50 animate-pulse border-dashed",
-      )}
-    >
-      {file && (
-        <div className="absolute -top-3 -right-3 z-10">
-          <div className="flex items-center space-x-1.5 bg-green-500 text-white px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl shadow-green-500/30 border-2 border-white animate-in zoom-in">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Uploaded</span>
+      <div
+        className={cn(
+          "group relative rounded-[28px] border-2 transition-all duration-500 p-4 sm:p-5",
+          file
+            ? "bg-white border-solid border-green-200 shadow-lg shadow-green-500/5 ring-4 ring-green-50/30"
+            : "bg-gray-50/50 border-dashed border-gray-200 hover:border-primary/40 hover:bg-white cursor-pointer hover:shadow-xl",
+          isOpenedForEdit &&
+            "border-amber-400 bg-amber-50/20 ring-4 ring-amber-50 animate-pulse border-dashed",
+        )}
+      >
+        {file && (
+          <div className="absolute -top-3 -right-3 z-10">
+            <div className="flex items-center space-x-1.5 bg-green-500 text-white px-2.5 py-1 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest shadow-xl shadow-green-500/30 border-2 border-white animate-in zoom-in">
+              <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <span>{lbl.uploaded}</span>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileChange}
-        className="hidden"
-        disabled={isDisabled}
-        accept={type === "photo" ? "image/*" : ".pdf,.doc,.docx"}
-      />
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          className="hidden"
+          disabled={isDisabled}
+          accept={type === "photo" ? "image/*" : ".pdf,.doc,.docx"}
+        />
 
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center space-x-5 flex-1 min-w-0">
-          <div
-            className={cn(
-              "w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500 flex-shrink-0 shadow-sm",
-              file
-                ? "bg-green-50 text-green-500"
-                : "bg-white border text-gray-400 group-hover:scale-105 group-hover:text-primary group-hover:shadow-lg",
-            )}
-          >
-            {isOpenedForEdit ? (
-              <RefreshCw className="w-8 h-8 animate-spin-slow text-amber-500" />
-            ) : file ? (
-              <FileText className="w-8 h-8" />
-            ) : type === "photo" ? (
-              <Users className="w-8 h-8" />
-            ) : (
-              <Upload className="w-8 h-8" />
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <h4
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+          <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
+            <div
               className={cn(
-                "font-black text-sm uppercase tracking-tight truncate",
+                "w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center transition-all duration-500 flex-shrink-0 shadow-sm",
                 file
-                  ? "text-green-600"
-                  : "text-primary/70 group-hover:text-primary",
+                  ? "bg-green-50 text-green-500"
+                  : "bg-white border text-gray-400 group-hover:scale-105 group-hover:text-primary group-hover:shadow-lg",
               )}
             >
-              {file ? file.name : label}
-            </h4>
-            <div className="flex items-center space-x-2 mt-1">
-              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                {file
-                  ? `${(file.size / 1024 / 1024).toFixed(2)} MB`
-                  : type === "photo"
-                    ? "JPG, PNG Max 2MB"
-                    : "PDF, DOCX Max 5MB"}
-              </span>
-              {required && !file && (
-                <span className="text-[10px] text-amber-500 font-black uppercase tracking-widest bg-amber-50 px-1.5 rounded-md">
-                  *
+              {isOpenedForEdit ? (
+                <RefreshCw className="w-6 h-6 sm:w-7 sm:h-7 animate-spin-slow text-amber-500" />
+              ) : file ? (
+                <FileText className="w-6 h-6 sm:w-7 sm:h-7" />
+              ) : type === "photo" ? (
+                <Users className="w-6 h-6 sm:w-7 sm:h-7" />
+              ) : (
+                <Upload className="w-6 h-6 sm:w-7 sm:h-7" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h4
+                className={cn(
+                  "font-black text-xs sm:text-sm tracking-tight break-words leading-snug w-full",
+                  file
+                    ? "text-green-600"
+                    : "text-primary/70 group-hover:text-primary",
+                )}
+              >
+                {file ? file.name : label}
+              </h4>
+              {!required && !file && (
+                <span className="text-[9px] text-amber-700 bg-amber-50 font-black rounded-md px-1.5 py-0.5 uppercase tracking-widest">
+                  {lbl.optional}
                 </span>
               )}
+              <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5 mt-1">
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                  {file
+                    ? `${(file.size / 1024 / 1024).toFixed(2)} MB`
+                    : type === "photo"
+                      ? lbl.photoHint
+                      : lbl.docHint}
+                </span>
+                {required && !file && (
+                  <span className="text-[10px] text-amber-500 font-black uppercase tracking-widest bg-amber-50 px-1.5 rounded-md">
+                    *
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex items-center space-x-2">
-          {!file || isOpenedForEdit ? (
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isDisabled}
-              className="px-6 py-3 bg-white border-2 border-gray-100 text-primary rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-sm hover:border-primary hover:shadow-lg transition-all active:scale-95 whitespace-nowrap"
-            >
-              Select File
-            </button>
-          ) : (
-            <div className="flex items-center space-x-2">
+          <div className="flex items-center justify-end space-x-2 flex-shrink-0">
+            {!file || isOpenedForEdit ? (
               <button
                 type="button"
-                onClick={() => onView(file, previewUrl)}
-                className="p-3 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isDisabled}
+                className="px-5 py-2.5 sm:px-6 sm:py-3 bg-white border-2 border-gray-100 text-primary rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-sm hover:border-primary hover:shadow-lg transition-all active:scale-95 whitespace-nowrap"
               >
-                <Eye className="w-5 h-5" />
+                {lbl.selectFile}
               </button>
-              <button
-                type="button"
-                onClick={() => onDelete()}
-                className="p-3 bg-red-50 text-red-600 rounded-2xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
-            </div>
-          )}
+            ) : (
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => onView(file, previewUrl)}
+                  className="p-2.5 sm:p-3 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                >
+                  <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDelete()}
+                  className="p-2.5 sm:p-3 bg-red-50 text-red-600 rounded-2xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                >
+                  <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
   );
 };
 
@@ -789,18 +928,17 @@ function LocationFields({
   isFormLocked,
   openedFields,
   setValue,
+  curT,
+  isAm,
 }: any) {
   const {
     regions,
-    zones,
-    woredas,
-    kebeles,
-    setRegionId,
-    setZoneId,
-    setWoredaId,
-    regionId,
-    zoneId,
-    woredaId,
+    zonesByRegion,
+    woredasByZone,
+    kebelesByWoreda,
+    loadZones,
+    loadWoredas,
+    loadKebeles,
   } = useLocationData();
 
   const selectedRegion = watch("region");
@@ -808,114 +946,90 @@ function LocationFields({
   const selectedWoreda = watch("woreda");
   const selectedKebele = watch("kebele");
 
-  React.useEffect(() => {
-    if (selectedRegion) {
-      const region = regions.find(
-        (r) => r.id === Number(selectedRegion) || r.name === selectedRegion,
-      );
-      if (region) setRegionId(region.id);
-    }
-  }, [selectedRegion, regions, setRegionId]);
-
-  React.useEffect(() => {
-    if (selectedZone) {
-      const zone = zones.find(
-        (z) => z.id === Number(selectedZone) || z.name === selectedZone,
-      );
-      if (zone) setZoneId(zone.id);
-    }
-  }, [selectedZone, zones, setZoneId]);
-
-  React.useEffect(() => {
-    if (selectedWoreda) {
-      const woreda = woredas.find(
-        (w) => w.id === Number(selectedWoreda) || w.name === selectedWoreda,
-      );
-      if (woreda) setWoredaId(woreda.id);
-    }
-  }, [selectedWoreda, woredas, setWoredaId]);
-
   return (
     <div className="w-full grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-      <FormSelect
-        label="Region"
-        name="region"
-        register={register}
+      <SearchableLocationSelect
+        label={curT?.region || "Region"}
+        placeholder={isAm ? "ክልል ምረጥ" : "Select Region"}
+        searchPlaceholder={isAm ? "ክልል ፈልግ" : "Search region"}
         value={selectedRegion}
-        options={regions.map((r) => ({ value: r.id, label: r.name }))}
+        options={regions}
         onChange={(val) => {
           setValue?.("region", val);
-          setRegionId(Number(val));
-          try {
-            setValue?.("zone", "");
-            setValue?.("woreda", "");
-            setValue?.("kebele", "");
-          } catch (e) {
-            /* ignore */
-          }
+          setValue?.("zone", "");
+          setValue?.("woreda", "");
+          setValue?.("kebele", "");
+          if (val) loadZones(val);
         }}
-        error={errors.region}
-        disabled={isFormLocked}
-        placeholder="Select Region"
+        onClear={() => {
+          setValue?.("region", "");
+          setValue?.("zone", "");
+          setValue?.("woreda", "");
+          setValue?.("kebele", "");
+        }}
       />
-      <FormSelect
-        label="Zone"
-        name="zone"
-        register={register}
+      <SearchableLocationSelect
+        label={`${curT?.zone || "Zone"} / ${isAm ? "ክፍለ ከተማ" : "Subcity"}`}
+        placeholder={isAm ? "ዞን/ክፍለ ከተማ ምረጥ" : "Select Zone / Subcity"}
+        searchPlaceholder={isAm ? "ዞን ፈልግ" : "Search zone"}
         value={selectedZone}
-        options={zones.map((z) => ({ value: z.id, label: z.name }))}
+        options={zonesByRegion[String(selectedRegion)] || []}
+        disabled={!selectedRegion}
         onChange={(val) => {
           setValue?.("zone", val);
-          setZoneId(Number(val));
-          try {
-            setValue?.("woreda", "");
-            setValue?.("kebele", "");
-          } catch (e) {
-            /* ignore */
-          }
+          setValue?.("woreda", "");
+          setValue?.("kebele", "");
+          if (val) loadWoredas(val);
         }}
-        error={errors.zone}
-        disabled={isFormLocked || !regionId}
-        placeholder="Select Zone"
+        onClear={() => {
+          setValue?.("zone", "");
+          setValue?.("woreda", "");
+          setValue?.("kebele", "");
+        }}
+        onOpen={() => { if (selectedRegion) loadZones(selectedRegion); }}
       />
-      <FormSelect
-        label="Woreda"
-        name="woreda"
-        register={register}
+      <SearchableLocationSelect
+        label={curT?.woreda || "Woreda"}
+        placeholder={isAm ? "ወረዳ ምረጥ" : "Select Woreda"}
+        searchPlaceholder={isAm ? "ወረዳ ፈልግ" : "Search woreda"}
         value={selectedWoreda}
-        options={woredas.map((w) => ({ value: w.id, label: w.name }))}
+        options={woredasByZone[String(selectedZone)] || []}
+        disabled={!selectedZone}
         onChange={(val) => {
           setValue?.("woreda", val);
-          setWoredaId(Number(val));
-          try {
-            setValue?.("kebele", "");
-          } catch (e) {
-            /* ignore */
-          }
+          setValue?.("kebele", "");
+          if (val) loadKebeles(val);
         }}
-        error={errors.woreda}
-        disabled={isFormLocked || !zoneId}
-        placeholder="Select Woreda"
+        onClear={() => {
+          setValue?.("woreda", "");
+          setValue?.("kebele", "");
+        }}
+        onOpen={() => { if (selectedZone) loadWoredas(selectedZone); }}
       />
-      <FormSelect
-        label="Kebele"
-        name="kebele"
-        register={register}
+      <SearchableLocationSelect
+        label={curT?.kebele || "Kebele"}
+        placeholder={isAm ? "ቀበሌ ምረጥ" : "Select Kebele"}
+        searchPlaceholder={isAm ? "ቀበሌ ፈልግ" : "Search kebele"}
         value={selectedKebele}
-        options={kebeles.map((k) => ({ value: k.id, label: k.name }))}
+        options={kebelesByWoreda[String(selectedWoreda)] || []}
+        disabled={!selectedWoreda}
         onChange={(val) => setValue?.("kebele", val)}
-        error={errors.kebele}
-        disabled={isFormLocked || !woredaId}
-        placeholder="Select Kebele"
+        onClear={() => setValue?.("kebele", "")}
+        onOpen={() => { if (selectedWoreda) loadKebeles(selectedWoreda); }}
       />
       <FormInput
-        label="House No"
+        label={curT?.houseNo || "House No"}
         name="houseNumber"
+        type="text"
+        inputMode="numeric"
         register={register}
         value={watch("houseNumber")}
         error={errors.houseNumber}
         disabled={isFormLocked}
-        isOpenedForEdit={openedFields.includes("houseNumber")}
+        isOpenedForEdit={openedFields?.includes("houseNumber")}
+        onChange={(e) => {
+          e.target.value = e.target.value.replace(/\D/g, "");
+        }}
       />
     </div>
   );
@@ -930,18 +1044,16 @@ function BranchAddressRow({
   onRemove,
   isFormLocked,
   isRequired = false,
+  isAm,
 }: any) {
   const {
     regions,
-    zones,
-    woredas,
-    kebeles,
-    setRegionId,
-    setZoneId,
-    setWoredaId,
-    regionId,
-    zoneId,
-    woredaId,
+    zonesByRegion,
+    woredasByZone,
+    kebelesByWoreda,
+    loadZones,
+    loadWoredas,
+    loadKebeles,
   } = useLocationData();
 
   const selectedRegion = watch(`branchAddresses.${index}.region`);
@@ -949,40 +1061,13 @@ function BranchAddressRow({
   const selectedWoreda = watch(`branchAddresses.${index}.woreda`);
   const selectedKebeleId = watch(`branchAddresses.${index}.kebeleId`);
 
-  React.useEffect(() => {
-    if (selectedRegion) {
-      const region = regions.find(
-        (r) => r.id === Number(selectedRegion) || r.name === selectedRegion,
-      );
-      if (region) setRegionId(region.id);
-    }
-  }, [selectedRegion, regions, setRegionId]);
-
-  React.useEffect(() => {
-    if (selectedZone) {
-      const zone = zones.find(
-        (z) => z.id === Number(selectedZone) || z.name === selectedZone,
-      );
-      if (zone) setZoneId(zone.id);
-    }
-  }, [selectedZone, zones, setZoneId]);
-
-  React.useEffect(() => {
-    if (selectedWoreda) {
-      const woreda = woredas.find(
-        (w) => w.id === Number(selectedWoreda) || w.name === selectedWoreda,
-      );
-      if (woreda) setWoredaId(woreda.id);
-    }
-  }, [selectedWoreda, woredas, setWoredaId]);
-
   const branchErrors = errors?.branchAddresses?.[index] || {};
 
   return (
     <div className="space-y-4 rounded-[28px] border border-dashed border-gray-200 p-5 bg-gray-50/50">
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest">
-          Branch Address #{index + 1}
+          {isAm ? `የቅርንጫፍ አድራሻ #${index + 1}` : `Branch Address #${index + 1}`}
         </p>
         <button
           type="button"
@@ -991,70 +1076,79 @@ function BranchAddressRow({
           className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all disabled:opacity-50"
         >
           <Trash2 className="w-3.5 h-3.5" />
-          <span>Remove</span>
+          <span>{isAm ? "አስወግድ" : "Remove"}</span>
         </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <FormSelect
+        <SearchableLocationSelect
           label="Region"
-          name={`branchAddresses.${index}.region`}
-          register={register}
+          placeholder={isAm ? "ክልል ምረጥ" : "Select Region"}
+          searchPlaceholder={isAm ? "ክልል ፈልግ" : "Search region"}
           value={selectedRegion}
-          options={regions.map((r) => ({ value: r.id, label: r.name }))}
+          options={regions}
           onChange={(val) => {
             setValue(`branchAddresses.${index}.region`, val);
-            setRegionId(Number(val));
+            setValue(`branchAddresses.${index}.zone`, "");
+            setValue(`branchAddresses.${index}.woreda`, "");
+            setValue(`branchAddresses.${index}.kebeleId`, "");
+            if (val) loadZones(val);
+          }}
+          onClear={() => {
+            setValue(`branchAddresses.${index}.region`, "");
             setValue(`branchAddresses.${index}.zone`, "");
             setValue(`branchAddresses.${index}.woreda`, "");
             setValue(`branchAddresses.${index}.kebeleId`, "");
           }}
-          required={isRequired}
-          disabled={isFormLocked}
-          placeholder="Select Region"
         />
-        <FormSelect
-          label="Zone"
-          name={`branchAddresses.${index}.zone`}
-          register={register}
+        <SearchableLocationSelect
+          label={`Zone / ${isAm ? "ክፍለ ከተማ" : "Subcity"}`}
+          placeholder={isAm ? "ዞን/ክፍለ ከተማ ምረጥ" : "Select Zone / Subcity"}
+          searchPlaceholder={isAm ? "ዞን ፈልግ" : "Search zone"}
           value={selectedZone}
-          options={zones.map((z) => ({ value: z.id, label: z.name }))}
+          options={zonesByRegion[String(selectedRegion)] || []}
+          disabled={!selectedRegion}
           onChange={(val) => {
             setValue(`branchAddresses.${index}.zone`, val);
-            setZoneId(Number(val));
+            setValue(`branchAddresses.${index}.woreda`, "");
+            setValue(`branchAddresses.${index}.kebeleId`, "");
+            if (val) loadWoredas(val);
+          }}
+          onClear={() => {
+            setValue(`branchAddresses.${index}.zone`, "");
             setValue(`branchAddresses.${index}.woreda`, "");
             setValue(`branchAddresses.${index}.kebeleId`, "");
           }}
-          required={isRequired}
-          disabled={isFormLocked || !regionId}
-          placeholder="Select Zone"
+          onOpen={() => { if (selectedRegion) loadZones(selectedRegion); }}
         />
-        <FormSelect
+        <SearchableLocationSelect
           label="Woreda"
-          name={`branchAddresses.${index}.woreda`}
-          register={register}
+          placeholder={isAm ? "ወረዳ ምረጥ" : "Select Woreda"}
+          searchPlaceholder={isAm ? "ወረዳ ፈልግ" : "Search woreda"}
           value={selectedWoreda}
-          options={woredas.map((w) => ({ value: w.id, label: w.name }))}
+          options={woredasByZone[String(selectedZone)] || []}
+          disabled={!selectedZone}
           onChange={(val) => {
             setValue(`branchAddresses.${index}.woreda`, val);
-            setWoredaId(Number(val));
+            setValue(`branchAddresses.${index}.kebeleId`, "");
+            if (val) loadKebeles(val);
+          }}
+          onClear={() => {
+            setValue(`branchAddresses.${index}.woreda`, "");
             setValue(`branchAddresses.${index}.kebeleId`, "");
           }}
-          required={isRequired}
-          disabled={isFormLocked || !zoneId}
-          placeholder="Select Woreda"
+          onOpen={() => { if (selectedZone) loadWoredas(selectedZone); }}
         />
-        <FormSelect
+        <SearchableLocationSelect
           label="Kebele"
-          name={`branchAddresses.${index}.kebeleId`}
-          register={register}
+          placeholder={isAm ? "ቀበሌ ምረጥ" : "Select Kebele"}
+          searchPlaceholder={isAm ? "ቀበሌ ፈልግ" : "Search kebele"}
           value={selectedKebeleId}
-          options={kebeles.map((k) => ({ value: k.id, label: k.name }))}
+          options={kebelesByWoreda[String(selectedWoreda)] || []}
+          disabled={!selectedWoreda}
           onChange={(val) => setValue(`branchAddresses.${index}.kebeleId`, val)}
-          error={branchErrors.kebeleId}
-          disabled={isFormLocked || !woredaId}
-          required={isRequired}
-          placeholder="Select Kebele"
+          onClear={() => setValue(`branchAddresses.${index}.kebeleId`, "")}
+          onOpen={() => { if (selectedWoreda) loadKebeles(selectedWoreda); }}
         />
       </div>
 
@@ -1069,7 +1163,7 @@ function BranchAddressRow({
           disabled={isFormLocked}
         />
         <FormInput
-          label={"Special Location (Optional)"}
+          label={isAm ? "ልዩ ቦታ (አማራጭ)" : "Special Location (Optional)"}
           name={`branchAddresses.${index}.specialLocation`}
           register={register}
           value={watch(`branchAddresses.${index}.specialLocation`) || ""}
@@ -1100,6 +1194,7 @@ const PersonnelSection = ({
   watch,
   setValue,
   openedFields,
+  isAm,
 }: {
   title: string;
   prefix: string;
@@ -1123,34 +1218,34 @@ const PersonnelSection = ({
   setValue?: any;
   watch?: any;
   openedFields?: string[];
+  isAm?: boolean;
 }) => {
   const isManagerSection = prefix === "manager";
   const correctionOpenedFields = openedFields || [];
+  const workExpVal = watch?.(`${prefix}.workExpYears`);
+  const hasWorkExp = !!workExpVal && String(workExpVal).trim().length > 0;
   const personnelDocs = [
-    { label: "Fingerprint from Police", key: "fingerprint_doc" },
-    { label: "Medical Result", key: "medical_doc" },
-    { label: "Training Certificate", key: "training_doc" },
-    { label: "Support Letter (Kebele)", key: "support_doc" },
-    { label: "Proof of Collateral", key: "collateral_doc" },
-    { label: "Work Experience", key: "experience_doc" },
-    { label: "Resignation Record", key: "resignation_letter_doc" },
-    { label: "Educational Cert (Degree)", key: "education_doc" },
-    { label: "National ID", key: "national_id_doc" },
-    { label: "Renewed Kebele ID/Passport", key: "passport_or_kabele_doc" },
-    { label: "Org Identification", key: "organization_Id_doc" },
+    { label: curT.fingerprintDoc, key: "fingerprint_doc", required: true },
+    { label: curT.medicalDoc, key: "medical_doc", required: true },
+    { label: curT.trainingDoc, key: "training_doc", required: false },
+    { label: curT.supportDoc, key: "support_doc", required: false },
+    { label: curT.collateralDoc, key: "collateral_doc", required: true },
+    { label: curT.experienceDoc, key: "experience_doc", required: hasWorkExp },
+    { label: curT.resignationDoc, key: "resignation_letter_doc", required: hasWorkExp },
+    { label: curT.educationDoc, key: "education_doc", required: true },
+    { label: curT.nationalIdDoc, key: "national_id_doc", required: true },
+    { label: curT.kebeleIdDoc, key: "passport_or_kabele_doc", required: true },
+    { label: curT.orgIdDoc, key: "organization_Id_doc", required: true },
   ];
 
   const {
     regions,
-    zones,
-    woredas,
-    kebeles,
-    setRegionId,
-    setZoneId,
-    setWoredaId,
-    regionId,
-    zoneId,
-    woredaId,
+    zonesByRegion,
+    woredasByZone,
+    kebelesByWoreda,
+    loadZones,
+    loadWoredas,
+    loadKebeles,
   } = useLocationData();
 
   const selectedRegion = watch?.(`${prefix}.region`);
@@ -1187,36 +1282,6 @@ const PersonnelSection = ({
     });
   }, [currentUser, isManagerSection, prefix, setValue]);
 
-  // Find regionId by name or id and trigger zone fetch
-  React.useEffect(() => {
-    if (selectedRegion) {
-      const region = regions.find(
-        (r) => r.id === Number(selectedRegion) || r.name === selectedRegion,
-      );
-      if (region) setRegionId(region.id);
-    }
-  }, [selectedRegion, regions, setRegionId]);
-
-  // Find zoneId by name or id and trigger woreda fetch
-  React.useEffect(() => {
-    if (selectedZone) {
-      const zone = zones.find(
-        (z) => z.id === Number(selectedZone) || z.name === selectedZone,
-      );
-      if (zone) setZoneId(zone.id);
-    }
-  }, [selectedZone, zones, setZoneId]);
-
-  // Find woredaId by name or id and trigger kebele fetch
-  React.useEffect(() => {
-    if (selectedWoreda) {
-      const woreda = woredas.find(
-        (w) => w.id === Number(selectedWoreda) || w.name === selectedWoreda,
-      );
-      if (woreda) setWoredaId(woreda.id);
-    }
-  }, [selectedWoreda, woredas, setWoredaId]);
-
   React.useEffect(() => {
     if (!selectedPositionId || Number.isNaN(selectedPositionId)) {
       setValue?.(`${prefix}.educationLevel`, "", {
@@ -1245,7 +1310,7 @@ const PersonnelSection = ({
             {title}
           </h4>
           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
-            Personnel Identification & Documentation
+            {curT.personnelTitle}
           </p>
         </div>
       </div>
@@ -1253,11 +1318,10 @@ const PersonnelSection = ({
       {/* Basic Info Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FormInput
-          label="Full Name"
+          label={curT.fullName}
           name={`${prefix}.fullName`}
           value={watch?.(`${prefix}.fullName`)}
           register={register}
-          placeholder="Enter legal full name"
           error={errors[prefix]?.fullName}
           disabled={isFormLocked || isManagerSection}
         />
@@ -1265,7 +1329,7 @@ const PersonnelSection = ({
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2.5">
             <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest px-1 flex items-center space-x-1.5">
-              <span>Gender</span>
+              <span>{curT.gender}</span>
               <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
                 *
               </span>
@@ -1279,9 +1343,9 @@ const PersonnelSection = ({
                   isFormLocked && "opacity-75 grayscale cursor-not-allowed",
                 )}
               >
-                <option value="">select gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
+                <option value="">{curT.genderOption}</option>
+                <option value="Male">{curT.male}</option>
+                <option value="Female">{curT.female}</option>
               </select>
               <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-xl bg-primary/5 text-primary">
                 <Users className="h-4 w-4" />
@@ -1292,11 +1356,10 @@ const PersonnelSection = ({
             </div>
           </div>
           <FormInput
-            label="Citizenship"
+            label={curT.citizenship}
             name={`${prefix}.citizenship`}
             register={register}
-            placeholder="ETHIOPIAN"
-            value={watch?.(`${prefix}.citizenship`) || "ETHIOPIAN"}
+            value={watch?.(`${prefix}.citizenship`) || curT.ethiopian}
             error={errors[prefix]?.citizenship}
             disabled={true}
           />
@@ -1312,10 +1375,21 @@ const PersonnelSection = ({
           <div className="flex gap-2">
             <input
               type="text"
-              {...register(`${prefix}.faydaId`)}
+              inputMode="numeric"
+              maxLength={10}
+              {...(() => {
+                const reg = register(`${prefix}.faydaId`);
+                const origOnChange = reg.onChange;
+                return {
+                  ...reg,
+                  onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+                    e.target.value = e.target.value.replace(/\D/g, "");
+                    origOnChange(e);
+                  },
+                };
+              })()}
               disabled={isFormLocked || isManagerSection}
               placeholder="FAYDA-XXXXX"
-              value={watch?.(`${prefix}.faydaId`)}
               className="flex-1 p-4 bg-white border-2 border-gray-100 rounded-2xl outline-none focus:border-primary text-sm font-bold text-primary shadow-sm"
             />
             <div className="flex items-center space-x-2 px-3 bg-primary/5 rounded-2xl border border-primary/10 w-32">
@@ -1351,10 +1425,15 @@ const PersonnelSection = ({
           name={`${prefix}.phone`}
           type="tel"
           register={register}
-          placeholder="+251..."
           value={watch?.(`${prefix}.phone`)}
           error={errors[prefix]?.phone}
           disabled={isFormLocked || isManagerSection}
+          onChange={(e) => {
+            let raw = e.target.value;
+            if (!raw.startsWith("+251")) raw = "+251";
+            const digits = raw.slice(4).replace(/\D/g, "");
+            e.target.value = `+251${digits}`;
+          }}
         />
       </div>
 
@@ -1362,7 +1441,7 @@ const PersonnelSection = ({
       <div className="bg-gray-50/60 p-5 rounded-[28px] border border-dashed border-gray-200 space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <FormSelect
-            label="Position"
+            label={curT.position}
             name={`${prefix}.positionId`}
             register={register}
             value={watch?.(`${prefix}.positionId`)}
@@ -1384,11 +1463,11 @@ const PersonnelSection = ({
             }}
             required={false}
             disabled={isFormLocked}
-            placeholder="Select Position"
+            placeholder={curT.selectPosition}
           />
 
           <FormSelect
-            label="Education Level"
+            label={curT.educationLevel}
             name={`${prefix}.educationLevel`}
             register={register}
             value={watch?.(`${prefix}.educationLevel`)}
@@ -1417,13 +1496,13 @@ const PersonnelSection = ({
             disabled={isFormLocked || !selectedPositionId}
             placeholder={
               selectedPositionId
-                ? "Select Education Level"
-                : "Select Position First"
+                ? curT.selectEducationLevel
+                : curT.selectPositionFirst
             }
           />
 
           <FormInput
-            label="Work Experience Years"
+            label={curT.workExpYears}
             name={`${prefix}.workExpYears`}
             type="number"
             register={register}
@@ -1434,7 +1513,7 @@ const PersonnelSection = ({
           />
 
           <FormInput
-            label="Total Experience Years"
+            label={curT.totalExpYears}
             name={`${prefix}.TotalExpYears`}
             type="number"
             register={register}
@@ -1449,74 +1528,74 @@ const PersonnelSection = ({
       {/* Location Section */}
       <div className="bg-gray-50/50 p-6 rounded-[32px] border-2 border-dashed border-gray-200 space-y-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <FormSelect
-            label="Region"
-            name={`${prefix}.region`}
-            register={register}
+          <SearchableLocationSelect
+            label={curT?.region || "Region"}
+            placeholder={isAm ? "ክልል ምረጥ" : "Select Region"}
+            searchPlaceholder={isAm ? "ክልል ፈልግ" : "Search region"}
             value={selectedRegion}
-            options={regions.map((r) => ({ value: r.id, label: r.name }))}
+            options={regions}
             onChange={(val) => {
               setValue?.(`${prefix}.region`, val);
-              setRegionId(Number(val));
-              try {
-                setValue?.(`${prefix}.zone`, "");
-                setValue?.(`${prefix}.woreda`, "");
-                setValue?.(`${prefix}.kebele`, "");
-              } catch (e) {
-                /* ignore */
-              }
+              setValue?.(`${prefix}.zone`, "");
+              setValue?.(`${prefix}.woreda`, "");
+              setValue?.(`${prefix}.kebele`, "");
+              if (val) loadZones(val);
             }}
-            error={errors[prefix]?.region}
-            disabled={isFormLocked}
+            onClear={() => {
+              setValue?.(`${prefix}.region`, "");
+              setValue?.(`${prefix}.zone`, "");
+              setValue?.(`${prefix}.woreda`, "");
+              setValue?.(`${prefix}.kebele`, "");
+            }}
           />
-          <FormSelect
-            label="Zone"
-            name={`${prefix}.zone`}
-            register={register}
+          <SearchableLocationSelect
+            label={`${curT?.zone || "Zone"} / ${isAm ? "ክፍለ ከተማ" : "Subcity"}`}
+            placeholder={isAm ? "ዞን/ክፍለ ከተማ ምረጥ" : "Select Zone / Subcity"}
+            searchPlaceholder={isAm ? "ዞን ፈልግ" : "Search zone"}
             value={selectedZone}
-            options={zones.map((z) => ({ value: z.id, label: z.name }))}
+            options={zonesByRegion[String(selectedRegion)] || []}
+            disabled={!selectedRegion}
             onChange={(val) => {
               setValue?.(`${prefix}.zone`, val);
-              setZoneId(Number(val));
-              try {
-                setValue?.(`${prefix}.woreda`, "");
-                setValue?.(`${prefix}.kebele`, "");
-              } catch (e) {
-                /* ignore */
-              }
+              setValue?.(`${prefix}.woreda`, "");
+              setValue?.(`${prefix}.kebele`, "");
+              if (val) loadWoredas(val);
             }}
-            error={errors[prefix]?.zone}
-            disabled={!regionId || isFormLocked}
+            onClear={() => {
+              setValue?.(`${prefix}.zone`, "");
+              setValue?.(`${prefix}.woreda`, "");
+              setValue?.(`${prefix}.kebele`, "");
+            }}
+            onOpen={() => { if (selectedRegion) loadZones(selectedRegion); }}
           />
-          <FormSelect
-            label="Woreda"
-            name={`${prefix}.woreda`}
-            register={register}
+          <SearchableLocationSelect
+            label={curT?.woreda || "Woreda"}
+            placeholder={isAm ? "ወረዳ ምረጥ" : "Select Woreda"}
+            searchPlaceholder={isAm ? "ወረዳ ፈልግ" : "Search woreda"}
             value={selectedWoreda}
-            options={woredas.map((w) => ({ value: w.id, label: w.name }))}
+            options={woredasByZone[String(selectedZone)] || []}
+            disabled={!selectedZone}
             onChange={(val) => {
               setValue?.(`${prefix}.woreda`, val);
-              setWoredaId(Number(val));
-              try {
-                setValue?.(`${prefix}.kebele`, "");
-              } catch (e) {
-                /* ignore */
-              }
+              setValue?.(`${prefix}.kebele`, "");
+              if (val) loadKebeles(val);
             }}
-            error={errors[prefix]?.woreda}
-            disabled={!zoneId || isFormLocked}
+            onClear={() => {
+              setValue?.(`${prefix}.woreda`, "");
+              setValue?.(`${prefix}.kebele`, "");
+            }}
+            onOpen={() => { if (selectedZone) loadWoredas(selectedZone); }}
           />
-          <FormSelect
-            label="Kebele"
-            name={`${prefix}.kebele`}
-            register={register}
+          <SearchableLocationSelect
+            label={curT?.kebele || "Kebele"}
+            placeholder={isAm ? "ቀበሌ ምረጥ" : "Select Kebele"}
+            searchPlaceholder={isAm ? "ቀበሌ ፈልግ" : "Search kebele"}
             value={selectedKebele}
-            options={kebeles.map((k) => ({ value: k.id, label: k.name }))}
-            onChange={(val) => {
-              setValue?.(`${prefix}.kebele`, val);
-            }}
-            error={errors[prefix]?.kebele}
-            disabled={!woredaId || isFormLocked}
+            options={kebelesByWoreda[String(selectedWoreda)] || []}
+            disabled={!selectedWoreda}
+            onChange={(val) => setValue?.(`${prefix}.kebele`, val)}
+            onClear={() => setValue?.(`${prefix}.kebele`, "")}
+            onOpen={() => { if (selectedWoreda) loadKebeles(selectedWoreda); }}
           />
         </div>
 
@@ -1543,7 +1622,7 @@ const PersonnelSection = ({
       {/* File Uploads Grid */}
       <div className="space-y-4 border-t border-gray-50 pt-6">
         <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest px-1 block mb-2">
-          Required Documents
+          {curT.requiredDocs}
         </label>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {personnelDocs.map((doc) => (
@@ -1554,6 +1633,7 @@ const PersonnelSection = ({
               onUpload={(file) => onUpload(`${prefix}_${doc.key}`, file)}
               onDelete={() => onDelete(`${prefix}_${doc.key}`)}
               onView={onView}
+              required={doc.required}
               disabled={isFormLocked}
               isOpenedForEdit={correctionOpenedFields.includes(
                 `${prefix}_${doc.key}`,
@@ -1569,6 +1649,7 @@ const PersonnelSection = ({
 export const NewApplication = () => {
   const { user: currentUser } = useAuth();
   const { language } = useLanguage();
+  const isAm = language === "am";
   const locationLookup = useLocationData();
   const [positions, setPositions] = React.useState<PositionOption[]>([]);
   // Map of positionId -> unique education level strings derived from position requirements
@@ -1691,6 +1772,7 @@ export const NewApplication = () => {
         "Your application for a new private security agency license has been successfully submitted. The Federal Police will review your documents and contact you for the next steps.",
       step1Title: "Agency & Office Information",
       orgName: "Organization Name",
+      orgNameAmharic: "Organization Name (Amharic)",
       headOfficeAddress: "Head Office Address",
       headOffice: "Head Office Name",
       faxNumber: "Fax Number",
@@ -1710,18 +1792,92 @@ export const NewApplication = () => {
       step2Desc: "Upload mandatory legal and organizational documents.",
       step3Title: "Assets & Facilities",
       step3Desc: "Provide details about your physical assets and branding.",
+      capitalAmount: "Capital Amount",
       offices: "Number of Offices",
       storeHouse: "Has Store House?",
       computers: "Number of Computers",
       vehicles: "Number of Vehicles",
+      photoSamples: "Photo Samples",
       step4Title: "Training Status",
       step4Desc: "Details about the organization's training program.",
+      trainingAddress: "Training Address",
+      trainingDays: "Number of Days Trained",
+      trainingMale: "Number of Males Trained",
+      trainingFemale: "Number of Females Trained",
+      trainingProvider: "Training Provider Body",
       step5Title: "Key Personnel Requirements",
       step5Desc:
         "Provide details and documents for the Manager, Operations Head, and Admin Head.",
       step6Title: "Final Review",
       step6Desc:
         "Please ensure all uploaded documents and photos are clear and valid. False information may lead to permanent disqualification.",
+      fullName: "Full Name",
+      gender: "Gender",
+      male: "Male",
+      female: "Female",
+      citizenship: "Citizenship",
+      ethiopian: "ETHIOPIAN",
+      position: "Position",
+      selectPosition: "Select Position",
+      educationLevel: "Education Level",
+      selectEducationLevel: "Select Education Level",
+      selectPositionFirst: "Select Position First",
+      workExpYears: "Work Experience Years",
+      totalExpYears: "Total Experience Years",
+      uploaded: "Uploaded",
+      selectFile: "Select File",
+      documentHint: "PDF, DOCX Max 5MB",
+      photoHint: "JPG, PNG Max 2MB",
+      optional: "Optional",
+      genderOption: "Select gender",
+      addAddress: "Add Address",
+      branchAddresses: "Branch Addresses (Optional)",
+      branchAddressDesc: "Add none, one, or multiple branch locations.",
+      noBranchAddress: "No branch address added. You can submit with only the head office address.",
+      completeBranchFirst: "Please complete the current branch address before adding another one.",
+      remove: "Remove",
+      headOfficeDesc: "Primary office location used for the application record.",
+      edit: "Edit",
+      reviewApplication: "Review Application",
+      returnToDashboard: "Return to Dashboard",
+      selectOption: "Select option",
+      yes: "Yes",
+      no: "No",
+      docTradeName: "Trade name designation",
+      docTradePreReg: "Trade pre-registration",
+      docRenewedLicense: "Renewed Trade license",
+      docLaborSkill: "Labor and Skill Bureau registration",
+      docTinNumber: "TIN number paper",
+      docTrademark: "Organizational Trademark",
+      docOrgStructure: "Organizational structure",
+      docArticlesInc: "Articles of incorporation",
+      docInternalRegs: "Internal regulations",
+      docTechList: "Lists of technologies used",
+      docCapital: "Capital (Bank statement)",
+      docVehicleRent: "Notarized Vehicle Rent/Ownership",
+      docHouseRent: "Notarized House Rent/Ownership",
+      docUniformSample: "Uniform Sample",
+      docEmployeeId: "Organization Employee ID Sample (Front & Back)",
+      docEmploymentForm: "Employment Form",
+      docWarrantyForm: "Employment Warranty Form",
+      docLogo: "Logo of Organization",
+      docTrainingManual: "Training Manual",
+      docTrainingCert: "Certificate of Training (Optional)",
+      personnelTitle: "Key Personnel Requirements",
+      personnelDesc: "Provide details and documents for the Manager, Operations Head, and Admin Head.",
+      personnelNote: "Note: Ensure all uploaded documents are clear and legible. The Fayda ID and Phone number must be active for verification purposes.",
+      fingerprintDoc: "Fingerprint from Police",
+      medicalDoc: "Medical Result",
+      trainingDoc: "Training Certificate",
+      supportDoc: "Support Letter (Kebele)",
+      collateralDoc: "Proof of Collateral",
+      experienceDoc: "Work Experience",
+      resignationDoc: "Resignation Record",
+      educationDoc: "Educational Cert (Degree)",
+      nationalIdDoc: "National ID",
+      kebeleIdDoc: "Renewed Kebele ID/Passport",
+      orgIdDoc: "Org Identification",
+      requiredDocs: "Required Documents",
       back: "Back",
       continue: "Continue",
       submit: "Submit Application",
@@ -1734,6 +1890,7 @@ export const NewApplication = () => {
         "ለአዲስ የግል ጥበቃ ተቋም ፈቃድ ያቀረቡት ማመልከቻ በተሳካ ሁኔታ ገብቷል። ፌዴራል ፖሊስ ሰነዶችዎን ገምግሞ ለቀጣይ እርምጃዎች ያገኝዎታል።",
       step1Title: "የተቋም እና የቢሮ መረጃ",
       orgName: "የተቋሙ ስም",
+      orgNameAmharic: "የተቋሙ ስም (አማርኛ)",
       headOfficeAddress: "የዋና መስሪያ ቤት አድራሻ",
       headOffice: "የዋና መስሪያ ቤት ስም",
       faxNumber: "የፋክስ ቁጥር",
@@ -1753,17 +1910,91 @@ export const NewApplication = () => {
       step2Desc: "አስገዳጅ የሆኑ ህጋዊ እና ድርጅታዊ ሰነዶችን ይስቀሉ።",
       step3Title: "ንብረቶች እና መገልገያዎች",
       step3Desc: "ስለ ቁሳዊ ንብረቶችዎ እና ስለ ተቋሙ መለያዎች ዝርዝር መረጃ ይስጡ።",
+      capitalAmount: "የካፒታል መጠን",
       offices: "የቢሮዎች ብዛት",
       storeHouse: "መጋዘን አለው?",
       computers: "የኮምፒውተሮች ብዛት",
       vehicles: "የተሸከርካሪዎች ብዛት",
+      photoSamples: "የፎቶ ናሙናዎች",
       step4Title: "የስልጠና ሁኔታ",
       step4Desc: "ስለ ተቋሙ የስልጠና ፕሮግራም ዝርዝር መረጃ።",
+      trainingAddress: "የስልጠና አድራሻ",
+      trainingDays: "የሰለጠኑበት ቀናት ብዛት",
+      trainingMale: "የሰለጠኑ ወንዶች ብዛት",
+      trainingFemale: "የሰለጠኑ ሴቶች ብዛት",
+      trainingProvider: "ስልጠና ሰጪ አካል",
       step5Title: "የቁልፍ ሰራተኞች መስፈርቶች",
       step5Desc: "ለስራ አስኪያጅ፣ ለኦፕሬሽን ኃላፊ እና ለአስተዳደር ኃላፊ ዝርዝር መረጃ እና ሰነዶችን ያቅርቡ።",
       step6Title: "የመጨረሻ ግምገማ",
       step6Desc:
         "እባክዎ ሁሉም የተሰቀሉ ሰነዶች እና ፎቶዎች ግልጽ እና ትክክለኛ መሆናቸውን ያረጋግጡ። የተሳሳተ መረጃ መስጠት ለዘላቂ ብቁ አለመሆን ሊያጋልጥ ይችላል።",
+      fullName: "ሙሉ ስም",
+      gender: "ጾታ",
+      male: "ወንድ",
+      female: "ሴት",
+      citizenship: "ዜግነት",
+      ethiopian: "ኢትዮጵያዊ",
+      position: "ቦታ",
+      selectPosition: "ቦታ ይምረጡ",
+      educationLevel: "የትምህርት ደረጃ",
+      selectEducationLevel: "የትምህርት ደረጃ ይምረጡ",
+      selectPositionFirst: "መጀመሪያ ቦታ ይምረጡ",
+      workExpYears: "የስራ ልምድ ዓመታት",
+      totalExpYears: "ጠቅላላ የልምድ ዓመታት",
+      uploaded: "ተሰቅሏል",
+      selectFile: "ፋይል ይምረጡ",
+      documentHint: "ፒዲኤፍ፣ ዶክስ ከፍተኛ 5ሜባ",
+      photoHint: "ጄፒጂ፣ ፒኤንጂ ከፍተኛ 2ሜባ",
+      optional: "አማራጭ",
+      genderOption: "ጾታ ይምረጡ",
+      addAddress: "አድራሻ ያክሉ",
+      branchAddresses: "የቅርንጫፍ አድራሻዎች (አማራጭ)",
+      branchAddressDesc: "አንድም ቢሆን፣ አንድም ባይኖር ወይም በርካታ የቅርንጫፍ አድራሻዎችን ያክሉ።",
+      noBranchAddress: "ምንም የቅርንጫፍ አድራሻ አልተጨመረም። በዋና መሥሪያ ቤት አድራሻ ብቻ ማስገባት ይችላሉ።",
+      completeBranchFirst: "ሌላ ከመጨመርዎ በፊት እባክዎ የአሁኑን የቅርንጫፍ አድራሻ ያጠናቅቁ።",
+      remove: "አስወግድ",
+      headOfficeDesc: "ለማመልከቻው መዝገብ የሚያገለግል ዋና የቢሮ አድራሻ።",
+      edit: "አርትዕ",
+      reviewApplication: "ማመልከቻውን ይገምግሙ",
+      returnToDashboard: "ወደ ዳሽቦርድ ይመለሱ",
+      selectOption: "አማራጭ ይምረጡ",
+      yes: "አዎ",
+      no: "አይ",
+      docTradeName: "የንግድ ስም ስያሜ",
+      docTradePreReg: "የንግድ ቅድመ ምዝገባ",
+      docRenewedLicense: "የታደሰ የንግድ ፍቃድ",
+      docLaborSkill: "የሰራተኛ እና ክህሎት ቢሮ ምዝገባ",
+      docTinNumber: "የቲን ቁጥር ወረቀት",
+      docTrademark: "የድርጅት የንግድ ምልክት",
+      docOrgStructure: "የድርጅት መዋቅር",
+      docArticlesInc: "የድርጅት ማህበረ ህግ",
+      docInternalRegs: "የውስጥ መመሪያዎች",
+      docTechList: "ጥቅም ላይ የዋሉ ቴክኖሎጂዎች ዝርዝር",
+      docCapital: "ካፒታል (የባንክ ሂሳብ መግለጫ)",
+      docVehicleRent: "የተሽከርካሪ ኪራይ/ባለቤትነት (Notarized)",
+      docHouseRent: "የቤት ኪራይ/ባለቤትነት (Notarized)",
+      docUniformSample: "የዩኒፎርም ናሙና",
+      docEmployeeId: "የድርጅት ሰራተኛ መታወቂያ ናሙና (ፊት እና ጀርባ)",
+      docEmploymentForm: "የቅጥር ቅጽ",
+      docWarrantyForm: "የቅጥር ዋስትና ቅጽ",
+      docLogo: "የድርጅት አርማ",
+      docTrainingManual: "የስልጠና ማኑዋል",
+      docTrainingCert: "የስልጠና የምስክር ወረቀት (አማራጭ)",
+      personnelTitle: "የቁልፍ ሰራተኞች መስፈርቶች",
+      personnelDesc: "ለስራ አስኪያጅ፣ ለኦፕሬሽን ኃላፊ እና ለአስተዳደር ኃላፊ ዝርዝር መረጃ እና ሰነዶችን ያቅርቡ።",
+      personnelNote: "ማሳሰቢያ፡ ሁሉም የተሰቀሉ ሰነዶች ግልጽ እና ሊነበቡ የሚችሉ መሆናቸውን ያረጋግጡ። ፋይዳ አይዲ እና ስልክ ቁጥር ለማረጋገጫ ዓላማ ንቁ መሆን አለባቸው።",
+      fingerprintDoc: "የጣት አሻራ ከፖሊስ",
+      medicalDoc: "የሕክምና ውጤት",
+      trainingDoc: "የስልጠና ምስክር ወረቀት",
+      supportDoc: "የድጋፍ ደብዳቤ ከቀበሌ",
+      collateralDoc: "የዋስትና ማስረጃ",
+      experienceDoc: "የሥራ ልምድ",
+      resignationDoc: "ከሥራ የመልቀቂያ ማስረጃ",
+      educationDoc: "የትምህርት ማስረጃ",
+      nationalIdDoc: "ፋይዳ / ብሔራዊ መታወቂያ",
+      kebeleIdDoc: "የታደሰ የቀበሌ መታወቂያ ወይም ፓስፖርት",
+      orgIdDoc: "የድርጅት መታወቂያ",
+      requiredDocs: "የሚፈለጉ ሰነዶች",
       back: "ተመለስ",
       continue: "ቀጥል",
       submit: "ማመልከቻውን አቅርብ",
@@ -1849,9 +2080,10 @@ export const NewApplication = () => {
     resolver: zodResolver(applicationSchema),
     defaultValues: {
       // It's good practice to initialize nested objects
-      manager: { gender: "", citizenship: "ETHIOPIAN" },
-      ops: { gender: "", citizenship: "ETHIOPIAN" },
-      admin: { gender: "", citizenship: "ETHIOPIAN" },
+      agencyphone: "+251",
+      manager: { gender: "", citizenship: "ETHIOPIAN", phone: "+251" },
+      ops: { gender: "", citizenship: "ETHIOPIAN", phone: "+251" },
+      admin: { gender: "", citizenship: "ETHIOPIAN", phone: "+251" },
       branchAddresses: [],
     },
   });
@@ -1877,7 +2109,7 @@ export const NewApplication = () => {
       shouldDirty: false,
       shouldTouch: false,
     });
-    setValue("manager.phone", currentUser.phone ?? "", {
+    setValue("manager.phone", currentUser.phone || "+251", {
       shouldDirty: false,
       shouldTouch: false,
     });
@@ -2742,7 +2974,7 @@ export const NewApplication = () => {
                     isOpenedForEdit={openedFields.includes("agencyName")}
                   />
                   <FormInput
-                    label={"Organization Name (Amharic)"}
+                    label={curT.orgNameAmharic}
                     name="agencyNameAmharic"
                     register={register}
                     value={watch("agencyNameAmharic")}
@@ -2769,6 +3001,8 @@ export const NewApplication = () => {
                     isFormLocked={formLocked}
                     openedFields={openedFields}
                     setValue={setValue}
+                    curT={curT}
+                    isAm={isAm}
                   />
 
                   <FormInput
@@ -2838,28 +3072,50 @@ export const NewApplication = () => {
                           isFormLocked={formLocked}
                           isRequired={branchAddressFields.length > 0}
                           onRemove={() => removeBranchAddress(index)}
+                          isAm={isAm}
                         />
                       ))}
                     </div>
                   )}
                 </div>
-                <FormInput
-                  label={curT.agencyphone}
-                  name="agencyphone"
-                  register={register}
-                  value={watch("agencyphone")}
-                  error={errors.agencyphone}
-                  disabled={formLocked}
-                  isOpenedForEdit={openedFields.includes("agencyphone")}
-                />
+                <div className="space-y-2.5">
+                  <div className="flex justify-between items-center px-1">
+                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
+                      {curT.agencyphone}
+                    </label>
+                  </div>
+                  <input
+                    value={watch("agencyphone") || "+251"}
+                    onChange={(e) => {
+                      let raw = e.target.value;
+                      if (!raw.startsWith("+251")) raw = "+251";
+                      const digits = raw.slice(4).replace(/\D/g, "");
+                      setValue("agencyphone", `+251${digits}`);
+                    }}
+                    type="tel"
+                    disabled={formLocked}
+                    className="w-full p-4 transition-all duration-300 outline-none border-2 text-primary font-bold shadow-sm bg-white border-solid border-green-200 shadow-green-500/5 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl"
+                  />
+                  {errors.agencyphone && (
+                    <p className="text-[10px] text-red-500 font-bold ml-2 uppercase tracking-wider flex items-center space-x-1">
+                      <AlertCircle className="w-3 h-3" />
+                      <span>{(errors.agencyphone as any)?.message}</span>
+                    </p>
+                  )}
+                </div>
                 <FormInput
                   label={curT.faxNumber}
                   name="faxNumber"
+                  type="text"
+                  inputMode="numeric"
                   register={register}
                   value={watch("faxNumber")}
                   error={errors.faxNumber}
                   disabled={formLocked}
                   isOpenedForEdit={openedFields.includes("faxNumber")}
+                  onChange={(e) => {
+                    e.target.value = e.target.value.replace(/\D/g, "");
+                  }}
                 />
                 <FormInput
                   label={curT.tradeName}
@@ -2883,11 +3139,16 @@ export const NewApplication = () => {
                 <FormInput
                   label={curT.tinNumber}
                   name="tinNumber"
+                  type="text"
+                  inputMode="numeric"
                   register={register}
                   value={watch("tinNumber")}
                   error={errors.tinNumber}
                   disabled={formLocked}
                   isOpenedForEdit={openedFields.includes("tinNumber")}
+                  onChange={(e) => {
+                    e.target.value = e.target.value.replace(/\D/g, "");
+                  }}
                 />
               </div>
             </motion.div>
@@ -2909,44 +3170,17 @@ export const NewApplication = () => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
-                  {
-                    label: "Trade name designation",
-                    key: "trade_name_designation",
-                  },
-                  {
-                    label: "Trade pre-registration",
-                    key: "trade_pre_registration",
-                  },
-                  {
-                    label: "Renewed Trade license",
-                    key: "renewed_trade_license",
-                  },
-                  {
-                    label: "Labor and Skill Bureau registration",
-                    key: "labor_and_skill_bureau",
-                  },
-                  { label: "TIN number paper", key: "tin_number_paper" },
-                  {
-                    label: "Organizational Trademark",
-                    key: "organizational_trademark",
-                  },
-                  { label: "Organizational structure", key: "org_structure" },
-                  {
-                    label: "Articles of incorporation",
-                    key: "articles_of_incorporation",
-                  },
-                  {
-                    label: "Internal regulations",
-                    key: "internal_regulations",
-                  },
-                  {
-                    label: "Lists of technologies used",
-                    key: "tech_list_used",
-                  },
-                  {
-                    label: "Capital (Bank statement)",
-                    key: "capital",
-                  },
+                  { label: curT.docTradeName, key: "trade_name_designation" },
+                  { label: curT.docTradePreReg, key: "trade_pre_registration" },
+                  { label: curT.docRenewedLicense, key: "renewed_trade_license" },
+                  { label: curT.docLaborSkill, key: "labor_and_skill_bureau" },
+                  { label: curT.docTinNumber, key: "tin_number_paper" },
+                  { label: curT.docTrademark, key: "organizational_trademark" },
+                  { label: curT.docOrgStructure, key: "org_structure" },
+                  { label: curT.docArticlesInc, key: "articles_of_incorporation" },
+                  { label: curT.docInternalRegs, key: "internal_regulations" },
+                  { label: curT.docTechList, key: "tech_list_used" },
+                  { label: curT.docCapital, key: "capital" },
                 ].map((doc) => (
                   <FileUpload
                     key={doc.key}
@@ -2979,7 +3213,7 @@ export const NewApplication = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
-                    <span>Capital Amount</span>
+                    <span>{curT.capitalAmount}</span>
                     <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
                       *
                     </span>
@@ -2988,7 +3222,13 @@ export const NewApplication = () => {
                     type="number"
                     {...register("capitalAmount")}
                     disabled={formLocked}
-                    placeholder="Enter capital amount"
+                    min={1}
+                    placeholder={isAm ? "የካፒታል መጠን ያስገቡ" : "Enter capital amount"}
+                    onInput={(e) => {
+                      const el = e.target as HTMLInputElement;
+                      const val = parseInt(el.value, 10);
+                      if (el.value !== "" && (isNaN(val) || val <= 0)) el.value = "";
+                    }}
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
                   />
                   {errors.capitalAmount && (
@@ -3009,7 +3249,15 @@ export const NewApplication = () => {
                     type="number"
                     {...register("officesCount")}
                     disabled={formLocked}
-                    placeholder="Enter number of offices"
+                    min={1}
+                    max={99}
+                    placeholder={isAm ? "የቢሮዎች ብዛት ያስገቡ" : "Enter number of offices"}
+                    onInput={(e) => {
+                      const el = e.target as HTMLInputElement;
+                      const val = parseInt(el.value, 10);
+                      if (el.value !== "" && (isNaN(val) || val <= 0)) { el.value = ""; return; }
+                      if (val > 99) el.value = "99";
+                    }}
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
                   />
                   {errors.officesCount && (
@@ -3048,7 +3296,15 @@ export const NewApplication = () => {
                     type="number"
                     {...register("computersCount")}
                     disabled={formLocked}
-                    placeholder="Enter number of computers"
+                    min={1}
+                    max={99}
+                    placeholder={isAm ? "የኮምፒውተሮች ብዛት ያስገቡ" : "Enter number of computers"}
+                    onInput={(e) => {
+                      const el = e.target as HTMLInputElement;
+                      const val = parseInt(el.value, 10);
+                      if (el.value !== "" && (isNaN(val) || val <= 0)) { el.value = ""; return; }
+                      if (val > 99) el.value = "99";
+                    }}
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
                   />
                   {errors.computersCount && (
@@ -3069,7 +3325,15 @@ export const NewApplication = () => {
                     type="number"
                     {...register("vehiclesCount")}
                     disabled={formLocked}
-                    placeholder="Enter number of vehicles"
+                    min={1}
+                    max={99}
+                    placeholder={isAm ? "የተሸከርካሪዎች ብዛት ያስገቡ" : "Enter number of vehicles"}
+                    onInput={(e) => {
+                      const el = e.target as HTMLInputElement;
+                      const val = parseInt(el.value, 10);
+                      if (el.value !== "" && (isNaN(val) || val <= 0)) { el.value = ""; return; }
+                      if (val > 99) el.value = "99";
+                    }}
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
                   />
                   {errors.vehiclesCount && (
@@ -3082,7 +3346,7 @@ export const NewApplication = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FileUpload
-                  label="Notarized Vehicle Rent/Ownership"
+                  label={curT.docVehicleRent}
                   file={uploadedFiles.vehicle_rent}
                   onUpload={(file) => handleUpload("vehicle_rent", file)}
                   onDelete={() => handleDelete("vehicle_rent")}
@@ -3090,7 +3354,7 @@ export const NewApplication = () => {
                   isOpenedForEdit={openedFields.includes("vehicle_rent")}
                 />
                 <FileUpload
-                  label="Notarized House Rent/Ownership"
+                  label={curT.docHouseRent}
                   file={uploadedFiles.house_rent}
                   onUpload={(file) => handleUpload("house_rent", file)}
                   onDelete={() => handleDelete("house_rent")}
@@ -3100,10 +3364,10 @@ export const NewApplication = () => {
               </div>
 
               <div className="space-y-4">
-                <h4 className="font-bold text-primary">Photo Samples</h4>
+                <h4 className="font-bold text-primary">{curT.photoSamples}</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FileUpload
-                    label="Uniform Sample"
+                    label={curT.docUniformSample}
                     type="photo"
                     file={uploadedFiles.uniform_sample}
                     onUpload={(file) => handleUpload("uniform_sample", file)}
@@ -3112,7 +3376,7 @@ export const NewApplication = () => {
                     isOpenedForEdit={openedFields.includes("uniform_sample")}
                   />
                   <FileUpload
-                    label=" Organization Employee ID Sample (Front & Back)"
+                    label={curT.docEmployeeId}
                     type="photo"
                     file={uploadedFiles.id_sample}
                     onUpload={(file) => handleUpload("id_sample", file)}
@@ -3121,7 +3385,7 @@ export const NewApplication = () => {
                     isOpenedForEdit={openedFields.includes("id_sample")}
                   />
                   <FileUpload
-                    label="Employment Form"
+                    label={curT.docEmploymentForm}
                     type="photo"
                     file={uploadedFiles.employment_form}
                     onUpload={(file) => handleUpload("employment_form", file)}
@@ -3130,7 +3394,7 @@ export const NewApplication = () => {
                     isOpenedForEdit={openedFields.includes("employment_form")}
                   />
                   <FileUpload
-                    label="Employment Warranty Form"
+                    label={curT.docWarrantyForm}
                     type="photo"
                     file={uploadedFiles.warranty_form}
                     onUpload={(file) => handleUpload("warranty_form", file)}
@@ -3139,7 +3403,7 @@ export const NewApplication = () => {
                     isOpenedForEdit={openedFields.includes("warranty_form")}
                   />
                   <FileUpload
-                    label="Logo of Organization"
+                    label={curT.docLogo}
                     type="photo"
                     file={uploadedFiles.logo}
                     onUpload={(file) => handleUpload("logo", file)}
@@ -3170,85 +3434,109 @@ export const NewApplication = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700 flex items-center space-x-1.5">
-                    <span>Training Address</span>
+                    <span>{curT.trainingAddress}</span>
                     <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-amber-700 bg-amber-50">
-                      Optional
+                      {isAm ? "አማራጭ" : "Optional"}
                     </span>
                   </label>
                   <input
                     {...register("trainingAddress")}
                     disabled={formLocked}
-                    placeholder="Enter training address"
+                    placeholder={isAm ? "የስልጠና አድራሻ ያስገቡ" : "Enter training address"}
                     className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700 flex items-center space-x-1.5">
-                    <span>Number of Days Trained (Optional)</span>
+                    <span>{curT.trainingDays} ({isAm ? "አማራጭ" : "Optional"})</span>
                     <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-amber-700 bg-amber-50">
-                      Optional
+                      {isAm ? "አማራጭ" : "Optional"}
                     </span>
                   </label>
                   <input
                     type="number"
                     {...register("trainingDays")}
                     disabled={formLocked}
-                    placeholder="Enter number of days"
+                    min={1}
+                    max={99}
+                    placeholder={isAm ? "የቀናት ብዛት ያስገቡ" : "Enter number of days"}
                     className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
+                    onInput={(e) => {
+                      const el = e.target as HTMLInputElement;
+                      const val = parseInt(el.value, 10);
+                      if (el.value !== "" && (isNaN(val) || val <= 0)) { el.value = ""; return; }
+                      if (val > 99) el.value = "99";
+                    }}
                   />
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700 flex items-center space-x-1.5">
-                    <span>Number of Males Trained (Optional)</span>
+                    <span>{curT.trainingMale} ({isAm ? "አማራጭ" : "Optional"})</span>
                     <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-amber-700 bg-amber-50">
-                      Optional
+                      {isAm ? "አማራጭ" : "Optional"}
                     </span>
                   </label>
                   <input
                     type="number"
                     {...register("totalTraineesMale")}
                     disabled={formLocked}
-                    placeholder="Enter number of males"
+                    min={1}
+                    max={99}
+                    placeholder={isAm ? "የወንዶች ብዛት ያስገቡ" : "Enter number of males"}
                     className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
+                    onInput={(e) => {
+                      const el = e.target as HTMLInputElement;
+                      const val = parseInt(el.value, 10);
+                      if (el.value !== "" && (isNaN(val) || val <= 0)) { el.value = ""; return; }
+                      if (val > 99) el.value = "99";
+                    }}
                   />
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700 flex items-center space-x-1.5">
-                    <span>Number of Females Trained (Optional)</span>
+                    <span>{curT.trainingFemale} ({isAm ? "አማራጭ" : "Optional"})</span>
                     <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-amber-700 bg-amber-50">
-                      Optional
+                      {isAm ? "አማራጭ" : "Optional"}
                     </span>
                   </label>
                   <input
                     type="number"
                     {...register("totalTraineesFemale")}
                     disabled={formLocked}
-                    placeholder="Enter number of females"
+                    min={1}
+                    max={99}
+                    placeholder={isAm ? "የሴቶች ብዛት ያስገቡ" : "Enter number of females"}
                     className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
+                    onInput={(e) => {
+                      const el = e.target as HTMLInputElement;
+                      const val = parseInt(el.value, 10);
+                      if (el.value !== "" && (isNaN(val) || val <= 0)) { el.value = ""; return; }
+                      if (val > 99) el.value = "99";
+                    }}
                   />
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700 flex items-center space-x-1.5">
-                    <span>Training Provider Body</span>
+                    <span>{curT.trainingProvider}</span>
                     <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-amber-700 bg-amber-50">
-                      Optional
+                      {isAm ? "አማራጭ" : "Optional"}
                     </span>
                   </label>
                   <input
                     {...register("trainingProvider")}
                     disabled={formLocked}
-                    placeholder="Enter training provider"
+                    placeholder={isAm ? "የስልጠና ሰጪ አካል ያስገቡ" : "Enter training provider"}
                     className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
 
                 <div className="space-y-2">
                   <FileUpload
-                    label="Training Manual"
+                    label={curT.docTrainingManual}
                     file={uploadedFiles.training_manual}
                     onUpload={(file) => handleUpload("training_manual", file)}
                     onDelete={() => handleDelete("training_manual")}
@@ -3258,7 +3546,7 @@ export const NewApplication = () => {
                 </div>
                 <div className="md:col-span-2">
                   <FileUpload
-                    label="Certificate of Training (Optional)"
+                    label={curT.docTrainingCert}
                     required={false}
                     file={uploadedFiles.training_cert}
                     onUpload={(file) => handleUpload("training_cert", file)}
@@ -3312,6 +3600,7 @@ export const NewApplication = () => {
                   onDelete={handleDelete}
                   onView={handleView}
                   curT={curT}
+                  isAm={isAm}
                 />
 
                 {/* 2. Operations Head Section */}
@@ -3340,6 +3629,7 @@ export const NewApplication = () => {
                   onDelete={handleDelete}
                   onView={handleView}
                   curT={curT}
+                  isAm={isAm}
                 />
 
                 {/* 3. Administration Head Section */}
@@ -3368,6 +3658,7 @@ export const NewApplication = () => {
                   onDelete={handleDelete}
                   onView={handleView}
                   curT={curT}
+                  isAm={isAm}
                 />
               </div>
 
