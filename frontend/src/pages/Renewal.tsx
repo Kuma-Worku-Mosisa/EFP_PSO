@@ -314,6 +314,8 @@ const FileUpload = ({
   onView,
   disabled = false,
   isOpenedForEdit = false,
+  infoText,
+  infoTextAm,
 }: {
   label: string;
   type?: "document" | "photo";
@@ -324,9 +326,13 @@ const FileUpload = ({
   onView: (file: File, url: string | null) => void;
   disabled?: boolean;
   isOpenedForEdit?: boolean;
+  infoText?: string;
+  infoTextAm?: string;
 }) => {
+  const { language } = useLanguage();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
+  const [showInfo, setShowInfo] = React.useState(false);
 
   React.useEffect(() => {
     if (file) {
@@ -376,6 +382,24 @@ const FileUpload = ({
         accept={type === "photo" ? "image/*" : ".pdf,.doc,.docx"}
       />
 
+      {infoText && (
+        <div className="mb-3 flex flex-col items-start">
+          <button
+            type="button"
+            onClick={() => setShowInfo(!showInfo)}
+            className="flex items-center space-x-1 text-[10px] font-black text-amber-700 uppercase tracking-wider hover:text-amber-800 transition-colors"
+          >
+            <span>{language === "am" ? "ተጨማሪ መረጃ" : "Learn more"}</span>
+            <span className={`transition-transform duration-200 ${showInfo ? "rotate-90" : ""}`}>→</span>
+          </button>
+          {showInfo && (
+            <p className="mt-1 text-[10px] text-amber-700 bg-amber-50 rounded-xl px-3 py-2 font-medium w-full">
+              {language === "am" && infoTextAm ? infoTextAm : infoText}
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="flex items-center justify-between gap-4 text-left">
         <div className="flex items-center space-x-5 flex-1 min-w-0">
           <div
@@ -399,7 +423,7 @@ const FileUpload = ({
           <div className="flex-1 min-w-0 text-left">
             <h4
               className={cn(
-                "font-black text-sm uppercase tracking-tight truncate",
+                "font-black text-sm",
                 file
                   ? "text-green-600"
                   : "text-primary/70 group-hover:text-primary",
@@ -408,16 +432,21 @@ const FileUpload = ({
               {file ? file.name : label}
             </h4>
             <div className="flex items-center space-x-2 mt-1">
-              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+              <span className="text-[10px] text-gray-400 font-bold">
                 {file
                   ? `${(file.size / 1024 / 1024).toFixed(2)} MB`
                   : type === "photo"
                     ? "JPG, PNG Max 2MB"
                     : "PDF, DOCX Max 5MB"}
               </span>
-              {required && !file && (
-                <span className="text-[10px] text-amber-500 font-black uppercase tracking-widest bg-amber-50 px-1.5 rounded-md">
-                  Required
+              {!file && required && (
+                <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                  *
+                </span>
+              )}
+              {!file && !required && (
+                <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-amber-700 bg-amber-50 uppercase tracking-widest">
+                  {language === "am" ? "አማራጭ" : "Optional"}
                 </span>
               )}
             </div>
@@ -520,8 +549,9 @@ const SearchableLocationSelect = ({
 
   return (
     <div ref={containerRef} className="space-y-2 text-left relative">
-      <label className="text-[11px] font-black text-gray-500 uppercase tracking-widest">
-        {label}
+      <label className="text-[11px] font-black text-gray-500 flex items-center space-x-1.5">
+        <span>{label}</span>
+        <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
       </label>
       <button
         type="button"
@@ -532,7 +562,7 @@ const SearchableLocationSelect = ({
           onOpen?.();
         }}
         className={cn(
-          "w-full p-4 pr-12 rounded-2xl border text-left flex items-center justify-between gap-3 transition-all relative",
+          "w-full p-4 pr-12 rounded-2xl border-2 text-left flex items-center justify-between gap-3 transition-all relative",
           disabled
             ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"
             : "bg-white border-gray-200 hover:border-primary focus:border-primary",
@@ -540,7 +570,7 @@ const SearchableLocationSelect = ({
       >
         <span
           className={cn(
-            "truncate",
+            "whitespace-normal break-words",
             selectedOption ? "text-primary font-medium" : "text-gray-400",
           )}
         >
@@ -573,7 +603,7 @@ const SearchableLocationSelect = ({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full bg-transparent outline-none text-sm text-primary placeholder:text-gray-400"
+              className="w-full bg-transparent outline-none text-sm text-primary font-bold placeholder:text-gray-400"
               autoFocus
             />
             {searchTerm && (
@@ -635,7 +665,7 @@ export const Renewal = () => {
     nameAmharic: string;
     status: string;
   } | null>(null);
-  const [renewalPolicy, setRenewalPolicy] =
+  const [, setRenewalPolicy] =
     React.useState<RenewalPolicyInfo | null>(null);
   const [appStatus] = React.useState<
     "draft" | "pending" | "reviewing" | "correction"
@@ -657,6 +687,27 @@ export const Renewal = () => {
       kebele: "",
     },
   ]);
+
+  const [branchAddresses, setBranchAddresses] = React.useState<
+    { id: number; region: string; zone: string; woreda: string; kebele: string; houseNumber: string; specialLocation: string }[]
+  >([]);
+
+  const addBranchAddress = () => {
+    setBranchAddresses((prev) => [
+      ...prev,
+      { id: Date.now(), region: "", zone: "", woreda: "", kebele: "", houseNumber: "", specialLocation: "" },
+    ]);
+  };
+
+  const removeBranchAddress = (id: number) => {
+    setBranchAddresses((prev) => prev.filter((b) => b.id !== id));
+  };
+
+  const updateBranchAddress = (id: number, field: string, value: string) => {
+    setBranchAddresses((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, [field]: value } : b)),
+    );
+  };
 
   // Location lookup caches (regions -> zones -> woredas -> kebeles)
   const [regionsList, setRegionsList] = React.useState<any[]>([]);
@@ -812,12 +863,20 @@ export const Renewal = () => {
   });
 
   const certificateSerialNumber = watch("certificateSerialNumber");
+  const vehiclesCount = watch("vehicles");
 
   React.useEffect(() => {
     setEligibleOrganization(null);
     setRenewalPolicy(null);
     setEligibilityError(null);
   }, [certificateSerialNumber]);
+
+  React.useEffect(() => {
+    const count = Number(vehiclesCount);
+    if (count === 0 && uploadedFiles.vehicle_rent) {
+      handleDelete("vehicle_rent");
+    }
+  }, [vehiclesCount]);
 
   const isFormLocked =
     isSubmitted || appStatus === "pending" || appStatus === "reviewing";
@@ -860,6 +919,12 @@ export const Renewal = () => {
     if (e) e.preventDefault();
 
     if (step === 1) {
+      if (eligibleOrganization) {
+        setStep(2);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+
       const serial = String(getValues("certificateSerialNumber") || "").trim();
 
       if (!serial) {
@@ -897,7 +962,6 @@ export const Renewal = () => {
 
         setEligibleOrganization(response?.data?.organization || null);
         setRenewalPolicy(policy ?? null);
-        setStep(2);
         window.scrollTo({ top: 0, behavior: "smooth" });
       } catch (error: unknown) {
         setEligibleOrganization(null);
@@ -951,6 +1015,7 @@ export const Renewal = () => {
       const payload = {
         ..._data,
         serviceContracts,
+        branchAddresses,
         uploadedFiles: Object.fromEntries(
           Object.entries(uploadedFiles).map(([key, file]) => [
             key,
@@ -1024,10 +1089,10 @@ export const Renewal = () => {
       renewalYearLimitValue: "One renewal application per year",
       verifyAndContinue: "Verify and Continue",
       verifying: "Verifying...",
-      region: "Region",
-      zone: "Zone",
-      woreda: "Woreda",
-      kebele: "Kebele",
+      region: "REGION",
+      zone: "ZONE",
+      woreda: "WOREDA",
+      kebele: "KEBELE",
       houseNo: "House No.",
       specialLocation: "Special Location Name (Optional)",
       faydaId: "Fayda ID Number",
@@ -1270,27 +1335,6 @@ export const Renewal = () => {
         onSubmit={handleSubmit(onSubmit)}
         className="bg-white rounded-[40px] shadow-xl p-6 md:p-12 border border-gray-100 min-h-[600px] flex flex-col"
       >
-        {renewalPolicy && step > 1 && (
-          <div className="mb-8 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-blue-900 text-sm space-y-1">
-            <p className="font-black uppercase tracking-widest text-[10px]">
-              {curT.renewalPolicyTitle}
-            </p>
-            <p className="text-xs">
-              {curT.certificateIssued}:{" "}
-              {formatPolicyDate(renewalPolicy.issueDate, language as "en" | "am")}
-              {" · "}
-              {curT.certificateExpires}:{" "}
-              {formatPolicyDate(renewalPolicy.expiryDate, language as "en" | "am")}
-              {" · "}
-              {curT.renewalOpens}:{" "}
-              {formatPolicyDate(
-                renewalPolicy.earliestSubmitDate,
-                language as "en" | "am",
-              )}
-            </p>
-          </div>
-        )}
-
         <AnimatePresence mode="wait">
           {step === 1 && (
             <motion.div
@@ -1309,62 +1353,169 @@ export const Renewal = () => {
                 </p>
               </div>
               <div className="space-y-4 max-w-xl">
-                <label className="text-xs font-black text-gray-500 uppercase tracking-widest">
-                  {curT.certificateSerialNumber}
+                <label className="text-xs font-black text-gray-500 flex items-center space-x-1.5">
+                  <span>{curT.certificateSerialNumber}</span>
+                  <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
                 </label>
                 <input
                   {...register("certificateSerialNumber")}
                   placeholder={curT.certificateSerialPlaceholder}
-                  className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full p-4 bg-gray-50 border-2 border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary text-primary font-bold"
                 />
-                {renewalPolicy && (
-                  <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-blue-900 text-sm space-y-2">
-                    <p className="font-black uppercase tracking-widest text-[10px]">
-                      {curT.renewalPolicyTitle}
-                    </p>
-                    <p>
-                      <span className="font-bold">{curT.certificateIssued}:</span>{" "}
-                      {formatPolicyDate(renewalPolicy.issueDate, language as "en" | "am")}
-                    </p>
-                    <p>
-                      <span className="font-bold">{curT.certificateExpires}:</span>{" "}
-                      {formatPolicyDate(renewalPolicy.expiryDate, language as "en" | "am")}
-                    </p>
-                    <p>
-                      <span className="font-bold">{curT.renewalOpens}:</span>{" "}
-                      {formatPolicyDate(
-                        renewalPolicy.earliestSubmitDate,
-                        language as "en" | "am",
-                      )}
-                    </p>
-                    <p>
-                      <span className="font-bold">{curT.renewalYearLimit}:</span>{" "}
-                      {renewalPolicy.renewalYear} — {curT.renewalYearLimitValue}
-                    </p>
-                  </div>
-                )}
-                {eligibleOrganization && (
-                  <div className="rounded-2xl border border-green-100 bg-green-50 p-4 text-green-700 text-sm">
-                    <p className="font-black uppercase tracking-widest text-[10px] mb-1">
-                      {language === "am" ? "ብቁ ድርጅት" : "Eligible Organization"}
-                    </p>
-                    <p className="font-bold">
-                      {language === "am"
-                        ? eligibleOrganization.nameAmharic
-                        : eligibleOrganization.nameEnglish}
-                    </p>
-                    <p className="text-xs text-green-600">
-                      {curT.status}: {eligibleOrganization.status}
-                    </p>
-                  </div>
-                )}
                 {eligibilityError && (
                   <div className="rounded-2xl border border-red-100 bg-red-50 p-4 text-red-600 text-sm font-medium">
                     {eligibilityError}
                   </div>
                 )}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+
+              {eligibleOrganization && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-black text-primary uppercase tracking-widest">
+                      {language === "am" ? "የቅርንጫፍ አድራሻዎች (አማራጭ)" : "Branch Addresses (Optional)"}
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={addBranchAddress}
+                      className="inline-flex items-center space-x-2 rounded-xl bg-primary px-4 py-2 text-[11px] font-black uppercase tracking-widest text-white transition-all hover:shadow-lg"
+                    >
+                      <span>{language === "am" ? "አድራሻ ያክሉ" : "Add Address"}</span>
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    {language === "am"
+                      ? "አንድም ቢሆን፣ አንድም ባይኖር ወይም በርካታ የቅርንጫፍ አድራሻዎችን ያክሉ።"
+                      : "Add none, one, or multiple branch locations."}
+                  </p>
+                  {branchAddresses.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-4 text-xs text-gray-500">
+                      {language === "am"
+                        ? "ምንም የቅርንጫፍ አድራሻ አልተጨመረም። በዋና መሥሪያ ቤት አድራሻ ብቻ ማስገባት ይችላሉ።"
+                        : "No branch address added. You can submit with only the head office address."}
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {branchAddresses.map((branch) => (
+                        <div key={branch.id} className="space-y-4 rounded-[28px] border border-dashed border-gray-200 p-5 bg-gray-50/50">
+                          <div className="flex items-center justify-between">
+                            <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest">
+                              {language === "am" ? `የቅርንጫፍ አድራሻ #${branchAddresses.indexOf(branch) + 1}` : `Branch Address #${branchAddresses.indexOf(branch) + 1}`}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => removeBranchAddress(branch.id)}
+                              className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all"
+                            >
+                              <span>{language === "am" ? "አስወግድ" : "Remove"}</span>
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <SearchableLocationSelect
+                              label={language === "am" ? "ክልል" : "REGION"}
+                              placeholder={language === "am" ? "ክልል ምረጥ" : "Select Region"}
+                              searchPlaceholder={language === "am" ? "ክልል ፈልግ" : "Search region"}
+                              value={branch.region}
+                              options={regionsList}
+                              onChange={(val) => {
+                                updateBranchAddress(branch.id, "region", val);
+                                updateBranchAddress(branch.id, "zone", "");
+                                updateBranchAddress(branch.id, "woreda", "");
+                                updateBranchAddress(branch.id, "kebele", "");
+                                if (val) loadZonesForRegion(val);
+                              }}
+                              onClear={() => {
+                                updateBranchAddress(branch.id, "region", "");
+                                updateBranchAddress(branch.id, "zone", "");
+                                updateBranchAddress(branch.id, "woreda", "");
+                                updateBranchAddress(branch.id, "kebele", "");
+                              }}
+                              onOpen={() => { if (branch.region) void loadZonesForRegion(branch.region); }}
+                            />
+                            <SearchableLocationSelect
+                              label={`${language === "am" ? "ዞን" : "ZONE"} / ${language === "am" ? "ክፍለ ከተማ" : "SUBCITY"}`}
+                              placeholder={language === "am" ? "ዞን/ክፍለ ከተማ ምረጥ" : "Select Zone / Subcity"}
+                              searchPlaceholder={language === "am" ? "ዞን ፈልግ" : "Search zone"}
+                              value={branch.zone}
+                              options={zonesByRegion[String(branch.region)] || []}
+                              disabled={!branch.region}
+                              onChange={(val) => {
+                                updateBranchAddress(branch.id, "zone", val);
+                                updateBranchAddress(branch.id, "woreda", "");
+                                updateBranchAddress(branch.id, "kebele", "");
+                                if (val) loadWoredasForZone(val);
+                              }}
+                              onClear={() => {
+                                updateBranchAddress(branch.id, "zone", "");
+                                updateBranchAddress(branch.id, "woreda", "");
+                                updateBranchAddress(branch.id, "kebele", "");
+                              }}
+                              onOpen={() => { if (branch.region) void loadZonesForRegion(branch.region); }}
+                            />
+                            <SearchableLocationSelect
+                              label={language === "am" ? "ወረዳ" : "WOREDA"}
+                              placeholder={language === "am" ? "ወረዳ ምረጥ" : "Select Woreda"}
+                              searchPlaceholder={language === "am" ? "ወረዳ ፈልግ" : "Search woreda"}
+                              value={branch.woreda}
+                              options={woredasByZone[String(branch.zone)] || []}
+                              disabled={!branch.zone}
+                              onChange={(val) => {
+                                updateBranchAddress(branch.id, "woreda", val);
+                                updateBranchAddress(branch.id, "kebele", "");
+                                if (val) loadKebelesForWoreda(val);
+                              }}
+                              onClear={() => {
+                                updateBranchAddress(branch.id, "woreda", "");
+                                updateBranchAddress(branch.id, "kebele", "");
+                              }}
+                              onOpen={() => { if (branch.zone) void loadWoredasForZone(branch.zone); }}
+                            />
+                            <SearchableLocationSelect
+                              label={language === "am" ? "ቀበሌ" : "KEBELE"}
+                              placeholder={language === "am" ? "ቀበሌ ምረጥ" : "Select Kebele"}
+                              searchPlaceholder={language === "am" ? "ቀበሌ ፈልግ" : "Search kebele"}
+                              value={branch.kebele}
+                              options={kebelesByWoreda[String(branch.woreda)] || []}
+                              disabled={!branch.woreda}
+                              onChange={(val) => updateBranchAddress(branch.id, "kebele", val)}
+                              onClear={() => updateBranchAddress(branch.id, "kebele", "")}
+                              onOpen={() => { if (branch.woreda) void loadKebelesForWoreda(branch.woreda); }}
+                            />
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="text-[11px] font-black text-gray-400 flex items-center space-x-1.5">
+                                <span>{language === "am" ? "የቤት ቁጥር" : "HOUSE NO."}</span>
+                                <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
+                              </label>
+                              <input
+                                type="text"
+                                value={branch.houseNumber}
+                                onChange={(e) => updateBranchAddress(branch.id, "houseNumber", e.target.value)}
+                                placeholder={language === "am" ? "የቤት ቁጥር ያስገቡ" : "Enter house number"}
+                                className="w-full p-4 bg-white border-2 border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary text-primary font-bold text-sm"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-[11px] font-black text-gray-400 flex items-center space-x-1.5">
+                                <span>{language === "am" ? "ልዩ ቦታ (አማራጭ)" : "Special Location (Optional)"}</span>
+                                <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-amber-700 bg-amber-50">opt</span>
+                              </label>
+                              <input
+                                type="text"
+                                value={branch.specialLocation}
+                                onChange={(e) => updateBranchAddress(branch.id, "specialLocation", e.target.value)}
+                                placeholder={language === "am" ? "ልዩ ቦታ ያስገቡ" : "Enter special location"}
+                                className="w-full p-4 bg-white border-2 border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary text-primary font-bold text-sm"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -1444,6 +1595,7 @@ export const Renewal = () => {
                     onUpload={(file) => handleUpload(doc.key, file)}
                     onDelete={() => handleDelete(doc.key)}
                     onView={handleView}
+                    required={doc.key !== "tech_list"}
                   />
                 ))}
               </div>
@@ -1467,39 +1619,44 @@ export const Renewal = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500">
-                    {curT.offices}
+                  <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
+                    <span>{curT.offices}</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
                   </label>
                   <input
                     type="number"
+                    min="0"
                     placeholder={
                       language === "am" ? "ቁጥር ያስገቡ" : "Enter number"
                     }
                     {...register("offices")}
-                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full p-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-primary font-bold outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500">
-                    {curT.capitalAmount}
+                  <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
+                    <span>{curT.capitalAmount}</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
                   </label>
                   <input
                     type="number"
+                    min="0"
                     step="0.01"
                     placeholder={
                       language === "am" ? "መጠኑን ያስገቡ" : "Enter amount"
                     }
                     {...register("capitalAmount")}
-                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full p-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-primary font-bold outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500">
-                    {curT.storeHouse}
+                  <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
+                    <span>{curT.storeHouse}</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
                   </label>
                   <select
                     {...register("storeHouse")}
-                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full p-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-primary font-bold outline-none focus:ring-2 focus:ring-primary"
                   >
                     <option value="">{curT.selectStore}</option>
                     <option value="1">{curT.yes}</option>
@@ -1507,29 +1664,34 @@ export const Renewal = () => {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500">
-                    {curT.computers}
+                  <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
+                    <span>{curT.computers}</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
                   </label>
                   <input
                     type="number"
+                    min="0"
                     placeholder={
                       language === "am" ? "ቁጥር ያስገቡ" : "Enter number"
                     }
                     {...register("computers")}
-                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full p-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-primary font-bold outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500">
-                    {curT.vehicles}
+                  <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
+                    <span>{curT.vehicles}</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
                   </label>
                   <input
                     type="number"
+                    min="0"
+                    defaultValue="0"
                     placeholder={
                       language === "am" ? "ቁጥር ያስገቡ" : "Enter number"
                     }
                     {...register("vehicles")}
-                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full p-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-primary font-bold outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
               </div>
@@ -1538,25 +1700,30 @@ export const Renewal = () => {
                 <FileUpload
                   label={
                     language === "am"
-                      ? "የቢሮ ኪራይ ውል (1 ዓመት የቀረው)"
-                      : "Office Tenancy Agreement (1 Year Remaining)"
+                      ? "የተሽከርካሪ ኪራይ/ባለቤትነት (Notarized)"
+                      : "Notarized Vehicle Rent/Ownership"
                   }
-                  file={uploadedFiles.office_lease}
-                  onUpload={(file) => handleUpload("office_lease", file)}
-                  onDelete={() => handleDelete("office_lease")}
+                  file={uploadedFiles.vehicle_rent}
+                  onUpload={(file) => handleUpload("vehicle_rent", file)}
+                  onDelete={() => handleDelete("vehicle_rent")}
                   onView={handleView}
+                  disabled={!watch("vehicles") || Number(watch("vehicles")) === 0}
+                  infoText="If rented, upload a document showing 1 year paid rent. If owned, upload ownership documents."
+                  infoTextAm="ተሽከርካሪ የተከራየ ከሆነ የ1 አመት ክፍያ የተከፈለበትን ሰነድ ይስቀሉ። የራስ ከሆነ የባለቤትነት ሰነድ ይስቀሉ።"
+                  required={false}
                 />
-
                 <FileUpload
                   label={
                     language === "am"
-                      ? "የመኪና ባለቤትነት ፈቃድ (የኪራይ ውል)"
-                      : "Car Owner's License (Lease Agreement)"
+                      ? "የቤት ኪራይ/ባለቤትነት (Notarized)"
+                      : "Notarized House Rent/Ownership"
                   }
-                  file={uploadedFiles.car_lease}
-                  onUpload={(file) => handleUpload("car_lease", file)}
-                  onDelete={() => handleDelete("car_lease")}
+                  file={uploadedFiles.house_rent}
+                  onUpload={(file) => handleUpload("house_rent", file)}
+                  onDelete={() => handleDelete("house_rent")}
                   onView={handleView}
+                  infoText="If rented, upload a document showing 1 year paid rent. If owned, upload ownership documents."
+                  infoTextAm="ቤት የተከራየ ከሆነ የ1 አመት ክፍያ የተከፈለበትን ሰነድ ይስቀሉ። የራስ ከሆነ የባለቤትነት ሰነድ ይስቀሉ።"
                 />
               </div>
 
@@ -1602,75 +1769,87 @@ export const Renewal = () => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">
-                    {curT.trainingPlace}
+                  <label className="text-sm font-bold text-gray-700 flex items-center space-x-1.5">
+                    <span>{curT.trainingPlace}</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
                   </label>
                   <input
                     {...register("trainingPlace")}
-                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full p-4 bg-gray-50 border-2 border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary text-primary font-bold"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">
-                    {curT.trainingProvider}
+                  <label className="text-sm font-bold text-gray-700 flex items-center space-x-1.5">
+                    <span>{curT.trainingProvider}</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
                   </label>
                   <input
                     {...register("trainingProvider")}
-                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full p-4 bg-gray-50 border-2 border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary text-primary font-bold"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">
-                    {curT.trainingDays}
+                  <label className="text-sm font-bold text-gray-700 flex items-center space-x-1.5">
+                    <span>{curT.trainingDays}</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
                   </label>
                   <input
                     type="number"
+                    min="0"
                     {...register("trainingDays")}
-                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full p-4 bg-gray-50 border-2 border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary text-primary font-bold"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500">
-                      {language === "am" ? "የተማሩ ወንዶች" : "Trained (Male)"}
+                    <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
+                      <span>{language === "am" ? "የተማሩ ወንዶች" : "Trained (Male)"}</span>
+                      <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
                     </label>
                     <input
                       type="number"
+                      min="0"
                       {...register("trainedMale")}
-                      className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl"
+                      className="w-full p-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-primary font-bold"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500">
-                      {language === "am" ? "የተማሩ ሴቶች" : "Trained (Female)"}
+                    <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
+                      <span>{language === "am" ? "የተማሩ ሴቶች" : "Trained (Female)"}</span>
+                      <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
                     </label>
                     <input
                       type="number"
+                      min="0"
                       {...register("trainedFemale")}
-                      className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl"
+                      className="w-full p-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-primary font-bold"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500">
-                      {language === "am" ? "ያልተማሩ ወንዶች" : "Not Trained (Male)"}
+                    <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
+                      <span>{language === "am" ? "ያልተማሩ ወንዶች" : "Not Trained (Male)"}</span>
+                      <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
                     </label>
                     <input
                       type="number"
+                      min="0"
                       {...register("notTrainedMale")}
-                      className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl"
+                      className="w-full p-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-primary font-bold"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500">
-                      {language === "am" ? "ያልተማሩ ሴቶች" : "Not Trained (Female)"}
+                    <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
+                      <span>{language === "am" ? "ያልተማሩ ሴቶች" : "Not Trained (Female)"}</span>
+                      <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
                     </label>
                     <input
                       type="number"
+                      min="0"
                       {...register("notTrainedFemale")}
-                      className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl"
+                      className="w-full p-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-primary font-bold"
                     />
                   </div>
                 </div>
@@ -1685,6 +1864,7 @@ export const Renewal = () => {
                     onUpload={(file) => handleUpload("training_cert", file)}
                     onDelete={() => handleDelete("training_cert")}
                     onView={handleView}
+                    required={false}
                   />
                 </div>
               </div>
@@ -1728,8 +1908,9 @@ export const Renewal = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2 text-left">
-                        <label className="text-[11px] font-black text-gray-500 uppercase tracking-widest">
-                          {curT.nameServiceUser}
+                        <label className="text-[11px] font-black text-gray-500 flex items-center space-x-1.5">
+                          <span>{curT.nameServiceUser}</span>
+                          <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
                         </label>
                         <input
                           value={contract.serviceUserName}
@@ -1741,26 +1922,31 @@ export const Renewal = () => {
                             )
                           }
                           placeholder={curT.nameServiceUser}
-                          className="w-full p-4 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
+                          className="w-full p-4 bg-white border-2 border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary text-primary font-bold"
                         />
                       </div>
 
                       <div className="space-y-2 text-left">
-                        <label className="text-[11px] font-black text-gray-500 uppercase tracking-widest">
-                          {curT.assignedPersonnelNumber}
+                        <label className="text-[11px] font-black text-gray-500 flex items-center space-x-1.5">
+                          <span>{curT.assignedPersonnelNumber}</span>
+                          <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
                         </label>
                         <input
                           value={contract.assignedPersonnelCount}
-                          onChange={(e) =>
-                            updateServiceContract(
-                              contract.id,
-                              "assignedPersonnelCount",
-                              e.target.value,
-                            )
-                          }
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === "" || Number(val) >= 0) {
+                              updateServiceContract(
+                                contract.id,
+                                "assignedPersonnelCount",
+                                val,
+                              );
+                            }
+                          }}
                           type="number"
+                          min="0"
                           placeholder="0"
-                          className="w-full p-4 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
+                          className="w-full p-4 bg-white border-2 border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary text-primary font-bold"
                         />
                       </div>
                     </div>
@@ -1769,7 +1955,7 @@ export const Renewal = () => {
                       <SearchableLocationSelect
                         label={curT.region}
                         placeholder={
-                          language === "am" ? "ክልል ምረጥ" : "Select Region"
+                          language === "am" ? "ክልል ምረጥ" : "Select region"
                         }
                         searchPlaceholder={
                           language === "am" ? "ክልል ፈልግ" : "Search region"
@@ -1925,21 +2111,24 @@ export const Renewal = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {educationLevels.map((level, i) => (
                     <div key={i} className="space-y-2">
-                      <label className="text-xs font-bold text-gray-500">
-                        {level.label}
+                      <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
+                        <span>{level.label}</span>
+                        <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
                       </label>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <input
                           type="number"
-                          placeholder="M"
+                          min="0"
+                          placeholder={language === "am" ? "ወንድ" : "Male"}
                           {...register(level.maleKey)}
-                          className="p-2 bg-white border border-gray-200 rounded-lg text-xs"
+                          className="p-2 bg-white border-2 border-gray-200 rounded-lg text-xs text-primary font-bold"
                         />
                         <input
                           type="number"
-                          placeholder="F"
+                          min="0"
+                          placeholder={language === "am" ? "ሴት" : "Female"}
                           {...register(level.femaleKey)}
-                          className="p-2 bg-white border border-gray-200 rounded-lg text-xs"
+                          className="p-2 bg-white border-2 border-gray-200 rounded-lg text-xs text-primary font-bold"
                         />
                       </div>
                     </div>
@@ -2021,9 +2210,7 @@ export const Renewal = () => {
                               "warranty_form",
                               "security_guard_warranty_form",
                               "logo",
-                              "office_lease",
                               "house_lease",
-                              "car_lease",
                             ].some((k) => key.includes(k)) &&
                             !key.startsWith("manager") &&
                             !key.startsWith("ops") &&
@@ -2116,8 +2303,6 @@ export const Renewal = () => {
                         "uniform_sample",
                         "id_sample",
                         "logo",
-                        "office_lease",
-                        "car_lease",
                       ].map(
                         (key) =>
                           uploadedFiles[key] && (
@@ -2302,12 +2487,12 @@ export const Renewal = () => {
                 </div>
                 <div className="space-y-2">
                   <h5 className="text-xl font-black text-primary uppercase tracking-tight">
-                    Ready for License Renewal?
+                    {language === "am" ? "ለፈቃድ እድሳት ዝግጁ ነዎት?" : "Ready for License Renewal?"}
                   </h5>
                   <p className="text-xs text-gray-500 max-w-lg mx-auto">
-                    By submitting, you certify that all information above is
-                    true and that you possess all original documents for
-                    verification during the annual audit.
+                    {language === "am"
+                      ? "በማስገባት፣ ከላይ ያለው መረጃ ሁሉ እውነት መሆኑን እና በዓመታዊ ኦዲት ወቅት ለማረጋገጥ ሁሉንም ዋና ሰነዶች እንደያዙ ያረጋግጣሉ።"
+                      : "By submitting, you certify that all information above is true and that you possess all original documents for verification during the annual audit."}
                   </p>
                 </div>
               </div>

@@ -99,7 +99,7 @@ export const applicationSchema = z
 
     // Contact Info
     agencyphone: z.string().min(10, "Invalid phone number"),
-    faxNumber: z.string().min(1, "Fax number is required"),
+    faxNumber: z.string().optional(),
     email: z.string().email("Invalid email address"),
     tinNumber: z.string().min(2, "TIN number is required"),
 
@@ -116,7 +116,7 @@ export const applicationSchema = z
     ),
     vehiclesCount: z.preprocess(
       (val) => Number(val),
-      z.number().min(1, "Must be 1 or more"),
+      z.number().min(0, "Must be 0 or more"),
     ),
     hasStoreHouse: z.preprocess(
       (val) => val === true || val === "true",
@@ -329,9 +329,15 @@ const FormInput = ({
   const { language } = useLanguage();
   const fiOpt = language === "am" ? "አማራጭ" : "Optional";
   const isFilled = value && value.length > 0;
-  const autoPlaceholder =
-    placeholder ||
-    (type === "email"
+  const autoPlaceholder = placeholder || (language === "am"
+    ? type === "email"
+      ? "ስም@ኢሜል.ኮም"
+      : type === "number"
+        ? "ቁጥር ያስገቡ"
+        : type === "tel"
+          ? "ስልክ ቁጥር ያስገቡ"
+          : `ያስገቡ ${label.toLowerCase()}`
+    : type === "email"
       ? "name@example.com"
       : type === "number"
         ? "Enter a number"
@@ -818,6 +824,8 @@ const FileUpload = ({
   onView,
   disabled = false,
   isOpenedForEdit = false,
+  infoText,
+  infoTextAm,
 }: {
   label: string;
   type?: "document" | "photo";
@@ -828,11 +836,14 @@ const FileUpload = ({
   onView: (file: File, url: string | null) => void;
   disabled?: boolean;
   isOpenedForEdit?: boolean;
+  infoText?: string;
+  infoTextAm?: string;
 }) => {
   const { language } = useLanguage();
   const lbl = uploadLbl(language);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
+  const [showInfo, setShowInfo] = React.useState(false);
 
   React.useEffect(() => {
     if (file) {
@@ -873,14 +884,14 @@ const FileUpload = ({
         </div>
       )}
 
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileChange}
-        className="hidden"
-        disabled={isDisabled}
-        accept={type === "photo" ? "image/*" : ".pdf,.doc,.docx"}
-      />
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          className="hidden"
+          disabled={isDisabled}
+          accept={type === "photo" ? "image/*" : ".pdf,.doc,.docx"}
+        />
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
@@ -1075,15 +1086,11 @@ function LocationFields({
         label={curT?.houseNo || "House No"}
         name="houseNumber"
         type="text"
-        inputMode="numeric"
         register={register}
         value={watch("houseNumber")}
         error={errors.houseNumber}
         disabled={isFormLocked}
         isOpenedForEdit={openedFields?.includes("houseNumber")}
-        onChange={(e) => {
-          e.target.value = e.target.value.replace(/\D/g, "");
-        }}
       />
     </div>
   );
@@ -1136,7 +1143,7 @@ function BranchAddressRow({
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <SearchableLocationSelect
-          label="Region"
+          label={isAm ? "ክልል" : "Region"}
           placeholder={isAm ? "ክልል ምረጥ" : "Select Region"}
           searchPlaceholder={isAm ? "ክልል ፈልግ" : "Search region"}
           value={selectedRegion}
@@ -1178,7 +1185,7 @@ function BranchAddressRow({
           }}
         />
         <SearchableLocationSelect
-          label="Woreda"
+          label={isAm ? "ወረዳ" : "Woreda"}
           placeholder={isAm ? "ወረዳ ምረጥ" : "Select Woreda"}
           searchPlaceholder={isAm ? "ወረዳ ፈልግ" : "Search woreda"}
           value={selectedWoreda}
@@ -1198,7 +1205,7 @@ function BranchAddressRow({
           }}
         />
         <SearchableLocationSelect
-          label="Kebele"
+          label={isAm ? "ቀበሌ" : "Kebele"}
           placeholder={isAm ? "ቀበሌ ምረጥ" : "Select Kebele"}
           searchPlaceholder={isAm ? "ቀበሌ ፈልግ" : "Search kebele"}
           value={selectedKebeleId}
@@ -1214,7 +1221,7 @@ function BranchAddressRow({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormInput
-          label={isRequired ? "House No." : "House No. (Optional)"}
+          label={isAm ? (isRequired ? "የቤት ቁጥር" : "የቤት ቁጥር (አማራጭ)") : (isRequired ? "House No." : "House No. (Optional)")}
           name={`branchAddresses.${index}.houseNumber`}
           register={register}
           value={watch(`branchAddresses.${index}.houseNumber`) || ""}
@@ -1440,7 +1447,7 @@ const PersonnelSection = ({
             <input
               type="text"
               inputMode="numeric"
-              maxLength={10}
+              maxLength={16}
               {...(() => {
                 const reg = register(`${prefix}.faydaId`);
                 const origOnChange = reg.onChange;
@@ -1841,7 +1848,7 @@ export const NewApplication = () => {
       submittedDesc:
         "Your application for a new private security agency license has been successfully submitted. The Federal Police will review your documents and contact you for the next steps.",
       step1Title: "Agency & Office Information",
-      orgName: "Organization Name",
+      orgName: "Organization Name (English)",
       orgNameAmharic: "Organization Name (Amharic)",
       headOfficeAddress: "Head Office Address",
       headOffice: "Head Office Name",
@@ -1921,12 +1928,13 @@ export const NewApplication = () => {
       docRenewedLicense: "Renewed Trade license",
       docLaborSkill: "Labor and Skill Bureau registration",
       docTinNumber: "TIN number paper",
-      docTrademark: "Organizational Trademark",
+      docTaxpayerClearance: "Taxpayer clearance",
       docOrgStructure: "Organizational structure",
       docArticlesInc: "Memorandum of association",
       docInternalRegs: "Internal regulations",
       docTechList: "Lists of technologies used",
       docCapital: "Capital (Bank statement)",
+      docInsurance: "Insurance",
       docVehicleRent: "Notarized Vehicle Rent/Ownership",
       docHouseRent: "Notarized House Rent/Ownership",
       docUniformSample: "Uniform Sample",
@@ -2041,12 +2049,13 @@ export const NewApplication = () => {
       docRenewedLicense: "የታደሰ የንግድ ፍቃድ",
       docLaborSkill: "የሰራተኛ እና ክህሎት ቢሮ ምዝገባ",
       docTinNumber: "የቲን ቁጥር ወረቀት",
-      docTrademark: "የድርጅት የንግድ ምልክት",
+      docTaxpayerClearance: "የግብር ከፋይ ማጽደቂያ",
       docOrgStructure: "የድርጅት መዋቅር",
-      docArticlesInc: "የመመስረቻ  ጽሑፍ",
-      docInternalRegs: " የውሥጥ መተዳደሪያ ደንብ",
+      docArticlesInc: "የድርጅት ማህበረ ህግ",
+      docInternalRegs: "የውስጥ መመሪያዎች",
       docTechList: "ጥቅም ላይ የዋሉ ቴክኖሎጂዎች ዝርዝር",
       docCapital: "ካፒታል (የባንክ ሂሳብ መግለጫ)",
+      docInsurance: "ኢንሹራንስ",
       docVehicleRent: "የተሽከርካሪ ኪራይ/ባለቤትነት (Notarized)",
       docHouseRent: "የቤት ኪራይ/ባለቤትነት (Notarized)",
       docUniformSample: "የዩኒፎርም ናሙና",
@@ -2163,6 +2172,7 @@ export const NewApplication = () => {
       ops: { gender: "", citizenship: "ETHIOPIAN", phone: "+251" },
       admin: { gender: "", citizenship: "ETHIOPIAN", phone: "+251" },
       branchAddresses: [],
+      vehiclesCount: 0,
     },
   });
 
@@ -2407,6 +2417,13 @@ export const NewApplication = () => {
       isMounted = false;
     };
   }, []);
+
+  React.useEffect(() => {
+    const count = Number(watch("vehiclesCount"));
+    if (count === 0 && uploadedFiles.vehicle_rent) {
+      handleDelete("vehicle_rent");
+    }
+  }, [watch("vehiclesCount")]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -3059,7 +3076,7 @@ export const NewApplication = () => {
               </div>
 
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
-                <div className="md:col-span-2 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 sm:gap-6">
+                <div className="md:col-span-2 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
                   <FormInput
                     label={curT.orgName}
                     name="agencyName"
@@ -3068,6 +3085,9 @@ export const NewApplication = () => {
                     error={errors.agencyName}
                     disabled={formLocked}
                     isOpenedForEdit={openedFields.includes("agencyName")}
+                    onChange={(e) => {
+                      e.target.value = e.target.value.replace(/[^a-zA-Z0-9\s\-\.\,\'\(\)\/\&]/g, "");
+                    }}
                   />
                   <FormInput
                     label={curT.orgNameAmharic}
@@ -3077,6 +3097,9 @@ export const NewApplication = () => {
                     error={errors.agencyNameAmharic}
                     disabled={formLocked}
                     isOpenedForEdit={openedFields.includes("agencyNameAmharic")}
+                    onChange={(e) => {
+                     e.target.value = e.target.value.replace(/[^\u1200-\u137F\s\-\.\,\'\(\)\/\&]/g, "");
+                    }}
                   />
                 </div>
 
@@ -3117,10 +3140,10 @@ export const NewApplication = () => {
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <h4 className="text-sm font-black text-primary uppercase tracking-widest">
-                        Branch Addresses (Optional)
+                        {curT.branchAddresses}
                       </h4>
                       <p className="text-xs text-gray-500">
-                        Add none, one, or multiple branch locations.
+                        {curT.branchAddressDesc}
                       </p>
                     </div>
                     <button
@@ -3146,14 +3169,13 @@ export const NewApplication = () => {
                       className="inline-flex items-center justify-center space-x-2 rounded-xl bg-primary px-4 py-2 text-[11px] font-black uppercase tracking-widest text-white transition-all hover:shadow-lg disabled:opacity-50"
                     >
                       <Plus className="w-4 h-4" />
-                      <span>Add Address</span>
+                      <span>{curT.addAddress}</span>
                     </button>
                   </div>
 
                   {branchAddressFields.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-4 text-xs text-gray-500 sm:p-5">
-                      No branch address added. You can submit with only the head
-                      office address.
+                      {curT.noBranchAddress}
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -3203,15 +3225,12 @@ export const NewApplication = () => {
                   label={curT.faxNumber}
                   name="faxNumber"
                   type="text"
-                  inputMode="numeric"
                   register={register}
                   value={watch("faxNumber")}
                   error={errors.faxNumber}
+                  required={false}
                   disabled={formLocked}
                   isOpenedForEdit={openedFields.includes("faxNumber")}
-                  onChange={(e) => {
-                    e.target.value = e.target.value.replace(/\D/g, "");
-                  }}
                 />
                 <FormInput
                   label={curT.tradeName}
@@ -3274,15 +3293,16 @@ export const NewApplication = () => {
                   },
                   { label: curT.docLaborSkill, key: "labor_and_skill_bureau" },
                   { label: curT.docTinNumber, key: "tin_number_paper" },
-                  { label: curT.docTrademark, key: "organizational_trademark" },
+                  { label: curT.docTaxpayerClearance, key: "taxpayer_clearance" },
                   { label: curT.docOrgStructure, key: "org_structure" },
                   {
                     label: curT.docArticlesInc,
                     key: "articles_of_incorporation",
                   },
                   { label: curT.docInternalRegs, key: "internal_regulations" },
-                  { label: curT.docTechList, key: "tech_list_used" },
+                  { label: curT.docTechList, key: "tech_list_used", required: false },
                   { label: curT.docCapital, key: "capital" },
+                  { label: curT.docInsurance, key: "insurance" },
                 ].map((doc) => (
                   <FileUpload
                     key={doc.key}
@@ -3291,6 +3311,7 @@ export const NewApplication = () => {
                     onUpload={(file) => handleUpload(doc.key, file)}
                     onDelete={() => handleDelete(doc.key)}
                     onView={handleView}
+                    required={doc.required ?? true}
                   />
                 ))}
               </div>
@@ -3440,7 +3461,7 @@ export const NewApplication = () => {
                     type="number"
                     {...register("vehiclesCount")}
                     disabled={formLocked}
-                    min={1}
+                    min={0}
                     max={99}
                     placeholder={
                       isAm ? "የተሸከርካሪዎች ብዛት ያስገቡ" : "Enter number of vehicles"
@@ -3448,10 +3469,7 @@ export const NewApplication = () => {
                     onInput={(e) => {
                       const el = e.target as HTMLInputElement;
                       const val = parseInt(el.value, 10);
-                      if (el.value !== "" && (isNaN(val) || val <= 0)) {
-                        el.value = "";
-                        return;
-                      }
+                      if (el.value !== "" && (isNaN(val) || val <= 0)) { el.value = ""; return; }
                       if (val > 99) el.value = "99";
                     }}
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
@@ -3472,6 +3490,9 @@ export const NewApplication = () => {
                   onDelete={() => handleDelete("vehicle_rent")}
                   onView={handleView}
                   isOpenedForEdit={openedFields.includes("vehicle_rent")}
+                  disabled={!watch("vehiclesCount") || Number(watch("vehiclesCount")) === 0}
+                  infoText="If rented, upload a document showing 1 year paid rent. If owned, upload ownership documents."
+                  infoTextAm="ተሽከርካሪ የተከራየ ከሆነ የ1 አመት ክፍያ የተከፈለበትን ሰነድ ይስቀሉ። የራስ ከሆነ የባለቤትነት ሰነድ ይስቀሉ።"
                 />
                 <FileUpload
                   label={curT.docHouseRent}
@@ -3480,6 +3501,8 @@ export const NewApplication = () => {
                   onDelete={() => handleDelete("house_rent")}
                   onView={handleView}
                   isOpenedForEdit={openedFields.includes("house_rent")}
+                  infoText="If rented, upload a document showing 1 year paid rent. If owned, upload ownership documents."
+                  infoTextAm="ቤት የተከራየ ከሆነ የ1 አመት ክፍያ የተከፈለበትን ሰነድ ይስቀሉ። የራስ ከሆነ የባለቤትነት ሰነድ ይስቀሉ።"
                 />
               </div>
 
@@ -4416,12 +4439,12 @@ export const NewApplication = () => {
                 </div>
                 <div className="space-y-2">
                   <h5 className="text-xl font-black text-primary uppercase tracking-tight">
-                    Ready for Final Submission?
+                    {isAm ? "ለመጨረሻ ማቅረቢያ ዝግጁ ነዎት?" : "Ready for Final Submission?"}
                   </h5>
                   <p className="text-xs text-gray-500 max-w-lg mx-auto">
-                    By submitting, you certify that all information above is
-                    true and that you possess all original documents for
-                    verification during the Federal Police site visit.
+                    {isAm
+                      ? "በማስገባት፣ ከላይ ያለው መረጃ ሁሉ እውነት መሆኑን እና በፌደራል ፖሊስ የቦታ ጉብኝት ወቅት ለማረጋገጥ ሁሉንም ዋና ሰነዶች እንደያዙ ያረጋግጣሉ።"
+                      : "By submitting, you certify that all information above is true and that you possess all original documents for verification during the Federal Police site visit."}
                   </p>
                 </div>
               </div>
