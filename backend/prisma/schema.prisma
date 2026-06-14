@@ -194,7 +194,7 @@ model Organization {
   email       String  @unique @map("email_address") @db.VarChar(255)
   phone       String  @map("phone_number") @db.VarChar(50)
   faxNumber   String? @map("fax_number") @db.VarChar(50)
-  tradeName   String? @map("trade_name") @db.VarChar(255)
+  tradeName   String? @unique @map("trade_name") @db.NVarChar(255)
   tinNumber   String  @unique @map("tin_number") @db.VarChar(50)
   addressId   Int?    @map("address_id")
 
@@ -289,6 +289,7 @@ model OrganizationDocument {
   fileUrl        String       @map("file_url") @db.VarChar(Max)
   isVerified     Boolean      @default(false) @map("is_verified")
   verifiedAt     DateTime?    @map("verified_at") @db.DateTime
+  issuedDate     DateTime?    @map("issue_date") @db.Date
   expiryDate     DateTime?    @map("expiry_date") @db.Date
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, map: "FK_OrgDocs_Organizations")
 

@@ -5,7 +5,7 @@ import { Connection } from "tedious"; // Fixed import
 
 const connectionString =
   process.env.DATABASE_URL ||
-     "sqlserver://localhost:1433;database=EFP_PSO;user=erpuser;password=1234;trustServerCertificate=true";
+     "sqlserver://localhost:1433;database=EFP_PSO;user=erpuser;password=123456;trustServerCertificate=true";
 const prismaClientSingleton = () => {
   // Use the correctly cased class name
   const adapter = new PrismaMssql(connectionString);

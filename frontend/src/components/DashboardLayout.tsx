@@ -55,7 +55,9 @@ export const DashboardLayout = ({
   // Logic to determine the primary role for UI display
   const isSuperAdmin = user?.roles.includes("super_admin");
   const isLicensingAuthority = user?.roles.includes("licensing_authority");
-  const isAdmin = !isLicensingAuthority && user?.roles.includes("admin");
+  const isOrgHrManager = user?.roles.includes("org_hr_manager");
+  const isAdmin =
+    !isLicensingAuthority && !isOrgHrManager && user?.roles.includes("admin");
   const isAgency = user?.roles.includes("agency");
   const isFieldReviewer = user?.roles.includes("field_reviewer");
 
@@ -315,9 +317,11 @@ export const DashboardLayout = ({
                         ? "Licensing Authority"
                         : isFieldReviewer
                           ? "Field Reviewer"
-                          : isAdmin
-                            ? "Police Admin"
-                            : "Agency Manager"}
+                          : isOrgHrManager
+                            ? "Org HR Manager"
+                            : isAdmin
+                              ? "Police Admin"
+                              : "Agency Manager"}
                   </p>
                 </div>
                 <div className="w-9 h-9 lg:w-10 lg:h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary font-black border-2 border-secondary overflow-hidden">

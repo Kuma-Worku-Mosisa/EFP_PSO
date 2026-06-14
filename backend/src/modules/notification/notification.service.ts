@@ -44,31 +44,53 @@ const transporter = nodemailer.createTransport(
   makeTransportConfig(smtpHost, smtpPort, smtpSecure),
 );
 
+let smtpAuthFailed = false;
+let smtpVerifyPromise: Promise<void> | null = null;
+
 const BACKEND_ROOT = path.resolve(__dirname, "../../../");
 const FAILED_QUEUE_PATH = path.join(
   BACKEND_ROOT,
   "notification_failed_queue.json",
 );
 
-if (!smtpUser || !smtpPass) {
-  console.warn(
-    "[Notification Service] SMTP credentials are not configured. Email delivery will be disabled until SMTP_USER and SMTP_PASS are set.",
-  );
-} else {
-  transporter
+const verifySmtpTransporter = async () => {
+  if (!smtpUser || !smtpPass) {
+    smtpAuthFailed = true;
+    console.warn(
+      "[Notification Service] SMTP credentials are not configured. Email delivery will be disabled until SMTP_USER and SMTP_PASS are set.",
+    );
+    return;
+  }
+
+  if (smtpVerifyPromise) {
+    return smtpVerifyPromise;
+  }
+
+  smtpVerifyPromise = transporter
     .verify()
-    .then(() =>
+    .then(() => {
+      smtpAuthFailed = false;
       console.log(
         "[Notification Service] SMTP transporter verified successfully.",
-      ),
-    )
-    .catch((verifyError) =>
+      );
+    })
+    .catch((verifyError: any) => {
+      smtpVerifyPromise = null;
+      smtpAuthFailed = true;
       console.warn(
         "[Notification Service] SMTP transporter verify failed:",
         verifyError?.message || verifyError,
-      ),
-    );
-}
+      );
+      console.warn(
+        "[Notification Service] SMTP auth failed. Future email attempts will be skipped until valid SMTP credentials are provided.",
+      );
+      throw verifyError;
+    });
+
+  return smtpVerifyPromise;
+};
+
+verifySmtpTransporter().catch(() => undefined);
 
 export class NotificationService {
   /**
@@ -161,64 +183,95 @@ export class NotificationService {
       );
 
       if (smtpConfigured && user.email && user.email.includes("@")) {
-        const mailOptions = {
-          from: `"EFP-PSO" `,
-          to: user.email,
-          subject: `[EFP-PSO] ${template.titleEn}`,
-          text: plainTextFallback,
-          html: `
-            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 25px; line-height: 1.6; max-width: 650px; border: 1px solid #e9ecef; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin: 0 auto; color: #333333;">
-              
-              <div style="background-color: ${layoutThemeColor}; color: #ffffff; padding: 20px; font-size: 20px; font-weight: bold; border-radius: 8px 8px 0 0; text-align: center; letter-spacing: 0.5px;">
-                EFP-PSO Central Operations Alert Node
-              </div>
-              
-              <div style="padding: 20px 10px;">
-                <h3 style="color: ${layoutThemeColor}; border-bottom: 2px solid #f1f3f5; padding-bottom: 8px; margin-top: 0; font-size: 17px;">
-                  ${template.titleEn}
-                </h3>
-                <p style="font-size: 15px; color: #2d3748; margin-bottom: 25px; background-color: #f8f9fa; padding: 15px; border-left: 4px solid ${layoutThemeColor}; border-radius: 4px;">
-                  ${template.msgEn}
-                </p>
-
-                <h3 style="color: ${layoutThemeColor}; border-bottom: 2px solid #f1f3f5; padding-bottom: 8px; font-size: 16px; margin-top: 25px;">
-                  ${template.titleAm}
-                </h3>
-                <p style="font-size: 15px; color: #2d3748; margin-bottom: 25px; background-color: #f8f9fa; padding: 15px; border-left: 4px solid ${layoutThemeColor}; border-radius: 4px; direction: ltr; text-align: left;">
-                  ${template.msgAm}
-                </p>
-              </div>
-
-              <hr style="border: 0; border-top: 1px solid #dee2e6; margin: 25px 0;" />
-              <p style="font-size: 11px; color: #adb5bd; text-align: center; margin-bottom: 0;">
-                This is a secure automated notification generated from your institutional administrative account profile on the EFP-PSO ERP Platform. Please do not reply directly to this mailer node.
-              </p>
-            </div>
-          `,
-        };
-
-        // attempt send with exponential backoff
-        try {
-          await NotificationService.attemptSendWithRetries(mailOptions);
-          console.log(
-            ` [SMTP Mailer]: Operational email alert successfully transmitted to ${user.email}`,
+        if (smtpAuthFailed) {
+          console.warn(
+            "[SMTP Mailer]: SMTP auth previously failed; skipping email delivery until valid SMTP credentials are provided.",
           );
-        } catch (sendError) {
-          console.error(
-            ` [SMTP Mailer]: Failed to send after retries to ${user.email}, enqueueing for manual resend.`,
-            sendError,
+        } else {
+          try {
+            await verifySmtpTransporter();
+          } catch {
+            console.warn(
+              "[SMTP Mailer]: SMTP transporter verification failed; skipping email delivery until valid SMTP credentials are provided.",
+            );
+          }
+        }
+
+        if (smtpAuthFailed) {
+          console.warn(
+            "[SMTP Mailer]: SMTP auth previously failed; skipping email delivery until valid SMTP credentials are provided.",
           );
-          // enqueue failure for admin re-send
-          await NotificationService.enqueueFailedEmail({
-            id: crypto.randomUUID(),
-            createdAt: new Date().toISOString(),
-            recipientUserId,
-            notificationType: type,
-            context: ctx,
-            mailOptions,
-            attempts: 0,
-            lastError: String(sendError),
-          });
+        } else {
+          const mailOptions = {
+            from: `"EFP-PSO" <${smtpUser}>`,
+            to: user.email,
+            subject: `[EFP-PSO] ${template.titleEn}`,
+            text: plainTextFallback,
+            html: `
+              <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 25px; line-height: 1.6; max-width: 650px; border: 1px solid #e9ecef; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin: 0 auto; color: #333333;">
+                
+                <div style="background-color: ${layoutThemeColor}; color: #ffffff; padding: 20px; font-size: 20px; font-weight: bold; border-radius: 8px 8px 0 0; text-align: center; letter-spacing: 0.5px;">
+                  EFP-PSO Central Operations Alert Node
+                </div>
+                
+                <div style="padding: 20px 10px;">
+                  <h3 style="color: ${layoutThemeColor}; border-bottom: 2px solid #f1f3f5; padding-bottom: 8px; margin-top: 0; font-size: 17px;">
+                    ${template.titleEn}
+                  </h3>
+                  <p style="font-size: 15px; color: #2d3748; margin-bottom: 25px; background-color: #f8f9fa; padding: 15px; border-left: 4px solid ${layoutThemeColor}; border-radius: 4px;">
+                    ${template.msgEn}
+                  </p>
+
+                  <h3 style="color: ${layoutThemeColor}; border-bottom: 2px solid #f1f3f5; padding-bottom: 8px; font-size: 16px; margin-top: 25px;">
+                    ${template.titleAm}
+                  </h3>
+                  <p style="font-size: 15px; color: #2d3748; margin-bottom: 25px; background-color: #f8f9fa; padding: 15px; border-left: 4px solid ${layoutThemeColor}; border-radius: 4px; direction: ltr; text-align: left;">
+                    ${template.msgAm}
+                  </p>
+                </div>
+
+                <hr style="border: 0; border-top: 1px solid #dee2e6; margin: 25px 0;" />
+                <p style="font-size: 11px; color: #adb5bd; text-align: center; margin-bottom: 0;">
+                  This is a secure automated notification generated from your institutional administrative account profile on the EFP-PSO ERP Platform. Please do not reply directly to this mailer node.
+                </p>
+              </div>
+            `,
+          };
+
+          // attempt send with exponential backoff
+          try {
+            await NotificationService.attemptSendWithRetries(mailOptions);
+            console.log(
+              ` [SMTP Mailer]: Operational email alert successfully transmitted to ${user.email}`,
+            );
+          } catch (sendError) {
+            if (
+              sendError?.responseCode === 535 ||
+              sendError?.code === "EAUTH"
+            ) {
+              smtpAuthFailed = true;
+              console.error(
+                ` [SMTP Mailer]: SMTP auth failed for ${user.email}. Disabling further retries until credentials are fixed.`,
+                sendError,
+              );
+            } else {
+              console.error(
+                ` [SMTP Mailer]: Failed to send after retries to ${user.email}, enqueueing for manual resend.`,
+                sendError,
+              );
+              // enqueue failure for admin re-send
+              await NotificationService.enqueueFailedEmail({
+                id: crypto.randomUUID(),
+                createdAt: new Date().toISOString(),
+                recipientUserId,
+                notificationType: type,
+                context: ctx,
+                mailOptions,
+                attempts: 0,
+                lastError: String(sendError),
+              });
+            }
+          }
         }
       } else if (!smtpConfigured) {
         console.warn(

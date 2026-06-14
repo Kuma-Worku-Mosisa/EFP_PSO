@@ -529,6 +529,7 @@ export class RenewalService {
         documentType: getDocumentTypeLabel(file.fieldname),
         fileUrl: writtenPaths[index],
         isVerified: false,
+        issuedDate: new Date(),
       }));
 
       return await prisma.$transaction(async (tx) => {

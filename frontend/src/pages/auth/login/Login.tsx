@@ -101,6 +101,8 @@ export const Login = () => {
         navigate("/super-admin/dashboard");
       } else if (normalizedUser.roles?.includes("licensing_authority")) {
         navigate("/licensing-authority");
+      } else if (normalizedUser.roles?.includes("org_hr_manager")) {
+        navigate("/org-hr-manager");
       } else if (normalizedUser.roles?.includes("admin")) {
         navigate("/admin");
       } else if (normalizedUser.roles?.includes("field_reviewer")) {

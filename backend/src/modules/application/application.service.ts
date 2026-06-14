@@ -131,9 +131,8 @@ export class ApplicationService {
         }
       }
 
-      const branchAddresses = (Array.isArray(formData.branchAddresses)
-        ? formData.branchAddresses
-        : []
+      const branchAddresses = (
+        Array.isArray(formData.branchAddresses) ? formData.branchAddresses : []
       )
         .filter((branch: any) => branch?.kebeleId)
         .map((branch: any) => ({
@@ -672,6 +671,7 @@ export class ApplicationService {
               documentType: coreAssetDocMapping[key],
               fileUrl: url,
               isVerified: false,
+              issuedDate: new Date(),
             }));
 
           const orgDocTypeMapping: Record<string, string> = {
@@ -700,6 +700,7 @@ export class ApplicationService {
                 orgDocTypeMapping[key] || key.toUpperCase().replace("_", " "),
               fileUrl: url,
               isVerified: false,
+              issuedDate: new Date(),
             }));
 
           const allOrganizationDocumentEntries = [
@@ -1496,6 +1497,29 @@ export class ApplicationService {
                     address: serializeAddress(contract.address),
                   }),
                 ),
+                educationStats: latestGuardEducationStat
+                  ? {
+                      grade_3_9_male: latestGuardEducationStat.grade_3_9_male,
+                      grade_3_9_female:
+                        latestGuardEducationStat.grade_3_9_female,
+                      grade_10_12_male:
+                        latestGuardEducationStat.grade_10_12_male,
+                      grade_10_12_female:
+                        latestGuardEducationStat.grade_10_12_female,
+                      certificate_male:
+                        latestGuardEducationStat.certificate_male,
+                      certificate_female:
+                        latestGuardEducationStat.certificate_female,
+                      diploma_male: latestGuardEducationStat.diploma_male,
+                      diploma_female: latestGuardEducationStat.diploma_female,
+                      degree_male: latestGuardEducationStat.degree_male,
+                      degree_female: latestGuardEducationStat.degree_female,
+                      second_degree_male:
+                        latestGuardEducationStat.second_degree_male,
+                      second_degree_female:
+                        latestGuardEducationStat.second_degree_female,
+                    }
+                  : null,
               }
             : null,
           manager: serializeEmployee(r.manager),

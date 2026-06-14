@@ -388,8 +388,8 @@ export const LicenseViewer = () => {
         ]
       : isSignedByAdmin
         ? [
-            "የጥበ/አገ/ሰጪ/ድር/ቁጥ/",
-            "ወና ክፍል ሓለፍ",
+            "የጥበ/አገ/ሰጪ ድር/ቁጥ/",
+            "ዋና ክፍል ኃላፊ",
             "Sec/serve/Org/Control/",
             "Main Section Head",
           ]

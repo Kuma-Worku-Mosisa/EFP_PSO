@@ -1135,6 +1135,7 @@ export class CertificationService {
               documentType: "Organization Logo",
               fileUrl: data.logoUrl,
               isVerified: false,
+              issuedDate: new Date(),
             },
           });
         }

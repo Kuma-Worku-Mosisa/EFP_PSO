@@ -77,16 +77,6 @@ const buildDocumentCards = (
 const getOrganizationDocumentCards = (application?: any) =>
   buildDocumentCards(application?.organization?.documents || [], "org-grid");
 
-type ServiceContractCard = {
-  id: string;
-  contractId?: number | string;
-  serviceUserName: string;
-  contractUrl: string;
-  fileName: string;
-  assignedPersonnelCount?: number | null;
-  address?: any;
-};
-
 const findOrganizationDocument = (application: any, terms: string[]) => {
   const documents = getOrganizationDocumentCards(application);
   return documents.find((doc) =>
@@ -178,23 +168,27 @@ const getEmployeeOnlyDocumentCard = (
 
 const getEmployeeTrainingCertificate = (employee: any) => {
   const docs = (employee?.documents || []).filter(Boolean);
-  
+
   // Specifically look for training certificate by checking file URL pattern
   const trainingDoc = docs.find((doc: any) => {
     const fileUrl = doc?.fileUrl || "";
     const docType = normalizeText(doc?.documentType || "");
     const fileName = normalizeText(getFileName(fileUrl));
-    
+
     // Look for training_doc in the path AND training certificate in the type or filename
     const hasTrainingDocInPath = fileUrl.includes("training_doc");
-    const hasTrainingCertificate = docType.includes("training") && docType.includes("certificate");
-    const hasTrainingCertInFile = fileName.includes("training") && fileName.includes("certificate");
-    
-    return hasTrainingDocInPath && (hasTrainingCertificate || hasTrainingCertInFile);
+    const hasTrainingCertificate =
+      docType.includes("training") && docType.includes("certificate");
+    const hasTrainingCertInFile =
+      fileName.includes("training") && fileName.includes("certificate");
+
+    return (
+      hasTrainingDocInPath && (hasTrainingCertificate || hasTrainingCertInFile)
+    );
   });
-  
+
   if (!trainingDoc?.id) return null;
-  
+
   return {
     scope: "employee" as const,
     id: Number(trainingDoc.id),
@@ -1661,20 +1655,6 @@ export const ApplicationsReview = () => {
             </h4>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
-            {selectedApp.organization?.tradeName && (
-              <ReviewItem
-                label="Trade Name"
-                value={selectedApp.organization.tradeName}
-                id="new_trade_designation_live"
-              />
-            )}
-            {selectedApp.organization?.tinNumber && (
-              <ReviewItem
-                label="TIN Number"
-                value={selectedApp.organization.tinNumber}
-                id="new_tin_live"
-              />
-            )}
             {selectedApp.organization?.logoUrl && (
               <ReviewItem
                 label="Logo File"
@@ -2073,7 +2053,8 @@ export const ApplicationsReview = () => {
                 label="Training Certificate"
                 value={
                   getFileName(
-                    getEmployeeTrainingCertificate(selectedApp.manager)?.fileUrl,
+                    getEmployeeTrainingCertificate(selectedApp.manager)
+                      ?.fileUrl,
                   ) || "-"
                 }
                 id="new_mgr_train"
@@ -2090,7 +2071,8 @@ export const ApplicationsReview = () => {
                     : "manager:training-certificate"
                 }
                 initialVerified={Boolean(
-                  getEmployeeTrainingCertificate(selectedApp.manager)?.isVerified,
+                  getEmployeeTrainingCertificate(selectedApp.manager)
+                    ?.isVerified,
                 )}
               />
               <ReviewItem
@@ -2389,12 +2371,14 @@ export const ApplicationsReview = () => {
                 id="new_ops_train"
                 value={
                   getFileName(
-                    getEmployeeTrainingCertificate(selectedApp.operationsHead)?.fileUrl,
+                    getEmployeeTrainingCertificate(selectedApp.operationsHead)
+                      ?.fileUrl,
                   ) || "-"
                 }
                 isFile
                 fileUrl={
-                  getEmployeeTrainingCertificate(selectedApp.operationsHead)?.fileUrl
+                  getEmployeeTrainingCertificate(selectedApp.operationsHead)
+                    ?.fileUrl
                 }
                 documentTarget={getEmployeeTrainingCertificate(
                   selectedApp.operationsHead,
@@ -2405,7 +2389,8 @@ export const ApplicationsReview = () => {
                     : "operations:training-certificate"
                 }
                 initialVerified={Boolean(
-                  getEmployeeTrainingCertificate(selectedApp.operationsHead)?.isVerified,
+                  getEmployeeTrainingCertificate(selectedApp.operationsHead)
+                    ?.isVerified,
                 )}
               />
               <ReviewItem
@@ -2688,7 +2673,8 @@ export const ApplicationsReview = () => {
                 id="new_admin_train"
                 value={
                   getFileName(
-                    getEmployeeTrainingCertificate(selectedApp.adminHead)?.fileUrl,
+                    getEmployeeTrainingCertificate(selectedApp.adminHead)
+                      ?.fileUrl,
                   ) || "-"
                 }
                 isFile
@@ -2704,7 +2690,8 @@ export const ApplicationsReview = () => {
                     : "admin:training-certificate"
                 }
                 initialVerified={Boolean(
-                  getEmployeeTrainingCertificate(selectedApp.adminHead)?.isVerified,
+                  getEmployeeTrainingCertificate(selectedApp.adminHead)
+                    ?.isVerified,
                 )}
               />
               <ReviewItem
@@ -2895,7 +2882,6 @@ export const ApplicationsReview = () => {
         getEmployeeOnlyDocumentCard={getEmployeeOnlyDocumentCard}
         getFileName={getFileName}
         buildDocumentCards={buildDocumentCards}
-        isApplicationReadyForApproval={isApplicationReadyForApproval}
       />
     );
 

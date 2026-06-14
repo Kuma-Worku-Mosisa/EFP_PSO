@@ -27,6 +27,7 @@ import efpPositionRoutes from "./modules/efpPosition/efpPosition.routes";
 import notificationRoutes from "./modules/notification/notification.routes";
 import { runNotificationCronWorker } from "./modules/notification/notification.worker";
 import organizationRoutes from "./modules/organization/organization.routes";
+import employeeRoutes from "./modules/employee/employee.routes";
 
 const app = express();
 
@@ -90,6 +91,7 @@ app.use("/api/payments", paymentRouter);
 // 🔔 MOUNT NOTIFICATION API ENDPOINTS: Exposed for dashboard feed requests
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/organizations", organizationRoutes);
+app.use("/api/employees", employeeRoutes);
 
 // 6. Health Check / Root Route
 app.get("/", (req, res) => {

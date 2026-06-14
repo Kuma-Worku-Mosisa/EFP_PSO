@@ -1,6 +1,11 @@
 import { Request, Response } from "express";
+import multer from "multer";
+import fs from "fs";
+import path from "path";
 import prisma from "../../lib/prisma";
 import { ApiResponse } from "../../utils/apiResponse";
+import { deleteDocumentFile } from "../../utils/documentOrganizer";
+import { buildPrefixedFilename, fileFilter } from "../../middleware/fileUpload";
 
 /**
  * Returns a list of organizations with lightweight aggregate counts.
@@ -12,6 +17,7 @@ export const getOrganizationsHandler = async (req: Request, res: Response) => {
         id: true,
         nameEnglish: true,
         nameAmharic: true,
+        tradeName: true,
         email: true,
         phone: true,
         capitalAmount: true,
@@ -47,6 +53,7 @@ export const getOrganizationsHandler = async (req: Request, res: Response) => {
       id: o.id,
       nameEnglish: o.nameEnglish,
       nameAmharic: o.nameAmharic,
+      tradeName: o.tradeName,
       email: o.email,
       phone: o.phone,
       capitalAmount: o.capitalAmount,
@@ -114,6 +121,7 @@ export const getOrganizationDetailsHandler = async (
         id: true,
         nameEnglish: true,
         nameAmharic: true,
+        tradeName: true,
         email: true,
         phone: true,
         capitalAmount: true,
@@ -151,6 +159,7 @@ export const getOrganizationDetailsHandler = async (
           select: {
             fullName: true,
             email: true,
+            phone: true,
           },
         },
         position: {
@@ -189,9 +198,20 @@ export const getOrganizationDetailsHandler = async (
         age: true,
         educationLevel: true,
         workExpYears: true,
+        TotalExpYears: true,
         isBlacklisted: true,
         employmentStatus: true,
         employmentStartDate: true,
+        documents: {
+          select: {
+            id: true,
+            documentType: true,
+            fileUrl: true,
+            isVerified: true,
+            verifiedAt: true,
+            uploadedAt: true,
+          },
+        },
       },
     });
 
@@ -261,9 +281,13 @@ export const getOrganizationDetailsHandler = async (
       },
     });
 
-    // Fetch training details
+    // Fetch training details for this organization through its applications
     const trainingDetails = await prisma.organizationTrainingDetail.findMany({
-      where: { applicationId: null }, // Or fetch by organization relationship if exists
+      where: {
+        application: {
+          organizationId: id,
+        },
+      },
     });
 
     const branches = await prisma.organizationBranch.findMany({
@@ -329,6 +353,7 @@ export const getOrganizationDetailsHandler = async (
         fileUrl: true,
         isVerified: true,
         verifiedAt: true,
+        issuedDate: true,
         expiryDate: true,
       },
     });
@@ -338,6 +363,7 @@ export const getOrganizationDetailsHandler = async (
       id: org.id,
       nameEnglish: org.nameEnglish,
       nameAmharic: org.nameAmharic,
+      tradeName: org.tradeName,
       email: org.email,
       phone: org.phone,
       tinNumber: org.tinNumber,
@@ -356,12 +382,14 @@ export const getOrganizationDetailsHandler = async (
         addressId: e.addressId ?? null,
         fullName: e.user?.fullName ?? "",
         email: e.user?.email ?? "",
+        phone: e.user?.phone ?? "",
         positionName: e.position?.name ?? "",
         gender: e.gender ?? "",
         citizenship: e.citizenship ?? "",
         age: e.age ?? 0,
         educationLevel: e.educationLevel ?? "",
         workExpYears: e.workExpYears ?? 0,
+        totalExpYears: e.TotalExpYears ?? 0,
         isBlacklisted: e.isBlacklisted,
         employmentStatus: e.employmentStatus ?? "",
         employmentStartDate: e.employmentStartDate
@@ -379,6 +407,18 @@ export const getOrganizationDetailsHandler = async (
                 e.address.kebele?.woreda?.zone?.region?.nameEnglish ?? "",
             }
           : null,
+        documents: e.documents.map((doc) => ({
+          id: doc.id,
+          documentType: doc.documentType,
+          fileUrl: doc.fileUrl,
+          isVerified: doc.isVerified,
+          verifiedAt: doc.verifiedAt
+            ? new Date(doc.verifiedAt).toISOString().split("T")[0]
+            : null,
+          uploadedAt: doc.uploadedAt
+            ? new Date(doc.uploadedAt).toISOString().split("T")[0]
+            : new Date().toISOString().split("T")[0],
+        })),
       })),
       incidents: incidents.map((inc) => ({
         id: inc.id,
@@ -454,9 +494,21 @@ export const getOrganizationDetailsHandler = async (
       dmsDocuments: dmsDocuments.map((doc) => ({
         id: doc.id.toString(),
         documentName: doc.documentType,
-        type: doc.isVerified ? "Basic" : "Yearly Renewed",
+        isVerified: doc.isVerified,
+        // Classify by file path: if URL contains /<year>_renewal/ (e.g., /2026_renewal/),
+        // it's a Yearly Renewed document; otherwise it's a Basic/Statutory credential.
+        type: /\/\d{4}_renewal\//.test(doc.fileUrl)
+          ? "Yearly Renewed"
+          : "Basic",
         referenceNumber: doc.id.toString(),
-        issuedDate: new Date().toISOString().split("T")[0],
+        // Use verifiedAt as the best-available timestamp for issued/checked date;
+        // if not present, fall back to today's date. Adding a proper `createdAt`
+        // column to `OrganizationDocument` is recommended for accurate history.
+        issuedDate: doc.issuedDate
+          ? new Date(doc.issuedDate).toISOString().split("T")[0]
+          : doc.verifiedAt
+            ? new Date(doc.verifiedAt).toISOString().split("T")[0]
+            : new Date().toISOString().split("T")[0],
         expiryDate: doc.expiryDate
           ? new Date(doc.expiryDate).toISOString().split("T")[0]
           : undefined,
@@ -535,6 +587,193 @@ export const updateOrganizationHandler = async (
       "Failed to update organization",
       500,
       err?.message ?? String(err),
+    );
+  }
+};
+
+/**
+ * Delete an organization document
+ * DELETE /api/organizations/documents/:docId
+ */
+export const deleteOrganizationDocumentHandler = async (
+  req: Request,
+  res: Response,
+) => {
+  const docId = Number(req.params.docId);
+
+  if (!Number.isFinite(docId) || docId <= 0) {
+    return ApiResponse.error(res, "Invalid document id.", 400);
+  }
+
+  try {
+    // Fetch document to get file path
+    const doc = await prisma.organizationDocument.findUnique({
+      where: { id: docId },
+    });
+
+    if (!doc) {
+      return ApiResponse.error(res, "Document not found", 404);
+    }
+
+    // Delete file from disk
+    try {
+      deleteDocumentFile(doc.fileUrl);
+    } catch (fileError) {
+      console.warn(
+        "[WARN] Failed to delete document file:",
+        doc.fileUrl,
+        fileError,
+      );
+      // Continue with database deletion even if file deletion fails
+    }
+
+    // Delete from database
+    const deleted = await prisma.organizationDocument.delete({
+      where: { id: docId },
+    });
+
+    return ApiResponse.success(res, "Document deleted successfully.", deleted);
+  } catch (error: any) {
+    console.error(
+      "[ERROR] Delete organization document failed:",
+      error?.message || error,
+    );
+    return ApiResponse.error(
+      res,
+      error?.message || "Failed to delete document.",
+      500,
+      error?.message,
+    );
+  }
+};
+
+const createDocumentReplacementStorage = (
+  existingRelativePath: string,
+  prefix: string,
+) => {
+  const sanitizedRelativePath = existingRelativePath.replace(/^[/\\]+/, "");
+  const destinationDir = path.dirname(
+    path.join(process.cwd(), sanitizedRelativePath),
+  );
+
+  return multer.diskStorage({
+    destination: (req, file, cb) => {
+      if (!fs.existsSync(destinationDir)) {
+        fs.mkdirSync(destinationDir, { recursive: true });
+      }
+      cb(null, destinationDir);
+    },
+    filename: (req, file, cb) => {
+      cb(null, buildPrefixedFilename(prefix, file.originalname));
+    },
+  });
+};
+
+/**
+ * Replace an organization document file with a newly uploaded file.
+ * PATCH /api/organizations/documents/:docId
+ */
+export const replaceOrganizationDocumentHandler = async (
+  req: Request,
+  res: Response,
+) => {
+  const docId = Number(req.params.docId);
+
+  if (!Number.isFinite(docId) || docId <= 0) {
+    return ApiResponse.error(res, "Invalid document id.", 400);
+  }
+
+  try {
+    const existingDoc = await prisma.organizationDocument.findUnique({
+      where: { id: docId },
+    });
+
+    if (!existingDoc) {
+      return ApiResponse.error(res, "Document not found", 404);
+    }
+
+    const documentTypePrefix = String(
+      existingDoc.documentType || "organization_document",
+    )
+      .replace(/\s+/g, "_")
+      .toLowerCase();
+
+    const upload = multer({
+      storage: createDocumentReplacementStorage(
+        existingDoc.fileUrl,
+        documentTypePrefix,
+      ),
+      fileFilter,
+      limits: {
+        fileSize: 10 * 1024 * 1024,
+      },
+    }).single("document");
+
+    upload(req, res, async (uploadError) => {
+      if (uploadError) {
+        console.error(
+          "[ERROR] Document replacement upload failed:",
+          uploadError,
+        );
+        return ApiResponse.error(
+          res,
+          uploadError.message || "Failed to upload replacement document.",
+          400,
+          uploadError instanceof Error
+            ? uploadError.message
+            : String(uploadError),
+        );
+      }
+
+      const file = req.file;
+      if (!file) {
+        return ApiResponse.error(res, "Document file is required", 400);
+      }
+
+      const relativePath = path
+        .relative(process.cwd(), file.path)
+        .replace(/\\/g, "/");
+
+      try {
+        deleteDocumentFile(existingDoc.fileUrl);
+      } catch (fileDeleteError) {
+        console.warn(
+          "[WARN] Failed to delete previous organization document file:",
+          existingDoc.fileUrl,
+          fileDeleteError,
+        );
+      }
+
+      const updated = await prisma.organizationDocument.update({
+        where: { id: docId },
+        data: {
+          fileUrl: relativePath,
+          isVerified: false,
+          verifiedAt: null,
+        },
+        select: {
+          id: true,
+          organizationId: true,
+          documentType: true,
+          fileUrl: true,
+          isVerified: true,
+          verifiedAt: true,
+          issuedDate: true,
+          expiryDate: true,
+        },
+      });
+
+      return ApiResponse.success(res, "Document updated successfully.", {
+        document: updated,
+      });
+    });
+  } catch (error: any) {
+    console.error("[ERROR] Replace organization document failed:", error);
+    return ApiResponse.error(
+      res,
+      error?.message || "Failed to update document.",
+      500,
+      error?.message,
     );
   }
 };

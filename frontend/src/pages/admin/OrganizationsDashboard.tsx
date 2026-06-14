@@ -25,6 +25,7 @@ interface Organization {
   id: number; // Int @id
   nameAmharic: string; // NVarChar(255)
   nameEnglish: string; // VarChar(255)
+  tradeName?: string 
   email: string;
   phone: string;
   capitalAmount?: number | null; // db.Decimal(18, 2)
@@ -401,8 +402,9 @@ export default function OrganizationDashboard() {
           <table className="w-full text-left border-collapse whitespace-nowrap">
             <thead>
               <tr className="bg-gray-50/70 border-b border-gray-100 text-[10px] font-black text-gray-400 tracking-widest uppercase">
-                <th className="px-6 py-4 text-center w-12">Identity</th>
-                <th className="px-6 py-4">Corporate Entity Name</th>
+                <th className="px-6 py-4 text-center w-12">Logo</th>
+                <th className="px-6 py-4">Organization Name</th>
+                <th className="px-6 py-4">Trade Name</th>
                 <th className="px-6 py-4">Branch Network</th>
                 <th className="px-6 py-4">Total Workforce</th>
                 <th className="px-6 py-4">Service Contracts</th>
@@ -436,6 +438,15 @@ export default function OrganizationDashboard() {
                         </span>
                         <span className="text-xs text-gray-400 font-medium mt-0.5 tracking-normal">
                           {org.nameAmharic}
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* Trade Names */}
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-sm text-primary group-hover:text-secondary transition-colors duration-150">
+                          {org.tradeName || "----"}
                         </span>
                       </div>
                     </td>
