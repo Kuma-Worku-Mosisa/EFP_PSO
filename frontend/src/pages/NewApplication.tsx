@@ -3,6 +3,7 @@ import React from "react";
 import { useLanguage } from "../context/LanguageContext";
 import { useAuth } from "../context/AuthContext";
 import {
+  Info,
   CheckCircle2,
   FileText,
   Upload,
@@ -108,15 +109,15 @@ export const applicationSchema = z
     // Step 3 & 4: Assets (Preprocessing strings to numbers for Prisma)
     officesCount: z.preprocess(
       (val) => Number(val),
-      z.number().min(1, "At least 1 office required"),
+      z.number().min(0, "Cannot be negative"),
     ),
     computersCount: z.preprocess(
       (val) => Number(val),
-      z.number().min(1, "Must be 1 or more"),
+      z.number().min(0, "Cannot be negative"),
     ),
     vehiclesCount: z.preprocess(
       (val) => Number(val),
-      z.number().min(0, "Must be 0 or more"),
+      z.number().min(0, "Cannot be negative"),
     ),
     hasStoreHouse: z.preprocess(
       (val) => val === true || val === "true",
@@ -124,7 +125,7 @@ export const applicationSchema = z
     ),
     capitalAmount: z.preprocess(
       (val) => Number(val),
-      z.number().min(300, "Capital amount must be at least 300"),
+      z.number().min(0, "Cannot be negative"),
     ),
 
     // Step 4: Training
@@ -145,6 +146,20 @@ export const applicationSchema = z
       z.number().optional(),
     ),
     totalTraineesFemale: z.preprocess(
+      (val) =>
+        val === "" || val === null || val === undefined
+          ? undefined
+          : Number(val),
+      z.number().optional(),
+    ),
+    totalMaleUntrained: z.preprocess(
+      (val) =>
+        val === "" || val === null || val === undefined
+          ? undefined
+          : Number(val),
+      z.number().optional(),
+    ),
+    totalFemaleUntrained: z.preprocess(
       (val) =>
         val === "" || val === null || val === undefined
           ? undefined
@@ -312,6 +327,10 @@ const FormInput = ({
   disabled = false,
   isOpenedForEdit = false,
   onChange,
+  min,
+  onInput,
+  infoText,
+  infoTextAm,
 }: {
   label: string;
   value?: string;
@@ -325,8 +344,13 @@ const FormInput = ({
   disabled?: boolean;
   isOpenedForEdit?: boolean;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  min?: number;
+  onInput?: (e: React.FormEvent<HTMLInputElement>) => void;
+  infoText?: string;
+  infoTextAm?: string;
 }) => {
   const { language } = useLanguage();
+  const [showInfo, setShowInfo] = React.useState(false);
   const fiOpt = language === "am" ? "አማራጭ" : "Optional";
   const isFilled = value && value.length > 0;
   const autoPlaceholder = placeholder || (language === "am"
@@ -348,7 +372,7 @@ const FormInput = ({
   return (
     <div className="space-y-2.5 relative group">
       <div className="flex justify-between items-center px-1">
-        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center space-x-1.5">
+        <label className={`${language === "am" ? "text-sm" : "text-[11px]"} font-black text-primary uppercase tracking-widest flex items-center space-x-1.5`}>
           <span>{label}</span>
           <span
             className={cn(
@@ -371,6 +395,51 @@ const FormInput = ({
           </motion.div>
         )}
       </div>
+
+      {infoText && (
+        <div className="px-1">
+          <button
+            type="button"
+            onClick={() => setShowInfo(!showInfo)}
+            className="inline-flex items-center space-x-1.5 text-[11px] font-bold text-amber-600 hover:text-amber-500 transition-all duration-300 hover:scale-105 active:scale-95"
+          >
+            <motion.span
+              animate={{ rotate: showInfo ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+              className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-50 text-amber-600"
+            >
+              <Info className="w-3 h-3" />
+            </motion.span>
+            <span>{language === "am" ? "ተጨማሪ መረጃ →" : "Learn more →"}</span>
+            <motion.span
+              animate={{ rotate: showInfo ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+              className="text-amber-400"
+            >
+              <ChevronDown className="w-3.5 h-3.5" />
+            </motion.span>
+          </button>
+          <AnimatePresence initial={false}>
+            {showInfo && (
+              <motion.div
+                key="info"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className="overflow-hidden"
+              >
+                <div className="mt-2 p-3 bg-gradient-to-br from-amber-50 to-orange-50/50 border border-amber-200/70 rounded-xl shadow-sm">
+                  <p className="text-[11px] text-amber-900 leading-relaxed font-medium">
+                    {language === "am" && infoTextAm ? infoTextAm : infoText}
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
       <div className="relative">
         <input
           {...(() => {
@@ -389,6 +458,8 @@ const FormInput = ({
           })()}
           type={type}
           inputMode={inputMode ?? "text"}
+          min={min}
+          onInput={onInput}
           disabled={disabled && !isOpenedForEdit}
           className={cn(
             "w-full p-4 transition-all duration-300 outline-none border-2 text-primary font-bold shadow-sm",
@@ -413,6 +484,7 @@ const FormInput = ({
           </div>
         )}
       </div>
+
       {error && (
         <motion.p
           initial={{ opacity: 0, y: -5 }}
@@ -490,7 +562,7 @@ const SearchableLocationSelect = ({
 
   return (
     <div ref={containerRef} className="space-y-2 text-left relative">
-      <label className="text-[11px] font-black text-gray-500 uppercase tracking-widest">
+      <label className={`${language === "am" ? "text-sm" : "text-[11px]"} font-black text-primary uppercase tracking-widest`}>
         {label}
       </label>
       <button
@@ -733,7 +805,7 @@ const FormSelect = ({
   return (
     <div className="space-y-2.5 relative group">
       <div className="flex justify-between items-center px-1">
-        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center space-x-1.5">
+        <label className={`${language === "am" ? "text-sm" : "text-[11px]"} font-black text-primary uppercase tracking-widest flex items-center space-x-1.5`}>
           <span>{label}</span>
           <span
             className={cn(
@@ -760,7 +832,7 @@ const FormSelect = ({
           }}
           disabled={disabled}
           className={cn(
-            "w-full p-4 transition-all duration-300 outline-none border-2 text-primary font-bold shadow-sm bg-gray-50/50 rounded-2xl appearance-none",
+            "w-full p-4 transition-all duration-300 outline-none border-2 text-primary font-bold shadow-sm bg-gray-50/50 rounded-2xl appearance-none text-sm",
             error
               ? "border-red-300 ring-4 ring-red-50 bg-red-50/10"
               : "focus:border-primary focus:ring-4 focus:ring-primary/10 border-solid border-gray-200 hover:border-gray-300",
@@ -875,6 +947,50 @@ const FileUpload = ({
           "border-amber-400 bg-amber-50/20 ring-4 ring-amber-50 animate-pulse border-dashed",
       )}
     >
+      {infoText && (
+        <div className="px-1 mb-3">
+          <button
+            type="button"
+            onClick={() => setShowInfo(!showInfo)}
+            className="inline-flex items-center space-x-1.5 text-[11px] font-bold text-amber-600 hover:text-amber-500 transition-all duration-300 hover:scale-105 active:scale-95"
+          >
+            <motion.span
+              animate={{ rotate: showInfo ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+              className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-50 text-amber-600"
+            >
+              <Info className="w-3 h-3" />
+            </motion.span>
+            <span>{language === "am" ? "ተጨማሪ መረጃ →" : "Learn more →"}</span>
+            <motion.span
+              animate={{ rotate: showInfo ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+              className="text-amber-400"
+            >
+              <ChevronDown className="w-3.5 h-3.5" />
+            </motion.span>
+          </button>
+          <AnimatePresence initial={false}>
+            {showInfo && (
+              <motion.div
+                key="info"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className="overflow-hidden"
+              >
+                <div className="mt-2 p-3 bg-gradient-to-br from-amber-50 to-orange-50/50 border border-amber-200/70 rounded-xl shadow-sm">
+                  <p className="text-[11px] text-amber-900 leading-relaxed font-medium">
+                    {language === "am" && infoTextAm ? infoTextAm : infoText}
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
       {file && (
         <div className="absolute -top-3 -right-3 z-10">
           <div className="flex items-center space-x-1.5 bg-green-500 text-white px-2.5 py-1 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest shadow-xl shadow-green-500/30 border-2 border-white animate-in zoom-in">
@@ -1399,7 +1515,7 @@ const PersonnelSection = ({
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2.5">
-            <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest px-1 flex items-center space-x-1.5">
+            <label className={`${isAm ? "text-sm" : "text-[11px]"} font-black text-primary uppercase tracking-widest px-1 flex items-center space-x-1.5`}>
               <span>{curT.gender}</span>
               <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
                 *
@@ -1440,7 +1556,7 @@ const PersonnelSection = ({
       {/* Identity & Contact Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border-t border-gray-50 pt-6">
         <div className="md:col-span-1 space-y-2.5">
-          <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest px-1">
+          <label className={`${isAm ? "text-sm" : "text-[11px]"} font-black text-primary uppercase tracking-widest px-1`}>
             {curT.faydaId || "Fayda ID & OTP"}
           </label>
           <div className="flex gap-2">
@@ -1510,7 +1626,7 @@ const PersonnelSection = ({
 
       {/* Position & Experience */}
       <div className="bg-gray-50/60 p-5 rounded-[28px] border border-dashed border-gray-200 space-y-5">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormSelect
             label={curT.position}
             name={`${prefix}.positionId`}
@@ -1581,6 +1697,14 @@ const PersonnelSection = ({
             error={personnelErrors.workExpYears}
             required={false}
             disabled={isFormLocked}
+            min={0}
+            onInput={(e) => {
+              const el = e.target as HTMLInputElement;
+              const val = parseInt(el.value, 10);
+              if (el.value !== "" && (isNaN(val) || val < 0)) el.value = "";
+            }}
+            infoText="Enter your work experience years relevant to your current position."
+            infoTextAm="አሁን ባሉበት ቦታ ያገለገሉትን የስራ ልምድ ዓመታት ያስገቡ።"
           />
 
           <FormInput
@@ -1592,6 +1716,14 @@ const PersonnelSection = ({
             error={personnelErrors.TotalExpYears}
             required={false}
             disabled={isFormLocked}
+            min={0}
+            onInput={(e) => {
+              const el = e.target as HTMLInputElement;
+              const val = parseInt(el.value, 10);
+              if (el.value !== "" && (isNaN(val) || val < 0)) el.value = "";
+            }}
+            infoText="Enter your total experience years across Police, Defence force, or other work areas."
+            infoTextAm="በፖሊስ፣ በመከላከያ ሠራዊት ወይም በሌሎች የስራ ዘርፎች ያለዎትን ጠቅላላ የልምድ ዓመታት ያስገቡ።"
           />
         </div>
       </div>
@@ -1881,6 +2013,8 @@ export const NewApplication = () => {
       trainingDays: "Number of Days Trained",
       trainingMale: "Number of Males Trained",
       trainingFemale: "Number of Females Trained",
+      trainingMaleUntrained: "Number of Males Not Trained",
+      trainingFemaleUntrained: "Number of Females Not Trained",
       trainingProvider: "Training Provider Body",
       step5Title: "Key Personnel Requirements",
       step5Desc:
@@ -1972,7 +2106,7 @@ export const NewApplication = () => {
       submittedDesc:
         "ለአዲስ የግል ጥበቃ ተቋም ፈቃድ ያቀረቡት ማመልከቻ በተሳካ ሁኔታ ገብቷል። ፌዴራል ፖሊስ ሰነዶችዎን ገምግሞ ለቀጣይ እርምጃዎች ያገኝዎታል።",
       step1Title: "የተቋም እና የቢሮ መረጃ",
-      orgName: "የተቋሙ ስም",
+      orgName: "የተቋሙ ስም (ኢንጊሊዘኛ)",
       orgNameAmharic: "የተቋሙ ስም (አማርኛ)",
       headOfficeAddress: "የዋና መስሪያ ቤት አድራሻ",
       headOffice: "የዋና መስሪያ ቤት ስም",
@@ -2005,6 +2139,8 @@ export const NewApplication = () => {
       trainingDays: "የሰለጠኑበት ቀናት ብዛት",
       trainingMale: "የሰለጠኑ ወንዶች ብዛት",
       trainingFemale: "የሰለጠኑ ሴቶች ብዛት",
+      trainingMaleUntrained: "ያልሰለጠኑ ወንዶች ብዛት",
+      trainingFemaleUntrained: "ያልሰለጠኑ ሴቶች ብዛት",
       trainingProvider: "ስልጠና ሰጪ አካል",
       step5Title: "የቁልፍ ሰራተኞች መስፈርቶች",
       step5Desc: "ለስራ አስኪያጅ፣ ለኦፕሬሽን ኃላፊ እና ለአስተዳደር ኃላፊ ዝርዝር መረጃ እና ሰነዶችን ያቅርቡ።",
@@ -2747,6 +2883,8 @@ export const NewApplication = () => {
         trainingProvider: data.trainingProvider,
         totalTraineesMale: Number(data.totalTraineesMale || 0),
         totalTraineesFemale: Number(data.totalTraineesFemale || 0),
+        totalMaleUntrained: Number(data.totalMaleUntrained || 0),
+        totalFemaleUntrained: Number(data.totalFemaleUntrained || 0),
         manager: data.manager,
         ops: data.ops,
         admin: data.admin,
@@ -3198,7 +3336,7 @@ export const NewApplication = () => {
                 </div>
                 <div className="space-y-2.5">
                   <div className="flex justify-between items-center px-1">
-                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
+                    <label className={`${isAm ? "text-sm" : "text-[11px]"} font-black text-primary uppercase tracking-widest`}>
                       {curT.agencyphone}
                     </label>
                   </div>
@@ -3335,7 +3473,7 @@ export const NewApplication = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
+                  <label className={`${isAm ? "text-sm" : "text-xs"} font-black text-primary flex items-center space-x-1.5`}>
                     <span>{curT.capitalAmount}</span>
                     <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
                       *
@@ -3345,14 +3483,14 @@ export const NewApplication = () => {
                     type="number"
                     {...register("capitalAmount")}
                     disabled={formLocked}
-                    min={1}
+                    min={0}
                     placeholder={
                       isAm ? "የካፒታል መጠን ያስገቡ" : "Enter capital amount"
                     }
                     onInput={(e) => {
                       const el = e.target as HTMLInputElement;
                       const val = parseInt(el.value, 10);
-                      if (el.value !== "" && (isNaN(val) || val <= 0))
+                      if (el.value !== "" && (isNaN(val) || val < 0))
                         el.value = "";
                     }}
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
@@ -3365,7 +3503,7 @@ export const NewApplication = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
+                  <label className={`${isAm ? "text-sm" : "text-xs"} font-black text-primary flex items-center space-x-1.5`}>
                     <span>{curT.offices}</span>
                     <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
                       *
@@ -3375,19 +3513,16 @@ export const NewApplication = () => {
                     type="number"
                     {...register("officesCount")}
                     disabled={formLocked}
-                    min={1}
-                    max={99}
+                    min={0}
                     placeholder={
                       isAm ? "የቢሮዎች ብዛት ያስገቡ" : "Enter number of offices"
                     }
                     onInput={(e) => {
                       const el = e.target as HTMLInputElement;
                       const val = parseInt(el.value, 10);
-                      if (el.value !== "" && (isNaN(val) || val <= 0)) {
+                      if (el.value !== "" && (isNaN(val) || val < 0)) {
                         el.value = "";
-                        return;
                       }
-                      if (val > 99) el.value = "99";
                     }}
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
                   />
@@ -3399,7 +3534,7 @@ export const NewApplication = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
+                  <label className={`${isAm ? "text-sm" : "text-xs"} font-black text-primary flex items-center space-x-1.5`}>
                     <span>{curT.storeHouse}</span>
                     <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
                       *
@@ -3417,7 +3552,7 @@ export const NewApplication = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
+                  <label className={`${isAm ? "text-sm" : "text-xs"} font-black text-primary flex items-center space-x-1.5`}>
                     <span>{curT.computers}</span>
                     <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
                       *
@@ -3427,19 +3562,16 @@ export const NewApplication = () => {
                     type="number"
                     {...register("computersCount")}
                     disabled={formLocked}
-                    min={1}
-                    max={99}
+                    min={0}
                     placeholder={
                       isAm ? "የኮምፒውተሮች ብዛት ያስገቡ" : "Enter number of computers"
                     }
                     onInput={(e) => {
                       const el = e.target as HTMLInputElement;
                       const val = parseInt(el.value, 10);
-                      if (el.value !== "" && (isNaN(val) || val <= 0)) {
+                      if (el.value !== "" && (isNaN(val) || val < 0)) {
                         el.value = "";
-                        return;
                       }
-                      if (val > 99) el.value = "99";
                     }}
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
                   />
@@ -3451,7 +3583,7 @@ export const NewApplication = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
+                  <label className={`${isAm ? "text-sm" : "text-xs"} font-black text-primary flex items-center space-x-1.5`}>
                     <span>{curT.vehicles}</span>
                     <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
                       *
@@ -3462,15 +3594,13 @@ export const NewApplication = () => {
                     {...register("vehiclesCount")}
                     disabled={formLocked}
                     min={0}
-                    max={99}
                     placeholder={
                       isAm ? "የተሸከርካሪዎች ብዛት ያስገቡ" : "Enter number of vehicles"
                     }
                     onInput={(e) => {
                       const el = e.target as HTMLInputElement;
                       const val = parseInt(el.value, 10);
-                      if (el.value !== "" && (isNaN(val) || val <= 0)) { el.value = ""; return; }
-                      if (val > 99) el.value = "99";
+                      if (el.value !== "" && (isNaN(val) || val < 0)) { el.value = ""; }
                     }}
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
                   />
@@ -3491,8 +3621,8 @@ export const NewApplication = () => {
                   onView={handleView}
                   isOpenedForEdit={openedFields.includes("vehicle_rent")}
                   disabled={!watch("vehiclesCount") || Number(watch("vehiclesCount")) === 0}
-                  infoText="If rented, upload a document showing 1 year paid rent. If owned, upload ownership documents."
-                  infoTextAm="ተሽከርካሪ የተከራየ ከሆነ የ1 አመት ክፍያ የተከፈለበትን ሰነድ ይስቀሉ። የራስ ከሆነ የባለቤትነት ሰነድ ይስቀሉ።"
+                  infoText="If rented, upload a document showing 1 year paid vehicle rent deal. If owned, upload the vehicle libre (ownership certificate)."
+                  infoTextAm="ተሽከርካሪ የተከራየ ከሆነ የ1 አመት የኪራይ ውል ሰነድ ይስቀሉ። የራስ ከሆነ የተሽከርካሪ ሊብሬ (የባለቤትነት ሰርተፍኬት) ይስቀሉ።"
                 />
                 <FileUpload
                   label={curT.docHouseRent}
@@ -3501,8 +3631,8 @@ export const NewApplication = () => {
                   onDelete={() => handleDelete("house_rent")}
                   onView={handleView}
                   isOpenedForEdit={openedFields.includes("house_rent")}
-                  infoText="If rented, upload a document showing 1 year paid rent. If owned, upload ownership documents."
-                  infoTextAm="ቤት የተከራየ ከሆነ የ1 አመት ክፍያ የተከፈለበትን ሰነድ ይስቀሉ። የራስ ከሆነ የባለቤትነት ሰነድ ይስቀሉ።"
+                  infoText="If rented, upload a document showing 1 year paid house rent deal. If owned, upload the Carta and house plan."
+                  infoTextAm="ቤት የተከራየ ከሆነ የ1 አመት የቤት ኪራይ ውል ሰነድ ይስቀሉ። የራስ ከሆነ ካርታ እና የቤት ፕላን ይስቀሉ።"
                 />
               </div>
 
@@ -3667,8 +3797,8 @@ export const NewApplication = () => {
                     type="number"
                     {...register("totalTraineesFemale")}
                     disabled={formLocked}
-                    min={1}
-                    max={99}
+                    min={0}
+                    max={999}
                     placeholder={
                       isAm ? "የሴቶች ብዛት ያስገቡ" : "Enter number of females"
                     }
@@ -3676,11 +3806,67 @@ export const NewApplication = () => {
                     onInput={(e) => {
                       const el = e.target as HTMLInputElement;
                       const val = parseInt(el.value, 10);
-                      if (el.value !== "" && (isNaN(val) || val <= 0)) {
+                      if (el.value !== "" && (isNaN(val) || val < 0)) {
                         el.value = "";
                         return;
                       }
-                      if (val > 99) el.value = "99";
+                      if (val > 999) el.value = "999";
+                    }}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-700 flex items-center space-x-1.5">
+                    <span>
+                      {curT.trainingMaleUntrained} ({isAm ? "አማራጭ" : "Optional"})
+                    </span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-amber-700 bg-amber-50">
+                      {isAm ? "አማራጭ" : "Optional"}
+                    </span>
+                  </label>
+                  <input
+                    type="number"
+                    {...register("totalMaleUntrained")}
+                    disabled={formLocked}
+                    min={0}
+                    placeholder={
+                      isAm ? "ያልሰለጠኑ ወንዶች ብዛት ያስገቡ" : "Enter males not trained"
+                    }
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
+                    onInput={(e) => {
+                      const el = e.target as HTMLInputElement;
+                      const val = parseInt(el.value, 10);
+                      if (el.value !== "" && (isNaN(val) || val < 0)) {
+                        el.value = "";
+                      }
+                    }}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-700 flex items-center space-x-1.5">
+                    <span>
+                      {curT.trainingFemaleUntrained} ({isAm ? "አማራጭ" : "Optional"})
+                    </span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-amber-700 bg-amber-50">
+                      {isAm ? "አማራጭ" : "Optional"}
+                    </span>
+                  </label>
+                  <input
+                    type="number"
+                    {...register("totalFemaleUntrained")}
+                    disabled={formLocked}
+                    min={0}
+                    placeholder={
+                      isAm ? "ያልሰለጠኑ ሴቶች ብዛት ያስገቡ" : "Enter females not trained"
+                    }
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
+                    onInput={(e) => {
+                      const el = e.target as HTMLInputElement;
+                      const val = parseInt(el.value, 10);
+                      if (el.value !== "" && (isNaN(val) || val < 0)) {
+                        el.value = "";
+                      }
                     }}
                   />
                 </div>
