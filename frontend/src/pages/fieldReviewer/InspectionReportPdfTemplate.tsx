@@ -138,19 +138,19 @@ export const InspectionReportPdfTemplate: React.FC<Props> = ({
     formatInspectionPdfDate(value, { ethiopian: isAm, includeTime });
 
   const Row = ({ label, value }: { label: string; value: string }) => (
-    <div style={{ marginBottom: rowGap }}>
-      <div
+    <div style={{ marginBottom: rowGap, display: "flex", gap: 4 }}>
+      <span
         style={{
-          fontSize: labelSize,
-          color: "#6b7280",
+          fontSize: valueSize,
+          color: "#111827",
           fontWeight: 600,
-          marginBottom: 1,
           fontFamily: fontStack,
+          whiteSpace: "nowrap",
         }}
       >
-        {label}
-      </div>
-      <div
+        {label}:
+      </span>
+      <span
         style={{
           fontSize: valueSize,
           color: "#111827",
@@ -160,7 +160,7 @@ export const InspectionReportPdfTemplate: React.FC<Props> = ({
         }}
       >
         {value}
-      </div>
+      </span>
     </div>
   );
 
@@ -172,24 +172,24 @@ export const InspectionReportPdfTemplate: React.FC<Props> = ({
     right: React.ReactNode;
   }) => (
     <div style={{ display: "flex", gap: compact ? 14 : 24, marginBottom: 2 }}>
-      <div style={{ flex: 1 }}>{left}</div>
+      <div style={{ flex: 1, paddingLeft: compact ? 6 : 10 }}>{left}</div>
       <div style={{ flex: 1 }}>{right}</div>
     </div>
   );
 
-  const SectionHeader = ({ title }: { title: string }) => (
+  const SectionHeader = ({ title, noMargin }: { title: string; noMargin?: boolean }) => (
     <div
       style={{
-        background: "#003366",
-        borderRadius: 6,
+        background: "#6B7280",
+        borderRadius: noMargin ? "6px 6px 0 0" : 6,
         padding: sectionPad,
-        marginBottom: sectionMargin,
-        marginTop: compact ? 4 : 8,
+        marginBottom: noMargin ? 0 : sectionMargin,
+        marginTop: noMargin ? 0 : (compact ? 4 : 8),
       }}
     >
       <span
         style={{
-          color: "#FFD700",
+          color: "#FFFFFF",
           fontWeight: 700,
           fontSize: compact ? 11 : 13,
           fontFamily: fontStack,
@@ -209,7 +209,7 @@ export const InspectionReportPdfTemplate: React.FC<Props> = ({
           border: "1px solid #dce8f0",
           borderRadius: 6,
           padding: compact ? "12px 14px" : "16px 18px",
-          borderLeft: "4px solid #003366",
+          borderLeft: "4px solid #6B7280",
           fontSize: compact ? 10 : 12,
           color: "#1f2937",
           lineHeight: 1.65,
@@ -236,16 +236,16 @@ export const InspectionReportPdfTemplate: React.FC<Props> = ({
     >
       <div
         style={{
-          background: "#001F3F",
+          background: "#4B5563",
           padding: headerPad,
-          borderBottom: "3px solid #FFD700",
+          borderBottom: "3px solid #9CA3AF",
         }}
       >
         <div
           style={{
             fontSize: titleSize,
             fontWeight: 800,
-            color: "#FFD700",
+            color: "#FFFFFF",
             marginBottom: compact ? 4 : 6,
             fontFamily: fontStack,
           }}
@@ -255,7 +255,7 @@ export const InspectionReportPdfTemplate: React.FC<Props> = ({
         <div
           style={{
             fontSize: 11,
-            color: "#c8d8ea",
+            color: "#D1D5DB",
             fontFamily: fontStack,
           }}
         >
@@ -416,20 +416,28 @@ export const InspectionReportPdfTemplate: React.FC<Props> = ({
           text={display(inspection.expertOpinion)}
         />
 
-        <SectionHeader
-          title={isAm ? "የምርመራ ኮሚቴ" : "Inspection Committee"}
-        />
-        <table
+        <div
           style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            fontSize: compact ? 9 : 11,
-            fontFamily: fontStack,
-            pageBreakInside: "avoid",
+            borderRadius: 6,
+            overflow: "hidden",
+            border: "1px solid #D1D5DB",
           }}
         >
+          <SectionHeader
+            title={isAm ? "የምርመራ ኮሚቴ" : "Inspection Committee"}
+            noMargin
+          />
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              fontSize: compact ? 9 : 11,
+              fontFamily: fontStack,
+              pageBreakInside: "avoid",
+            }}
+        >
           <thead>
-            <tr style={{ background: "#003366" }}>
+            <tr style={{ background: "#6B7280" }}>
               {(isAm
                 ? ["ስም", "ሚና", "ፊርማ", "የተፈረመበት ቀን"]
                 : ["Name", "Role", "Signature", "Signed At"]
@@ -437,7 +445,7 @@ export const InspectionReportPdfTemplate: React.FC<Props> = ({
                 <th
                   key={header}
                   style={{
-                    color: "#FFD700",
+                    color: "#FFFFFF",
                     fontWeight: 700,
                     padding: "8px 10px",
                     textAlign: "left",
@@ -463,7 +471,7 @@ export const InspectionReportPdfTemplate: React.FC<Props> = ({
                   style={{
                     padding: "10px",
                     fontWeight: 700,
-                    color: "#003366",
+                    color: "#374151",
                     fontSize: 11,
                   }}
                 >
@@ -502,6 +510,7 @@ export const InspectionReportPdfTemplate: React.FC<Props> = ({
             ))}
           </tbody>
         </table>
+        </div>
 
         <div
           style={{

@@ -64,7 +64,16 @@ const personnelSchema = z.object({
   kebele: z.string().min(1, "Kebele is required"),
   houseNo: z.string().min(1, "House number is required"),
   specialLocation: z.string().optional(),
-});
+}).refine(
+  (val) => {
+    if (val.workExpYears === undefined || val.TotalExpYears === undefined) return true;
+    return val.TotalExpYears >= val.workExpYears;
+  },
+  {
+    path: ["TotalExpYears"],
+    message: "Total experience years must be equal to or greater than work experience years",
+  },
+);
 
 const branchAddressSchema = z.object({
   region: z.string().optional(),
@@ -410,7 +419,7 @@ const FormInput = ({
             >
               <Info className="w-3 h-3" />
             </motion.span>
-            <span>{language === "am" ? "ተጨማሪ መረጃ →" : "Learn more →"}</span>
+            <span>{language === "am" ? "ተጨማሪ መረጃ" : "Learn more"}</span>
             <motion.span
               animate={{ rotate: showInfo ? 180 : 0 }}
               transition={{ duration: 0.3 }}
@@ -872,14 +881,14 @@ const uploadLbl = (lang: string) => {
       uploaded: "Uploaded",
       selectFile: "Select File",
       optional: "Optional",
-      docHint: "PDF, DOCX Max 5MB",
+      docHint: "PDF Max 5MB",
       photoHint: "JPG, PNG Max 2MB",
     },
     am: {
       uploaded: "ተሰቅሏል",
       selectFile: "ፋይል ይምረጡ",
       optional: "አማራጭ",
-      docHint: "ፒዲኤፍ፣ ዶክስ ከፍተኛ 5ሜባ",
+      docHint: "ፒዲኤፍ ከፍተኛ 5ሜባ",
       photoHint: "ጄፒጂ፣ ፒኤንጂ ከፍተኛ 2ሜባ",
     },
   };
@@ -961,7 +970,7 @@ const FileUpload = ({
             >
               <Info className="w-3 h-3" />
             </motion.span>
-            <span>{language === "am" ? "ተጨማሪ መረጃ →" : "Learn more →"}</span>
+            <span>{language === "am" ? "ተጨማሪ መረጃ" : "Learn more"}</span>
             <motion.span
               animate={{ rotate: showInfo ? 180 : 0 }}
               transition={{ duration: 0.3 }}
@@ -1006,7 +1015,7 @@ const FileUpload = ({
           onChange={handleFileChange}
           className="hidden"
           disabled={isDisabled}
-          accept={type === "photo" ? "image/*" : ".pdf,.doc,.docx"}
+          accept={type === "photo" ? "image/*" : ".pdf"}
         />
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
@@ -1408,8 +1417,20 @@ const PersonnelSection = ({
   const workExpVal = watch?.(`${prefix}.workExpYears`);
   const hasWorkExp = !!workExpVal && String(workExpVal).trim().length > 0;
   const personnelDocs = [
-    { label: curT.fingerprintDoc, key: "fingerprint_doc", required: true },
-    { label: curT.medicalDoc, key: "medical_doc", required: true },
+    {
+      label: curT.fingerprintDoc,
+      key: "fingerprint_doc",
+      required: true,
+      infoText: "Fingerprint from the police (proof of criminal record)",
+      infoTextAm: "የጣት አሻራ ከፖሊስ (የወንጀል ሪከርድ ማረጋገጫ)",
+    },
+    {
+      label: curT.medicalDoc,
+      key: "medical_doc",
+      required: true,
+      infoText: "Bring your medical test outcome from a hospital or clinic",
+      infoTextAm: "የህክምና ምርመራ ውጤትዎን ከሆስፒታል ወይም ክሊኒክ ያስገቡ",
+    },
     { label: curT.trainingDoc, key: "training_doc", required: false },
     { label: curT.supportDoc, key: "support_doc", required: false },
     { label: curT.collateralDoc, key: "collateral_doc", required: true },
@@ -1420,7 +1441,15 @@ const PersonnelSection = ({
       required: hasWorkExp,
     },
     { label: curT.educationDoc, key: "education_doc", required: true },
-    { label: curT.nationalIdDoc, key: "national_id_doc", required: true },
+    {
+      label: curT.nationalIdDoc,
+      key: "national_id_doc",
+      required: true,
+      infoText:
+        "Upload a photo of your National ID or Digital Fayda ID front and back as a PDF",
+      infoTextAm:
+        "የብሔራዊ መታወቂያዎን ወይም የዲጂታል ፋይዳ መታወቂያዎን ፊት እና ጀርባ እንደ ፒዲኤፍ ያስገቡ",
+    },
     { label: curT.kebeleIdDoc, key: "passport_or_kabele_doc", required: true },
     { label: curT.orgIdDoc, key: "organization_Id_doc", required: true },
   ];
@@ -1834,7 +1863,7 @@ const PersonnelSection = ({
           {curT.requiredDocs}
         </label>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {personnelDocs.map((doc) => (
+          {personnelDocs.map((doc: any) => (
             <FileUpload
               key={doc.key}
               label={doc.label}
@@ -1847,6 +1876,8 @@ const PersonnelSection = ({
               isOpenedForEdit={correctionOpenedFields.includes(
                 `${prefix}_${doc.key}`,
               )}
+              infoText={doc.infoText}
+              infoTextAm={doc.infoTextAm}
             />
           ))}
         </div>
@@ -2037,7 +2068,7 @@ export const NewApplication = () => {
       totalExpYears: "Total Experience Years",
       uploaded: "Uploaded",
       selectFile: "Select File",
-      documentHint: "PDF, DOCX Max 5MB",
+      documentHint: "PDF Max 5MB",
       photoHint: "JPG, PNG Max 2MB",
       optional: "Optional",
       genderOption: "Select gender",
@@ -2061,7 +2092,7 @@ export const NewApplication = () => {
       docTradePreReg: "Trade pre-registration",
       docRenewedLicense: "Renewed Trade license",
       docLaborSkill: "Labor and Skill Bureau registration",
-      docTinNumber: "TIN number paper",
+
       docTaxpayerClearance: "Taxpayer clearance",
       docOrgStructure: "Organizational structure",
       docArticlesInc: "Memorandum of association",
@@ -2090,10 +2121,10 @@ export const NewApplication = () => {
       collateralDoc: "Proof of Collateral",
       experienceDoc: "Work Experience",
       resignationDoc: "Resignation Record",
-      educationDoc: "Educational Cert (Degree)",
+      educationDoc: "Educational Certificate",
       nationalIdDoc: "National ID",
       kebeleIdDoc: "Renewed Kebele ID/Passport",
-      orgIdDoc: "Org Identification",
+      orgIdDoc: "Organization Identification",
       requiredDocs: "Required Documents",
       back: "Back",
       continue: "Continue",
@@ -2128,20 +2159,20 @@ export const NewApplication = () => {
       step3Title: "ንብረቶች እና መገልገያዎች",
       step3Desc: "ስለ ቁሳዊ ንብረቶችዎ እና ስለ ተቋሙ መለያዎች ዝርዝር መረጃ ይስጡ።",
       capitalAmount: "የካፒታል መጠን",
-      offices: "የቢሮዎች ብዛት",
-      storeHouse: "መጋዘን አለው?",
-      computers: "የኮምፒውተሮች ብዛት",
-      vehicles: "የተሸከርካሪዎች ብዛት",
+      offices: "የቢሮ ብዛት",
+      storeHouse: "ግምጃ አለው?",
+      computers: "የኮምፒውተር ብዛት",
+      vehicles: "የተሸከርካሪ ብዛት",
       photoSamples: "የፎቶ ናሙናዎች",
       step4Title: "የስልጠና ሁኔታ",
       step4Desc: "ስለ ተቋሙ የስልጠና ፕሮግራም ዝርዝር መረጃ።",
-      trainingAddress: "የስልጠና አድራሻ",
-      trainingDays: "የሰለጠኑበት ቀናት ብዛት",
+      trainingAddress: "ስልጠና ሚሰጠበት ቦታ",
+      trainingDays: "የሰለጠኑበት ቀን ብዛት",
       trainingMale: "የሰለጠኑ ወንዶች ብዛት",
       trainingFemale: "የሰለጠኑ ሴቶች ብዛት",
       trainingMaleUntrained: "ያልሰለጠኑ ወንዶች ብዛት",
       trainingFemaleUntrained: "ያልሰለጠኑ ሴቶች ብዛት",
-      trainingProvider: "ስልጠና ሰጪ አካል",
+      trainingProvider: "ስልጠና የሰጠው አካል",
       step5Title: "የቁልፍ ሰራተኞች መስፈርቶች",
       step5Desc: "ለስራ አስኪያጅ፣ ለኦፕሬሽን ኃላፊ እና ለአስተዳደር ኃላፊ ዝርዝር መረጃ እና ሰነዶችን ያቅርቡ።",
       step6Title: "የመጨረሻ ግምገማ",
@@ -2162,7 +2193,7 @@ export const NewApplication = () => {
       totalExpYears: "ጠቅላላ የልምድ ዓመታት",
       uploaded: "ተሰቅሏል",
       selectFile: "ፋይል ይምረጡ",
-      documentHint: "ፒዲኤፍ፣ ዶክስ ከፍተኛ 5ሜባ",
+      documentHint: "ፒዲኤፍ ከፍተኛ 5ሜባ",
       photoHint: "ጄፒጂ፣ ፒኤንጂ ከፍተኛ 2ሜባ",
       optional: "አማራጭ",
       genderOption: "ጾታ ይምረጡ",
@@ -2182,23 +2213,23 @@ export const NewApplication = () => {
       no: "አይ",
       docTradeName: "የንግድ ስም ስያሜ",
       docTradePreReg: "የንግድ ቅድመ ምዝገባ",
-      docRenewedLicense: "የታደሰ የንግድ ፍቃድ",
-      docLaborSkill: "የሰራተኛ እና ክህሎት ቢሮ ምዝገባ",
-      docTinNumber: "የቲን ቁጥር ወረቀት",
-      docTaxpayerClearance: "የግብር ከፋይ ማጽደቂያ",
+      docRenewedLicense: "የንግድ ሥራ ፍቃድ የታደሰ",
+      docLaborSkill: "የስራና ክህሎት ቢሮ",
+
+      docTaxpayerClearance: "የግብር ከፋይነት መለያ ቁጥር",
       docOrgStructure: "የድርጅት መዋቅር",
-      docArticlesInc: "የድርጅት ማህበረ ህግ",
-      docInternalRegs: "የውስጥ መመሪያዎች",
-      docTechList: "ጥቅም ላይ የዋሉ ቴክኖሎጂዎች ዝርዝር",
-      docCapital: "ካፒታል (የባንክ ሂሳብ መግለጫ)",
+      docArticlesInc: "የመመሰረቻ ጽሁፍ",
+      docInternalRegs: "የውስጥ መተዳደርያ ደንብ",
+      docTechList: "የሚጠቀመው ቴክኖሎጂ ዝርዝር",
+      docCapital: "ካፒታል እንደ ደረጃው (የባንክ ሂሳብ መግለጫ)",
       docInsurance: "ኢንሹራንስ",
-      docVehicleRent: "የተሽከርካሪ ኪራይ/ባለቤትነት (Notarized)",
-      docHouseRent: "የቤት ኪራይ/ባለቤትነት (Notarized)",
+      docVehicleRent: "የተሽከርካሪ ኪራይ/ባለቤትነት",
+      docHouseRent: "የቤት ኪራይ/ባለቤትነት",
       docUniformSample: "የዩኒፎርም ናሙና",
       docEmployeeId: "የድርጅት ሰራተኛ መታወቂያ ናሙና (ፊት እና ጀርባ)",
-      docEmploymentForm: "የቅጥር ቅጽ",
-      docWarrantyForm: "የቅጥር ዋስትና ቅጽ",
-      docLogo: "የድርጅት አርማ",
+      docEmploymentForm: "የቅጥር ፎርም",
+      docWarrantyForm: "የዋስትና ፎርም ",
+      docLogo: "የድርጅት አርማ (ሎጎ)",
       docTrainingManual: "የስልጠና ማኑዋል",
       docTrainingCert: "የስልጠና የምስክር ወረቀት (አማራጭ)",
       personnelTitle: "የቁልፍ ሰራተኞች መስፈርቶች",
@@ -2308,7 +2339,7 @@ export const NewApplication = () => {
       ops: { gender: "", citizenship: "ETHIOPIAN", phone: "+251" },
       admin: { gender: "", citizenship: "ETHIOPIAN", phone: "+251" },
       branchAddresses: [],
-      vehiclesCount: 0,
+      vehiclesCount: undefined,
     },
   });
 
@@ -2874,7 +2905,7 @@ export const NewApplication = () => {
         branchAddresses: normalizedBranchAddresses,
         numberOfOffices: Number(data.officesCount),
         numberOfComputers: Number(data.computersCount),
-        numberOfVehicles: Number(data.vehiclesCount),
+        numberOfVehicles: Number(data.vehiclesCount ?? 0),
         hasStoreHouse:
           data.hasStoreHouse === true || data.hasStoreHouse === "true",
         capitalAmount: Number(data.capitalAmount),
@@ -3430,7 +3461,6 @@ export const NewApplication = () => {
                     key: "renewed_trade_license",
                   },
                   { label: curT.docLaborSkill, key: "labor_and_skill_bureau" },
-                  { label: curT.docTinNumber, key: "tin_number_paper" },
                   { label: curT.docTaxpayerClearance, key: "taxpayer_clearance" },
                   { label: curT.docOrgStructure, key: "org_structure" },
                   {
@@ -3623,6 +3653,7 @@ export const NewApplication = () => {
                   disabled={!watch("vehiclesCount") || Number(watch("vehiclesCount")) === 0}
                   infoText="If rented, upload a document showing 1 year paid vehicle rent deal. If owned, upload the vehicle libre (ownership certificate)."
                   infoTextAm="ተሽከርካሪ የተከራየ ከሆነ የ1 አመት የኪራይ ውል ሰነድ ይስቀሉ። የራስ ከሆነ የተሽከርካሪ ሊብሬ (የባለቤትነት ሰርተፍኬት) ይስቀሉ።"
+                  required={false}
                 />
                 <FileUpload
                   label={curT.docHouseRent}
@@ -3647,6 +3678,8 @@ export const NewApplication = () => {
                     onDelete={() => handleDelete("uniform_sample")}
                     onView={handleView}
                     isOpenedForEdit={openedFields.includes("uniform_sample")}
+                    infoText="A photo of the security guard wearing a uniform"
+                    infoTextAm="የጥበቃ ሰራተኛ ዩኒፎርም ለብሶ የሚያሳይ ፎቶ"
                   />
                   <FileUpload
                     label={curT.docEmployeeId}
@@ -3656,6 +3689,8 @@ export const NewApplication = () => {
                     onDelete={() => handleDelete("id_sample")}
                     onView={handleView}
                     isOpenedForEdit={openedFields.includes("id_sample")}
+                    infoText="A sample of a serial numbered employee ID card with full details on the front and back."
+                    infoTextAm="ተከታታይ ቁጥር ያለው የሰራተኛ መታወቂያ ካርድ ናሙና ከፊት እና ከኋላ ያለውን ሙሉ መረጃ የሚያሳይ"
                   />
                   <FileUpload
                     label={curT.docEmploymentForm}
