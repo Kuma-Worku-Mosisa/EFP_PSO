@@ -6,6 +6,7 @@ import prisma from "../../lib/prisma";
 import { ApiResponse } from "../../utils/apiResponse";
 import { deleteDocumentFile } from "../../utils/documentOrganizer";
 import { buildPrefixedFilename, fileFilter } from "../../middleware/fileUpload";
+import { NotificationService } from "../notification/notification.service";
 
 /**
  * Returns a list of organizations with lightweight aggregate counts.
@@ -114,7 +115,7 @@ export const getOrganizationDetailsHandler = async (
       );
     };
 
-    // Fetch organization with basic fields
+    // Fetch organization with basic fields (include head office address)
     const org = await prisma.organization.findUnique({
       where: { id },
       select: {
@@ -124,6 +125,7 @@ export const getOrganizationDetailsHandler = async (
         tradeName: true,
         email: true,
         phone: true,
+        faxNumber: true,
         capitalAmount: true,
         status: true,
         createdAt: true,
@@ -132,6 +134,32 @@ export const getOrganizationDetailsHandler = async (
         numberOfVehicles: true,
         numberOfComputers: true,
         hasStoreHouse: true,
+        address: {
+          select: {
+            houseNumber: true,
+            specialLocation: true,
+            kebele: {
+              select: {
+                nameEnglish: true,
+                woreda: {
+                  select: {
+                    nameEnglish: true,
+                    zone: {
+                      select: {
+                        nameEnglish: true,
+                        region: {
+                          select: {
+                            nameEnglish: true,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
         _count: {
           select: {
             branches: true,
@@ -160,6 +188,7 @@ export const getOrganizationDetailsHandler = async (
             fullName: true,
             email: true,
             phone: true,
+            faydaId: true,
           },
         },
         position: {
@@ -366,6 +395,7 @@ export const getOrganizationDetailsHandler = async (
       tradeName: org.tradeName,
       email: org.email,
       phone: org.phone,
+      fax: org.faxNumber ?? "",
       tinNumber: org.tinNumber,
       capitalAmount: org.capitalAmount,
       status: org.status,
@@ -395,6 +425,7 @@ export const getOrganizationDetailsHandler = async (
         employmentStartDate: e.employmentStartDate
           ? new Date(e.employmentStartDate).toISOString().split("T")[0]
           : "",
+        faydaId: e.user?.faydaId ?? "",
         address: e.address
           ? {
               id: e.addressId ?? 0,
@@ -491,6 +522,7 @@ export const getOrganizationDetailsHandler = async (
         id: branch.id,
         addressText: formatNestedAddress(branch.address),
       })),
+      headOfficeAddress: formatNestedAddress(org.address),
       dmsDocuments: dmsDocuments.map((doc) => ({
         id: doc.id.toString(),
         documentName: doc.documentType,
@@ -587,6 +619,319 @@ export const updateOrganizationHandler = async (
       "Failed to update organization",
       500,
       err?.message ?? String(err),
+    );
+  }
+};
+
+/**
+ * Create a new organization address change request.
+ * POST /api/organizations/address-change-requests
+ */
+export const createAddressChangeRequestHandler = async (
+  req: Request,
+  res: Response,
+) => {
+  const organizationId = Number(req.user?.organizationId ?? 0);
+  if (!organizationId || Number.isNaN(organizationId)) {
+    return ApiResponse.error(
+      res,
+      "Organization context is required for address change requests.",
+      400,
+    );
+  }
+
+  const {
+    requestedKebeleId,
+    requestedHouseNumber,
+    requestedSpecialLocation,
+    reason,
+  } = req.body as {
+    requestedKebeleId?: number | string;
+    requestedHouseNumber?: string;
+    requestedSpecialLocation?: string;
+    reason?: string;
+  };
+
+  const kebeleId = Number(requestedKebeleId);
+  if (!Number.isFinite(kebeleId) || kebeleId <= 0) {
+    return ApiResponse.error(
+      res,
+      "A valid requestedKebeleId is required.",
+      400,
+    );
+  }
+
+  try {
+    const organizationExists = await prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { id: true, nameEnglish: true, nameAmharic: true },
+    });
+
+    if (!organizationExists) {
+      return ApiResponse.error(res, "Organization not found", 404);
+    }
+
+    const createdRequest = await prisma.organizationAddressChangeRequest.create(
+      {
+        data: {
+          organizationId,
+          requestedKebeleId: kebeleId,
+          requestedHouseNumber: requestedHouseNumber?.trim() || undefined,
+          requestedSpecialLocation:
+            requestedSpecialLocation?.trim() || undefined,
+          reason: reason?.trim() || undefined,
+          status: "PENDING",
+        },
+      },
+    );
+
+    // Notify Federal Police Admins (role="admin" and status="ACTIVE") about the new address change request
+    try {
+      console.log("[ADDRESS CHANGE] Querying for admin users...");
+      const adminUsers = await prisma.user.findMany({
+        where: {
+          status: "ACTIVE",
+          user_roles: {
+            some: {
+              roles: {
+                role_name: "admin",
+              },
+            },
+          },
+        },
+        select: { id: true, fullName: true, email: true },
+      });
+
+      console.log(
+        `[ADDRESS CHANGE] Found ${adminUsers.length} active admin users:`,
+        adminUsers.map((u) => ({ id: u.id, name: u.fullName, email: u.email })),
+      );
+
+      if (adminUsers.length > 0) {
+        const orgName =
+          organizationExists?.nameEnglish || "Unknown Organization";
+        const orgNameAm =
+          organizationExists?.nameAmharic || "Unknown Organization";
+        for (const admin of adminUsers) {
+          try {
+            console.log(
+              `[ADDRESS CHANGE] Sending notification to admin ${admin.id} (${admin.fullName})...`,
+            );
+            await NotificationService.sendBilingualAlert(
+              admin.id,
+              "ADDRESS_CHANGE_REQUESTED",
+              {
+                organizationName: orgName,
+                organizationNameAm: orgNameAm,
+                requestReason: reason?.substring(0, 50) || "No reason provided",
+              },
+            );
+            console.log(
+              `[ADDRESS CHANGE] ✓ Notification sent to admin ${admin.id}`,
+            );
+          } catch (notifyErr) {
+            console.warn(
+              `[ADDRESS CHANGE] ✗ Failed to notify admin ${admin.id}:`,
+              notifyErr instanceof Error ? notifyErr.message : notifyErr,
+            );
+          }
+        }
+      } else {
+        console.log("[ADDRESS CHANGE] No active admin users found to notify");
+      }
+    } catch (notifyErr) {
+      console.warn(
+        "[ADDRESS CHANGE] Error querying/notifying admins:",
+        notifyErr instanceof Error ? notifyErr.message : notifyErr,
+      );
+    }
+
+    return ApiResponse.success(
+      res,
+      "Address change request submitted successfully.",
+      {
+        id: createdRequest.addressRequestId,
+        status: createdRequest.status,
+      },
+    );
+  } catch (error: any) {
+    console.error(
+      "Create Address Change Request Error:",
+      error?.message ?? error,
+    );
+    return ApiResponse.error(
+      res,
+      "Failed to submit address change request",
+      500,
+      error?.message ?? String(error),
+    );
+  }
+};
+
+/**
+ * GET /api/organizations/address-change-requests
+ * Returns all address change requests for the authenticated user's organization
+ */
+export const getAddressChangeRequestsHandler = async (
+  req: Request,
+  res: Response,
+) => {
+  const organizationId = Number(req.user?.organizationId ?? 0);
+  const roles = Array.isArray(req.user?.roles)
+    ? req.user.roles.map((role) => String(role).toLowerCase())
+    : [];
+
+  const isAdminView = roles.some((role) =>
+    ["admin", "system_admin", "super_admin"].includes(role),
+  );
+
+  if (!organizationId && !isAdminView) {
+    return ApiResponse.error(
+      res,
+      "Organization context is required to list address change requests.",
+      400,
+    );
+  }
+
+  try {
+    const whereClause = organizationId
+      ? { organizationId }
+      : isAdminView
+        ? {}
+        : { organizationId };
+
+    const requests = await prisma.organizationAddressChangeRequest.findMany({
+      where: whereClause,
+      include: {
+        requestedKebele: {
+          select: {
+            id: true,
+            nameEnglish: true,
+            nameAmharic: true,
+            woreda: {
+              select: {
+                id: true,
+                nameEnglish: true,
+                nameAmharic: true,
+                zone: {
+                  select: {
+                    id: true,
+                    nameEnglish: true,
+                    nameAmharic: true,
+                    region: {
+                      select: {
+                        id: true,
+                        nameEnglish: true,
+                        nameAmharic: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        organization: {
+          select: {
+            nameEnglish: true,
+            nameAmharic: true,
+            address: {
+              select: {
+                houseNumber: true,
+                specialLocation: true,
+                kebele: {
+                  select: {
+                    nameEnglish: true,
+                    nameAmharic: true,
+                    woreda: {
+                      select: {
+                        nameEnglish: true,
+                        nameAmharic: true,
+                        zone: {
+                          select: {
+                            nameEnglish: true,
+                            nameAmharic: true,
+                            region: {
+                              select: {
+                                nameEnglish: true,
+                                nameAmharic: true,
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const normalized = requests.map((r) => {
+      const kebele = r.requestedKebele as any;
+      const requestedWoreda = kebele?.woreda as any;
+      const requestedZone = requestedWoreda?.zone as any;
+      const requestedRegion = requestedZone?.region as any;
+      const currentAddress = (r.organization as any)?.address as any;
+      const currentKebele = currentAddress?.kebele as any;
+      const currentWoreda = currentKebele?.woreda as any;
+      const currentZone = currentWoreda?.zone as any;
+      const currentRegion = currentZone?.region as any;
+
+      return {
+        id: r.addressRequestId,
+        organizationName:
+          (r.organization as any)?.nameEnglish ||
+          (r.organization as any)?.nameAmharic ||
+          "Unknown Organization",
+        status: (r.status || "PENDING").toString().toUpperCase(),
+        reason: r.reason || "",
+        adminFeedback: r.adminFeedback || null,
+        createdAt: r.createdAt,
+        currentAddress: {
+          regionName:
+            currentRegion?.nameEnglish || currentRegion?.nameAmharic || "",
+          zoneName: currentZone?.nameEnglish || currentZone?.nameAmharic || "",
+          woredaName:
+            currentWoreda?.nameEnglish || currentWoreda?.nameAmharic || "",
+          kebeleName:
+            currentKebele?.nameEnglish || currentKebele?.nameAmharic || "",
+          specialLocation: currentAddress?.specialLocation ?? null,
+          houseNumber: currentAddress?.houseNumber ?? null,
+        },
+        requestedAddress: {
+          regionName:
+            requestedRegion?.nameEnglish || requestedRegion?.nameAmharic || "",
+          zoneName:
+            requestedZone?.nameEnglish || requestedZone?.nameAmharic || "",
+          woredaName:
+            requestedWoreda?.nameEnglish || requestedWoreda?.nameAmharic || "",
+          kebeleName: kebele?.nameEnglish || kebele?.nameAmharic || "",
+          specialLocation: r.requestedSpecialLocation ?? null,
+          houseNumber: r.requestedHouseNumber ?? null,
+        },
+      };
+    });
+
+    return ApiResponse.success(
+      res,
+      "Address change requests retrieved",
+      normalized,
+    );
+  } catch (error: any) {
+    console.error(
+      "Get Address Change Requests Error:",
+      error?.message ?? error,
+    );
+    return ApiResponse.error(
+      res,
+      "Failed to fetch address change requests",
+      500,
+      error?.message ?? String(error),
     );
   }
 };

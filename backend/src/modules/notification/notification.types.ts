@@ -6,11 +6,29 @@ export type NotificationType =
   | "EXPIRY_ALERT"
   | "CRITICAL_ISSUE"
   | "NEW_APPLICATION"
-  | "CERT_SIGNED";
+  | "CERT_SIGNED"
+  | "FORMAL_REQUEST_SUBMITTED"
+  | "FORMAL_REQUEST_APPROVED"
+  | "FORMAL_REQUEST_REJECTED"
+  | "TRANSFER_REQUEST_INITIATED_SOURCE"
+  | "TRANSFER_REQUEST_INITIATED_DESTINATION"
+  | "TRANSFER_REQUEST_RELEASED"
+  | "TRANSFER_REQUEST_REJECTED"
+  | "TRANSFER_REQUEST_APPROVED"
+  | "ADDRESS_CHANGE_SUBMITTED"
+  | "ADDRESS_CHANGE_APPROVED"
+  | "ADDRESS_CHANGE_REQUESTED";
 
 export interface NotificationContext {
   organizationName?: string; // English name
   organizationNameAm?: string; // Amharic name
+  currentOrganizationName?: string;
+  currentOrganizationNameAm?: string;
+  destinationOrganizationName?: string;
+  destinationOrganizationNameAm?: string;
+  employeeName?: string;
+  faydaId?: string;
+  transferReason?: string;
   certificateSerial?: string;
   inspectionDate?: string;
   daysRemaining?: number;
@@ -92,6 +110,84 @@ export const getBilingualTemplate = (
 
       ሰርቲፍኬት: ${ctx.certificateSerial || "(ያልታወቀ)"}
       ድርጅት: ${ctx.organizationNameAm || ctx.organizationName || "(ያልታወቀ)"}`,
+      };
+    case "FORMAL_REQUEST_SUBMITTED":
+      return {
+        titleEn: `📋 New Formal Request - ${ctx.organizationName || "Applicant"} (${ctx.organizationNameAm || "ID"})`,
+        titleAm: `📋 አዲስ ጥያቄ - ${ctx.organizationName || "ተመልካች"} (${ctx.organizationNameAm || "ID"})`,
+        msgEn: `A formal request letter has been submitted and needs your review.\n\n👤 Applicant:\n${ctx.organizationName || "N/A"}\n\n🆔 Fayida ID:\n${ctx.organizationNameAm || "N/A"}\n\n⏱️ Submitted:\n${new Date().toLocaleString("en-US")}\n\n✅ Action:\nReview and approve/reject in the admin dashboard.\n\n🕐 Timeline: 5-7 business days`,
+        msgAm: `የፈቃድ ደብዳቤ ጥያቄ ቀርቦ ለመገምገም ያስፈልግ ነው።\n\n👤 ተመልካች:\n${ctx.organizationName || "N/A"}\n\n🆔 ፋይዳ ቁጥር:\n${ctx.organizationNameAm || "N/A"}\n\n⏱️ ቀርበበት ጊዜ:\n${new Date().toLocaleString("am-ET")}\n\n✅ ተግባር:\nበ አስተዳደር ዳሽቦርድ ውስጥ ይገምግሙ እና ጸድቆ/ውድቅ ያድርጉ።\n\n🕐 ጊዜ: 5-7 ሥራ ቀናት`,
+      };
+    case "FORMAL_REQUEST_APPROVED":
+      return {
+        titleEn: "✅ Your Formal Request Approved!",
+        titleAm: "✅ የእርስዎ ፈቃድ ደብዳቤ ጥያቄ ጸድቋል!",
+        msgEn: `Dear ${ctx.organizationName || "Applicant"},\n\nYour formal request letter has been APPROVED by the Federal Police Administration.\n\n📋 Details:\n• Fayida ID: ${ctx.organizationNameAm || "N/A"}\n• Status: APPROVED ✓\n• Date: ${new Date().toLocaleString("en-US")}\n\n✅ Next Step:\nYou can now proceed with your full license application.\n\nThank you!`,
+        msgAm: `ውድ ${ctx.organizationName || "ተመልካች"},\n\nየእርስዎ መደበኛ ፈቃድ ደብዳቤ ጥያቄ በፌዴራል ፖሊስ አስተዳደር ጸድቋል።\n\n📋 ዝርዝር:\n• ፋይዳ ቁጥር: ${ctx.organizationNameAm || "N/A"}\n• ሁኔታ: ጸድቋል ✓\n• ቀን: ${new Date().toLocaleString("am-ET")}\n\n✅ ቀጣይ ደረጃ:\nአሁን ወደ ሙሉ የፈቃድ ማመልከቻ መቀጠል ይችላሉ።\n\nእናመሰግናለን!`,
+      };
+    case "FORMAL_REQUEST_REJECTED":
+      return {
+        titleEn: "❌ Your Formal Request Needs Correction",
+        titleAm: "❌ የእርስዎ ፈቃድ ደብዳቤ ጥያቄ እርማት ያስፈልጋል",
+        msgEn: `Dear ${ctx.organizationName || "Applicant"},\n\nYour formal request letter has been REJECTED and needs corrections.\n\n📋 Details:\n• Fayida ID: ${ctx.organizationNameAm || "N/A"}\n• Status: REJECTED ❌\n• Date: ${new Date().toLocaleString("en-US")}\n\n💬 Admin Feedback:\n${ctx.customDetailsEn || "Please review the requirements and resubmit."}\n\n✅ Action Required:\nMake the necessary corrections and resubmit your formal letter.\n\nSupport: formal-requests@efp.gov.et`,
+        msgAm: `ውድ ${ctx.organizationName || "ተመልካች"},\n\nየእርስዎ መደበኛ ፈቃድ ደብዳቤ ጥያቄ ውድቅ ተደርጓል እና እርማት ያስፈልጋል።\n\n📋 ዝርዝር:\n• ፋይዳ ቁጥር: ${ctx.organizationNameAm || "N/A"}\n• ሁኔታ: ውድቅ ❌\n• ቀን: ${new Date().toLocaleString("am-ET")}\n\n💬 የአስተዳደር ግብረመልስ:\n${ctx.customDetailsAm || "እባክዎ መስፈርቶቹን ይገምግሙ እና ደጋግሙ ያቅርቡ።"}\n\n✅ ያስፈልጋቸው ተግባር:\nያስፈላጊ እርማቶች ያድርጉ እና መደበኛ ደብዳቤውን ደጋግሙ ያቅርቡ።\n\nድጋፍ: formal-requests@efp.gov.et`,
+      };
+    case "TRANSFER_REQUEST_INITIATED_SOURCE":
+      return {
+        titleEn: "📤 Employee Transfer Request - Action Required",
+        titleAm: "📤 የሰራተኛ ሰ ዋደ ጥያቄ - እርምጃ ያስፈልጋል",
+        msgEn: `An employee transfer request has been initiated from your organization.\n\n👤 Employee Details:\n• Name: ${ctx.employeeName || "N/A"}\n• Fayida ID: ${ctx.faydaId || "N/A"}\n• Current Organization: ${ctx.currentOrganizationName || "N/A"}\n• Destination Organization: ${ctx.destinationOrganizationName || "N/A"}\n• Transfer Reason: ${ctx.transferReason || "N/A"}\n\n⏱️ Timeline:\n• Status: PENDING - Awaiting your approval\n• Action Required: RELEASE or REJECT the transfer\n• Deadline: 7 business days\n\n📋 Next Steps:\n1. Review the employee's current performance and record\n2. Approve (RELEASE) or reject the transfer request\n3. Provide feedback if rejection is necessary\n\nPlease log in to the HR Management portal to take action.`,
+        msgAm: `ከ ድርጅትዎ የሰራተኛ ሰ ዋደ ጥያቄ ጀምርዋል።\n\n👤 የሰራተኛ ዝርዝር:\n• ስም: ${ctx.employeeName || "N/A"}\n• ፋይዳ ቁጥር: ${ctx.faydaId || "N/A"}\n• ወቅታዊ ድርጅት: ${ctx.currentOrganizationNameAm || ctx.currentOrganizationName || "N/A"}\n• የሚገባ ድርጅት: ${ctx.destinationOrganizationNameAm || ctx.destinationOrganizationName || "N/A"}\n• የሰራተኛ ሰ ዋደ ምክንያት: ${ctx.transferReason || "N/A"}\n\n⏱️ ጊዜ:\n• ሁኔታ: ተጠብቆ ነበር - ለ ማጽደቅ ይጠብቃል\n• ተግባር: ሰ ዋደውን ሩብ ወይም ውድቅ ያድርጉ\n• ወሳኝ ቀን: 7 ሥራ ቀናት\n\n📋 ቀጣይ ደረጃዎች:\n1. የሰራተኛውን ወቅታዊ አፈፃፀም እና ዝርዝር ይገምግሙ\n2. ሰ ዋደውን ይፈቅዱ (RELEASE) ወይም ውድቅ ያድርጉ\n3. ውድቅ ከሆነ ግብረመልስ ያቅርቡ\n\nእባክዎ ተግባር ለ ማድረግ ወደ HR ሥራ ሰራዊት ወንጌል ይግቡ።`,
+      };
+    case "TRANSFER_REQUEST_INITIATED_DESTINATION":
+      return {
+        titleEn:
+          "📥 New Employee Transfer Request Incoming - Awaiting Your Approval",
+        titleAm: "📥 አዲስ የሰራተኛ ሰ ዋደ ጥያቄ ገብቷል - ለ ማጽደቅ ይጠብቃል",
+        msgEn: `A new employee transfer request has been received for your organization.\n\n👤 Employee Details:\n• Name: ${ctx.employeeName || "N/A"}\n• Fayida ID: ${ctx.faydaId || "N/A"}\n• Current Organization: ${ctx.currentOrganizationName || "N/A"}\n• Destination (Your Org): ${ctx.destinationOrganizationName || "N/A"}\n• Transfer Reason: ${ctx.transferReason || "N/A"}\n\n⏱️ Status & Timeline:\n• Current Status: SOURCE_ORGANIZATION_PENDING\n• Estimated Completion: 10-15 business days\n• Your Review Deadline: 5 business days\n\n📋 Next Steps:\n1. Review the incoming transfer request\n2. Assess if employee fits your organizational needs\n3. You will be able to APPROVE or REJECT after source organization RELEASES\n4. Prepare onboarding documentation if approved\n\n💡 Note: The source organization must approve first (RELEASE) before you can finalize approval.\n\nPlease log in to the HR Management portal to review this request.`,
+        msgAm: `አዲስ የሰራተኛ ሰ ዋደ ጥያቄ ለ ድርጅትዎ ተቀብሎ ታል።\n\n👤 የሰራተኛ ዝርዝር:\n• ስም: ${ctx.employeeName || "N/A"}\n• ፋይዳ ቁጥር: ${ctx.faydaId || "N/A"}\n• ወቅታዊ ድርጅት: ${ctx.currentOrganizationNameAm || ctx.currentOrganizationName || "N/A"}\n• የሚገባ (ዎ ድርጅት): ${ctx.destinationOrganizationNameAm || ctx.destinationOrganizationName || "N/A"}\n• የሰራተኛ ሰ ዋደ ምክንያት: ${ctx.transferReason || "N/A"}\n\n⏱️ ሁኔታ እና ጊዜ:\n• ወቅታዊ ሁኔታ: SOURCE_ORGANIZATION_PENDING\n• ግምታዊ ማብቂያ: 10-15 ሥራ ቀናት\n• ዎ ሞጋገዝ ቀን: 5 ሥራ ቀናት\n\n📋 ቀጣይ ደረጃዎች:\n1. ለ ድርጅትዎ የሚገቡ ሰ ዋደ ጥያቄ ይገምግሙ\n2. ሰራተኛው ለ ድርጅትዎ ሙያ ይመስል ይገምግሙ\n3. ምንጭ ድርጅት ሩብ (RELEASE) ካገደ ብዙ ማጽደቅ ወይም ውድቅ ማድረግ ይችላሉ\n4. ከ ማጽደቅ ብዙ የ ውስጥ ሰራ ጥሪ ወረቀት ዝግጁ ያድርጉ\n\n💡 ማስታወሻ: ምንጭ ድርጅት በ ቅድሚያ ገምግማ (RELEASE) ያስፈልጋል ለ እርስዎ ሙሉ ማጽደቅ ውሳኔ።\n\nእባክዎ ይህን ጥያቄ ለ ማርሞ ወደ HR ሥራ ሰራዊት ወንጌል ይግቡ።`,
+      };
+    case "TRANSFER_REQUEST_RELEASED":
+      return {
+        titleEn: "✅ Employee Transfer Approved by Source Organization",
+        titleAm: "✅ የሰራተኛ ሰ ዋደ ምንጭ ድርጅት ጸድቋል",
+        msgEn: `The source organization has approved the employee transfer request.\n\n👤 Employee Details:\n• Name: ${ctx.employeeName || "N/A"}\n• Fayida ID: ${ctx.faydaId || "N/A"}\n• From Organization: ${ctx.currentOrganizationName || "N/A"}\n• To Organization: ${ctx.destinationOrganizationName || "N/A"}\n\n📋 Current Status:\n• Status: SOURCE_RELEASED ✓\n• Next: Awaiting destination organization's final approval\n• Timeline: Destination org will review within 5 business days\n\n⏳ Important Notes:\n• The employee is being released by the source organization\n• Destination organization must now review and approve\n• Prepare for employee's arrival and onboarding\n\nPlease log in to track the progress of this transfer.`,
+        msgAm: `ምንጭ ድርጅት የሰራተኛ ሰ ዋደ ጥያቄ ጸድቋል።\n\n👤 የሰራተኛ ዝርዝር:\n• ስም: ${ctx.employeeName || "N/A"}\n• ፋይዳ ቁጥር: ${ctx.faydaId || "N/A"}\n• ከ ድርጅት: ${ctx.currentOrganizationNameAm || ctx.currentOrganizationName || "N/A"}\n• ወደ ድርጅት: ${ctx.destinationOrganizationNameAm || ctx.destinationOrganizationName || "N/A"}\n\n📋 ወቅታዊ ሁኔታ:\n• ሁኔታ: SOURCE_RELEASED ✓\n• ቀጣይ: ለ የመጨረሻ ማጽደቅ የሚገባ ድርጅት ይጠብቃል\n• ጊዜ: የሚገባ ድርጅት ውስጥ 5 ሥራ ቀናት ውስጥ ይገምግማል\n\n⏳ ወሳኝ ማስታወሻዎች:\n• ሰራተኛው ምንጭ ድርጅት ስንቅ ነበር\n• የሚገባ ድርጅት አሁን ይገምግም እና ይፈቅዱ\n• ሰራተኛውን ምጀመሪያ እና ውስጣዊ ሰራ ጥሪ ዝግጁ ያድርጉ\n\nእባክዎ ይህን ሰ ዋደ አፈፃፀም ለ ድኩ ወደ ወንጌል ይግቡ።`,
+      };
+    case "TRANSFER_REQUEST_REJECTED":
+      return {
+        titleEn: "❌ Employee Transfer Request Rejected",
+        titleAm: "❌ የሰራተኛ ሰ ዋደ ጥያቄ ውድቅ ተደርጓል",
+        msgEn: `An employee transfer request has been rejected.\n\n👤 Employee Details:\n• Name: ${ctx.customDetailsEn || "N/A"}\n• Transfer Reason: ${ctx.certificateSerial || "N/A"}\n\n📋 Status:\n• Status: REJECTED ❌\n• Rejection Reason: ${ctx.customDetailsAm || "No reason provided"}\n\n⏳ Timeline:\n• Rejected On: Today\n• Employee Status: Will remain in current organization\n• Can Reapply: Yes, after 30 days\n\n💬 Next Steps:\n1. Discuss with the employee if re-application is desired\n2. Address any concerns raised in the rejection\n3. Can resubmit after 30 days if conditions change\n\nPlease contact HR management for further assistance.`,
+        msgAm: `የሰራተኛ ሰ ዋደ ጥያቄ ውድቅ ተደርጓል።\n\n👤 የሰራተኛ ዝርዝር:\n• ስም: ${ctx.customDetailsEn || "N/A"}\n• የሰ ዋደ ምክንያት: ${ctx.certificateSerial || "N/A"}\n\n📋 ሁኔታ:\n• ሁኔታ: ውድቅ ❌\n• ውድቅ ምክንያት: ${ctx.customDetailsAm || "ምክንያት አልተሰጠም"}\n\n⏳ ጊዜ:\n• ውድቅ ቀን: ዛሬ\n• ሰራተኛ ሁኔታ: ወቅታዊ ድርጅት ውስጥ ይቀር\n• ደጋግም ማመልከት: አዎ, 30 ቀናት ከ ወቅታዊ\n\n💬 ቀጣይ ደረጃዎች:\n1. ደጋግም ማመልከት ከ ሆነ ሰራተኛው ጋር ወይ ይወያዩ\n2. በ ውድቅ ውስጥ ነበር ጉዳዮች ይድኑ\n3. ሁኔታ ካልተለወጠ 30 ቀናት ከ ወቅታዊ ደጋግም ማስገቢያ ይችላሉ\n\nለ ተጨማሪ ድጋፍ እባክዎ HR ሥራ ሰራዊት ያነጋግሩ።`,
+      };
+    case "TRANSFER_REQUEST_APPROVED":
+      return {
+        titleEn: "🎉 Employee Transfer Fully Approved!",
+        titleAm: "🎉 የሰራተኛ ሰ ዋደ ሙሉ ጸድቋል!",
+        msgEn: `The employee transfer has been fully approved and is now complete.\n\n👤 Employee Details:\n• Name: ${ctx.employeeName || "N/A"}\n• Fayida ID: ${ctx.faydaId || "N/A"}\n• From Organization: ${ctx.currentOrganizationName || "N/A"}\n• To Organization: ${ctx.destinationOrganizationName || "N/A"}\n\n✅ Status: FULLY_APPROVED\n\n🚀 Next Steps:\n1. Update employee records in the system\n2. Prepare onboarding materials\n3. Update payroll and benefits information\n4. Notify all relevant departments\n5. Schedule orientation with new organization\n\n📋 Important Actions:\n• HR Records: Update in personnel database\n• IT Systems: Grant access to new org systems\n• Equipment: Prepare workspace and resources\n• Payroll: Update salary allocation\n\nCongratulations on completing the transfer process!`,
+        msgAm: `የሰራተኛ ሰ ዋደ ሙሉ ጸድቋል እና አሁን ሙሉ ነበር።\n\n👤 የሰራተኛ ዝርዝር:\n• ስም: ${ctx.employeeName || "N/A"}\n• ፋይዳ ቁጥር: ${ctx.faydaId || "N/A"}\n• ከ ድርጅት: ${ctx.currentOrganizationNameAm || ctx.currentOrganizationName || "N/A"}\n• ወደ ድርጅት: ${ctx.destinationOrganizationNameAm || ctx.destinationOrganizationName || "N/A"}\n\n✅ ሁኔታ: FULLY_APPROVED\n\n🚀 ቀጣይ ደረጃዎች:\n1. በ ሲስተም ውስጥ ሰራተኛ ዝርዝር ሌሎች\n2. ውስጣዊ ሰራ ጥሪ ሰነዶች ዝግጁ ያድርጉ\n3. በ ደሞዝ እና ጠቀሌታ መረጃ ሌሎች\n4. ሁሉ ተዛማጅ ክፍሎች ውሳኔ ያድርጉ\n5. አዲስ ድርጅት ጋር ወደ ለሙናት ዕቅድ\n\n📋 ወሳኝ እርምጃዎች:\n• HR ዝርዝር: በ ሰራተኞች ዳታቤዝ ውስጥ ሌሎች\n• IT ሲስተም: አዲስ ድርጅት ሲስተም አስቅበት\n• ውስጣዊ ሰራ: የ ሥራ ቦታ እና መሳሪያ ዝግጁ ያድርጉ\n• ደሞዝ: ደሞዝ ክፍሌ ሌሎች\n\nሰ ዋደ ሂደት ማብቂያ ውስጥ እንኮ ደስ ይበሉ!`,
+      };
+    case "ADDRESS_CHANGE_SUBMITTED":
+      return {
+        titleEn: "📍 New Address Change Request Submitted",
+        titleAm: "📍 አዲስ የአድራሻ መለወጥ ጥያቄ ተሰጥቷል",
+        msgEn: `A new address change request has been submitted and requires administrative review. Please open the admin dashboard to review and approve the change.`,
+        msgAm: `አዲስ የአድራሻ መለወጥ ጥያቄ ተሰጥቷል እና ለአስተዳደር ግምገማ ይጠቀማል።`,
+      };
+    case "ADDRESS_CHANGE_APPROVED":
+      return {
+        titleEn: "✅ Address Change Approved",
+        titleAm: "✅ የአድራሻ መለወጥ ተፈቅዷል",
+        msgEn: `Your organization's address change request has been approved by the administration. The new address is now active in the system.`,
+        msgAm: `የድርጅትዎ የአድራሻ መለወጥ ጥያቄ በአስተዳደር ተፈቅዷል። አዲሱ አድራሻ በ ስርዓቱ ውስጥ አሁን ነው።`,
+      };
+    case "ADDRESS_CHANGE_REQUESTED":
+      return {
+        titleEn: "📍 Address Change Request Received - Review Required",
+        titleAm: "📍 የአድራሻ መለወጥ ጥያቄ ተቀብሎ ታል - ግምገማ ያስፈልጋል",
+        msgEn: `📋 New Address Change Request\n\nOrganization: ${ctx.organizationName || "N/A"}\nReason: ${ctx.requestReason || "No reason provided"}\n\n✅ Action:\nPlease review and approve/reject this request in the admin dashboard.\n\n⏱️ Timeline: Review within 5 business days.`,
+        msgAm: `📋 አዲስ የአድራሻ መለወጥ ጥያቄ\n\nድርጅት: ${ctx.organizationNameAm || ctx.organizationName || "N/A"}\nምክንያት: ${ctx.requestReason || "ምንም ምክንያት አልተሰጠም"}\n\n✅ ተግባር:\nእባክዎ በአስተዳደር ዳሽቦርድ ውስጥ ይህን ጥያቄ ይገምግሙ እና ይፈቅዱ ወይም ውድቁ ያድርጉ።\n\n⏱️ ጊዜ: ከ 5 ሥራ ቀናት ውስጥ ይገምግሙ።`,
       };
   }
 };

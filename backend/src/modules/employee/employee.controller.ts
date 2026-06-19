@@ -1,6 +1,116 @@
 import { Request, Response } from "express";
-import prisma from "../../lib/prisma";
 import { ApiResponse } from "../../utils/apiResponse";
+import { registerEmployee, ServiceError } from "./employee.service";
+import prisma from "../../lib/prisma";
+
+const getAuditUserId = (req: Request): number | null => {
+  const rawUserId = req.user?.userId ?? req.user?.id ?? null;
+  if (typeof rawUserId === "string") {
+    const parsed = Number(rawUserId);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return typeof rawUserId === "number" ? rawUserId : null;
+};
+
+export const registerEmployeeHandler = async (req: Request, res: Response) => {
+  const {
+    username,
+    fullName,
+    email,
+    phone,
+    password,
+    confirmPassword,
+    faydaId,
+    positionId,
+    educationLevel,
+    workExpYears,
+    TotalExpYears,
+    gender,
+    citizenship,
+    age,
+    startedDate,
+    organizationId,
+    kebeleId,
+    houseNo,
+    specialLocation,
+    uploadedFiles,
+  } = req.body;
+
+  if (!password || !confirmPassword || password !== confirmPassword) {
+    return ApiResponse.error(
+      res,
+      "Password and confirm password must match",
+      400,
+    );
+  }
+
+  if (!username || !fullName || !email || !phone || !password || !faydaId) {
+    return ApiResponse.error(
+      res,
+      "Missing required employee registration fields",
+      400,
+    );
+  }
+
+  if (!organizationId || !kebeleId) {
+    return ApiResponse.error(
+      res,
+      "Organization and kebele identifiers are required",
+      400,
+    );
+  }
+
+  try {
+    const actorUserId = getAuditUserId(req);
+    const result = await registerEmployee(
+      {
+        username,
+        fullName,
+        email,
+        phone,
+        password,
+        faydaId,
+        positionId: positionId ? Number(positionId) : null,
+        educationLevel: educationLevel || null,
+        workExpYears: workExpYears ? Number(workExpYears) : null,
+        TotalExpYears: TotalExpYears ? Number(TotalExpYears) : null,
+        gender: gender || null,
+        citizenship: citizenship || null,
+        age: age ? Number(age) : null,
+        startedDate: startedDate || null,
+        organizationId: Number(organizationId),
+        kebeleId: Number(kebeleId),
+        houseNo: houseNo || null,
+        specialLocation: specialLocation || null,
+        uploadedFiles:
+          typeof uploadedFiles === "object" && uploadedFiles
+            ? uploadedFiles
+            : undefined,
+      },
+      actorUserId,
+    );
+
+    return ApiResponse.success(
+      res,
+      "Employee registered successfully",
+      result,
+      201,
+    );
+  } catch (error: any) {
+    if (error instanceof ServiceError) {
+      const statusCode = error.code.startsWith("DUPLICATE_") ? 409 : 400;
+      return ApiResponse.error(res, error.message, statusCode, error.code);
+    }
+
+    console.error("Register Employee Error:", error?.message ?? error);
+    return ApiResponse.error(
+      res,
+      "Failed to register employee",
+      500,
+      error?.message ?? String(error),
+    );
+  }
+};
 
 /**
  * GET /api/employees/my-organization

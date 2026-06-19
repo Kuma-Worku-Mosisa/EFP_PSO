@@ -378,6 +378,7 @@ export const FormalLetter = () => {
         body: JSON.stringify({ userId: user.id, requestLetterUrl }),
       });
 
+      // Backend automatically sends admin/super_admin notifications
       setRemoteUrl(requestLetterUrl);
       setStatus("pending");
       setOpenedForEdit(false);

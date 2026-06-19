@@ -25,6 +25,7 @@ import {
   MessageSquare,
   ClipboardCheck,
   Building2,
+  MapPin,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useLanguage } from "../context/LanguageContext";
@@ -65,6 +66,7 @@ import FormalRequestManager from "../components/FormalRequestManager";
 import AdminAgreementManager from "./admin/AdminAgreementManager";
 import AdminAgreementDetail from "./admin/AdminAgreementDetail";
 import { AdminInspections } from "./AdminInspections";
+import { AdminAddressApproval } from "./admin/AdminAddressApproval";
 
 const Overview = () => {
   const { language } = useLanguage();
@@ -438,6 +440,11 @@ export const AdminDashboard = () => {
       path: "/admin/inspections",
     },
     {
+      icon: <MapPin className="w-5 h-5" />,
+      label: isAm ? "አድራሻ ለውጥ ፈቃዶች" : "Address Change Approvals",
+      path: "/admin/address-approvals",
+    },
+    {
       icon: <ShieldCheck className="w-5 h-5" />,
       label: t.dashboard.licenseManagement,
       path: "/admin/licenses",
@@ -531,6 +538,7 @@ export const AdminDashboard = () => {
         <Route path="organizations" element={<OrganizationDashboard />} />
         <Route path="applications" element={<ApplicationsReview />} />
         <Route path="inspections" element={<AdminInspections />} />
+        <Route path="address-approvals" element={<AdminAddressApproval />} />
         <Route path="licenses" element={<LicenseManagement />} />
         <Route path="licenses/:certificateId?" element={<LicenseViewer />} />
         <Route path="gps" element={<GPSTracking />} />

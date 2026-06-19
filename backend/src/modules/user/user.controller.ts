@@ -56,11 +56,14 @@ export const getAllUsers = async (req: Request, res: Response) => {
 export const getUserByIdHandler = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+
     if (!id) {
       return ApiResponse.error(res, "User ID is required", 400);
     }
 
-    const user = await UserService.getUserById(id);
+    // Wrap id in String() to resolve TS2345 type error (string | string[] to string)
+    const user = await UserService.getUserById(String(id));
+
     return ApiResponse.success(res, "User retrieved successfully", user);
   } catch (error: any) {
     if (error?.code === "NOT_FOUND") {
@@ -181,6 +184,47 @@ export const registerHandler = async (req: Request, res: Response) => {
   }
 };
 
+export const validateUserFieldHandler = async (req: Request, res: Response) => {
+  const field = String(req.query.field || "").trim();
+  const value = String(req.query.value || "").trim();
+
+  const allowedFields = ["username", "email", "phone", "faydaId"];
+  if (!field || !value) {
+    return ApiResponse.error(res, "Field and value are required", 400);
+  }
+
+  if (!allowedFields.includes(field)) {
+    return ApiResponse.error(
+      res,
+      "Validation field must be username, email, phone, or faydaId",
+      400,
+    );
+  }
+
+  const isFaydaId = field === "faydaId";
+  const validFormat = !isFaydaId || /^\d{12}$/.test(value);
+
+  if (isFaydaId && !validFormat) {
+    return ApiResponse.success(res, "Validation completed", {
+      field,
+      exists: false,
+      validFormat: false,
+      message: "Fayda ID must be exactly 12 digits.",
+    });
+  }
+
+  const existing = await UserService.findUserByUniqueField(
+    field as "username" | "email" | "phone" | "faydaId",
+    value,
+  );
+
+  return ApiResponse.success(res, "Validation completed", {
+    field,
+    exists: Boolean(existing),
+    validFormat: true,
+  });
+};
+
 /**
  * Handles secure credential verification and bundles associated user roles directly inside the JWT.
  */
@@ -221,11 +265,14 @@ export const loginHandler = async (req: Request, res: Response) => {
       );
     }
 
+    const organizationId = user.employee?.organizationId ?? null;
+
     const token = jwt.sign(
       {
         userId: user.id,
         username: user.username,
         roles: roles,
+        ...(organizationId && { organizationId }),
       },
       process.env.JWT_SECRET || "fallback_secret",
       { expiresIn: "1d" },
@@ -238,6 +285,7 @@ export const loginHandler = async (req: Request, res: Response) => {
       user: {
         ...cleanUser,
         roles,
+        organizationId,
       },
     });
   } catch (error: any) {

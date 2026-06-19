@@ -23,8 +23,12 @@ interface ConfirmDialogProps {
   type?: ActionType;
   isLoading?: boolean;
   isConfirmDisabled?: boolean;
+  // optional input for dialogs that need user text (e.g., rejection reason)
+  inputLabel?: string;
+  inputValue?: string;
+  onInputChange?: (val: string) => void;
+  inputPlaceholder?: string;
 }
-
 interface ActionConfigItem {
   icon: React.ReactElement;
   iconColor?: string;
@@ -84,6 +88,11 @@ export const ConfirmDialog = ({
   type = "default",
   isLoading,
   isConfirmDisabled = false,
+  // input props
+  inputLabel,
+  inputValue,
+  onInputChange,
+  inputPlaceholder,
 }: ConfirmDialogProps) => {
   const config = actionConfig[type];
 
@@ -155,6 +164,24 @@ export const ConfirmDialog = ({
                   <p className="text-sm text-gray-600 font-medium leading-relaxed">
                     {message}
                   </p>
+                  {/* Optional input */}
+                  {/** render input if inputLabel provided via props **/}
+                  {(inputLabel || inputPlaceholder) && (
+                    <div className="mt-2">
+                      <label className="block text-xs font-bold text-slate-600 mb-1">
+                        {inputLabel}
+                      </label>
+                      <textarea
+                        value={inputValue}
+                        onChange={(e) =>
+                          onInputChange && onInputChange(e.target.value)
+                        }
+                        placeholder={inputPlaceholder}
+                        className="w-full border border-slate-300 p-3 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                        rows={4}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Actions Section */}

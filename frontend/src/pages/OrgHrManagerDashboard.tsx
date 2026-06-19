@@ -1,14 +1,21 @@
 import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "../components/DashboardLayout";
 import { useLanguage } from "../context/LanguageContext";
-import { LayoutDashboard, Users, Briefcase, ShieldCheck } from "lucide-react";
+import {
+  LayoutDashboard,
+  Users,
+  Briefcase,
+  ShieldCheck,
+  MapPin,
+} from "lucide-react";
 import AgenciesManagement from "./admin/AgenciesManagement";
+import EmployeeRegistration from "./HRmanagement/EmployeeRegistration";
+import EmployeeTransferManager from "./HRmanagement/EmployeeTransferManager";
+import AddressChangeRequestForm from "./HRmanagement/AddressChangeRequestForm";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { apiRequest } from "../lib/api";
-import PositionManagement from "./PositionManagement";
 import { Profile } from "./Profile";
 import { Notifications } from "./Notifications";
 
@@ -92,9 +99,14 @@ export const OrgHrManagerDashboard = () => {
       path: "/org-hr-manager/organization",
     },
     {
+      icon: <MapPin className="w-5 h-5" />,
+      label: isAm ? "የአድራሻ ለውጥ ጥያቄ" : "Address Change Request",
+      path: "/org-hr-manager/address-change-request",
+    },
+    {
       icon: <Briefcase className="w-5 h-5" />,
-      label: isAm ? "የስራ ቦታ አስተዳደር" : "Positions",
-      path: "/org-hr-manager/positions",
+      label: isAm ? "ሰራተኛ እንዲሸምጥ" : "Employee Transfer",
+      path: "/org-hr-manager/employee-transfer",
     },
     {
       icon: <ShieldCheck className="w-5 h-5" />,
@@ -116,9 +128,17 @@ export const OrgHrManagerDashboard = () => {
       <Routes>
         <Route index element={<Overview />} />
         <Route path="organization" element={<OrgOrganizationView />} />
-        <Route path="positions" element={<PositionManagement />} />
+        <Route
+          path="address-change-request"
+          element={<AddressChangeRequestForm />}
+        />
+        <Route path="employee-transfer" element={<EmployeeTransferManager />} />
         <Route path="profile" element={<Profile />} />
         <Route path="notifications" element={<Notifications />} />
+        <Route
+          path="employee-registration"
+          element={<EmployeeRegistration />}
+        />
       </Routes>
     </DashboardLayout>
   );

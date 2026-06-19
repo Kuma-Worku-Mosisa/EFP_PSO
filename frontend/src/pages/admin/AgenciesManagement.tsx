@@ -1,5 +1,6 @@
 // filepath: frontend/src/pages/admin/AgenciesManagement.tsx
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Building2,
   Users,
@@ -14,9 +15,7 @@ import {
   Plus,
   AlertTriangle,
   Calendar,
-  Shield,
   GraduationCap,
-  Award,
   BookOpen,
   FileCheck,
   ArrowUpRight,
@@ -84,6 +83,7 @@ interface EmployeeMock {
   fullName: string;
   email: string;
   phone?: string;
+  faydaId?: string;
   positionName: string;
   gender: string;
   citizenship: string;
@@ -174,7 +174,9 @@ interface OrganizationMock {
   tinNumber: string;
   status: string;
   email: string;
+  fax: string;
   phone: string;
+  headOfficeAddress: string;
   capitalAmount: string;
   numberOfOffices: number;
   numberOfVehicles: number;
@@ -218,7 +220,9 @@ const defaultOrg = (): OrganizationMock => ({
   tinNumber: "",
   status: "",
   email: "",
+  fax: "",
   phone: "",
+  headOfficeAddress: "",
   capitalAmount: "0.00",
   numberOfOffices: 0,
   numberOfVehicles: 0,
@@ -252,6 +256,7 @@ export function AgenciesManagement({
   const [toastType, setToastType] = useState<ToastType>("success");
   const [toastMessage, setToastMessage] = useState("");
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isOrgHrManager = user?.roles.includes("org_hr_manager");
 
   const getOrganizationDocumentActionLabel = (
@@ -298,8 +303,7 @@ export function AgenciesManagement({
       }
 
       try {
-        const res = await fetch(`/api/organizations/${orgId}/details`);
-        const data = await res.json();
+        const data = await apiRequest(`/organizations/${orgId}/details`);
         const details = data?.data ?? data?.payload ?? data;
 
         if (details && typeof details === "object") {
@@ -309,7 +313,9 @@ export function AgenciesManagement({
             tinNumber: details.tinNumber ?? "",
             status: details.status ?? "",
             email: details.email ?? "",
+            fax: details.fax ?? "",
             phone: details.phone ?? "",
+            headOfficeAddress: details.headOfficeAddress ?? "",
             capitalAmount: details.capitalAmount
               ? String(details.capitalAmount)
               : "0.00",
@@ -843,6 +849,7 @@ export function AgenciesManagement({
               <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">
                 Contact & Infrastructure
               </h3>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8">
                 <div>
                   <label className="text-sm text-gray-500">
@@ -862,6 +869,14 @@ export function AgenciesManagement({
                 </div>
                 <div>
                   <label className="text-sm text-gray-500">
+                    Official Fax number
+                  </label>
+                  <p className="font-medium text-gray-900 flex items-center gap-2 mt-1">
+                    {org.fax || "N/A"}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-500">
                     Store House / Armory
                   </label>
                   <p className="font-medium text-gray-900 mt-1">
@@ -871,12 +886,24 @@ export function AgenciesManagement({
                   </p>
                 </div>
               </div>
+              <div className="mb-4 mt-6 pt-6 border-t border-gray-200">
+                <h4 className="font-semibold text-gray-900 text-sm">
+                  Head Office Addresses: Special Location, House Number, Kebele,
+                  Woreda, Subcity/Zone, Region
+                </h4>
+                <p className="text-sm text-gray-600 mt-1">
+                  <MapPin size={16} className="text-blue-500 mt-0.5 shrink-0" />
+                  <span>{org.headOfficeAddress || "---"}</span>
+                </p>
+              </div>
 
               {org.branches.length > 0 && (
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <div className="flex items-center justify-between gap-3 mb-3">
                     <h4 className="font-semibold text-gray-900 text-sm">
-                      Branch Office Address{org.branches.length > 1 ? "es" : ""}
+                      Branch Addresses: Special Location, House Number, Kebele,
+                      Woreda, Subcity/Zone, Region
+                      {org.branches.length > 1 ? "es" : ""}
                     </h4>
                     <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                       {org.branches.length} branch
@@ -908,7 +935,13 @@ export function AgenciesManagement({
               <span className="font-semibold text-sm text-gray-700">
                 Active Operational Personnel Directory
               </span>
-              <button className="px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-xs font-medium transition flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() =>
+                  navigate("/org-hr-manager/employee-registration")
+                }
+                className="px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-xs font-medium transition flex items-center gap-1"
+              >
                 <Plus size={14} /> Register Employee
               </button>
             </div>
@@ -922,8 +955,8 @@ export function AgenciesManagement({
                     {" "}
                     <th className="p-4">Employee FULL Name</th>
                     <th className="p-4">Assigned Position</th>
-                    <th className="p-4">Demographics</th>
-                    <th className="p-4">Experience</th>
+                    <th className="p-4">Fayda Number (FAN)</th>
+                    <th className="p-4">Work Experience</th>
                     <th className="p-4">Status & Clearances</th>
                     <th className="p-4">Action</th>
                   </tr>
@@ -944,30 +977,18 @@ export function AgenciesManagement({
                       </td>
                       <td className="p-4">
                         <div className="flex items-center gap-1.5 font-medium text-gray-800">
-                          <Shield size={16} className="text-blue-500" />
                           {emp.positionName}
-                        </div>
-                        <div className="text-xs text-gray-400 mt-0.5">
-                          Started: {emp.employmentStartDate}
                         </div>
                       </td>
                       <td className="p-4 text-xs space-y-0.5">
                         <p>
-                          <span className="text-gray-400">Gender/Age:</span>{" "}
-                          {emp.gender}, {emp.age} yrs
-                        </p>
-                        <p>
-                          <span className="text-gray-400">Citizenship:</span>{" "}
-                          {emp.citizenship}
+                          <span className="text-gray-400">FAN: </span>{" "}
+                          {emp.faydaId}
                         </p>
                       </td>
                       <td className="p-4">
                         <div className="flex items-center gap-1 font-medium text-gray-900">
-                          <Award size={16} className="text-amber-500" />
                           <span>{emp.workExpYears} Years</span>
-                        </div>
-                        <div className="text-xs text-gray-400 mt-0.5">
-                          Education: {emp.educationLevel}
                         </div>
                       </td>
                       <td className="p-4">
@@ -1870,6 +1891,10 @@ export function AgenciesManagement({
                       <span className="font-semibold">Phone Number:</span>{" "}
                       {selectedEmployee.phone || "Not provided"}
                     </p>
+                    <p className="mt-2 text-sm text-slate-700">
+                      <span className="font-semibold">FAN Number:</span>{" "}
+                      {selectedEmployee.faydaId || "Not provided"}
+                    </p>
                     <p className="mt-1 text-sm text-slate-700 mb-2">
                       <span className="font-semibold">Position:</span>{" "}
                       {selectedEmployee.positionName || "Unassigned"}
@@ -2141,7 +2166,7 @@ export function AgenciesManagement({
       {/* Contract Document Preview Modal */}
       {selectedContractUrl && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70">
-          <div className="relative w-full max-w-4xl h-[92vh] sm:h-[90vh] md:h-[86vh] lg:h-[80vh] rounded-3xl bg-white shadow-2xl overflow-hidden flex flex-col">
+          <div className="relative w-full  max-w-6xl h-[95vh] sm:h-[92vh] md:h-[88vh] lg:h-[98vh] rounded-3xl bg-white shadow-2xl overflow-hidden flex flex-col">
             {/* Modal Header */}
             <div className="flex items-center pl-7 justify-between gap-4 border-b border-slate-200 bg-slate-50 ">
               <div>

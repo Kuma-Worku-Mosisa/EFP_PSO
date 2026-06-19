@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { ApiResponse } from "../../utils/apiResponse";
 import { FormalRequestService } from "./formalRequest.service";
+import { NotificationService } from "../notification/notification.service";
 
 const getUserId = (req: Request) => {
   const authUserId = (req as any).user?.id;
@@ -88,6 +89,22 @@ export const createFormalRequest = async (req: Request, res: Response) => {
       requestLetterUrl,
       (req as any).user?.id,
     );
+
+    // Notify admins/super_admins about the new formal request
+    try {
+      const userFullName =
+        (req as any).user?.fullName || (req as any).user?.username || "User";
+      await NotificationService.notifyAdminsOnFormalRequestSubmission(
+        userFullName,
+        userId,
+      );
+    } catch (notificationError) {
+      console.warn(
+        "[WARN] Failed to send admin notification for formal request:",
+        notificationError,
+      );
+      // Don't throw - notification failure shouldn't block the request creation
+    }
 
     return ApiResponse.success(res, "Formal request saved", result, 201);
   } catch (error: any) {

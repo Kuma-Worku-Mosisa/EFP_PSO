@@ -48,10 +48,19 @@ async function safeReadResponse(response: Response): Promise<any> {
 export async function uploadOrganizationDocuments(
   organizationName: string,
   filesMap: Map<string, File> | Record<string, File>,
+  metadata?: Record<string, string>,
 ): Promise<UploadResponse> {
   try {
     const formData = new FormData();
     formData.append("organizationName", organizationName);
+
+    if (metadata) {
+      Object.entries(metadata).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+          formData.append(key, value);
+        }
+      });
+    }
 
     // Add files to FormData
     if (filesMap instanceof Map) {

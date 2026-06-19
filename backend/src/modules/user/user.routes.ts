@@ -10,6 +10,7 @@ import {
   changePasswordHandler,
   revokeAccessHandler,
   getRolesHandler,
+  validateUserFieldHandler,
   uploadProfilePhotoHandler,
 } from "./user.controller";
 import {
@@ -25,6 +26,7 @@ const router = Router();
 // --- PUBLIC ROUTES ---
 router.post("/login", loginValidation, loginHandler);
 router.post("/register", registerValidation, registerHandler);
+router.get("/validate", validateUserFieldHandler);
 
 // --- PROTECTED ROUTES (ANY AUTHENTICATED USER) ---
 router.get("/me", authenticate, getCurrentUserHandler);

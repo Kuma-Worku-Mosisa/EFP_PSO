@@ -166,6 +166,17 @@ export default function NotificationDropdown({
     let title = item.alertTitle;
     let message = item.alertMessage;
 
+    const findBilingualSplit = (text: string) => {
+      const amharicMatch = text.match(/[\u1200-\u137F]/);
+      if (!amharicMatch || amharicMatch.index === undefined) return null;
+      const splitIndex = text.lastIndexOf("\n\n", amharicMatch.index);
+      if (splitIndex === -1) return null;
+      return {
+        en: text.slice(0, splitIndex).trim(),
+        am: text.slice(splitIndex + 2).trim(),
+      };
+    };
+
     try {
       if (item.alertMessage.startsWith("{")) {
         const nativeCtx: NotificationContext = JSON.parse(item.alertMessage);
@@ -177,7 +188,12 @@ export default function NotificationDropdown({
           const splitTitles = item.alertTitle.split(" / ");
           title = currentLang === "en" ? splitTitles[0] : splitTitles[1];
         }
-        if (item.alertMessage.includes("\n\n")) {
+
+        const bilingualParts = findBilingualSplit(item.alertMessage);
+        if (bilingualParts) {
+          message =
+            currentLang === "en" ? bilingualParts.en : bilingualParts.am;
+        } else if (item.alertMessage.includes("\n\n")) {
           const splitBlocks = item.alertMessage.split("\n\n");
           if (splitBlocks.length >= 2) {
             message =
@@ -374,7 +390,7 @@ export default function NotificationDropdown({
       {/* Atomic Popup Modal — Full Content Inspector Window */}
       {activeInspectorNode && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
+          <div className="w-full max-w-lg h-[min(90vh,calc(100vh-2rem))] bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100 animate-in fade-in zoom-in-95 duration-150 flex flex-col">
             {/* Modal Header configured around `#003265` branding anchor */}
             <div className="bg-[#003265] text-white px-5 py-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -394,7 +410,7 @@ export default function NotificationDropdown({
             </div>
 
             {/* Modal content layout context box panels */}
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4 flex-1 overflow-y-auto">
               <div className="space-y-1">
                 <span className="text-[10px] font-black tracking-widest text-[#003265]/60 uppercase block">
                   {currentLang === "en"
@@ -428,7 +444,7 @@ export default function NotificationDropdown({
             </div>
 
             {/* Modal Actions Footer */}
-            <div className="bg-gray-50 px-6 py-3 flex justify-end">
+            <div className="bg-gray-50 px-6 py-3 flex justify-end shrink-0">
               <button
                 onClick={() => setActiveInspectorNode(null)}
                 style={{ backgroundColor: "#003265" }}

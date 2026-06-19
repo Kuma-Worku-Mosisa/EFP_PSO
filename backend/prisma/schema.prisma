@@ -53,8 +53,9 @@ model Kebele {
   nameAmharic String @map("kebele_name_am") @db.NVarChar(100)
   nameEnglish String @map("kebele_name_en") @db.VarChar(100)
 
-  addresses Address[]
-  woreda    Woreda    @relation(fields: [woredaId], references: [id], onUpdate: NoAction, map: "FK_Kebeles_Woredas")
+  addresses             Address[]
+  woreda                Woreda                             @relation(fields: [woredaId], references: [id], onUpdate: NoAction, map: "FK_Kebeles_Woredas")
+  addressChangeRequests OrganizationAddressChangeRequest[]
 
   @@map("kebeles")
 }
@@ -100,6 +101,8 @@ model User {
   user_roles user_roles[]
 
   // Add these back-relation fields:
+  initiatedTransfers   TransferRequest[]            @relation("TransferInitiator")
+  actionedTransfers    TransferRequest[]            @relation("TransferActioner")
   official             Official?
   applications         Application[] // Fixes the missing opposite relation error
   formalRequests       FormalRequest[]
@@ -206,21 +209,25 @@ model Organization {
   capitalAmount     Decimal? @map("capital_amount") @db.Decimal(18, 2)
 
   // Status & Metadata
+
   status    String?  @default("Pending") @map("organization_status") @db.VarChar(50)
   createdAt DateTime @default(now()) @map("created_at") @db.DateTime
 
   // Relations
-  address             Address?                  @relation(fields: [addressId], references: [id], onUpdate: NoAction, map: "FK_Organizations_Addresses")
-  branches            OrganizationBranch[]
-  documents           OrganizationDocument[]
-  employees           Employee[]
-  applications        Application[]
-  certifications      Certification[]
-  renewalApplications RenewalApplication[]
-  guardEducationStats GuardEducationLevelStat[]
-  incidents           IncidentReport[]
+  sourceTransfers       TransferRequest[]                  @relation("SourceTransfers")
+  targetTransfers       TransferRequest[]                  @relation("TargetTransfers")
+  address               Address?                           @relation(fields: [addressId], references: [id], onUpdate: NoAction, map: "FK_Organizations_Addresses")
+  branches              OrganizationBranch[]
+  documents             OrganizationDocument[]
+  employees             Employee[]
+  applications          Application[]
+  certifications        Certification[]
+  renewalApplications   RenewalApplication[]
+  guardEducationStats   GuardEducationLevelStat[]
+  incidents             IncidentReport[]
   // agreements now relate through applications
-  serviceContracts    ServiceContract[]
+  serviceContracts      ServiceContract[]
+  addressChangeRequests OrganizationAddressChangeRequest[]
 
   @@map("organizations")
 }
@@ -234,6 +241,27 @@ model OrganizationBranch {
   address      Address      @relation(fields: [addressId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Branches_Addresses")
 
   @@map("organization_branches")
+}
+
+// The new Request Model
+model OrganizationAddressChangeRequest {
+  addressRequestId         Int     @id @default(autoincrement()) @map("address_request_id")
+  organizationId           Int     @map("organization_id")
+  requestedKebeleId        Int     @map("requested_kebele_id")
+  requestedHouseNumber     String? @map("requested_house_number") @db.VarChar(50)
+  requestedSpecialLocation String? @map("requested_special_location") @db.NVarChar(Max)
+
+  reason        String? @db.NVarChar(Max) // Why they want to change
+  adminFeedback String? @map("admin_feedback") @db.NVarChar(Max)
+  status        String? @default("PENDING") @map("request_status") @db.VarChar(50)
+
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  // Relations
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  requestedKebele Kebele       @relation(fields: [requestedKebeleId], references: [id], onUpdate: NoAction)
+
+  @@map("org_address_change_requests")
 }
 
 model ServiceContract {
@@ -332,16 +360,48 @@ model Employee {
   adminApplications      Application[] @relation("AdminHeadRole")
 
   // ADDED: Required back-relations for Incident and Manager Change modules
-  incidentReports IncidentReport[]
+  incidentReports  IncidentReport[]
+  transferRequests TransferRequest[]
 
   @@map("employees")
 }
 
+model TransferRequest {
+  id                   Int  @id @default(autoincrement()) @map("request_id")
+  employeeId           Int  @map("employee_id")
+  sourceOrganizationId Int  @map("source_organization_id")
+  targetOrganizationId Int  @map("target_organization_id")
+  requestedPositionId  Int? @map("requested_position_id")
+
+  // Workflow States: PENDING, AGENCY_B_PRE_APPROVED, FULLY_APPROVED, REJECTED
+  status          String  @default("PENDING") @db.VarChar(50)
+  reason          String  @map("transfer_reason") @db.VarChar(Max)
+  rejectionReason String? @map("rejection_reason") @db.VarChar(Max)
+
+  // Audit Tracking
+  initiatedById Int       @map("initiated_by_user_id") // HR Manager from Agency A who clicked send
+  actionedById  Int?      @map("actioned_by_user_id") // HR Manager from Agency B who clicked approve
+  createdAt     DateTime  @default(now()) @map("created_at") @db.DateTime
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.DateTime
+  actionedAt    DateTime? @map("actioned_at") @db.DateTime
+
+  // Relations (Explicitly protected against cascading loops)
+  employee           Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade, map: "FK_Transfers_Employees")
+  sourceOrganization Organization @relation("SourceTransfers", fields: [sourceOrganizationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Transfers_SourceOrg")
+  targetOrganization Organization @relation("TargetTransfers", fields: [targetOrganizationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Transfers_TargetOrg")
+  position           Position?    @relation(fields: [requestedPositionId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Transfers_Positions")
+  initiatedBy        User         @relation("TransferInitiator", fields: [initiatedById], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Transfers_Initiator")
+  actionedBy         User?        @relation("TransferActioner", fields: [actionedById], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Transfers_Actioner")
+
+  @@map("employee_transfer_requests")
+}
+
 model Position {
-  id           Int                   @id @default(autoincrement()) @map("position_id")
-  name         String                @unique @map("position_name") @db.VarChar(100)
-  requirements PositionRequirement[]
-  employees    Employee[]
+  id               Int                   @id @default(autoincrement()) @map("position_id")
+  name             String                @unique @map("position_name") @db.VarChar(100)
+  requirements     PositionRequirement[]
+  employees        Employee[]
+  transferRequests TransferRequest[]
 
   @@map("positions")
 }

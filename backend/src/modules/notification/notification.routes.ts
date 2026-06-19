@@ -6,11 +6,7 @@ import { authenticate } from "../../middleware/auth";
 const router = Router();
 
 // User feed — authenticated; users may only access their own feed
-router.get(
-  "/feed/:userId",
-  authenticate,
-  NotificationController.getMyFeed,
-);
+router.get("/feed/:userId", authenticate, NotificationController.getMyFeed);
 
 // Mark a single notification as read
 router.patch("/read", authenticate, NotificationController.clearNotification);

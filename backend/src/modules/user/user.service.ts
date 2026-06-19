@@ -32,6 +32,11 @@ const userSelection = {
   photoUrl: true,
   status: true,
   createdAt: true,
+  employee: {
+    select: {
+      organizationId: true,
+    },
+  },
   user_roles: {
     select: {
       role_id: true,
@@ -65,6 +70,7 @@ export type UserAdminUpdateInput = {
   photoUrl?: string | null;
   roleIds?: number[]; // To sync new system assignments
   status?: string;
+  password?: string; // Add this line to catch password updates
 };
 
 type AuditContext = {
@@ -233,6 +239,19 @@ export const findUserByUsername = async (username: string) => {
   });
 };
 
+export const findUserByUniqueField = async (
+  field: "username" | "email" | "phone" | "faydaId",
+  value: string,
+) => {
+  const whereClause = { [field]: value } as any;
+  return await prisma.user.findFirst({
+    where: whereClause,
+    select: {
+      id: true,
+    },
+  });
+};
+
 /**
  * Comprehensive update handler allowing Admins to change user details and completely sync permissions safely.
  */
@@ -249,6 +268,52 @@ export const updateUserProfile = async (
     select: userSelection,
   });
   if (!existingUser) throw new ServiceError("User not found", "NOT_FOUND");
+
+  // PRE-CHECK for unique constraints outside the transaction to prevent SQL Server timeouts
+  const orConditions = [];
+  if (input.email && input.email !== existingUser.email)
+    orConditions.push({ email: input.email });
+  if (input.username && input.username !== existingUser.username)
+    orConditions.push({ username: input.username });
+  if (input.phone && input.phone !== existingUser.phone)
+    orConditions.push({ phone: input.phone });
+  if (input.faydaId && input.faydaId !== existingUser.faydaId)
+    orConditions.push({ faydaId: input.faydaId });
+
+  if (orConditions.length > 0) {
+    const conflict = await prisma.user.findFirst({
+      where: { OR: orConditions },
+    });
+    if (conflict) {
+      if (conflict.email === input.email)
+        throw new ServiceError(
+          "Email address is already registered.",
+          "DUPLICATE_EMAIL",
+        );
+      if (conflict.username === input.username)
+        throw new ServiceError(
+          "Username is already taken.",
+          "DUPLICATE_USERNAME",
+        );
+      if (conflict.phone === input.phone)
+        throw new ServiceError(
+          "Phone number is already linked.",
+          "DUPLICATE_PHONE",
+        );
+      if (conflict.faydaId === input.faydaId)
+        throw new ServiceError(
+          "Fayda ID is already registered.",
+          "DUPLICATE_FAYDA",
+        );
+    }
+  }
+
+  // FIX: Explicitly type the variable to satisfy TypeScript strict mode
+  let newHashedPassword: string | undefined;
+
+  if (input.password && input.password.trim() !== "") {
+    newHashedPassword = await bcrypt.hash(input.password, 12);
+  }
 
   return await prisma.$transaction(async (tx) => {
     // If roles array is supplied, replace existing assignments entirely
@@ -278,6 +343,7 @@ export const updateUserProfile = async (
         faydaId: input.faydaId,
         ...(input.status && { status: input.status }),
         photoUrl: input.photoUrl,
+        ...(newHashedPassword && { password: newHashedPassword }),
       },
       select: userSelection,
     });

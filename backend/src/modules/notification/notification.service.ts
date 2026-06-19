@@ -519,6 +519,99 @@ export class NotificationService {
   }
 
   /**
+   * Notifies all admin and super_admin users about a new formal request letter submission.
+   */
+  static async notifyAdminsOnFormalRequestSubmission(
+    applicantFullName: string,
+    applicantId: number,
+  ) {
+    try {
+      console.log(
+        `[Notification Service] Starting admin notification for formal request submission by user ID: ${applicantId}`,
+      );
+
+      // Fetch the actual user data from database to get the correct fullName and faydaId
+      const applicant = await prisma.user.findUnique({
+        where: { id: applicantId },
+        select: {
+          id: true,
+          fullName: true,
+          faydaId: true,
+        },
+      });
+
+      if (!applicant) {
+        console.warn(
+          `[Notification Service] Applicant user ID ${applicantId} not found in database`,
+        );
+        return;
+      }
+
+      const actualFullName = applicant.fullName || applicantFullName;
+      const actualFaydaId = applicant.faydaId || String(applicantId);
+
+      console.log(
+        `[Notification Service] Fetched applicant details - Name: ${actualFullName}, Fayda ID: ${actualFaydaId}`,
+      );
+
+      // Get all admin users (admin, super_admin)
+      const adminRoles = ["admin", "super_admin"];
+      const adminUsers = [];
+
+      for (const role of adminRoles) {
+        console.log(`[Notification Service] Fetching users with role: ${role}`);
+        const users = await getUsersByRole(role);
+        console.log(
+          `[Notification Service] Found ${users.length} users with role: ${role}`,
+        );
+        adminUsers.push(...users);
+      }
+
+      // Remove duplicates
+      const uniqueAdmins = Array.from(
+        new Map(adminUsers.map((user) => [user.id, user])).values(),
+      );
+
+      console.log(
+        `[Notification Service] Total unique admin users to notify: ${uniqueAdmins.length}`,
+      );
+
+      if (uniqueAdmins.length === 0) {
+        console.warn(
+          "[Notification Service] No admin users found in the database. Notifications will not be sent.",
+        );
+        return;
+      }
+
+      // Send notification to each admin
+      for (const admin of uniqueAdmins) {
+        console.log(
+          `[Notification Service] Sending formal request notification to admin user ID: ${admin.id}, email: ${admin.email}`,
+        );
+        await NotificationService.sendBilingualAlert(
+          admin.id,
+          "FORMAL_REQUEST_SUBMITTED",
+          {
+            organizationName: actualFullName,
+            organizationNameAm: actualFaydaId,
+          },
+        );
+      }
+
+      console.log(
+        `[Notification Service] Successfully notified ${uniqueAdmins.length} admin users about formal request letter submission.`,
+      );
+    } catch (error: any) {
+      console.error(
+        `[Notification Service] Failed to notify admins about formal request submission:`,
+        error.message,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  /**
    * Notify all users with role `licensing_authority` when a certificate
    * has been signed by an admin or super_admin.
    * This will avoid duplicate sends within a 24h window for the same certificate
@@ -589,6 +682,62 @@ export class NotificationService {
         "[Notification Service] Failed to notify licensing authorities:",
         err,
       );
+    }
+  }
+
+  /**
+   * Notifies the applicant when their formal request is approved or rejected.
+   */
+  static async notifyApplicantOnFormalRequestStatusChange(
+    userId: number,
+    status: "APPROVED" | "REJECTED",
+    adminFeedback?: string | null,
+  ) {
+    try {
+      // Fetch user with Fayida ID
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          faydaId: true,
+        },
+      });
+
+      if (!user) {
+        console.warn(
+          `[Notification Service] User ID ${userId} not found for formal request notification.`,
+        );
+        return;
+      }
+
+      console.log(
+        `[Notification Service] Notifying applicant ${user.fullName} (#${user.faydaId}) about formal request ${status}`,
+      );
+
+      const notificationType =
+        status === "APPROVED"
+          ? "FORMAL_REQUEST_APPROVED"
+          : "FORMAL_REQUEST_REJECTED";
+
+      await NotificationService.sendBilingualAlert(user.id, notificationType, {
+        organizationName: user.fullName,
+        organizationNameAm: user.faydaId,
+        customDetailsEn:
+          adminFeedback || "Your formal request has been processed.",
+        customDetailsAm: adminFeedback || "የእርስዎ ፈቃድ ደብዳቤ ጥያቄ ተስተካክሏል።",
+      });
+
+      console.log(
+        `[Notification Service] Successfully notified applicant ${user.fullName} about formal request ${status}`,
+      );
+    } catch (error: any) {
+      console.error(
+        `[Notification Service] Failed to notify applicant about formal request status change:`,
+        error.message,
+      );
+      throw error;
     }
   }
 }

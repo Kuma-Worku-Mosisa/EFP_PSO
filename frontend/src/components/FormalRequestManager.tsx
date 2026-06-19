@@ -111,6 +111,7 @@ interface UserData {
   id: number;
   fullName: string;
   username?: string;
+  faydaId?: string;
   formalRequests: Request[];
 }
 
@@ -127,6 +128,7 @@ const mapRequestsToUsers = (requests: any[]): UserData[] => {
         id: userId,
         fullName: user.fullName || user.username || `User ${userId}`,
         username: user.username,
+        faydaId : user.faydaId,
         formalRequests: [],
       });
     }
@@ -171,6 +173,7 @@ const FormalRequestManager = ({
     approved: isAm ? "ጸድቋል" : "Approved",
     rejected: isAm ? "ውድቅ ተደርጓል" : "Rejected",
     totalSubmissions: isAm ? "ጠቅላላ ማስገቢያዎች" : "Total Submissions",
+    faydaNo: isAm ? "ፋይዳ መለያ" : "Fayda Number",
     year: isAm ? "ዓመት" : "Year",
     requestLetter: isAm ? "ማመልከቻ ደብዳቤ #" : "Request Letter #",
     noRequestsForUser: isAm ? "ለዚህ ተጠቃሚ ምንም ማመልከቻ ደብዳቤ አልተገኘም።" : "No requests found for this user.",
@@ -395,6 +398,7 @@ const UserRequestDropdown = ({
         noRequests: "ምንም ማመልከቻ ደብዳቤ አልተገኘም።",
         noFilterMatch: "ከፍለጋ ወይም ማጣሪያ ጋር የሚዛመድ ተጠቃሚ የለም።",
         newLabel: "አዲስ",
+        faydaNo: "ፋይዳ መለያ",
       }
     : {
         totalSubmissions: "Total Submissions",
@@ -433,6 +437,7 @@ const UserRequestDropdown = ({
         noRequests: "No formal requests found.",
         noFilterMatch: "No users match your search or filter.",
         newLabel: "NEW",
+        faydaNo: "Fayda Number",
       };
   const [isOpen, setIsOpen] = useState(false);
   const [activeRequest, setActiveRequest] = useState<Request | null>(null);
@@ -633,7 +638,7 @@ const UserRequestDropdown = ({
           </div>
           <div>
             <h3 className="font-black text-[#0C2A4C] uppercase text-sm flex items-center gap-2">
-              {user.fullName}
+              {user.fullName} <br />{" "}
               {user.formalRequests.some(
                 (r) => r.status === "PENDING" && !getViewedIds().has(r.id),
               ) && (
@@ -644,18 +649,25 @@ const UserRequestDropdown = ({
                   <span className="text-[9px] text-gray-400 font-bold">
                     {timeAgo(
                       user.formalRequests
-                        .filter((r) => r.status === "PENDING" && !getViewedIds().has(r.id))
-                        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
-                        ?.createdAt ?? "",
+                        .filter(
+                          (r) =>
+                            r.status === "PENDING" && !getViewedIds().has(r.id),
+                        )
+                        .sort(
+                          (a, b) =>
+                            new Date(b.createdAt).getTime() -
+                            new Date(a.createdAt).getTime(),
+                        )[0]?.createdAt ?? "",
                       isAm,
                     )}
                   </span>
                 </>
               )}
             </h3>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                {dt.totalSubmissions}: {user.formalRequests.length}
-              </p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+              {dt.totalSubmissions}: {user.formalRequests.length} <br />
+              {dt.faydaNo}: {user.faydaId}
+            </p>
           </div>
         </div>
         <ChevronDown
@@ -690,7 +702,8 @@ const UserRequestDropdown = ({
                         </div>
                         <div>
                           <p className="text-xs font-bold text-[#0C2A4C]">
-                            {dt.requestLetter}{req.id}
+                            {dt.requestLetter}
+                            {req.id}
                           </p>
                           <p className="text-[10px] text-gray-400">
                             {new Date(req.createdAt).toLocaleDateString(
@@ -718,7 +731,13 @@ const UserRequestDropdown = ({
                           ) : (
                             <Clock className="w-3 h-3" />
                           )}
-                          <span>{req.status === "APPROVED" ? dt.approved : req.status === "REJECTED" ? dt.rejected : dt.pending}</span>
+                          <span>
+                            {req.status === "APPROVED"
+                              ? dt.approved
+                              : req.status === "REJECTED"
+                                ? dt.rejected
+                                : dt.pending}
+                          </span>
                         </div>
                         <button
                           type="button"
@@ -780,7 +799,9 @@ const UserRequestDropdown = ({
                       onClick={() => setShowActionDropdown(!showActionDropdown)}
                       className="inline-flex items-center justify-center rounded-xl bg-[#0C2A4C] px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[#DCC380] hover:bg-[#0C2A4C]/90 transition-all"
                     >
-                      <ChevronDown className={`w-3.5 h-3.5 mr-1.5 transition-transform ${showActionDropdown ? "rotate-180" : ""}`} />
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 mr-1.5 transition-transform ${showActionDropdown ? "rotate-180" : ""}`}
+                      />
                       {dt.action}
                     </button>
                     <AnimatePresence>
@@ -831,7 +852,9 @@ const UserRequestDropdown = ({
                               disabled={isUpdating}
                               className="w-full flex items-center justify-center rounded-xl bg-[#0C2A4C] text-[#DCC380] text-sm font-black uppercase tracking-widest px-5 py-3.5 transition-all hover:bg-[#0C2A4C]/90 disabled:opacity-60 disabled:cursor-not-allowed border-2 border-[#DCC380]"
                             >
-                              {isUpdating ? dt.updating : `${dt.apply} ${statusSelection}`}
+                              {isUpdating
+                                ? dt.updating
+                                : `${dt.apply} ${statusSelection}`}
                             </button>
                             {statusSelection === "REJECTED" && (
                               <div className="space-y-3 border-2 border-gray-100 rounded-xl p-4">
@@ -870,11 +893,14 @@ const UserRequestDropdown = ({
                                 {updateError}
                               </p>
                             )}
-                            {getFileTypeFromUrl(activeRequest.requestLetterUrl) ===
-                              "application/pdf" && (
+                            {getFileTypeFromUrl(
+                              activeRequest.requestLetterUrl,
+                            ) === "application/pdf" && (
                               <div className="pt-2 border-t-2 border-gray-100">
                                 <a
-                                  href={resolveFileUrl(activeRequest.requestLetterUrl)}
+                                  href={resolveFileUrl(
+                                    activeRequest.requestLetterUrl,
+                                  )}
                                   target="_blank"
                                   rel="noreferrer"
                                   className="flex items-center justify-center rounded-xl bg-gray-100 px-5 py-3.5 text-sm font-black uppercase tracking-widest text-[#0C2A4C] hover:bg-gray-200 transition-all border-2 border-gray-200"
@@ -912,9 +938,9 @@ const UserRequestDropdown = ({
             </div>
 
             <div className="flex-1 bg-gray-100 p-4 sm:p-6 flex items-stretch justify-center overflow-auto">
-              {getFileTypeFromUrl(
-                activeRequest.requestLetterUrl,
-              ).startsWith("image/") ? (
+              {getFileTypeFromUrl(activeRequest.requestLetterUrl).startsWith(
+                "image/",
+              ) ? (
                 <img
                   src={resolveFileUrl(activeRequest.requestLetterUrl)}
                   alt={dt.formalRequest}
@@ -948,19 +974,25 @@ const UserRequestDropdown = ({
             setIsConfirmOpen(false);
           }}
           isConfirmDisabled={!isFeedbackValid || isFinalStatus}
-          title={statusSelection === "APPROVED"
-            ? dt.confirmApproveTitle
-            : dt.confirmRejectTitle}
-          message={statusSelection === "APPROVED"
-            ? dt.confirmApproveMsg
-            : dt.confirmRejectMsg}
+          title={
+            statusSelection === "APPROVED"
+              ? dt.confirmApproveTitle
+              : dt.confirmRejectTitle
+          }
+          message={
+            statusSelection === "APPROVED"
+              ? dt.confirmApproveMsg
+              : dt.confirmRejectMsg
+          }
           type={statusSelection === "APPROVED" ? "approve" : "reject"}
-          isLoading={isUpdating} />
+          isLoading={isUpdating}
+        />
         <AutoDismissToast
           isOpen={toastOpen}
           type={toastType}
           message={toastMessage}
-          onClose={() => setToastOpen(false)} />
+          onClose={() => setToastOpen(false)}
+        />
       </>
     </div>
   );

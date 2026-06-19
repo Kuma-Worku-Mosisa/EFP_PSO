@@ -85,7 +85,9 @@ export class NotificationController {
       );
     } catch (error: any) {
       const status =
-        error.message === "Notification not found or access denied." ? 404 : 500;
+        error.message === "Notification not found or access denied."
+          ? 404
+          : 500;
       return ApiResponse.error(
         res,
         "Could not finalize item clear transaction.",
@@ -126,7 +128,9 @@ export class NotificationController {
       );
     } catch (error: any) {
       const status =
-        error.message === "Notification not found or access denied." ? 404 : 500;
+        error.message === "Notification not found or access denied."
+          ? 404
+          : 500;
       return ApiResponse.error(
         res,
         "Could not delete notification.",
@@ -159,9 +163,8 @@ export class NotificationController {
         );
       }
 
-      const result = await NotificationService.deleteAllUserNotifications(
-        authUserId,
-      );
+      const result =
+        await NotificationService.deleteAllUserNotifications(authUserId);
 
       return ApiResponse.success(
         res,
@@ -279,20 +282,24 @@ export class NotificationController {
   /**
    * Notifies all admin users when a new application is submitted.
    */
-  static async notifyAdminsOnApplicationSubmission(req: Request, res: Response) {
+  static async notifyAdminsOnApplicationSubmission(
+    req: Request,
+    res: Response,
+  ) {
     try {
       console.log(
         "[Notification Controller] Received request to notify admins about application submission",
       );
       console.log("[Notification Controller] Request body:", req.body);
 
-      const { organizationName, organizationNameAm, applicationType } = req.body;
+      const { organizationName, organizationNameAm, applicationType } =
+        req.body;
 
       if (!organizationName || !applicationType) {
-        console.error(
-          "[Notification Controller] Missing required fields",
-          { organizationName, applicationType },
-        );
+        console.error("[Notification Controller] Missing required fields", {
+          organizationName,
+          applicationType,
+        });
         return ApiResponse.error(
           res,
           "Missing required fields: organizationName, applicationType",

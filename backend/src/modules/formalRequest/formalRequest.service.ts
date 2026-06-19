@@ -1,5 +1,6 @@
 import prisma from "../../lib/prisma";
 import { createAuditLog } from "../../utils/auditLogger";
+import { NotificationService } from "../notification/notification.service";
 
 export class FormalRequestService {
   static async listFormalRequests() {
@@ -11,6 +12,7 @@ export class FormalRequestService {
             id: true,
             username: true,
             fullName: true,
+            faydaId: true,
             email: true,
             phone: true,
           },
@@ -29,6 +31,7 @@ export class FormalRequestService {
             id: true,
             username: true,
             fullName: true,
+            faydaId: true,
             email: true,
             phone: true,
           },
@@ -47,6 +50,7 @@ export class FormalRequestService {
             id: true,
             username: true,
             fullName: true,
+            faydaId: true,
             email: true,
             phone: true,
           },
@@ -110,6 +114,20 @@ export class FormalRequestService {
       oldValue: JSON.stringify(existing),
       newValue: JSON.stringify(updated),
     });
+
+    // Notify the applicant about the status change
+    try {
+      await NotificationService.notifyApplicantOnFormalRequestStatusChange(
+        existing.userId,
+        status,
+        adminFeedback ?? null,
+      );
+    } catch (notificationError: any) {
+      console.error(
+        `[FormalRequest Service] Failed to send notification to applicant: ${notificationError.message}`,
+      );
+      // Don't throw - notification failure shouldn't block status update
+    }
 
     return updated;
   }

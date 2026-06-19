@@ -28,6 +28,7 @@ import notificationRoutes from "./modules/notification/notification.routes";
 import { runNotificationCronWorker } from "./modules/notification/notification.worker";
 import organizationRoutes from "./modules/organization/organization.routes";
 import employeeRoutes from "./modules/employee/employee.routes";
+import transferRoutes from "./modules/transfers/transfers.routes";
 
 const app = express();
 
@@ -92,6 +93,7 @@ app.use("/api/payments", paymentRouter);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/organizations", organizationRoutes);
 app.use("/api/employees", employeeRoutes);
+app.use("/api/transfers", transferRoutes);
 
 // 6. Health Check / Root Route
 app.get("/", (req, res) => {

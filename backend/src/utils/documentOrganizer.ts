@@ -56,25 +56,22 @@ export const organizeUploadedFiles = (
       return;
     }
 
-    // Get relative path for database storage (staged or final)
-    const relativePath = staged
-      ? // staged temp path
-        // import getRelativeTempFilePath lazily to avoid circular imports
-        (function () {
-          const {
-            getRelativeTempFilePath,
-          } = require("../middleware/fileUpload");
-          return getRelativeTempFilePath(
-            organizationName,
-            docMapping.role,
-            file.filename,
-          );
-        })()
-      : getRelativeFilePath(organizationName, docMapping.role, file.filename);
+    const absoluteFilePath = path.isAbsolute(file.path)
+      ? file.path
+      : path.join(process.cwd(), file.path);
+
+    let relativePath = path.relative(process.cwd(), absoluteFilePath);
+    relativePath = relativePath.replace(/\\/g, "/");
+
+    if (!relativePath.startsWith("uploads/")) {
+      relativePath = `uploads/${relativePath}`;
+    }
 
     filePathMap[fieldName] = relativePath;
 
-    console.log(`[DEBUG] File organized: ${fieldName} -> ${relativePath}`);
+    console.log(
+      `[DEBUG] File organized: ${fieldName} -> ${filePathMap[fieldName]}`,
+    );
   });
 
   return filePathMap;
