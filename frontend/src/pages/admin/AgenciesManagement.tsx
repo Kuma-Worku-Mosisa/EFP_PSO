@@ -1,6 +1,8 @@
 // filepath: frontend/src/pages/admin/AgenciesManagement.tsx
 import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "../../context/LanguageContext";
 import {
   Building2,
   Users,
@@ -24,21 +26,20 @@ import {
   Trash2,
   ChevronDown,
   ChevronUp,
+  ArrowLeft,
+  UserPlus,
+  User,
+  Clock,
+  Shield,
+  Search,
+  SlidersHorizontal,
 } from "lucide-react";
 import DocumentPreviewer from "../../components/DocumentPreviewer";
 import { AutoDismissToast, ToastType } from "../../components/AutoDismissToast";
 import { useAuth } from "../../context/AuthContext";
 import { apiRequest } from "../../lib/api";
 
-// --- TypeScript Interfaces ---
 
-interface StatCardProps {
-  title: string;
-  value: string | number;
-  icon: React.ElementType;
-  color: string;
-  bg: string;
-}
 
 interface IncidentPenaltyMock {
   id: number;
@@ -256,6 +257,8 @@ export function AgenciesManagement({
   const [toastType, setToastType] = useState<ToastType>("success");
   const [toastMessage, setToastMessage] = useState("");
   const { user } = useAuth();
+  const { language } = useLanguage();
+  const isAm = language === "am";
   const navigate = useNavigate();
   const isOrgHrManager = user?.roles.includes("org_hr_manager");
 
@@ -263,11 +266,11 @@ export function AgenciesManagement({
     doc: DMSDocumentMock,
     loading: boolean,
   ) => {
-    if (loading) return "Updating...";
+    if (loading) return isAm ? "በማዘመን ላይ..." : "Updating...";
     if (isOrgHrManager) {
-      return doc.isVerified ? "Verified" : "Update";
+      return doc.isVerified ? (isAm ? "የተረጋገጠ" : "Verified") : (isAm ? "አዘምን" : "Update");
     }
-    return doc.isVerified ? "Mark Unverified" : "Mark Verified";
+    return doc.isVerified ? (isAm ? "ያልተረጋገጠ አድርግ" : "Mark Unverified") : (isAm ? "የተረጋገጠ አድርግ" : "Mark Verified");
   };
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -347,6 +350,8 @@ export function AgenciesManagement({
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeMock | null>(
     null,
   );
+  const [personnelSearch, setPersonnelSearch] = useState("");
+  const [personnelFilter, setPersonnelFilter] = useState("ALL");
   const [addressDetails, setAddressDetails] = useState<AddressMock | null>(
     null,
   );
@@ -433,39 +438,36 @@ export function AgenciesManagement({
         return "bg-gray-50 text-gray-600 border-gray-200";
     }
   };
+  const translateDocStatus = (status: string) => {
+    if (!isAm) return status;
+    const map: Record<string, string> = {
+      "Permanent": "ቋሚ",
+      "Active": "ንቁ",
+      "Expiring Soon": "በቅርቡ የሚያልቅ",
+      "Expired": "ያለፈበት",
+    };
+    return map[status] || status;
+  };
 
-  const eduStatRows = [
-    {
-      label: "Grade 3-9",
-      male: org.educationStats.grade_3_9_male,
-      female: org.educationStats.grade_3_9_female,
-    },
-    {
-      label: "Grade 10-12",
-      male: org.educationStats.grade_10_12_male,
-      female: org.educationStats.grade_10_12_female,
-    },
-    {
-      label: "Vocational Certificate",
-      male: org.educationStats.certificate_male,
-      female: org.educationStats.certificate_female,
-    },
-    {
-      label: "Advanced Diploma",
-      male: org.educationStats.diploma_male,
-      female: org.educationStats.diploma_female,
-    },
-    {
-      label: "Bachelor's Degree",
-      male: org.educationStats.degree_male,
-      female: org.educationStats.degree_female,
-    },
-    {
-      label: "Master's Degree (Second)",
-      male: org.educationStats.second_degree_male,
-      female: org.educationStats.second_degree_female,
-    },
+  const eduStatLabels: [string, string][] = [
+    ["Grade 3-9", "ከ3-9ኛ ክፍል"],
+    ["Grade 10-12", "ከ10-12ኛ ክፍል"],
+    ["Vocational Certificate", "የሙያ ሰርተፍኬት"],
+    ["Advanced Diploma", "ከፍተኛ ዲፕሎማ"],
+    ["Bachelor's Degree", "የመጀመሪያ ዲግሪ"],
+    ["Master's Degree (Second)", "የሁለተኛ ዲግሪ"],
   ];
+  const eduStatRows = eduStatLabels.map(([en, am], i) => {
+    const data = [
+      { male: org.educationStats.grade_3_9_male, female: org.educationStats.grade_3_9_female },
+      { male: org.educationStats.grade_10_12_male, female: org.educationStats.grade_10_12_female },
+      { male: org.educationStats.certificate_male, female: org.educationStats.certificate_female },
+      { male: org.educationStats.diploma_male, female: org.educationStats.diploma_female },
+      { male: org.educationStats.degree_male, female: org.educationStats.degree_female },
+      { male: org.educationStats.second_degree_male, female: org.educationStats.second_degree_female },
+    ];
+    return { label: isAm ? am : en, ...data[i] };
+  });
 
   const educationTotals = eduStatRows.reduce(
     (totals, row) => ({
@@ -719,42 +721,48 @@ export function AgenciesManagement({
   return (
     <div className="min-h-screen bg-gray-50 p-6 font-sans">
       {/* 1. Page Header Dashboard Context */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-        <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-gradient-to-r from-[#003366] to-[#001F3F] rounded-2xl shadow-lg px-6 py-6 mb-6 relative overflow-hidden border-t-4 border-[#FFD700]"
+      >
+        <div className="absolute top-0 right-0 w-32 h-full bg-gradient-to-l from-[#FFD700]/5 to-transparent" />
+        <div className="flex flex-col md:flex-row justify-between items-start gap-4 relative z-10">
           <div className="flex flex-col gap-3">
-            <button
+            <motion.button
+              whileHover={{ x: -2 }}
               type="button"
               onClick={onBack}
-              className="text-sm font-semibold text-primary hover:text-primary/80"
+              className="text-xs font-bold text-[#FFD700] hover:text-[#FFD700]/80 flex items-center gap-1 transition-colors"
             >
-              ← Back to Organizations
-            </button>
+              <ArrowLeft className="w-3.5 h-3.5" /> {isAm ? "ወደ ድርጅቶች ተመለስ" : "Back to Organizations"}
+            </motion.button>
             <div className="flex items-center gap-4">
-              <div className="h-16 w-16 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center shrink-0">
-                <Building2 size={32} />
+              <div className="w-14 h-14 rounded-xl bg-[#FFD700] flex items-center justify-center shrink-0 shadow-md">
+                <Building2 className="w-7 h-7 text-[#003366]" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-white">
                   {org.nameEnglish}
                 </h1>
                 <h2
-                  className="text-lg font-medium text-gray-500 mt-0.5"
+                  className="text-base font-medium text-white/70 mt-0.5"
                   style={{
                     fontFamily: "Nyala, Noto Sans Ethiopic, sans-serif",
                   }}
                 >
                   {org.nameAmharic}
                 </h2>
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-gray-600">
-                  <span className="flex items-center gap-1">
-                    <FileText size={16} /> TIN: {org.tinNumber}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold bg-white/10 text-white px-2.5 py-1 rounded-full border border-white/20">
+                    <FileText size={14} /> {isAm ? "ቲን" : "TIN"}: {org.tinNumber}
                   </span>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Toast */}
       <AutoDismissToast
@@ -764,48 +772,53 @@ export function AgenciesManagement({
         onClose={() => setToastOpen(false)}
       />
       {/* 2. Tab Navigation Bar (Now featuring DMS) */}
-      <div className="bg-white border border-gray-200 border-b-0 rounded-t-xl px-6 mb-6">
+      <div className="bg-white border border-gray-200 border-b-0 rounded-t-xl px-6 pt-2 mb-6">
         <nav className="flex gap-6 overflow-x-auto">
           {[
-            { id: "overview", label: "Overview", icon: Building2 },
+            { id: "overview", label: isAm ? "አጠቃላይ እይታ" : "Overview", icon: Building2 },
             {
               id: "personnel",
-              label: `HR & Personnel (${org.employees.length})`,
+              label: `${isAm ? "ሰራተኞች" : "HR & Personnel"} (${org.employees.length})`,
               icon: Users,
             },
-            { id: "compliance", label: "Education Stats", icon: GraduationCap },
+            { id: "compliance", label: isAm ? "የትምህርት ስታቲስቲክስ" : "Education Stats", icon: GraduationCap },
             {
               id: "training",
-              label: `Training Details (${org.trainingDetails.length})`,
+              label: `${isAm ? "የስልጠና ዝርዝሮች" : "Training Details"} (${org.trainingDetails.length})`,
               icon: BookOpen,
             },
             {
               id: "contracts",
-              label: `Service Contracts (${org.serviceContracts.length})`,
+              label: `${isAm ? "የአገልግሎት ውሎች" : "Service Contracts"} (${org.serviceContracts.length})`,
               icon: FileCheck,
             },
             {
               id: "dms",
-              label: `DMS Vault (${org.dmsDocuments.length})`,
+              label: `${isAm ? "የሰነድ ማከማቻ" : "DMS Vault"} (${org.dmsDocuments.length})`,
               icon: FileText,
             },
             {
               id: "operations",
-              label: `Operations & Incidents (${org.incidents.length})`,
+              label: `${isAm ? "ክዋኔዎች እና ክስተቶች" : "Operations & Incidents"} (${org.incidents.length})`,
               icon: ShieldAlert,
             },
-          ].map((tab) => (
-            <button
+          ].map((tab, idx) => (
+            <motion.button
               key={tab.id}
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 + idx * 0.05 }}
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.97 }}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 py-4 px-2 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+              className={`flex items-center gap-2 py-4 px-4 rounded-lg font-bold text-sm whitespace-nowrap transition-all ${
                 activeTab === tab.id
-                  ? "border-blue-600 text-blue-600 font-bold"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  ? "bg-[#003366] text-white shadow-sm"
+                  : "bg-[#003366]/10 text-[#003366] hover:bg-[#003366]/20"
               }`}
             >
               <tab.icon size={18} /> {tab.label}
-            </button>
+            </motion.button>
           ))}
         </nav>
       </div>
@@ -815,160 +828,208 @@ export function AgenciesManagement({
         {activeTab === "overview" && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard
-                title="Total Capital (ETB)"
-                value={org.capitalAmount}
-                icon={Briefcase}
-                color="text-emerald-600"
-                bg="bg-emerald-50"
-              />
-              <StatCard
-                title="Registered Vehicles"
-                value={org.numberOfVehicles}
-                icon={Car}
-                color="text-blue-600"
-                bg="bg-blue-50"
-              />
-              <StatCard
-                title="Registered Computers"
-                value={org.numberOfComputers}
-                icon={Monitor}
-                color="text-indigo-600"
-                bg="bg-indigo-50"
-              />
-              <StatCard
-                title="Number of Offices"
-                value={org.numberOfOffices}
-                icon={MapPin}
-                color="text-orange-600"
-                bg="bg-orange-50"
-              />
+              {[
+                { title: isAm ? "ጠቅላላ ካፒታል (ETB)" : "Total Capital (ETB)", value: org.capitalAmount, icon: Briefcase, delay: 0.1 },
+                { title: isAm ? "የተመዘገቡ ተሽከርካሪዎች" : "Registered Vehicles", value: org.numberOfVehicles, icon: Car, delay: 0.2 },
+                { title: isAm ? "የተመዘገቡ ኮምፒውተሮች" : "Registered Computers", value: org.numberOfComputers, icon: Monitor, delay: 0.3 },
+                { title: isAm ? "የቢሮዎች ብዛት" : "Number of Offices", value: org.numberOfOffices, icon: MapPin, delay: 0.4 },
+              ].map((card) => (
+                <motion.div
+                  key={card.title}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: card.delay }}
+                  whileHover={{ y: -4, boxShadow: "0 12px 24px rgba(0,51,102,0.12)" }}
+                  className="bg-gradient-to-br from-white to-[#f8faff] p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 hover:border-[#FFD700]/40 transition-all duration-300"
+                >
+                  <div className="p-3 rounded-lg bg-gradient-to-br from-[#003366] to-[#001F3F] shrink-0">
+                    <card.icon className="h-6 w-6 text-[#FFD700]" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-[#003366] uppercase tracking-wider">{card.title}</p>
+                    <p className="text-xl font-bold text-slate-900 mt-0.5">{card.value}</p>
+                  </div>
+                </motion.div>
+              ))}
             </div>
 
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">
-                Contact & Infrastructure
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8">
-                <div>
-                  <label className="text-sm text-gray-500">
-                    Official Phone Number
-                  </label>
-                  <p className="font-medium text-gray-900 flex items-center gap-2 mt-1">
-                    <Phone size={16} className="text-gray-400" /> {org.phone}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-500">
-                    Official Email Address
-                  </label>
-                  <p className="font-medium text-gray-900 flex items-center gap-2 mt-1">
-                    <Mail size={16} className="text-gray-400" /> {org.email}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-500">
-                    Official Fax number
-                  </label>
-                  <p className="font-medium text-gray-900 flex items-center gap-2 mt-1">
-                    {org.fax || "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-500">
-                    Store House / Armory
-                  </label>
-                  <p className="font-medium text-gray-900 mt-1">
-                    {org.hasStoreHouse
-                      ? "Yes, Verified Secure Facility"
-                      : "None Registered"}
-                  </p>
-                </div>
-              </div>
-              <div className="mb-4 mt-6 pt-6 border-t border-gray-200">
-                <h4 className="font-semibold text-gray-900 text-sm">
-                  Head Office Addresses: Special Location, House Number, Kebele,
-                  Woreda, Subcity/Zone, Region
-                </h4>
-                <p className="text-sm text-gray-600 mt-1">
-                  <MapPin size={16} className="text-blue-500 mt-0.5 shrink-0" />
-                  <span>{org.headOfficeAddress || "---"}</span>
-                </p>
-              </div>
-
-              {org.branches.length > 0 && (
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <div className="flex items-center justify-between gap-3 mb-3">
-                    <h4 className="font-semibold text-gray-900 text-sm">
-                      Branch Addresses: Special Location, House Number, Kebele,
-                      Woreda, Subcity/Zone, Region
-                      {org.branches.length > 1 ? "es" : ""}
-                    </h4>
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                      {org.branches.length} branch
-                      {org.branches.length > 1 ? "es" : ""}
-                    </span>
+            <div>
+              <div className="bg-gradient-to-r from-[#003366] to-[#001F3F] px-6 py-4 rounded-t-xl border-t-4 border-[#FFD700] relative overflow-hidden">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-[#FFD700] shrink-0">
+                    <Building2 size={18} className="text-[#003366]" />
                   </div>
-                  <div className="space-y-2">
-                    {org.branches.map((branch) => (
-                      <div key={branch.id} className="flex items-start gap-2">
-                        <MapPin
-                          size={16}
-                          className="text-blue-500 mt-0.5 shrink-0"
-                        />
-                        <span className="text-sm leading-relaxed text-gray-700">
-                          {branch.addressText}
+                  <h3 className="text-lg font-bold text-white">
+                    {isAm ? "ግንኙነት እና መሠረተ ልማት" : "Contact & Infrastructure"}
+                  </h3>
+                  <div className="flex-1 h-px bg-gradient-to-r from-[#FFD700]/40 to-transparent" />
+                </div>
+              </div>
+              <div className="bg-white border border-gray-200 border-t-0 rounded-b-xl p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8">
+                  {[
+                    { icon: Phone, label: isAm ? "ኦፊሴላዊ ስልክ ቁጥር" : "Official Phone Number", value: org.phone, delay: 0.3 },
+                    { icon: Mail, label: isAm ? "ኦፊሴላዊ የኢሜይል አድራሻ" : "Official Email Address", value: org.email, delay: 0.35 },
+                    { icon: Phone, label: isAm ? "ኦፊሴላዊ የፋክስ ቁጥር" : "Official Fax number", value: org.fax || (isAm ? "የለም" : "N/A"), delay: 0.4 },
+                    { icon: Shield, label: isAm ? "መጋዘን / የጦር መሳሪያ ክምችት" : "Store House / Armory", value: org.hasStoreHouse ? (isAm ? "አዎ፣ የተረጋገጠ ደህንነቱ የተጠበቀ ተቋም" : "Yes, Verified Secure Facility") : (isAm ? "ምንም አልተመዘገበም" : "None Registered"), delay: 0.45 },
+                  ].map((field) => (
+                    <motion.div
+                      key={field.label}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: field.delay }}
+                      className="group"
+                    >
+                      <label className="text-sm font-black text-[#003366] uppercase tracking-wider flex items-center gap-2 mb-1.5">
+                        <span className="p-1.5 rounded-lg bg-[#003366]">
+                          <field.icon size={18} className="text-[#FFD700]" />
                         </span>
-                      </div>
-                    ))}
-                  </div>
+                        {field.label}
+                      </label>
+                      <p className="text-gray-900 pl-9">
+                        {field.value}
+                      </p>
+                    </motion.div>
+                  ))}
                 </div>
-              )}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="mt-6 pt-6 border-t border-gray-100"
+                >
+                  <h4 className="text-sm font-black text-[#003366] flex items-center gap-2 mb-1.5">
+                    <span className="p-1.5 rounded-lg bg-[#003366]">
+                      <MapPin size={18} className="text-[#FFD700]" />
+                    </span>
+                    {isAm ? "ዋና ቢሮ አድራሻ" : "Head Office Address"}
+                  </h4>
+                  <p className="text-sm text-gray-700 pl-9 leading-relaxed">
+                    {org.headOfficeAddress || "---"}
+                  </p>
+                </motion.div>
+
+                {org.branches.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.55 }}
+                    className="mt-6 pt-6 border-t border-gray-100"
+                  >
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <h4 className="text-sm font-black text-[#003366] flex items-center gap-2">
+                        <span className="p-1.5 rounded-lg bg-[#003366]">
+                          <Building2 size={18} className="text-[#FFD700]" />
+                        </span>
+                        {isAm ? "የቅርንጫፍ ቢሮ አድራሻዎች" : "Branch Office Addresses"}
+                      </h4>
+                      <span className="text-[10px] font-bold text-[#003366] bg-[#003366]/5 border border-[#003366]/10 px-2 py-0.5 rounded-full">
+                        {org.branches.length} {isAm ? "ቅርንጫፍ" : "branch"}{org.branches.length > 1 ? (isAm ? "ዎች" : "es") : ""}
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      {org.branches.map((branch) => (
+                        <div key={branch.id} className="flex items-start gap-2">
+                          <MapPin
+                            size={16}
+                            className="text-[#003366] mt-0.5 shrink-0"
+                          />
+                          <span className="text-sm leading-relaxed text-gray-700">
+                            {branch.addressText}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </div>
             </div>
           </>
         )}
 
         {activeTab === "personnel" && (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
-              <span className="font-semibold text-sm text-gray-700">
-                Active Operational Personnel Directory
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
+          >
+            <div className="bg-gradient-to-r from-[#003366] to-[#001F3F] border-t-4 border-[#FFD700]">
+            <div className="p-4 flex justify-between items-center">
+              <span className="font-bold text-sm text-white">
+                {isAm ? "ንቁ የሰራተኞች ዳይሬክተሪ" : "Active Operational Personnel Directory"}
               </span>
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 type="button"
                 onClick={() =>
                   navigate("/org-hr-manager/employee-registration")
                 }
-                className="px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-xs font-medium transition flex items-center gap-1"
+                className="px-3 py-1.5 bg-[#FFD700] text-[#003366] hover:bg-[#FFD700]/90 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm"
               >
-                <Plus size={14} /> Register Employee
-              </button>
+                <UserPlus size={14} /> {isAm ? "ሰራተኛ ይመዝገቡ" : "Register Employee"}
+              </motion.button>
+            </div>
+            </div>
+            <div className="p-4 border-b border-gray-200 bg-gray-50/50 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={personnelSearch}
+                  onChange={(e) => setPersonnelSearch(e.target.value)}
+                  placeholder={isAm ? "በስም ፈልግ..." : "Search by name..."}
+                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 hover:border-[#003366]/30 transition-all"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <SlidersHorizontal className="h-3.5 w-3.5 text-gray-400 hidden sm:block" />
+                <select
+                  value={personnelFilter}
+                  onChange={(e) => setPersonnelFilter(e.target.value)}
+                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 hover:border-[#003366]/30 transition-all"
+                >
+                  <option value="ALL">{isAm ? "ሁሉም" : "All Status"}</option>
+                  <option value="Active">{isAm ? "ንቁ" : "Active"}</option>
+                  <option value="Inactive">{isAm ? "የማይንቀሳቀስ" : "Inactive"}</option>
+                  <option value="Approved">{isAm ? "የጸደቀ" : "Approved"}</option>
+                  <option value="Pending">{isAm ? "በመጠባበቅ ላይ" : "Pending"}</option>
+                  <option value="Rejected">{isAm ? "አልተቀበለም" : "Rejected"}</option>
+                  <option value="Suspended">{isAm ? "የታገደ" : "Suspended"}</option>
+                </select>
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-sm">
                 <thead>
-                  <tr
-                    style={{ backgroundColor: "#002952" }}
-                    className="text-white text-[11px] uppercase tracking-[0.2em]"
-                  >
-                    {" "}
-                    <th className="p-4">Employee FULL Name</th>
-                    <th className="p-4">Assigned Position</th>
-                    <th className="p-4">Fayda Number (FAN)</th>
-                    <th className="p-4">Work Experience</th>
-                    <th className="p-4">Status & Clearances</th>
-                    <th className="p-4">Action</th>
+                  <tr className="bg-[#003366] text-white text-[11px] uppercase tracking-[0.2em]">
+                    <th className="p-4">{isAm ? "የሰራተኛ ሙሉ ስም" : "Employee FULL Name"}</th>
+                    <th className="p-4">{isAm ? "የተሰጠ ሀላፊነት" : "Assigned Position"}</th>
+                    <th className="p-4">{isAm ? "የፋይዳ ቁጥር" : "Fayda Number (FAN)"}</th>
+                    <th className="p-4">{isAm ? "የስራ ልምድ" : "Work Experience"}</th>
+                    <th className="p-4">{isAm ? "ሁኔታ እና ማረጋገጫ" : "Status & Clearances"}</th>
+                    <th className="p-4">{isAm ? "ድርጊት" : "Action"}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 text-gray-700">
-                  {org.employees.map((emp) => (
-                    <tr
+                  {(() => {
+                    const filtered = org.employees.filter((emp) => {
+                      const matchesSearch = emp.fullName.toLowerCase().includes(personnelSearch.toLowerCase());
+                      const matchesFilter = personnelFilter === "ALL" || emp.employmentStatus === personnelFilter;
+                      return matchesSearch && matchesFilter;
+                    });
+                    return filtered.map((emp, idx) => (
+                    <motion.tr
                       key={emp.id}
-                      className="hover:bg-gray-50/70 transition-colors"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.2 + idx * 0.03 }}
+                      whileHover={{ backgroundColor: "rgba(0,51,102,0.02)" }}
+                      className="transition-colors"
                     >
                       <td className="p-4">
-                        <div className="font-bold text-gray-900">
+                        <div className="font-bold text-[#003366]">
                           {emp.fullName}
                         </div>
                         <div className="text-xs text-gray-400 mt-0.5">
@@ -977,18 +1038,19 @@ export function AgenciesManagement({
                       </td>
                       <td className="p-4">
                         <div className="flex items-center gap-1.5 font-medium text-gray-800">
-                          {emp.positionName}
+                          <User size={14} className="text-[#003366]/40" /> {emp.positionName}
                         </div>
                       </td>
                       <td className="p-4 text-xs space-y-0.5">
                         <p>
-                          <span className="text-gray-400">FAN: </span>{" "}
+                          <span className="text-gray-400">{isAm ? "ፋይዳ:" : "FAN:"} </span>{" "}
                           {emp.faydaId}
                         </p>
                       </td>
                       <td className="p-4">
                         <div className="flex items-center gap-1 font-medium text-gray-900">
-                          <span>{emp.workExpYears} Years</span>
+                          <Clock size={14} className="text-[#003366]/40" />
+                          <span>{emp.workExpYears} {isAm ? "ዓመታት" : "Years"}</span>
                         </div>
                       </td>
                       <td className="p-4">
@@ -1000,113 +1062,119 @@ export function AgenciesManagement({
                                 : "bg-amber-50 text-amber-700 border border-amber-200"
                             }`}
                           >
-                            {emp.employmentStatus}
+                            {emp.employmentStatus === "Active" && isAm ? "ንቁ" : emp.employmentStatus === "Inactive" && isAm ? "የማይንቀሳቀስ" : emp.employmentStatus}
                           </span>
                         </div>
                       </td>
                       <td className="p-4 text-right">
-                        <button
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
                           type="button"
                           onClick={() => setSelectedEmployee(emp)}
-                          className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition"
+                          className="px-3 py-1.5 bg-[#003366] text-[#FFD700] rounded-lg text-xs font-bold hover:shadow-md transition-shadow"
                         >
-                          Detail View
-                        </button>
+                          {isAm ? "ዝርዝር እይታ" : "Detail View"}
+                        </motion.button>
                       </td>
-                    </tr>
-                  ))}
+                    </motion.tr>
+                  ));
+                  })()}
                 </tbody>
               </table>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {activeTab === "compliance" && (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mt-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
+          >
+            <div className="p-4 bg-gradient-to-r from-gray-50 to-[#f8faff] border-b border-gray-200">
+              <h3 className="font-bold text-[#003366] text-sm">
+                {isAm ? "የትምህርት ደረጃ ስታቲስቲክስ" : "Education Level Statistics"}
+              </h3>
+            </div>
             <table className="w-full text-left border-collapse text-sm">
               <thead>
-                <tr className="bg-[#002952] border-b border-gray-200 text-white font-semibold text-xxs uppercase tracking-wider">
-                  {" "}
-                  <th className="p-4">Education LEVEl</th>
-                  <th className="p-4 text-center">Number of Males</th>
-                  <th className="p-4 text-center">Number of Females</th>
-                  <th className="p-4 text-right">Sub-Total</th>
+                <tr className="bg-[#003366] text-white font-bold text-xs uppercase tracking-wider">
+                  <th className="p-4">{isAm ? "የትምህርት ደረጃ" : "Education Level"}</th>
+                  <th className="p-4 text-center">{isAm ? "ወንድ" : "Number of Males"}</th>
+                  <th className="p-4 text-center">{isAm ? "ሴት" : "Number of Females"}</th>
+                  <th className="p-4 text-right">{isAm ? "አጠቃላይ" : "Sub-Total"}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 text-gray-700">
                 {eduStatRows.map((row, idx) => (
-                  <tr
+                  <motion.tr
                     key={idx}
-                    className="hover:bg-gray-50/50 transition-colors"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 + idx * 0.05 }}
+                    whileHover={{ backgroundColor: "rgba(0,51,102,0.02)" }}
+                    className="transition-colors"
                   >
-                    <td className="p-4 font-medium text-gray-900">
-                      {row.label}
-                    </td>
-                    <td className="p-4 text-center text-blue-600 font-medium">
-                      {row.male}
-                    </td>
-                    <td className="p-4 text-center text-pink-600 font-medium">
-                      {row.female}
-                    </td>
-                    <td className="p-4 text-right font-bold text-gray-800">
-                      {row.male + row.female}
-                    </td>
-                  </tr>
+                    <td className="p-4 font-bold text-[#003366]">{row.label}</td>
+                    <td className="p-4 text-center text-blue-600 font-medium">{row.male}</td>
+                    <td className="p-4 text-center text-pink-600 font-medium">{row.female}</td>
+                    <td className="p-4 text-right font-bold text-gray-800">{row.male + row.female}</td>
+                  </motion.tr>
                 ))}
-                <tr className="bg-slate-50 text-gray-900 font-semibold">
-                  <td className="p-4">Total</td>
-                  <td className="p-4 text-center text-blue-700">
-                    {educationTotals.male}
-                  </td>
-                  <td className="p-4 text-center text-pink-700">
-                    {educationTotals.female}
-                  </td>
-                  <td className="p-4 text-right text-gray-900">
-                    {educationTotals.male + educationTotals.female}
-                  </td>
+                <tr className="bg-[#003366]/5 text-[#003366] font-bold">
+                  <td className="p-4">{isAm ? "ድምር" : "Total"}</td>
+                  <td className="p-4 text-center">{educationTotals.male}</td>
+                  <td className="p-4 text-center">{educationTotals.female}</td>
+                  <td className="p-4 text-right">{educationTotals.male + educationTotals.female}</td>
                 </tr>
               </tbody>
             </table>
-          </div>
+          </motion.div>
         )}
 
         {activeTab === "training" && (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
+          >
             {org.trainingDetails.length === 0 ? (
-              <div className="p-10 text-center text-slate-500">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="p-10 text-center text-slate-500"
+              >
                 <BookOpen className="mx-auto mb-4 text-slate-400" size={32} />
-                <p className="text-lg font-semibold text-slate-900">
-                  No training details available yet
+                <p className="text-lg font-bold text-[#003366]">
+                  {isAm ? "እስካሁን የስልጠና ዝርዝሮች የሉም" : "No training details available yet"}
                 </p>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Training records are loaded from related applications and help
-                  you review the trainee cohort, venue, and timeline.
+                  {isAm ? "የስልጠና መረጃዎች ከተዛማጅ መተግበሪያዎች የተሰበሰቡ ናቸው" : "Training records are loaded from related applications and help you review the trainee cohort, venue, and timeline."}
                 </p>
-              </div>
+              </motion.div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full border-collapse text-sm">
                   <thead>
-                    <tr
-                      style={{ backgroundColor: "#002952" }}
-                      className="text-white text-[11px] uppercase tracking-[0.2em]"
-                    >
-                      {" "}
-                      <th className="p-4 text-left">Training Body</th>
-                      <th className="p-4 text-left">Location</th>
-                      <th className="p-4 text-center">Duration</th>
-                      <th className="p-4 text-center">Start Date</th>
-                      <th className="p-4 text-center">End Date</th>
-                      <th className="p-4 text-center">Male Trained</th>
-                      <th className="p-4 text-center">Female Trained</th>
-                      <th className="p-4 text-center">Male Not Trained</th>
-                      <th className="p-4 text-center">Female Not Trained</th>
-                      <th className="p-4 text-center">Total</th>
-                      <th className="p-4 text-right">Success</th>
+                    <tr className="bg-[#003366] text-white text-[11px] uppercase tracking-[0.2em]">
+                      <th className="p-4 text-left">{isAm ? "የስልጠና ተቋም" : "Training Body"}</th>
+                      <th className="p-4 text-left">{isAm ? "ቦታ" : "Location"}</th>
+                      <th className="p-4 text-center">{isAm ? "ቆይታ" : "Duration"}</th>
+                      <th className="p-4 text-center">{isAm ? "የመጀመሪያ ቀን" : "Start Date"}</th>
+                      <th className="p-4 text-center">{isAm ? "የማጠናቀቂያ ቀን" : "End Date"}</th>
+                      <th className="p-4 text-center">{isAm ? "ወንድ የሰለጠኑ" : "Male Trained"}</th>
+                      <th className="p-4 text-center">{isAm ? "ሴት የሰለጠኑ" : "Female Trained"}</th>
+                      <th className="p-4 text-center">{isAm ? "ያልሰለጠኑ ወንድ" : "Male Not Trained"}</th>
+                      <th className="p-4 text-center">{isAm ? "ያልሰለጠኑ ሴት" : "Female Not Trained"}</th>
+                      <th className="p-4 text-center">{isAm ? "ድምር" : "Total"}</th>
+                      <th className="p-4 text-right">{isAm ? "ስኬት" : "Success"}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 text-slate-700">
-                    {org.trainingDetails.map((train) => {
+                    {org.trainingDetails.map((train, idx) => {
                       const totalEnrolled =
                         train.totalTraineesMale + train.totalTraineesFemale;
                       const totalFailedOrNot =
@@ -1119,18 +1187,22 @@ export function AgenciesManagement({
                           : 0;
 
                       return (
-                        <tr
+                        <motion.tr
                           key={train.id}
-                          className="hover:bg-slate-50 transition-colors"
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.2 + idx * 0.03 }}
+                          whileHover={{ backgroundColor: "rgba(0,51,102,0.02)" }}
+                          className="transition-colors"
                         >
-                          <td className="p-4 font-semibold text-slate-900">
+                          <td className="p-4 font-bold text-[#003366]">
                             {train.trainingBodyName || "—"}
                           </td>
                           <td className="p-4 text-slate-600">
                             {train.trainingAddress || "—"}
                           </td>
                           <td className="p-4 text-center text-slate-900">
-                            {train.trainingDurationDays} days
+                            {train.trainingDurationDays} {isAm ? "ቀናት" : "days"}
                           </td>
                           <td className="p-4 text-center">
                             {train.trainingStartDate || "—"}
@@ -1150,168 +1222,160 @@ export function AgenciesManagement({
                           <td className="p-4 text-center text-slate-800">
                             {train.totalNotTraineesFemale}
                           </td>
-                          <td className="p-4 text-center font-semibold text-slate-900">
+                          <td className="p-4 text-center font-bold text-[#003366]">
                             {cohortSize}
                           </td>
                           <td className="p-4 text-right">
-                            <span className="inline-flex items-center justify-end gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
+                            <span className="inline-flex items-center justify-end gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
                               {successRate}%
                             </span>
                           </td>
-                        </tr>
+                        </motion.tr>
                       );
                     })}
                   </tbody>
                 </table>
               </div>
             )}
-          </div>
+          </motion.div>
         )}
 
         {activeTab === "contracts" && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-blue-50 text-blue-600 shrink-0">
-                  <FileCheck size={24} />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    Active Service Contracts
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900 mt-0.5">
-                    {org.serviceContracts.length} Corporate Clients
-                  </p>
-                </div>
-              </div>
-              <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-indigo-50 text-indigo-600 shrink-0">
-                  <Users size={24} />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    Deployed Guard Strength
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900 mt-0.5">
-                    {totalContractedPersonnel} Personnel
-                  </p>
-                </div>
-              </div>
-              <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-emerald-50 text-emerald-600 shrink-0">
-                  <Building2 size={24} />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    Operational Utilization
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900 mt-0.5">
-                    100% Active
-                  </p>
-                </div>
-              </div>
+              {[
+                { title: isAm ? "ንቁ የአገልግሎት ውሎች" : "Active Service Contracts", value: `${org.serviceContracts.length} ${isAm ? "የድርጅት ደንበኞች" : "Corporate Clients"}`, icon: FileCheck, delay: 0.1 },
+                { title: isAm ? "የተሰማራ የጥበቃ ሃይል" : "Deployed Guard Strength", value: `${totalContractedPersonnel} ${isAm ? "ሰራተኞች" : "Personnel"}`, icon: Users, delay: 0.2 },
+                { title: isAm ? "የአሰራር አጠቃቀም" : "Operational Utilization", value: isAm ? "100% ንቁ" : "100% Active", icon: Building2, delay: 0.3 },
+              ].map((card) => (
+                <motion.div
+                  key={card.title}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: card.delay }}
+                  whileHover={{ y: -4, boxShadow: "0 12px 24px rgba(0,51,102,0.12)" }}
+                  className="bg-gradient-to-br from-white to-[#f8faff] p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 hover:border-[#FFD700]/40 transition-all duration-300"
+                >
+                  <div className="p-3 rounded-lg bg-gradient-to-br from-[#003366] to-[#001F3F] shrink-0">
+                    <card.icon className="h-6 w-6 text-[#FFD700]" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-[#003366] uppercase tracking-wider">{card.title}</p>
+                    <p className="text-2xl font-bold text-slate-900 mt-0.5">{card.value}</p>
+                  </div>
+                </motion.div>
+              ))}
             </div>
 
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="p-5 bg-gray-50/70 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
+            >
+              <div className="p-5 bg-gradient-to-r from-gray-50 to-[#f8faff] border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h3 className="font-bold text-gray-900 text-sm">
-                    Active B2B Service Engagements
+                  <h3 className="font-bold text-[#003366] text-sm">
+                    {isAm ? "ንቁ የB2B አገልግሎት ውሎች" : "Active B2B Service Engagements"}
                   </h3>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    Legal binding digital document entries verified by Federal
-                    Police Registry.
+                    {isAm ? "በፌዴራል ፖሊስ መዝገብ የተረጋገጡ ህጋዊ ዲጂታል ሰነዶች" : "Legal binding digital document entries verified by Federal Police Registry."}
                   </p>
                 </div>
-                <button className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 self-start sm:self-auto">
-                  <Plus size={14} /> Append Contract
-                </button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="px-3 py-1.5 bg-gradient-to-r from-[#003366] to-[#001F3F] hover:from-[#001F3F] hover:to-[#003366] text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 self-start sm:self-auto shadow-sm"
+                >
+                  <Plus size={14} /> {isAm ? "ውል ያክሉ" : "Append Contract"}
+                </motion.button>
               </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-sm">
                   <thead>
-                    <tr className="bg-gray-100/50 border-b border-gray-200 text-gray-500 font-semibold text-xs uppercase tracking-wider">
-                      <th className="p-4">Contract ID & Client Entity</th>
-                      <th className="p-4">
-                        Deployment Site Location (Address)
-                      </th>
-                      <th className="p-4">Status</th>
-                      <th className="p-4 text-center">Assigned Guards</th>
-                      <th className="p-4">Audit Dates</th>
-                      <th className="p-4 text-right">Legal Documents</th>
+                    <tr className="bg-[#003366] text-white text-[11px] uppercase tracking-[0.2em]">
+                      <th className="p-4">{isAm ? "የውል መለያ እና ደንበኛ" : "Contract ID & Client Entity"}</th>
+                      <th className="p-4">{isAm ? "የተሰማራበት ቦታ" : "Deployment Site Location"}</th>
+                      <th className="p-4">{isAm ? "ሁኔታ" : "Status"}</th>
+                      <th className="p-4 text-center">{isAm ? "የተመደቡ ጠባቂዎች" : "Assigned Guards"}</th>
+                      <th className="p-4">{isAm ? "የኦዲት ቀናት" : "Audit Dates"}</th>
+                      <th className="p-4 text-right">{isAm ? "ህጋዊ ሰነዶች" : "Legal Documents"}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 text-gray-700">
-                    {org.serviceContracts.map((contract) => (
-                      <tr
+                    {org.serviceContracts.map((contract, idx) => (
+                      <motion.tr
                         key={contract.id}
-                        className="hover:bg-gray-50/40 transition-colors"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.3 + idx * 0.03 }}
+                        whileHover={{ backgroundColor: "rgba(0,51,102,0.02)" }}
+                        className="transition-colors"
                       >
                         <td className="p-4">
-                          <div className="font-bold text-gray-900">
+                          <div className="font-bold text-[#003366]">
                             {contract.serviceUserName}
                           </div>
                           <div className="text-xs text-gray-400 mt-1 font-mono flex items-center gap-1">
-                            <span className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-600 text-[10px]">
+                            <span className="px-1.5 py-0.5 bg-[#003366]/5 text-[#003366] rounded text-[10px] font-bold">
                               CID-{contract.id}
                             </span>
                           </div>
                         </td>
                         <td className="p-4">
                           <div className="flex items-start gap-1 text-xs text-gray-600 max-w-xs leading-relaxed">
-                            <MapPin
-                              size={14}
-                              className="text-gray-400 shrink-0 mt-0.5"
-                            />
+                            <MapPin size={14} className="text-[#003366]/40 shrink-0 mt-0.5" />
                             <span>{contract.addressText}</span>
                           </div>
                         </td>
                         <td className="p-4">
                           <span
-                            className={`inline-flex items-center justify-center text-xs font-semibold uppercase tracking-wider rounded-full px-3 py-1 ${getContractStatusBadge(contract.status)}`}
+                            className={`inline-flex items-center justify-center text-xs font-bold uppercase tracking-wider rounded-full px-3 py-1 ${getContractStatusBadge(contract.status)}`}
                           >
-                            {contract.status ?? "Unknown"}
+                            {contract.status ?? (isAm ? "ያልታወቀ" : "Unknown")}
                           </span>
                         </td>
                         <td className="p-4 text-center">
-                          <span className="inline-flex items-center justify-center font-bold text-sm text-blue-700 bg-blue-50 border border-blue-100 px-3 py-1 rounded-lg min-w-[50px]">
+                          <span className="inline-flex items-center justify-center font-bold text-sm text-[#003366] bg-[#003366]/5 border border-[#003366]/10 px-3 py-1 rounded-lg min-w-[50px]">
                             {contract.assignedPersonnelCount}
                           </span>
                         </td>
                         <td className="p-4 text-xs space-y-1 text-gray-500">
                           <p>
                             <span className="text-gray-400 font-medium">
-                              Logged:
+                              {isAm ? "የተመዘገበ:" : "Logged:"}
                             </span>{" "}
                             {contract.createdAt}
                           </p>
                           <p>
                             <span className="text-gray-400 font-medium">
-                              Updated:
+                              {isAm ? "የተሻሻለ:" : "Updated:"}
                             </span>{" "}
                             {contract.updatedAt}
                           </p>
                         </td>
                         <td className="p-4 text-right">
-                          <button
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
                             type="button"
                             onClick={() => {
                               setSelectedContractUrl(contract.contractUrl);
                               setSelectedContractName(contract.serviceUserName);
                             }}
-                            className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 font-semibold bg-blue-50/40 hover:bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 transition"
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#003366] bg-[#003366]/5 hover:bg-[#003366]/10 px-3 py-1.5 rounded-lg border border-[#003366]/10 transition"
                           >
-                            <span>Review Contract</span>
+                            <span>{isAm ? "ውሉን ይመልከቱ" : "Review Contract"}</span>
                             <ArrowUpRight size={14} />
-                          </button>
+                          </motion.button>
                         </td>
-                      </tr>
+                      </motion.tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            </div>
+            </motion.div>
           </div>
         )}
 
@@ -1325,11 +1389,13 @@ export function AgenciesManagement({
               className="hidden"
               onChange={handleOrganizationDocumentFileSelected}
             />
-            <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-3 text-sm text-blue-700">
-              <strong>Note for HR Managers:</strong> Update replaces the
-              selected unverified organization document and saves the new file
-              with an update-specific filename prefix.
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-xl border border-[#003366]/10 bg-[#003366]/5 p-3 text-sm text-[#003366]"
+            >
+              <strong>{isAm ? "ለኤችአር አስተዳዳሪዎች ማሳሰቢያ:" : "Note for HR Managers:"}</strong> {isAm ? "ዝማኔው ያልተረጋገጠውን የድርጅት ሰነድ ይተካና አዲሱን ፋይል በዝማኔ ስም መቅድም ያስቀምጣል።" : "Update replaces the selected unverified organization document and saves the new file with an update-specific filename prefix."}
+            </motion.div>
             {documentUpdateFile && documentReplacementTarget && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-6">
                 <div className="w-full max-w-lg rounded-[32px] bg-white shadow-2xl ring-1 ring-slate-200 overflow-hidden">
@@ -1338,15 +1404,14 @@ export function AgenciesManagement({
                       <div className="rounded-2xl bg-blue-50 p-3 text-blue-700">
                         <Eye size={20} />
                       </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900">
-                          Confirm document update
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          Preview the selected file, then confirm to replace the
-                          unverified document.
-                        </p>
-                      </div>
+                    <div>
+                      <p className="text-sm font-bold text-[#003366]">
+                        {isAm ? "የሰነድ ዝማኔ ያረጋግጡ" : "Confirm document update"}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {isAm ? "የተመረጠውን ፋይል ይመልከቱ፣ ከዚያ ያልተረጋገጠውን ሰነድ ለመተካት ያረጋግጡ።" : "Preview the selected file, then confirm to replace the unverified document."}
+                      </p>
+                    </div>
                     </div>
                     <button
                       type="button"
@@ -1365,7 +1430,7 @@ export function AgenciesManagement({
                             {documentReplacementTarget.docName}
                           </p>
                           <p className="text-xs text-slate-500 mt-1">
-                            File to upload: {documentUpdateFile.name}
+                            {isAm ? "የሚሰቀል ፋይል:" : "File to upload:"} {documentUpdateFile.name}
                           </p>
                         </div>
                         <div className="rounded-2xl bg-white p-3 text-blue-700 border border-blue-100">
@@ -1374,100 +1439,80 @@ export function AgenciesManagement({
                       </div>
                     </div>
                     <div className="rounded-3xl border border-slate-200 bg-white p-4">
-                      <p className="text-sm font-semibold text-slate-900 mb-2">
-                        Preview
+                      <p className="text-sm font-bold text-[#003366] mb-2">
+                        {isAm ? "ቅድመ እይታ" : "Preview"}
                       </p>
                       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
                         {documentUpdatePreviewUrl ? (
                           <div className="space-y-3">
                             <p className="text-xs text-slate-500">
-                              Preview is generated from the selected file. It
-                              will not be sent until you confirm.
+                              {isAm ? "ቅድመ እይታ ከተመረጠው ፋይል የመነጨ ነው። እስኪያረጋግጡ ድረስ አይላክም።" : "Preview is generated from the selected file. It will not be sent until you confirm."}
                             </p>
                             <a
                               href={documentUpdatePreviewUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-2 text-blue-700 hover:bg-blue-100"
+                              className="inline-flex items-center gap-2 rounded-full bg-[#003366] text-white px-3 py-2 font-bold hover:bg-[#001F3F] text-xs"
                             >
                               <Eye size={16} />
-                              Open Preview
+                              {isAm ? "ቅድመ እይታ ይክፈቱ" : "Open Preview"}
                             </a>
                           </div>
                         ) : (
                           <p className="text-sm text-slate-500">
-                            Select a new document to preview before confirming.
+                            {isAm ? "ለማረጋገጥ አዲስ ሰነድ ይምረጡ።" : "Select a new document to preview before confirming."}
                           </p>
                         )}
                       </div>
                     </div>
                   </div>
                   <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row">
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.98 }}
                       type="button"
                       onClick={closeDocumentUpdateModal}
-                      className="flex-1 rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                      className="flex-1 rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-100"
                     >
-                      Cancel
-                    </button>
-                    <button
+                      {isAm ? "ይቀለል" : "Cancel"}
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.98 }}
                       type="button"
                       onClick={confirmDocumentUpdate}
-                      className="flex-1 rounded-3xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700"
+                      className="flex-1 rounded-3xl bg-gradient-to-r from-[#003366] to-[#001F3F] px-4 py-3 text-sm font-bold text-white hover:shadow-md"
                     >
-                      Confirm Update
-                    </button>
+                      {isAm ? "ዝማኔ ያረጋግጡ" : "Confirm Update"}
+                    </motion.button>
                   </div>
                 </div>
               </div>
             )}
             {/* Top Info Cards specific to Document Control */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-indigo-50 text-indigo-600 shrink-0">
-                  <FileText size={24} />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    Basic Records
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900 mt-0.5">
-                    {basicDocs.length} Permanent
-                  </p>
-                </div>
-              </div>
-              <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-blue-50 text-blue-600 shrink-0">
-                  <Calendar size={24} />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    Yearly Managed
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900 mt-0.5">
-                    {yearlyDocs.length} Annual Cycles
-                  </p>
-                </div>
-              </div>
-              <div
-                className={`p-5 rounded-xl border shadow-sm flex items-center gap-4 ${alertDocsCount > 0 ? "bg-red-50/40 border-red-200" : "bg-white border-gray-200"}`}
-              >
-                <div
-                  className={`p-3 rounded-lg shrink-0 ${alertDocsCount > 0 ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"}`}
+              {[
+                { title: isAm ? "መሰረታዊ መዝገቦች" : "Basic Records", value: `${basicDocs.length} ${isAm ? "ቋሚ" : "Permanent"}`, icon: FileText, delay: 0.1, bg: "from-[#003366] to-[#001F3F]" },
+                { title: isAm ? "ዓመታዊ አስተዳደር" : "Yearly Managed", value: `${yearlyDocs.length} ${isAm ? "ዓመታዊ ዑደቶች" : "Annual Cycles"}`, icon: Calendar, delay: 0.2, bg: "from-[#003366] to-[#001F3F]" },
+                { title: isAm ? "የሚፈለግ እርምጃ" : "Action Required", value: `${alertDocsCount} ${isAm ? "ማስጠንቀቂያዎች" : "Alerts"}`, icon: AlertTriangle, delay: 0.3, bg: "from-[#003366] to-[#001F3F]" },
+              ].map((card) => (
+                <motion.div
+                  key={card.title}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: card.delay }}
+                  whileHover={{ y: -4, boxShadow: "0 12px 24px rgba(0,51,102,0.12)" }}
+                  className="bg-gradient-to-br from-white to-[#f8faff] p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 hover:border-[#FFD700]/40 transition-all duration-300"
                 >
-                  <AlertTriangle size={24} />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    Action Required
-                  </p>
-                  <p
-                    className={`text-2xl font-bold mt-0.5 ${alertDocsCount > 0 ? "text-red-700" : "text-gray-900"}`}
-                  >
-                    {alertDocsCount} Alerts
-                  </p>
-                </div>
-              </div>
+                  <div className={`p-3 rounded-lg bg-gradient-to-br ${card.bg} shrink-0`}>
+                    <card.icon className="h-6 w-6 text-[#FFD700]" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-[#003366] uppercase tracking-wider">{card.title}</p>
+                    <p className="text-2xl font-bold text-slate-900 mt-0.5">{card.value}</p>
+                  </div>
+                </motion.div>
+              ))}
             </div>
 
             {/* Split Grid for Developer-Preferred Structured DMS File System */}
@@ -1477,17 +1522,16 @@ export function AgenciesManagement({
                 <div>
                   <div className="p-4 bg-gray-50/70 border-b border-gray-200 flex items-start justify-between gap-4">
                     <div>
-                      <h4 className="font-bold text-gray-900 text-sm">
-                        Basic / Statutory Credentials
+                      <h4 className="font-bold text-[#003366] text-sm">
+                        {isAm ? "መሰረታዊ / ህጋዊ ማረጋገጫዎች" : "Basic / Statutory Credentials"}
                       </h4>
                       <p className="text-[11px] text-gray-400 mt-0.5">
-                        Permanent organizational foundational registry
-                        documents.
+                        {isAm ? "ቋሚ የድርጅት መሰረታዊ መዝገብ ሰነዶች።" : "Permanent organizational foundational registry documents."}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-mono font-medium">
-                        Immutable
+                      <span className="text-[10px] bg-[#003366]/10 text-[#003366] px-2 py-0.5 rounded font-mono font-bold">
+                        {isAm ? "የማይለወጥ" : "Immutable"}
                       </span>
                       <button
                         type="button"
@@ -1495,8 +1539,8 @@ export function AgenciesManagement({
                         className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                         aria-label={
                           basicDocsExpanded
-                            ? "Collapse document list"
-                            : "Expand document list"
+                            ? isAm ? "የሰነድ ዝርዝር ዘጋ" : "Collapse document list"
+                            : isAm ? "የሰነድ ዝርዝር ዘርጋ" : "Expand document list"
                         }
                       >
                         {basicDocsExpanded ? (
@@ -1537,11 +1581,11 @@ export function AgenciesManagement({
                               )}
                             </p>
                             <p className="text-[11px] text-gray-500 mt-1">
-                              Ref:{" "}
+                              {isAm ? "ማጣቀሻ:" : "Ref:"}{" "}
                               <span className="font-mono text-gray-700 font-medium">
                                 {doc.referenceNumber}
                               </span>{" "}
-                              • Filed: {doc.issuedDate}
+                              • {isAm ? "የተመዘገበ:" : "Filed:"} {doc.issuedDate}
                             </p>
                           </div>
                           <div className="flex sm:flex-col items-start sm:items-end justify-between gap-2 shrink-0">
@@ -1554,7 +1598,7 @@ export function AgenciesManagement({
                                 }}
                                 className="text-xxs text-blue-600 font-medium inline-flex items-center gap-1 hover:underline hover:cursor-pointer"
                               >
-                                <span>Open</span>
+                                <span>{isAm ? "ክፈት" : "Open"}</span>
                                 <ArrowUpRight size={12} />
                               </button>
                               {(() => {
@@ -1614,7 +1658,7 @@ export function AgenciesManagement({
                                         } inline-flex items-center gap-1`}
                                       >
                                         <Trash2 size={12} />
-                                        {loading ? "Deleting..." : "Delete"}
+                                        {loading ? (isAm ? "በማስወገድ ላይ..." : "Deleting...") : (isAm ? "አስወግድ" : "Delete")}
                                       </button>
                                     )}
                                   </>
@@ -1624,7 +1668,7 @@ export function AgenciesManagement({
                             <span
                               className={`px-2 py-0.5 text-[10px] font-bold border rounded ${getDmsBadgeStyles(doc.status)}`}
                             >
-                              {doc.status}
+                              {translateDocStatus(doc.status)}
                             </span>
                           </div>
                         </div>
@@ -1633,27 +1677,31 @@ export function AgenciesManagement({
                   ) : null}
                 </div>
                 <div className="p-3 bg-gray-50/30 border-t text-right">
-                  <button className="text-xs bg-white border text-gray-700 font-medium py-1 px-2.5 rounded-md hover:bg-gray-50 transition">
-                    Upload Base Doc
+                  <button className="text-xs bg-[#003366] text-white font-bold py-1 px-2.5 rounded-md hover:bg-[#001F3F] transition shadow-sm">
+                    {isAm ? "መሰረታዊ ሰነድ ያስገቡ" : "Upload Base Doc"}
                   </button>
                 </div>
               </div>
 
               {/* Box B: Yearly Renewed Items */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col justify-between">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col justify-between"
+              >
                 <div>
-                  <div className="p-4 bg-gray-50/70 border-b border-gray-200 flex justify-between items-center">
+                  <div className="p-4 bg-gradient-to-r from-gray-50 to-[#f8faff] border-b border-gray-200 flex justify-between items-center">
                     <div>
-                      <h4 className="font-bold text-gray-900 text-sm">
-                        Yearly Renewed Documents
+                      <h4 className="font-bold text-[#003366] text-sm">
+                        {isAm ? "ዓመታዊ የታደሱ ሰነዶች" : "Yearly Renewed Documents"}
                       </h4>
                       <p className="text-[11px] text-gray-400 mt-0.5">
-                        Time-bound certifications subject to cyclical statutory
-                        renewal checks.
+                        {isAm ? "ወቅታዊ የምስክር ወረቀቶች በህግ መሰረት የሚታደሱ" : "Time-bound certifications subject to cyclical statutory renewal checks."}
                       </p>
                     </div>
-                    <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-mono font-medium">
-                      Annual Audit
+                    <span className="text-[10px] bg-[#003366]/10 text-[#003366] px-2 py-0.5 rounded font-mono font-bold">
+                      {isAm ? "ዓመታዊ ኦዲት" : "Annual Audit"}
                     </span>
                   </div>
                   <div className="space-y-2 p-4">
@@ -1668,8 +1716,8 @@ export function AgenciesManagement({
                       }, {}),
                     ).map(([year, docsForYear]) => (
                       <details key={year} className="border rounded-lg">
-                        <summary className="px-4 py-2 bg-gray-50 font-semibold cursor-pointer">
-                          {year} <>Renewal Documents</> ({docsForYear.length})
+                        <summary className="px-4 py-2 bg-gray-50 cursor-pointer font-bold text-[#003366]">
+                          {year} {isAm ? "የእድሳት ሰነዶች" : "Renewal Documents"} ({docsForYear.length})
                         </summary>
                         <div className="divide-y">
                           {docsForYear.map((doc: any) => (
@@ -1691,11 +1739,11 @@ export function AgenciesManagement({
                                         : "bg-amber-100 text-amber-700"
                                     }`}
                                   >
-                                    {doc.isVerified ? "Verified" : "Pending"}
+                                {doc.isVerified ? (isAm ? "የተረጋገጠ" : "Verified") : (isAm ? "በመጠባበቅ ላይ" : "Pending")}
                                   </span>
                                 </p>
                                 <p className="text-xs text-gray-500 mt-1">
-                                  Ref:{" "}
+                                  {isAm ? "ማጣቀሻ:" : "Ref:"}{" "}
                                   <span className="font-mono">
                                     {doc.referenceNumber}
                                   </span>
@@ -1708,9 +1756,9 @@ export function AgenciesManagement({
                                     setSelectedDocUrl(doc.fileUrl);
                                     setSelectedDocName(doc.documentName);
                                   }}
-                                  className="text-xxs text-blue-600 hover:underline hover: cursor-pointer flex items-center gap-1"
+                                  className="text-xxs text-[#003366] hover:underline cursor-pointer flex items-center gap-1 font-bold"
                                 >
-                                  Open <ArrowUpRight size={12} />
+                                  {isAm ? "ክፈት" : "Open"} <ArrowUpRight size={12} />
                                 </button>
                                 {(() => {
                                   const key = Number(doc.id);
@@ -1772,7 +1820,7 @@ export function AgenciesManagement({
                                           } inline-flex items-center gap-1`}
                                         >
                                           <Trash2 size={12} />
-                                          {loading ? "Deleting..." : "Delete"}
+                                          {loading ? (isAm ? "እየሰረዘ..." : "Deleting...") : (isAm ? "ሰርዝ" : "Delete")}
                                         </button>
                                       )}
                                     </>
@@ -1787,25 +1835,33 @@ export function AgenciesManagement({
                   </div>
                 </div>
                 <div className="p-3 bg-gray-50/30 border-t text-right">
-                  <button className="text-xs bg-blue-600 text-white font-medium py-1 px-2.5 rounded-md hover:bg-blue-700 transition flex items-center gap-1 inline-flex ml-auto">
-                    <Plus size={12} /> File Renewal
+                  <button className="text-xs bg-gradient-to-r from-[#003366] to-[#001F3F] text-white font-bold py-1 px-2.5 rounded-md hover:shadow-md transition flex items-center gap-1 inline-flex ml-auto">
+                    <Plus size={12} /> {isAm ? "የፋይል እድሳት" : "File Renewal"}
                   </button>
                 </div>
-              </div>
+              </motion.div>
             </div>
           </div>
         )}
 
         {selectedEmployee && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60">
-            <div className="relative w-full max-w-7xl max-h-[90vh] overflow-hidden rounded-[32px] bg-white shadow-2xl ring-1 ring-slate-200">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="relative w-full max-w-7xl max-h-[90vh] overflow-hidden rounded-[32px] bg-white shadow-2xl ring-1 ring-slate-200"
+            >
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 bg-slate-50 px-4 py-4 sm:px-6 sm:py-5">
                 <div>
-                  <h2 className="text-xl font-semibold text-slate-900">
-                    Personnel Details
+                  <h2 className="text-xl font-bold text-[#003366]">
+                    {isAm ? "የሰራተኛ ዝርዝር መረጃ" : "Personnel Details"}
                   </h2>
                   <p className="text-sm text-slate-500 mt-1 uppercase">
-                    Detailed employee profile for:{" "}
+                    {isAm ? "የተሟላ የሰራተኛ መረጃ ለ:" : "Detailed employee profile for:"}{" "}
                     <strong>{selectedEmployee.fullName}</strong>.
                   </p>
                 </div>
@@ -1813,7 +1869,7 @@ export function AgenciesManagement({
                   type="button"
                   onClick={() => setSelectedEmployee(null)}
                   className="rounded-full border border-slate-200 bg-white px-3 py-2 text-slate-600 transition hover:bg-slate-100"
-                  aria-label="Close detail modal"
+                  aria-label={isAm ? "ዝርዝር መረጃ ዝጋ" : "Close detail modal"}
                 >
                   ✕
                 </button>
@@ -1821,51 +1877,51 @@ export function AgenciesManagement({
               <div className="grid gap-5 p-4 sm:p-6 grid-cols-1 lg:grid-cols-3 max-h-[calc(90vh-7.5rem)] overflow-y-auto">
                 <div className="space-y-4 rounded-3xl bg-slate-50 p-4 sm:p-5">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-                      Personal Profile
+                    <p className="text-xs uppercase tracking-[0.2em] text-[#003366] font-bold">
+                      {isAm ? "የግል መረጃ" : "Personal Profile"}
                     </p>
                     <p className="mt-2 text-sm text-slate-700">
-                      <span className="font-semibold">Full Name:</span>{" "}
+                      <span className="font-bold text-[#003366]">{isAm ? "ሙሉ ስም:" : "Full Name:"}</span>{" "}
                       {selectedEmployee.fullName}
                     </p>
                     <p className="mt-1 text-sm text-slate-700">
-                      <span className="font-semibold">Gender:</span>{" "}
+                      <span className="font-bold text-[#003366]">{isAm ? "ጾታ:" : "Gender:"}</span>{" "}
                       {selectedEmployee.gender || "---"}
                     </p>
                     <p className="mt-1 text-sm text-slate-700">
-                      <span className="font-semibold">Citizenship:</span>{" "}
+                      <span className="font-bold text-[#003366]">{isAm ? "ዜግነት:" : "Citizenship:"}</span>{" "}
                       {selectedEmployee.citizenship || "---"}
                     </p>
                     <p className="mt-1 text-sm text-slate-700">
-                      <span className="font-semibold">Age:</span>{" "}
+                      <span className="font-bold text-[#003366]">{isAm ? "ዕድሜ:" : "Age:"}</span>{" "}
                       {selectedEmployee.age ?? "---"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-                      Experience
+                    <p className="text-xs uppercase tracking-[0.2em] text-[#003366] font-bold">
+                      {isAm ? "ልምድ" : "Experience"}
                     </p>
                     <p className="mt-2 text-sm text-slate-700">
-                      <span className="font-semibold">Work Experience:</span>{" "}
-                      {selectedEmployee.workExpYears} years
+                      <span className="font-bold text-[#003366]">{isAm ? "የስራ ልምድ:" : "Work Experience:"}</span>{" "}
+                      {selectedEmployee.workExpYears} {isAm ? "ዓመታት" : "years"}
                     </p>
                     <p className="mt-1 text-sm text-slate-700">
-                      <span className="font-semibold">Total Experience:</span>{" "}
+                      <span className="font-bold text-[#003366]">{isAm ? "አጠቃላይ ልምድ:" : "Total Experience:"}</span>{" "}
                       {selectedEmployee.totalExpYears ??
                         selectedEmployee.workExpYears}{" "}
-                      years
+                      {isAm ? "ዓመታት" : "years"}
                     </p>
                     <p className="mt-1 text-sm text-slate-700">
-                      <span className="font-semibold">Education:</span>{" "}
-                      {selectedEmployee.educationLevel || "Not specified"}
+                      <span className="font-bold text-[#003366]">{isAm ? "ትምህርት:" : "Education:"}</span>{" "}
+                      {selectedEmployee.educationLevel || (isAm ? "አልተገለጸም" : "Not specified")}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-                      Risk & Location
+                    <p className="text-xs uppercase tracking-[0.2em] text-[#003366] font-bold">
+                      {isAm ? "አደጋ እና አካባቢ" : "Risk & Location"}
                     </p>
                     <p className="mt-2 text-sm text-slate-700">
-                      <span className="font-semibold">Blacklisted:</span>{" "}
+                      <span className="font-bold text-[#003366]">{isAm ? "በጥቁር ዝርዝር ውስጥ:" : "Blacklisted:"}</span>{" "}
                       <span
                         className={`inline-flex rounded-full px-2 py-1 text-[11px] font-semibold ${
                           selectedEmployee.isBlacklisted
@@ -1873,77 +1929,77 @@ export function AgenciesManagement({
                             : "bg-emerald-100 text-emerald-700"
                         }`}
                       >
-                        {selectedEmployee.isBlacklisted ? "Yes" : "No"}
+                        {selectedEmployee.isBlacklisted ? (isAm ? "አዎ" : "Yes") : (isAm ? "አይ" : "No")}
                       </span>
                     </p>
                   </div>
                 </div>
                 <div className="space-y-4 rounded-3xl bg-slate-50 p-4 sm:p-5">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-                      Contact & Role
+                    <p className="text-xs uppercase tracking-[0.2em] text-[#003366] font-bold">
+                      {isAm ? "ግንኙነት እና ሚና" : "Contact & Role"}
                     </p>
                     <p className="mt-2 text-sm text-slate-700">
-                      <span className="font-semibold">Email:</span>{" "}
+                      <span className="font-bold text-[#003366]">{isAm ? "ኢሜይል:" : "Email:"}</span>{" "}
                       {selectedEmployee.email}
                     </p>
                     <p className="mt-2 text-sm text-slate-700">
-                      <span className="font-semibold">Phone Number:</span>{" "}
-                      {selectedEmployee.phone || "Not provided"}
+                      <span className="font-bold text-[#003366]">{isAm ? "ስልክ ቁጥር:" : "Phone Number:"}</span>{" "}
+                      {selectedEmployee.phone || (isAm ? "አልተሟላም" : "Not provided")}
                     </p>
                     <p className="mt-2 text-sm text-slate-700">
-                      <span className="font-semibold">FAN Number:</span>{" "}
-                      {selectedEmployee.faydaId || "Not provided"}
+                      <span className="font-bold text-[#003366]">{isAm ? "የፋይዳ ቁጥር:" : "FAN Number:"}</span>{" "}
+                      {selectedEmployee.faydaId || (isAm ? "አልተሟላም" : "Not provided")}
                     </p>
                     <p className="mt-1 text-sm text-slate-700 mb-2">
-                      <span className="font-semibold">Position:</span>{" "}
-                      {selectedEmployee.positionName || "Unassigned"}
+                      <span className="font-bold text-[#003366]">{isAm ? "ሀላፊነት:" : "Position:"}</span>{" "}
+                      {selectedEmployee.positionName || (isAm ? "አልተመደበም" : "Unassigned")}
                     </p>
                     {selectedEmployee.addressId && (
                       <div>
-                        <p className="text-xs uppercase tracking-[0.2em] text-bold">
-                          Address Details
+                        <p className="text-xs uppercase tracking-[0.2em] text-[#003366] font-bold">
+                          {isAm ? "የአድራሻ ዝርዝሮች" : "Address Details"}
                         </p>
                         {addressLoading ? (
                           <p className="mt-2 text-sm text-slate-600 italic">
-                            Loading address details...
+                            {isAm ? "የአድራሻ ዝርዝሮችን በመጫን ላይ..." : "Loading address details..."}
                           </p>
                         ) : addressDetails ? (
                           <div className="mt-2 space-y-1">
                             {addressDetails.regionName && (
                               <p className="text-sm text-slate-700">
-                                <span className="font-bold">Region:</span>{" "}
+                                <span className="font-bold text-[#003366]">{isAm ? "ክልል:" : "Region:"}</span>{" "}
                                 {addressDetails.regionName}
                               </p>
                             )}
                             {addressDetails.zoneName && (
                               <p className="text-sm text-slate-700">
-                                <span className="font-bold">Subcity/Zone:</span>{" "}
+                                <span className="font-bold text-[#003366]">{isAm ? "ክፍለ ከተማ/ዞን:" : "Subcity/Zone:"}</span>{" "}
                                 {addressDetails.zoneName}
                               </p>
                             )}
                             {addressDetails.woredaName && (
                               <p className="text-sm text-slate-700">
-                                <span className="font-bold">Weroda:</span>{" "}
+                                <span className="font-bold text-[#003366]">{isAm ? "ወረዳ:" : "Woreda:"}</span>{" "}
                                 {addressDetails.woredaName}
                               </p>
                             )}
                             {addressDetails.kebeleName && (
                               <p className="text-sm text-slate-700">
-                                <span className="font-bold">Kebele:</span>{" "}
+                                <span className="font-bold text-[#003366]">{isAm ? "ቀበሌ:" : "Kebele:"}</span>{" "}
                                 {addressDetails.kebeleName}
                               </p>
                             )}
                             {addressDetails.houseNumber && (
                               <p className="text-sm text-slate-700">
-                                <span className="font-bold">House Number:</span>{" "}
+                                <span className="font-bold text-[#003366]">{isAm ? "የቤት ቁጥር:" : "House Number:"}</span>{" "}
                                 {addressDetails.houseNumber}
                               </p>
                             )}
                             {addressDetails.specialLocation && (
                               <p className="text-sm text-slate-700">
-                                <span className="font-bold">
-                                  Special Location:
+                                <span className="font-bold text-[#003366]">
+                                  {isAm ? "ልዩ ቦታ:" : "Special Location:"}
                                 </span>{" "}
                                 {addressDetails.specialLocation}
                               </p>
@@ -1951,22 +2007,22 @@ export function AgenciesManagement({
                           </div>
                         ) : (
                           <p className="mt-2 text-sm text-slate-500 italic">
-                            No address details found
+                            {isAm ? "ምንም የአድራሻ ዝርዝር አልተገኘም" : "No address details found"}
                           </p>
                         )}
                       </div>
                     )}
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-                      Employment
+                    <p className="text-xs uppercase tracking-[0.2em] text-[#003366] font-bold">
+                      {isAm ? "የስራ ሁኔታ" : "Employment"}
                     </p>
                     <p className="mt-2 text-sm text-slate-700">
-                      <span className="font-semibold">Status:</span>{" "}
-                      {selectedEmployee.employmentStatus || "Unknown"}
+                      <span className="font-bold text-[#003366]">{isAm ? "ሁኔታ:" : "Status:"}</span>{" "}
+                      {selectedEmployee.employmentStatus || (isAm ? "ያልታወቀ" : "Unknown")}
                     </p>
                     <p className="mt-1 text-sm text-slate-700">
-                      <span className="font-semibold">Started:</span>{" "}
+                      <span className="font-bold text-[#003366]">{isAm ? "የተጀመረበት:" : "Started:"}</span>{" "}
                       {selectedEmployee.employmentStartDate ?? "—"}
                     </p>
                   </div>
@@ -1975,17 +2031,17 @@ export function AgenciesManagement({
                 <div className="rounded-3xl bg-white border border-slate-200 p-4 sm:p-5 shadow-sm flex flex-col">
                   <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 mb-4">
                     <div>
-                      <h3 className="text-base font-semibold text-slate-900">
-                        Personnel Documents
+                      <h3 className="text-base font-bold text-[#003366]">
+                        {isAm ? "የሰራተኛ ሰነዶች" : "Personnel Documents"}
                       </h3>
                       <p className="text-xs text-slate-500 mt-1">
-                        Employment documents uploaded for this employee.
+                        {isAm ? "ለዚህ ሰራተኛ የተሰቀሉ የስራ ሰነዶች።" : "Employment documents uploaded for this employee."}
                       </p>
                     </div>
                     <span className="text-xs uppercase tracking-[0.22em] text-slate-500">
-                      {selectedEmployee.documents?.length ?? 0} document
+                      {selectedEmployee.documents?.length ?? 0} {isAm ? "ሰነድ" : "document"}
                       {(selectedEmployee.documents?.length ?? 0) !== 1
-                        ? "s"
+                        ? (isAm ? "ዎች" : "s")
                         : ""}
                     </span>
                   </div>
@@ -2003,7 +2059,7 @@ export function AgenciesManagement({
                             <span
                               className={`inline-flex items-center justify-center rounded-full px-2 py-1 text-xs font-semibold ${getDocumentBadgeStyle(doc.isVerified)}`}
                             >
-                              {doc.isVerified ? "Verified" : "Pending"}
+                              {doc.isVerified ? (isAm ? "የተረጋገጠ" : "Verified") : (isAm ? "በመጠባበቅ ላይ" : "Pending")}
                             </span>
                           </div>
                           <div className="flex flex-col gap-2">
@@ -2014,9 +2070,9 @@ export function AgenciesManagement({
                                   setSelectedDocUrl(doc.fileUrl);
                                   setSelectedDocName(doc.documentType);
                                 }}
-                                className="inline-flex items-center justify-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition"
+                                className="inline-flex items-center justify-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold hover:bg-[#003366]/5 hover:border-[#003366]/20 transition text-[#003366]"
                               >
-                                View Details
+                                {isAm ? "ዝርዝር ይመልከቱ" : "View Details"}
                               </button>
                               {doc.isVerified ? (
                                 <button
@@ -2032,8 +2088,8 @@ export function AgenciesManagement({
                                   }`}
                                 >
                                   {documentActionLoading[doc.id]
-                                    ? "Updating..."
-                                    : "Mark Unverified"}
+                                    ? (isAm ? "በማዘመን ላይ..." : "Updating...")
+                                    : (isAm ? "ያልተረጋገጠ አድርግ" : "Mark Unverified")}
                                 </button>
                               ) : (
                                 <button
@@ -2049,8 +2105,8 @@ export function AgenciesManagement({
                                   }`}
                                 >
                                   {documentActionLoading[doc.id]
-                                    ? "Updating..."
-                                    : "Mark Verified"}
+                                    ? (isAm ? "በማዘመን ላይ..." : "Updating...")
+                                    : (isAm ? "የተረጋገጠ አድርግ" : "Mark Verified")}
                                 </button>
                               )}
                             </div>
@@ -2060,45 +2116,60 @@ export function AgenciesManagement({
                     </div>
                   ) : (
                     <div className="rounded-2xl border border-dashed border-slate-200 p-4 text-center text-xs text-slate-500 flex-1 flex items-center justify-center">
-                      No documents
+                      {isAm ? "ምንም ሰነዶች የሉም" : "No documents"}
                     </div>
                   )}
                 </div>
               </div>
 
               <div className="flex items-center justify-end gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4">
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
                   type="button"
                   onClick={() => setSelectedEmployee(null)}
-                  className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                  className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
                 >
-                  Close
-                </button>
+                  {isAm ? "ዝጋ" : "Close"}
+                </motion.button>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
 
         {activeTab === "operations" && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-              <div className="flex items-center gap-2 text-gray-700 font-medium">
-                <AlertTriangle className="text-red-500" size={20} />
-                <span>Logged Incident Misconduct Case Reports</span>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="space-y-6"
+          >
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex justify-between items-center bg-white p-4 rounded-xl border border-gray-200 shadow-sm"
+            >
+              <div className="flex items-center gap-2 text-[#003366] font-bold">
+                <AlertTriangle className="text-[#003366]" size={20} />
+                <span>{isAm ? "የተመዘገቡ የስነምግባር ጥሰት ሪፖርቶች" : "Logged Incident Misconduct Case Reports"}</span>
               </div>
-            </div>
+            </motion.div>
 
-            {org.incidents.map((incident) => (
-              <div
+            {org.incidents.map((incident, idx) => (
+              <motion.div
                 key={incident.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 + idx * 0.1 }}
+                whileHover={{ boxShadow: "0 8px 30px rgba(0,51,102,0.08)" }}
                 className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
               >
-                <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <h4 className="text-base font-bold text-gray-900">
+                <div className="bg-gradient-to-r from-gray-50 to-[#f8faff] px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <h4 className="text-base font-bold text-[#003366]">
                     {incident.crimeCategory}
                   </h4>
                   <span
-                    className={`px-2.5 py-1 text-xs font-semibold rounded-full border ${getStatusStyles(incident.federalPoliceStatus)}`}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-full border ${getStatusStyles(incident.federalPoliceStatus)}`}
                   >
                     {incident.federalPoliceStatus}
                   </span>
@@ -2108,20 +2179,28 @@ export function AgenciesManagement({
                     {incident.incidentDescription}
                   </p>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
       </div>
 
       {/* Selected Employee Document Preview Modal */}
       {selectedDocUrl && (
-        <div className="fixed inset-0 z-50 flex  items-center justify-center p-3 sm:p-4 bg-black/70">
-          <div className="relative w-full max-w-7xl h-[95vh] sm:h-[92vh] md:h-[88vh] lg:h-[85vh] rounded-3xl bg-white shadow-2xl overflow-hidden flex flex-col">
-            <div className="flex items-center pl-7 justify-between gap-4 border-b border-slate-200 bg-slate-50 ">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-50 flex  items-center justify-center p-3 sm:p-4 bg-black/70"
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="relative w-full max-w-7xl h-[95vh] sm:h-[92vh] md:h-[88vh] lg:h-[85vh] rounded-3xl bg-white shadow-2xl overflow-hidden flex flex-col"
+          >
+            <div className="flex items-center pl-7 justify-between gap-4 border-b border-slate-200 bg-slate-50">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">
-                  Document Preview for {selectedDocName || "Employee Document"}
+                <h2 className="text-lg font-bold text-[#003366]">
+                  {isAm ? "የሰነድ ቅድመ እይታ ለ" : "Document Preview for"} {selectedDocName || (isAm ? "የሰራተኛ ሰነድ" : "Employee Document")}
                 </h2>
               </div>
               <button
@@ -2131,7 +2210,7 @@ export function AgenciesManagement({
                   setSelectedDocName("");
                 }}
                 className="rounded-full border border-slate-200 bg-white p-2 text-slate-600 transition hover:bg-slate-100"
-                aria-label="Close document preview"
+                aria-label={isAm ? "የሰነድ ቅድመ እይታ ዝጋ" : "Close document preview"}
               >
                 <X size={20} />
               </button>
@@ -2145,34 +2224,43 @@ export function AgenciesManagement({
             </div>
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4">
               <p className="text-xs text-slate-500 order-2 sm:order-1">
-                Preview uses the browser viewer. Open externally to download or
-                inspect in full.
+                {isAm ? "ቅድመ እይታ የአሳሽ መመልከቻን ይጠቀማል። ሙሉ ለማየት ወይም ለማውረድ ውጪ ይክፈቱ።" : "Preview uses the browser viewer. Open externally to download or inspect in full."}
               </p>
-              <button
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
                 type="button"
                 onClick={() => {
                   setSelectedDocUrl(null);
                   setSelectedDocName("");
                 }}
-                className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 order-1 sm:order-2"
+                className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-100 order-1 sm:order-2"
               >
-                Close Preview
-              </button>
+                {isAm ? "ቅድመ እይታ ዝጋ" : "Close Preview"}
+              </motion.button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
 
       {/* Contract Document Preview Modal */}
       {selectedContractUrl && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70">
-          <div className="relative w-full  max-w-6xl h-[95vh] sm:h-[92vh] md:h-[88vh] lg:h-[98vh] rounded-3xl bg-white shadow-2xl overflow-hidden flex flex-col">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70"
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="relative w-full  max-w-6xl h-[95vh] sm:h-[92vh] md:h-[88vh] lg:h-[98vh] rounded-3xl bg-white shadow-2xl overflow-hidden flex flex-col"
+          >
             {/* Modal Header */}
-            <div className="flex items-center pl-7 justify-between gap-4 border-b border-slate-200 bg-slate-50 ">
+            <div className="flex items-center pl-7 justify-between gap-4 border-b border-slate-200 bg-slate-50">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">
-                  Contract Document Preview for{" "}
-                  {selectedContractName || "Contract Document"}
+                <h2 className="text-lg font-bold text-[#003366]">
+                  {isAm ? "የውል ሰነድ ቅድመ እይታ ለ" : "Contract Document Preview for"}{" "}
+                  {selectedContractName || (isAm ? "የውል ሰነድ" : "Contract Document")}
                 </h2>
               </div>
               <button
@@ -2182,7 +2270,7 @@ export function AgenciesManagement({
                   setSelectedContractName("");
                 }}
                 className="rounded-full border border-slate-200 bg-white p-2 text-slate-600 transition hover:bg-slate-100"
-                aria-label="Close preview modal"
+                aria-label={isAm ? "የቅድመ እይታ መስኮት ዝጋ" : "Close preview modal"}
               >
                 <X size={20} />
               </button>
@@ -2203,7 +2291,7 @@ export function AgenciesManagement({
                       size={48}
                       className="mx-auto mb-3 text-slate-300"
                     />
-                    <p className="font-medium">No document URL provided</p>
+                    <p className="font-bold text-[#003366]">{isAm ? "የሰነድ ዩአርኤል አልተሰጠም" : "No document URL provided"}</p>
                   </div>
                 </div>
               )}
@@ -2212,39 +2300,24 @@ export function AgenciesManagement({
             {/* Modal Footer */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4">
               <p className="text-xs text-slate-500 order-2 sm:order-1">
-                Click "Open External" to view the document in full screen or
-                download it.
+                {isAm ? "ሙሉ ማያ ገጽ ለማየት ወይም ለማውረድ \"ውጪ ክፈት\" የሚለውን ይጫኑ።" : "Click \"Open External\" to view the document in full screen or download it."}
               </p>
-              <button
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
                 type="button"
                 onClick={() => {
                   setSelectedContractUrl(null);
                   setSelectedContractName("");
                 }}
-                className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 order-1 sm:order-2"
+                className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-100 order-1 sm:order-2"
               >
-                Close Preview
-              </button>
+                {isAm ? "ቅድመ እይታ ዝጋ" : "Close Preview"}
+              </motion.button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
-    </div>
-  );
-}
-
-// --- Reusable Metric Card Sub-Component ---
-
-function StatCard({ title, value, icon: Icon, color, bg }: StatCardProps) {
-  return (
-    <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
-      <div className={`p-3 rounded-lg ${bg} ${color} shrink-0`}>
-        <Icon size={24} />
-      </div>
-      <div>
-        <p className="text-sm font-medium text-gray-500 truncate">{title}</p>
-        <p className="text-xl font-bold text-gray-900 mt-0.5">{value}</p>
-      </div>
     </div>
   );
 }

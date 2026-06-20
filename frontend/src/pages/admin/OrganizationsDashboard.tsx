@@ -13,7 +13,6 @@ import {
   FileSignature,
   Network,
   Calendar,
-  DollarSign,
   X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -309,23 +308,33 @@ export default function OrganizationDashboard() {
         </div>
       )}
       {/* Structural Header Ribbon */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-2">
-        <div>
-          <h2 className="text-2xl font-black text-primary uppercase tracking-tight">
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-xl bg-gradient-to-r from-[#003366] to-[#001F3F] px-6 py-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between relative overflow-hidden"
+      >
+        <div className="absolute top-0 right-0 w-32 h-full bg-gradient-to-l from-[#FFD700]/5 to-transparent" />
+        <div className="relative">
+          <h2 className="text-2xl font-black text-white uppercase tracking-tight">
             Organization Registry
           </h2>
-          <p className="text-xs text-gray-400 font-medium mt-1">
+          <div className="h-0.5 w-16 bg-gradient-to-r from-[#FFD700] to-transparent mt-1" />
+          <p className="text-xs text-white/60 font-medium mt-2">
             Audit licensed enterprise records, operational branch scope,
             deployment workforce sizes, and legal authorization signatures.
           </p>
         </div>
-        <div>
-          <button className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-black text-white uppercase tracking-wider shadow-sm hover:bg-opacity-90 transition-all duration-200 active:scale-95">
+        <div className="relative">
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#FFD700] px-4 py-2.5 text-xs font-black text-[#003366] uppercase tracking-wider shadow-md hover:shadow-lg transition-all duration-200"
+          >
             <Plus className="h-4 w-4" />
             Register Enterprise
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Aggregate Analytical Panels */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

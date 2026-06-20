@@ -1,9 +1,12 @@
 //filepath: frontend/src/pages/HRmanagement/AddressChangeRequestForm.tsx
 import React, { useEffect, useState } from "react";
-import { MapPin, Send } from "lucide-react";
+import { motion } from "framer-motion";
+import { MapPin, Send, History, AlertCircle, CheckCircle, XCircle, Clock, Search, X, ChevronDown } from "lucide-react";
 import { apiRequest } from "../../lib/api";
+import { cn } from "../../lib/utils";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { AutoDismissToast, ToastType } from "../../components/AutoDismissToast";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface AddressFormData {
   regionId: string;
@@ -21,7 +24,179 @@ interface LocationOption {
   nameAmharic?: string | null;
 }
 
+const SearchableLocationSelect = ({
+  label,
+  placeholder,
+  searchPlaceholder,
+  value,
+  options,
+  disabled = false,
+  onChange,
+  onOpen,
+  onClear,
+  required = false,
+  isOptional = false,
+}: {
+  label: string;
+  placeholder: string;
+  searchPlaceholder: string;
+  value: string;
+  options: { id: number; name: string }[];
+  disabled?: boolean;
+  onChange: (value: string) => void;
+  onOpen?: () => void;
+  onClear?: () => void;
+  required?: boolean;
+  isOptional?: boolean;
+}) => {
+  const { language } = useLanguage();
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  const selectedOption = options.find(
+    (option) => String(option.id) === String(value),
+  );
+
+  React.useEffect(() => {
+    if (!isOpen) {
+      setSearchTerm("");
+    }
+  }, [isOpen]);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredOptions = options.filter((option) => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return true;
+    return option.name.toLowerCase().includes(term);
+  });
+
+  return (
+    <div ref={containerRef} className="space-y-1.5 text-left relative">
+      <label className="text-sm font-bold text-[#003366] flex items-center gap-1">
+        {label}
+        {required && <span className="text-orange-500">*</span>}
+        {isOptional && <span className="text-[10px] font-bold text-orange-500 tracking-wide">({language === "am" ? "አማራጭ" : "OPTIONAL"})</span>}
+      </label>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => {
+          if (disabled) return;
+          setIsOpen((prev) => !prev);
+          onOpen?.();
+        }}
+        className={cn(
+          "w-full px-4 py-2.5 rounded-xl border text-left flex items-center justify-between gap-3 transition-all relative text-sm",
+          disabled
+            ? "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed"
+            : "bg-white border-gray-200 hover:border-[#003366]/50 focus:border-[#003366]",
+        )}
+      >
+        <span
+          className={cn(
+            "truncate",
+            selectedOption ? "text-gray-900 font-medium" : "text-gray-400",
+          )}
+        >
+          {selectedOption?.name || placeholder}
+        </span>
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-gray-400">
+          {selectedOption ? (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onClear?.();
+              }}
+              className="p-0.5 rounded-full hover:bg-red-50 hover:text-red-600 transition-all"
+              aria-label={`Clear ${label}`}
+            >
+              <X className="w-4 h-4" />
+            </button>
+          ) : (
+            <ChevronDown className="w-4 h-4" />
+          )}
+        </span>
+      </button>
+
+      {isOpen && !disabled && (
+        <div className="absolute left-0 right-0 top-full z-20 mt-1.5 rounded-xl border border-gray-200 bg-white shadow-xl overflow-hidden">
+          <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-2.5 bg-gray-50">
+            <Search className="w-4 h-4 text-gray-400 shrink-0" />
+            <input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder={searchPlaceholder}
+              className="w-full bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-400"
+              autoFocus
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm("")}
+                className="shrink-0 p-1 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                aria-label="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="max-h-52 overflow-auto p-1.5">
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => {
+                    onChange(String(option.id));
+                    setIsOpen(false);
+                  }}
+                  className={cn(
+                    "w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all",
+                    String(option.id) === String(value)
+                      ? "bg-[#003366] text-white font-bold"
+                      : "hover:bg-gray-100 text-gray-700",
+                  )}
+                >
+                  {option.name}
+                </button>
+              ))
+            ) : (
+              <div className="px-3 py-4 text-sm text-gray-400 text-center">
+                {searchTerm
+                  ? language === "am"
+                    ? "ምንም አማራጭ አልተገኘም"
+                    : "No matching options"
+                  : language === "am"
+                    ? "ምንም አማራጭ የለም"
+                    : "No options available"}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function AddressChangeRequestForm() {
+  const { language } = useLanguage();
+  const isAm = language === "am";
   const [activeTab, setActiveTab] = useState<"form" | "history">("form");
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
@@ -276,8 +451,11 @@ export default function AddressChangeRequestForm() {
     };
   }, [formData.woredaId]);
 
-  const getOptionLabel = (item: LocationOption) =>
+  const getOptionName = (item: LocationOption) =>
     item.nameEnglish || item.nameAmharic || `#${item.id}`;
+
+  const mapOptions = (items: LocationOption[]) =>
+    items.map((item) => ({ id: item.id, name: getOptionName(item) }));
 
   const handleOpenConfirm = (e: React.FormEvent) => {
     e.preventDefault();
@@ -343,276 +521,359 @@ export default function AddressChangeRequestForm() {
     }
   };
 
+  const statusIcon = (status: string) => {
+    switch (status) {
+      case "APPROVED": return <CheckCircle className="w-4 h-4" />;
+      case "REJECTED": return <XCircle className="w-4 h-4" />;
+      default: return <Clock className="w-4 h-4" />;
+    }
+  };
+
+  const statusColors = (status: string) => {
+    switch (status) {
+      case "APPROVED": return "bg-emerald-100 text-emerald-700";
+      case "REJECTED": return "bg-red-100 text-red-700";
+      default: return "bg-[#FFD700]/15 text-[#C5A022]";
+    }
+  };
+
   return (
-    <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-      <div className="flex items-center gap-3 mb-6 border-b pb-4">
-        <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-          <MapPin size={24} />
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="max-w-4xl mx-auto"
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+        className="relative overflow-hidden bg-gradient-to-r from-[#003366] to-[#001F3F] rounded-3xl p-6 mb-6"
+      >
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#FFD700] via-[#C5A022] to-[#FFD700]" />
+        <div className="absolute -top-12 -right-12 w-36 h-36 rounded-full bg-[#FFD700]/5" />
+        <div className="relative z-10 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-[#FFD700]/20 flex items-center justify-center">
+            <MapPin className="w-6 h-6 text-[#FFD700]" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-white">
+              {isAm ? "የአድራሻ ለውጥ ጥያቄ" : "Address Change Request"}
+            </h2>
+            <p className="text-sm text-white/60">
+              {isAm ? "ለአስተዳደሩ ማረጋገጫ አዲስ አድራሻ ያስገቡ" : "Submit a new address for admin approval"}
+            </p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-xl font-semibold text-gray-800">
-            Request Address Change
-          </h2>
-          <p className="text-sm text-gray-500">
-            Submit a new address for admin approval.
-          </p>
-        </div>
-      </div>
-      {/* Tabs */}
-      <div className="mb-6">
-        <div className="flex space-x-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab("form")}
-            className={`px-4 py-2 rounded-t-lg border-b-2 ${
-              activeTab === "form"
-                ? "border-blue-600 text-blue-700 bg-blue-50"
-                : "border-transparent text-gray-600 bg-white"
-            }`}
-          >
-            Request Address Change
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("history")}
-            className={`px-4 py-2 rounded-t-lg border-b-2 ${
-              activeTab === "history"
-                ? "border-blue-600 text-blue-700 bg-blue-50"
-                : "border-transparent text-gray-600 bg-white"
-            }`}
-          >
-            Request Address History
-          </button>
-        </div>
+      </motion.div>
+
+      <div className="flex gap-2 mb-6">
+        <motion.button
+          whileHover={{ y: -1 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={() => setActiveTab("form")}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold tracking-wide transition-all ${
+            activeTab === "form"
+              ? "bg-[#003366] text-white shadow-md"
+              : "bg-white text-gray-500 border border-gray-200 hover:border-[#003366]/30"
+          }`}
+        >
+          <MapPin className="w-4 h-4" />
+          {isAm ? "የአድራሻ ለውጥ ጠይቅ" : "Request Change"}
+        </motion.button>
+        <motion.button
+          whileHover={{ y: -1 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={() => setActiveTab("history")}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold tracking-wide transition-all ${
+            activeTab === "history"
+              ? "bg-[#003366] text-white shadow-md"
+              : "bg-white text-gray-500 border border-gray-200 hover:border-[#003366]/30"
+          }`}
+        >
+          <History className="w-4 h-4" />
+          {isAm ? "ታሪክ" : "History"}
+        </motion.button>
       </div>
 
       {activeTab === "form" ? (
-        <form onSubmit={handleOpenConfirm} className="space-y-6">
-          <div className="space-y-4">
+        <motion.div
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <form onSubmit={handleOpenConfirm} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-6">
             {loadError ? (
-              <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
-                {loadError}
-              </div>
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="flex items-start gap-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-4"
+              >
+                <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <span>{loadError}</span>
+              </motion.div>
             ) : null}
             {hasPendingRequest ? (
-              <div className="text-sm text-yellow-800 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                You have a pending address change request. You cannot submit a
-                new one until it is processed.
-              </div>
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="flex items-start gap-3 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-4"
+              >
+                <Clock className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <span>
+                  {isAm
+                    ? "የማይፈታ የአድራሻ ለውጥ ጥያቄ አለዎት። እስኪከናወን ድረስ አዲስ ማስገባት አይችሉም።"
+                    : "You have a pending address change request. You cannot submit a new one until it is processed."}
+                </span>
+              </motion.div>
             ) : null}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Region *
-                </label>
-                <select
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
+            <div className="grid grid-cols-2 gap-5">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <SearchableLocationSelect
+                  label={isAm ? "ክልል" : "Region"}
+                  placeholder={isAm ? "ክልል ይምረጡ" : "Select Region"}
+                  searchPlaceholder={isAm ? "ክልል ፈልግ..." : "Search region..."}
                   value={formData.regionId}
-                  onChange={(e) =>
+                  options={mapOptions(regions)}
+                  required
+                  onChange={(val) =>
                     setFormData({
                       ...formData,
-                      regionId: e.target.value,
+                      regionId: val,
                       zoneId: "",
                       woredaId: "",
                       kebeleId: "",
                     })
                   }
-                >
-                  <option value="">
-                    {loading.regions
-                      ? "Loading regions..."
-                      : "-- Select Region --"}
-                  </option>
-                  {regions.map((region) => (
-                    <option key={region.id} value={region.id}>
-                      {getOptionLabel(region)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Zone/Sub-city *
-                </label>
-                <select
-                  required
-                  disabled={!formData.regionId || loading.zones}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white disabled:bg-gray-100"
-                  value={formData.zoneId}
-                  onChange={(e) =>
+                  onClear={() =>
                     setFormData({
                       ...formData,
-                      zoneId: e.target.value,
+                      regionId: "",
+                      zoneId: "",
                       woredaId: "",
                       kebeleId: "",
                     })
                   }
-                >
-                  <option value="">
-                    {formData.regionId
-                      ? loading.zones
-                        ? "Loading zones..."
-                        : "-- Select Zone --"
-                      : "Select a region first"}
-                  </option>
-                  {zones.map((zone) => (
-                    <option key={zone.id} value={zone.id}>
-                      {getOptionLabel(zone)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+                />
+              </motion.div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Woreda *
-                </label>
-                <select
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+              >
+                <SearchableLocationSelect
+                  label={isAm ? "ዞን/ከተማ ንዑስ" : "Zone/Sub-city"}
+                  placeholder={isAm ? "ዞን ይምረጡ" : "Select Zone"}
+                  searchPlaceholder={isAm ? "ዞን ፈልግ..." : "Search zone..."}
+                  value={formData.zoneId}
+                  options={mapOptions(zones)}
+                  disabled={!formData.regionId || loading.zones}
                   required
-                  disabled={!formData.zoneId || loading.woredas}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white disabled:bg-gray-100"
-                  value={formData.woredaId}
-                  onChange={(e) =>
+                  onChange={(val) =>
                     setFormData({
                       ...formData,
-                      woredaId: e.target.value,
+                      zoneId: val,
+                      woredaId: "",
                       kebeleId: "",
                     })
                   }
-                >
-                  <option value="">
-                    {formData.zoneId
-                      ? loading.woredas
-                        ? "Loading woredas..."
-                        : "-- Select Woreda --"
-                      : "Select a zone first"}
-                  </option>
-                  {woredas.map((woreda) => (
-                    <option key={woreda.id} value={woreda.id}>
-                      {getOptionLabel(woreda)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Kebele *
-                </label>
-                <select
-                  required
-                  disabled={!formData.woredaId || loading.kebeles}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white disabled:bg-gray-100"
-                  value={formData.kebeleId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, kebeleId: e.target.value })
+                  onClear={() =>
+                    setFormData({
+                      ...formData,
+                      zoneId: "",
+                      woredaId: "",
+                      kebeleId: "",
+                    })
                   }
-                >
-                  <option value="">
-                    {formData.woredaId
-                      ? loading.kebeles
-                        ? "Loading kebeles..."
-                        : "-- Select Kebele --"
-                      : "Select a woreda first"}
-                  </option>
-                  {kebeles.map((kebele) => (
-                    <option key={kebele.id} value={kebele.id}>
-                      {getOptionLabel(kebele)}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                />
+              </motion.div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  House Number
+            <div className="grid grid-cols-2 gap-5">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <SearchableLocationSelect
+                  label={isAm ? "ወረዳ" : "Woreda"}
+                  placeholder={isAm ? "ወረዳ ይምረጡ" : "Select Woreda"}
+                  searchPlaceholder={isAm ? "ወረዳ ፈልግ..." : "Search woreda..."}
+                  value={formData.woredaId}
+                  options={mapOptions(woredas)}
+                  disabled={!formData.zoneId || loading.woredas}
+                  required
+                  onChange={(val) =>
+                    setFormData({
+                      ...formData,
+                      woredaId: val,
+                      kebeleId: "",
+                    })
+                  }
+                  onClear={() =>
+                    setFormData({
+                      ...formData,
+                      woredaId: "",
+                      kebeleId: "",
+                    })
+                  }
+                />
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+              >
+                <SearchableLocationSelect
+                  label={isAm ? "ቀበሌ" : "Kebele"}
+                  placeholder={isAm ? "ቀበሌ ይምረጡ" : "Select Kebele"}
+                  searchPlaceholder={isAm ? "ቀበሌ ፈልግ..." : "Search kebele..."}
+                  value={formData.kebeleId}
+                  options={mapOptions(kebeles)}
+                  disabled={!formData.woredaId || loading.kebeles}
+                  required
+                  onChange={(val) =>
+                    setFormData({ ...formData, kebeleId: val })
+                  }
+                  onClear={() =>
+                    setFormData({ ...formData, kebeleId: "" })
+                  }
+                />
+              </motion.div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-5">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <label className="block text-sm font-bold text-[#003366] mb-1.5 flex items-center gap-1">
+                  {isAm ? "የቤት ቁጥር" : "House Number"}
+                  <span className="text-orange-500">*</span>
                 </label>
                 <input
+                  required
                   type="text"
-                  placeholder="e.g. 124/A"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder={isAm ? "ለምሳሌ 124/ሀ" : "e.g. 124/A"}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] outline-none text-sm"
                   value={formData.houseNumber}
                   onChange={(e) =>
                     setFormData({ ...formData, houseNumber: e.target.value })
                   }
                 />
-              </div>
+              </motion.div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Special Location (ልዩ ቦታ)
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35 }}
+            >
+              <label className="block text-sm font-bold text-[#003366] mb-1.5 flex items-center gap-1">
+                {isAm ? "ልዩ ቦታ" : "Special Location"}
+                <span className="text-[10px] font-bold text-orange-500 tracking-wide">
+                  ({isAm ? "አማራጭ" : "OPTIONAL"})
+                </span>
               </label>
               <input
                 type="text"
-                placeholder="e.g. ከቴሌ መብራት ጀርባ"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder={isAm ? "ከቴሌ መብራት ጀርባ" : "Around Tele"}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] outline-none text-sm"
                 value={formData.specialLocation}
                 onChange={(e) =>
                   setFormData({ ...formData, specialLocation: e.target.value })
                 }
               />
-            </div>
+            </motion.div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Reason for Change *
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <label className="block text-sm font-bold text-[#003366] mb-1.5">
+                {isAm ? "የለውጥ ምክንያት *" : "Reason for Change *"}
               </label>
               <textarea
                 required
                 rows={3}
-                placeholder="Explain why the organization is moving..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                placeholder={isAm ? "ድርጅቱ የሚዛወርበትን ምክንያት ያብራሩ..." : "Explain why the organization is moving..."}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] outline-none resize-none text-sm"
                 value={formData.reason}
                 onChange={(e) =>
                   setFormData({ ...formData, reason: e.target.value })
                 }
               />
-            </div>
-          </div>
+            </motion.div>
 
-          <div className="pt-4 border-t flex justify-end">
-            <button
-              type="submit"
-              disabled={isSubmitting || hasPendingRequest}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.45 }}
+              className="pt-4 border-t border-gray-100 flex justify-end"
             >
-              <Send size={18} />
-              {isSubmitting ? "Submitting..." : "Submit Request"}
-            </button>
-          </div>
-        </form>
+              <motion.button
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.97 }}
+                type="submit"
+                disabled={isSubmitting || hasPendingRequest}
+                className="flex items-center gap-2 bg-gradient-to-r from-[#003366] to-[#001F3F] hover:from-[#001F3F] hover:to-[#000F1F] disabled:from-gray-300 disabled:to-gray-300 text-white px-6 py-2.5 rounded-xl font-bold text-sm tracking-wide transition-all shadow-md"
+              >
+                <Send className="w-4 h-4" />
+                {isSubmitting
+                  ? isAm ? "በማስገባት ላይ..." : "Submitting..."
+                  : isAm ? "ጥያቄ ያስገቡ" : "Submit Request"}
+              </motion.button>
+            </motion.div>
+          </form>
+        </motion.div>
       ) : (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600">Filter:</label>
+        <motion.div
+          initial={{ opacity: 0, x: 10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3 }}
+          className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6"
+        >
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#003366] to-[#001F3F] text-[#FFD700] flex items-center justify-center shadow-sm">
+                <History className="w-4 h-4" />
+              </div>
+              <h3 className="font-bold text-[#003366]">
+                {isAm ? "የአድራሻ ለውጥ ታሪክ" : "Address Change History"}
+              </h3>
+            </div>
+            <div className="flex items-center gap-3">
               <select
                 value={historyFilter}
                 onChange={(e) => setHistoryFilter(e.target.value as any)}
-                className="px-3 py-1 border rounded"
+                className="px-3 py-2 border border-gray-200 rounded-xl text-xs font-bold text-gray-500 bg-gray-50 outline-none focus:ring-2 focus:ring-[#003366]/20"
               >
-                <option value="ALL">All</option>
-                <option value="PENDING">Pending</option>
-                <option value="APPROVED">Approved</option>
-                <option value="REJECTED">Rejected</option>
+                <option value="ALL">{isAm ? "ሁሉም" : "All"}</option>
+                <option value="PENDING">{isAm ? "በመጠባበቅ ላይ" : "Pending"}</option>
+                <option value="APPROVED">{isAm ? "ጸድቋል" : "Approved"}</option>
+                <option value="REJECTED">{isAm ? "ውድቅ ሆኗል" : "Rejected"}</option>
               </select>
-            </div>
-            <div className="text-sm text-gray-500">
-              {historyLoading ? "Loading..." : `${requests.length} requests`}
+              <span className="text-xs font-medium text-gray-400 bg-gray-50 px-3 py-2 rounded-xl">
+                {historyLoading
+                  ? isAm ? "በማምጣት ላይ..." : "Loading..."
+                  : `${requests.length} ${isAm ? "ጥያቄዎች" : "requests"}`}
+              </span>
             </div>
           </div>
 
           {historyError ? (
-            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
-              {historyError}
+            <div className="flex items-start gap-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <span>{historyError}</span>
             </div>
           ) : null}
 
@@ -621,50 +882,58 @@ export default function AddressChangeRequestForm() {
               .filter(
                 (r) => historyFilter === "ALL" || r.status === historyFilter,
               )
-              .map((r) => (
-                <div key={r.id} className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div className="font-medium">Request #{r.id}</div>
-                    <div>
-                      <span
-                        className={`px-2 py-1 text-xs rounded ${
-                          r.status === "PENDING"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : r.status === "APPROVED"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {r.status}
+              .map((r, idx) => (
+                <motion.div
+                  key={r.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: idx * 0.05 }}
+                  whileHover={{ y: -1 }}
+                  className="group p-4 rounded-2xl bg-gray-50/50 border border-gray-100 hover:border-[#FFD700]/30 hover:bg-gradient-to-r hover:from-[#FFD700]/5 hover:to-transparent transition-all duration-300"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-gray-900">
+                        {isAm ? "ጥያቄ #" : "Request #"}{r.id}
                       </span>
                     </div>
+                    <span className={`flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full ${statusColors(r.status)}`}>
+                      {statusIcon(r.status)}
+                      {r.status === "PENDING" ? (isAm ? "በመጠባበቅ ላይ" : "Pending") : r.status === "APPROVED" ? (isAm ? "ጸድቋል" : "Approved") : (isAm ? "ውድቅ" : "Rejected")}
+                    </span>
                   </div>
 
-                  <div className="text-sm text-gray-700 mt-2">
-                    {r.requestedAddressText}
-                  </div>
-                  <div className="text-sm text-gray-500 mt-2">
-                    Reason: {r.reason || "-"}
-                  </div>
+                  <p className="text-sm text-gray-600 mb-1">{r.requestedAddressText}</p>
+                  <p className="text-xs text-gray-400">
+                    {isAm ? "ምክንያት" : "Reason"}: {r.reason || "-"}
+                  </p>
                   {r.adminFeedback ? (
-                    <div className="text-sm text-gray-500 mt-2">
-                      Admin feedback: {r.adminFeedback}
-                    </div>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {isAm ? "የአስተዳዳሪ አስተያየት" : "Admin feedback"}: {r.adminFeedback}
+                    </p>
                   ) : null}
-                  <div className="text-xs text-gray-400 mt-2">
-                    Submitted: {new Date(r.createdAt).toLocaleString()}
-                  </div>
-                </div>
+                  <p className="text-[10px] text-gray-400 mt-2">
+                    {isAm ? "የቀረበበት ቀን" : "Submitted"}: {new Date(r.createdAt).toLocaleString()}
+                  </p>
+                </motion.div>
               ))}
+            {(!requests || requests.length === 0) && !historyLoading && (
+              <div className="text-center py-12">
+                <Search className="w-8 h-8 text-gray-300 mx-auto mb-3" />
+                <p className="text-sm text-gray-400 font-medium">
+                  {isAm ? "ምንም ጥያቄ የለም" : "No requests found"}
+                </p>
+              </div>
+            )}
           </div>
-        </div>
+        </motion.div>
       )}
       <ConfirmDialog
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={submitRequest}
-        title="Confirm Address Change Request"
-        message="Are you sure you want to submit this address change request for admin approval?"
+        title={isAm ? "የአድራሻ ለውጥ ጥያቄ ያረጋግጡ" : "Confirm Address Change Request"}
+        message={isAm ? "እርግጠኛ ነዎት ይህን የአድራሻ ለውጥ ጥያቄ ለአስተዳዳሪ ማረጋገጫ ማስገባት ይፈልጋሉ?" : "Are you sure you want to submit this address change request for admin approval?"}
         type="default"
         isLoading={confirmLoading}
         isConfirmDisabled={!formData.kebeleId || confirmLoading}
@@ -675,6 +944,6 @@ export default function AddressChangeRequestForm() {
         message={toast.message}
         onClose={() => setToast({ ...toast, isOpen: false })}
       />
-    </div>
+    </motion.div>
   );
 }
