@@ -116,6 +116,8 @@ model User {
   createdFaqs          Faq[]                        @relation("FaqCreator")
   notifications        Notification[]
   certifications       Certification[]              @relation("CertificationStampedBy")
+  receivedContacts     Contact[]
+  newsArticles         NewsArticle[]
 
   @@map("users")
 }
@@ -175,6 +177,24 @@ model Notification {
   recipientUser     User     @relation(fields: [recipientUserId], references: [id], onDelete: Cascade, map: "FK_Notifications_Users")
 
   @@map("notifications")
+}
+
+model NewsArticle {
+  id              Int      @id @default(autoincrement()) @map("news_id")
+  title           String   @db.NVarChar(255)
+  category        String   @default("General") @db.NVarChar(100)
+  summary         String?  @db.NVarChar(Max)
+  content         String   @db.NVarChar(Max)
+  imageUrl        String?  @map("image_url") @db.VarChar(Max)
+  status          String   @default("published") @db.VarChar(50)
+  publishedAt     DateTime @default(now()) @map("published_at")
+  createdByUserId Int?     @map("created_by_user_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  createdBy User? @relation(fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "FK_News_Users")
+
+  @@map("news_articles")
 }
 
 model FormalRequest {
@@ -308,8 +328,6 @@ model Agreement {
   @@map("agreements")
 }
 
-// DELETE the 'enum OrgDocumentType' block entirely from your file.
-
 model OrganizationDocument {
   id             Int          @id @default(autoincrement()) @map("org_doc_id")
   organizationId Int          @map("organization_id")
@@ -350,9 +368,8 @@ model Employee {
   address      Address?     @relation(fields: [addressId], references: [id], onUpdate: NoAction, map: "FK_Employees_Addresses")
 
   // Existing Module Relations
-  position      Position?                   @relation(fields: [positionId], references: [id], onUpdate: NoAction, map: "FK_Employees_Positions")
-  educationDocs EmployeeEducationDocument[]
-  documents     EmployeeDocument[]
+  position  Position?          @relation(fields: [positionId], references: [id], onUpdate: NoAction, map: "FK_Employees_Positions")
+  documents EmployeeDocument[]
 
   // Application Tracking Roles
   managedApplications    Application[] @relation("ManagerRole")
@@ -421,20 +438,6 @@ model PositionRequirement {
 // ==========================================
 // DOCUMENTATION MODELS
 // ==========================================
-
-model EmployeeEducationDocument {
-  id                    Int       @id @default(autoincrement()) @map("education_documents_id")
-  employeeId            Int       @map("employee_id")
-  educationDocumentType String    @map("education_document_type") @db.VarChar(100)
-  fileUrl               String    @map("education_document_file_url") @db.VarChar(Max)
-  isVerified            Boolean   @default(false) @map("is_verified")
-  verifiedAt            DateTime? @map("verified_at") @db.DateTime
-  uploadedAt            DateTime  @default(now()) @map("uploaded_at") @db.DateTime
-
-  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade, map: "FK_EduDocs_Employees")
-
-  @@map("employee_education_documents")
-}
 
 model EmployeeDocument {
   id           Int       @id @default(autoincrement()) @map("document_id")
@@ -772,4 +775,28 @@ model RefundLedger {
   status           String             @default("REFUNDING") // REFUNDING, REFUND_SUCCESS, REFUND_FAILED, REFUND_DUPLICATED
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
+}
+
+model Contact {
+  id Int @id(map: "PK__contacts__contact_id") @default(autoincrement()) @map("contact_id")
+
+  // Sender details
+  senderName  String @map("sender_name") @db.NVarChar(255)
+  senderEmail String @map("sender_email") @db.VarChar(255)
+  subject     String @db.NVarChar(255)
+  message     String @db.NVarChar(Max)
+
+  // Department stored as a single column (no extra table needed)
+  department String @db.VarChar(100)
+
+  // Direct relationship to the department head (User)
+  departmentHeadId Int  @map("department_head_id")
+  departmentHead   User @relation(fields: [departmentHeadId], references: [id], onUpdate: NoAction, map: "FK_Contacts_DepartmentHead")
+
+  // Tracking metadata
+  status    String   @default("PENDING") @db.VarChar(50)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime
+
+  @@map("contacts")
 }

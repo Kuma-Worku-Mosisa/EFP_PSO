@@ -225,6 +225,13 @@ export const translations = {
           message: "Your message here...",
         },
         submit: "Send Message",
+        success: "Your message was sent successfully.",
+        error: "Unable to send your message. Please try again.",
+        validation: "Please fill out all fields.",
+      },
+      tabs: {
+        admin: "Federal Police Admin",
+        systemAdmin: "Federal Police System Admin",
       },
       map: {
         title: "Ethiopian Federal Police HQ",
@@ -749,6 +756,13 @@ export const translations = {
           message: "መልዕክትዎን እዚህ ይጻፉ...",
         },
         submit: "መልዕክት ላክ",
+        success: "መልእክትዎ በተሳካ ሁኔታ ተልኳል።",
+        error: "መልእክትዎን ማስተላለፍ አልቻልንም። እባክዎ ደግመው ይሞክሩ።",
+        validation: "እባክዎ ሁሉንም ቦታ ይሙሉ።",
+      },
+      tabs: {
+        admin: "የፌዴራል ፖሊስ አስተዳዳሪ",
+        systemAdmin: "የፌዴራል ፖሊስ ስርዓት አስተዳዳሪ",
       },
       map: {
         title: "የኢትዮጵያ ፌዴራል ፖሊስ ዋና መሥሪያ ቤት",

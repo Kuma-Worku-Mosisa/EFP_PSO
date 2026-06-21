@@ -29,6 +29,8 @@ import { runNotificationCronWorker } from "./modules/notification/notification.w
 import organizationRoutes from "./modules/organization/organization.routes";
 import employeeRoutes from "./modules/employee/employee.routes";
 import transferRoutes from "./modules/transfers/transfers.routes";
+import contactRoutes from "./modules/contact/contact.routes";
+import newsRoutes from "./modules/news/news.routes";
 
 const app = express();
 
@@ -94,6 +96,10 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/organizations", organizationRoutes);
 app.use("/api/employees", employeeRoutes);
 app.use("/api/transfers", transferRoutes);
+
+// ... other middleware
+app.use("/api/contact", contactRoutes);
+app.use("/api", newsRoutes);
 
 // 6. Health Check / Root Route
 app.get("/", (req, res) => {
