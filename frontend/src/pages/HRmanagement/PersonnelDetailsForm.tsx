@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion";
+import React, { useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
 import {
   Users,
@@ -13,7 +13,10 @@ import {
   CheckCircle2,
   Upload,
   FileText,
-  Loader2,
+  Eye,
+  Trash2,
+  ChevronDown,
+  Info,
 } from "lucide-react";
 import { LoadingSpinner } from "../../components/LoadingSpinner";
 
@@ -48,10 +51,16 @@ const mockKebeles: LocationOption[] = [
 
 const documentTypes = [
   { key: "fingerprint", labelEn: "Fingerprint from Police", labelAm: "ከፖሊስ የጣት አሻራ", required: true },
-  { key: "medical", labelEn: "Medical Test Result", labelAm: "የህክምና ምርመራ ውጤት", required: true },
+  { key: "medical", labelEn: "Medical Result", labelAm: "የህክምና ውጤት", required: true },
+  { key: "training", labelEn: "Training Certificate", labelAm: "የስልጠና የምስክር ወረቀት", required: false },
+  { key: "support_letter", labelEn: "Support Letter (Kebele)", labelAm: "የድጋፍ ደብዳቤ (ቀበሌ)", required: false },
+  { key: "collateral", labelEn: "Proof of Collateral", labelAm: "የማስረጃ ማስረጃ", required: true },
+  { key: "work_exp", labelEn: "Work Experience", labelAm: "የስራ ልምድ", required: false },
+  { key: "resignation", labelEn: "Resignation Record", labelAm: "የመልቀቂያ መዝገብ", required: false },
   { key: "education", labelEn: "Educational Certificate", labelAm: "የትምህርት የምስክር ወረቀት", required: true },
-  { key: "national_id", labelEn: "National ID / Digital Fayda", labelAm: "ብሄራዊ መታወቂያ / ዲጂታል ፋይዳ", required: true },
-  { key: "passport_kebele", labelEn: "Renewed Kebele ID / Passport", labelAm: "የታደሰ የቀበሌ መታወቂያ / ፓስፖርት", required: true },
+  { key: "national_id", labelEn: "National ID", labelAm: "ብሄራዊ መታወቂያ", required: true },
+  { key: "passport_kebele", labelEn: "Renewed Kebele ID/Passport", labelAm: "የታደሰ የቀበሌ መታወቂያ/ፓስፖርት", required: true },
+  { key: "org_id", labelEn: "Organization Identification", labelAm: "የድርጅት መታወቂያ", required: true },
 ];
 
 export default function PersonnelDetailsForm() {
@@ -61,7 +70,9 @@ export default function PersonnelDetailsForm() {
 
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [middleName, setMiddleName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [gender, setGender] = useState("");
   const [citizenship] = useState("ETHIOPIAN");
   const [faydaId, setFaydaId] = useState("");
@@ -77,6 +88,40 @@ export default function PersonnelDetailsForm() {
   const [kebele, setKebele] = useState("");
   const [houseNo, setHouseNo] = useState("");
   const [specialLocation, setSpecialLocation] = useState("");
+  const [reason, setReason] = useState("");
+  const [files, setFiles] = useState<Record<string, File>>({});
+  const [activeDocKey, setActiveDocKey] = useState<string | null>(null);
+  const [openInfo, setOpenInfo] = useState<string | null>(null);
+  const [openPosInfo, setOpenPosInfo] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const infoTexts: Record<string, { en: string; am: string }> = {
+    fingerprint: {
+      en: "Fingerprint from the police (proof of criminal record)",
+      am: "ከፖሊስ የጣት አሻራ (የወንጀል ሪከርድ ማረጋገጫ)",
+    },
+    medical: {
+      en: "Bring your medical test outcome from a hospital or clinic",
+      am: "ከሆስፒታል ወይም ክሊኒክ የህክምና ምርመራ ውጤትዎን ያምጡ",
+    },
+    national_id: {
+      en: "Upload a photo of your National ID or Digital Fayda ID front and back as a PDF",
+      am: "የብሄራዊ መታወቂያዎ ወይም የዲጂታል ፋይዳ መታወቂያዎ ፊት እና ጀርባ ፎቶ እንደ PDF ያስገቡ",
+    },
+  };
+
+  const handleFileSelect = (docKey: string) => {
+    setActiveDocKey(docKey);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && activeDocKey) {
+      setFiles((prev) => ({ ...prev, [activeDocKey]: file }));
+    }
+    e.target.value = "";
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,21 +180,48 @@ export default function PersonnelDetailsForm() {
             </h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
-                {t("Full Name", "ሙሉ ስም")} <span className="text-orange-500">*</span>
+                {t("First Name", "ስም")} <span className="text-orange-500">*</span>
               </label>
               <input
                 type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
                 required
-                placeholder={t("Enter full name...", "ሙሉ ስም ያስገቡ...")}
+                placeholder={t("First name...", "ስም...")}
                 className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
+                {t("Middle Name", "የአባት ስም")} <span className="text-orange-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={middleName}
+                onChange={(e) => setMiddleName(e.target.value)}
+                required
+                placeholder={t("Middle name...", "የአባት ስም...")}
+                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
+                {t("Last Name", "የአያት ስም")} <span className="text-orange-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+                placeholder={t("Last name...", "የአያት ስም...")}
+                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
                   {t("Gender", "ጾታ")} <span className="text-orange-500">*</span>
@@ -178,7 +250,6 @@ export default function PersonnelDetailsForm() {
               </div>
             </div>
           </div>
-        </div>
 
         {/* Identity & Contact */}
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-6">
@@ -270,6 +341,7 @@ export default function PersonnelDetailsForm() {
               <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
                 <GraduationCap className="w-3.5 h-3.5 inline mr-1 text-[#FFD700]" />
                 {t("Education Level", "የትምህርት ደረጃ")}
+                <span className="text-orange-500 font-normal ml-1">({t("Optional", "አማራጭ")})</span>
               </label>
               <select
                 value={educationLevel}
@@ -287,7 +359,47 @@ export default function PersonnelDetailsForm() {
             <div>
               <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
                 {t("Work Experience (Years)", "የስራ ልምድ (ዓመታት)")}
+                <span className="text-orange-500 font-normal ml-1">({t("Optional", "አማራጭ")})</span>
               </label>
+              <button
+                type="button"
+                onClick={() => setOpenPosInfo(openPosInfo === "workExp" ? null : "workExp")}
+                className="inline-flex items-center space-x-1 text-[10px] font-bold text-orange-600 hover:text-orange-500 transition-all duration-300 hover:scale-105 active:scale-95 mb-1"
+              >
+                <motion.span
+                  animate={{ rotate: openPosInfo === "workExp" ? 180 : 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex items-center justify-center w-4 h-4 rounded-full bg-orange-50 text-orange-600"
+                >
+                  <Info className="w-2.5 h-2.5" />
+                </motion.span>
+                <span>{t("Learn more", "ተጨማሪ ይወቁ")}</span>
+                <motion.span
+                  animate={{ rotate: openPosInfo === "workExp" ? 180 : 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="text-orange-400"
+                >
+                  <ChevronDown className="w-3 h-3" />
+                </motion.span>
+              </button>
+              <AnimatePresence initial={false}>
+                {openPosInfo === "workExp" && (
+                  <motion.div
+                    key="workExpInfo"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mb-2 p-2 bg-gradient-to-br from-orange-50 to-amber-50/50 border border-orange-200/70 rounded-xl shadow-sm">
+                      <p className="text-[10px] text-orange-900 leading-relaxed font-medium">
+                        {t("Enter your work experience years relevant to your current position.", "ከአሁን ሹመትዎ ጋር የሚዛመድ የስራ ልምድ ዓመታትዎን ያስገቡ።")}
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               <input
                 type="number"
                 min="0"
@@ -300,7 +412,47 @@ export default function PersonnelDetailsForm() {
             <div>
               <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
                 {t("Total Experience (Years)", "አጠቃላይ ልምድ (ዓመታት)")}
+                <span className="text-orange-500 font-normal ml-1">({t("Optional", "አማራጭ")})</span>
               </label>
+              <button
+                type="button"
+                onClick={() => setOpenPosInfo(openPosInfo === "totalExp" ? null : "totalExp")}
+                className="inline-flex items-center space-x-1 text-[10px] font-bold text-orange-600 hover:text-orange-500 transition-all duration-300 hover:scale-105 active:scale-95 mb-1"
+              >
+                <motion.span
+                  animate={{ rotate: openPosInfo === "totalExp" ? 180 : 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex items-center justify-center w-4 h-4 rounded-full bg-orange-50 text-orange-600"
+                >
+                  <Info className="w-2.5 h-2.5" />
+                </motion.span>
+                <span>{t("Learn more", "ተጨማሪ ይወቁ")}</span>
+                <motion.span
+                  animate={{ rotate: openPosInfo === "totalExp" ? 180 : 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="text-orange-400"
+                >
+                  <ChevronDown className="w-3 h-3" />
+                </motion.span>
+              </button>
+              <AnimatePresence initial={false}>
+                {openPosInfo === "totalExp" && (
+                  <motion.div
+                    key="totalExpInfo"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mb-2 p-2 bg-gradient-to-br from-orange-50 to-amber-50/50 border border-orange-200/70 rounded-xl shadow-sm">
+                      <p className="text-[10px] text-orange-900 leading-relaxed font-medium">
+                        {t("Enter your total experience years across Police, Defence force, or other work areas.", "በፖሊስ፣ በመከላከያ ሠራዊት ወይም በሌሎች የስራ ዘርፎች ያለዎትን አጠቃላይ የልምድ ዓመታት ያስገቡ።")}
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               <input
                 type="number"
                 min="0"
@@ -410,6 +562,26 @@ export default function PersonnelDetailsForm() {
           </div>
         </div>
 
+        {/* Reason for Change */}
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-6">
+          <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#003366] to-[#001F3F] text-[#FFD700] flex items-center justify-center shadow-sm">
+              <FileText className="w-4 h-4" />
+            </div>
+            <h3 className="text-sm font-bold text-[#003366]">
+              {t("Reason for Change", "የለውጡ ምክንያት")} <span className="text-orange-500">*</span>
+            </h3>
+          </div>
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            required
+            rows={4}
+            placeholder={t("Describe the reason for this personnel change...", "የዚህን የሰራተኛ ለውጥ ምክንያት ይግለጹ...")}
+            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all resize-none"
+          />
+        </div>
+
         {/* Document Uploads */}
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-6">
           <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
@@ -421,60 +593,160 @@ export default function PersonnelDetailsForm() {
             </h3>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {documentTypes.map((doc) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {documentTypes.map((doc) => {
+              const uploadedFile = files[doc.key];
+              const previewUrl = uploadedFile ? URL.createObjectURL(uploadedFile) : null;
+              const hasExperience = Number(workExpYears) > 0 || Number(totalExpYears) > 0;
+              const isRequired = doc.required || (hasExperience && (doc.key === "work_exp" || doc.key === "resignation"));
+              return (
               <motion.div
                 key={doc.key}
                 whileHover={{ y: -2 }}
-                className="rounded-xl border-2 border-dashed border-gray-200 p-4 hover:border-[#FFD700]/40 hover:bg-[#FFD700]/5 transition-all cursor-pointer"
+                className={`group relative rounded-[20px] border-2 transition-all duration-500 p-4 ${
+                  uploadedFile
+                    ? "bg-white border-solid border-green-200 shadow-lg shadow-green-500/5 ring-4 ring-green-50/30"
+                    : "bg-gray-50/50 border-dashed border-gray-200 hover:border-[#003366]/40 hover:bg-white"
+                }`}
               >
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-1.5 rounded-lg bg-[#003366]">
-                    <FileText className="w-3.5 h-3.5 text-[#FFD700]" />
+                {uploadedFile && (
+                  <div className="absolute -top-3 -right-3 z-10">
+                    <div className="flex items-center space-x-1 bg-green-500 text-white px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-xl shadow-green-500/30 border-2 border-white">
+                      <CheckCircle2 className="w-3 h-3" />
+                      <span>{t("UPLOADED", "ተሰቅሏል")}</span>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-[#003366] truncate">
-                      {isAm ? doc.labelAm : doc.labelEn}
-                    </p>
-                    {doc.required && (
-                      <span className="text-[9px] font-bold text-orange-500">
-                        {t("Required", "የግድ ነው")}
-                      </span>
+                )}
+
+                {["fingerprint", "medical", "national_id"].includes(doc.key) && infoTexts[doc.key] && (
+                  <div className="mb-3">
+                    <button
+                      type="button"
+                      onClick={() => setOpenInfo(openInfo === doc.key ? null : doc.key)}
+                      className="inline-flex items-center space-x-1.5 text-[11px] font-bold text-orange-600 hover:text-orange-500 transition-all duration-300 hover:scale-105 active:scale-95"
+                    >
+                      <motion.span
+                        animate={{ rotate: openInfo === doc.key ? 180 : 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="flex items-center justify-center w-5 h-5 rounded-full bg-orange-50 text-orange-600"
+                      >
+                        <Info className="w-3 h-3" />
+                      </motion.span>
+                      <span>{t("Learn more", "ተጨማሪ ይወቁ")}</span>
+                      <motion.span
+                        animate={{ rotate: openInfo === doc.key ? 180 : 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="text-orange-400"
+                      >
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </motion.span>
+                    </button>
+                    <AnimatePresence initial={false}>
+                      {openInfo === doc.key && (
+                        <motion.div
+                          key="info"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.3, ease: "easeInOut" }}
+                          className="overflow-hidden"
+                        >
+                          <div className="mt-2 p-3 bg-gradient-to-br from-orange-50 to-amber-50/50 border border-orange-200/70 rounded-xl shadow-sm">
+                            <p className="text-[11px] text-orange-900 leading-relaxed font-medium">
+                              {isAm ? infoTexts[doc.key]?.am : infoTexts[doc.key]?.en}
+                            </p>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 flex-shrink-0 shadow-sm ${
+                    uploadedFile ? "bg-green-50 text-green-500" : "bg-white border text-gray-400"
+                  }`}>
+                    {uploadedFile ? (
+                      <FileText className="w-6 h-6" />
+                    ) : (
+                      <Upload className="w-6 h-6" />
                     )}
                   </div>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    type="button"
-                    className="p-1.5 rounded-lg bg-[#003366]/5 text-[#003366] hover:bg-[#003366]/10 transition-colors"
-                  >
-                    <Upload className="w-3.5 h-3.5" />
-                  </motion.button>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <h4 className={`text-sm font-black tracking-tight break-words leading-snug ${
+                        uploadedFile ? "text-green-600" : "text-[#003366]"
+                      }`}>
+                        {uploadedFile ? uploadedFile.name : (isAm ? doc.labelAm : doc.labelEn)}
+                      </h4>
+                      {isRequired && !uploadedFile && (
+                        <span className="text-xs text-orange-500 font-black bg-orange-50 px-1.5 rounded-md">*</span>
+                      )}
+                      {!isRequired && !uploadedFile && (
+                        <span className="text-[10px] text-amber-700 bg-amber-50 font-black rounded-md px-1.5 py-0.5 uppercase tracking-widest">
+                          {t("Optional", "አማራጭ")}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-[11px] text-gray-400 font-bold uppercase tracking-widest">
+                        {uploadedFile
+                          ? `${(uploadedFile.size / 1024 / 1024).toFixed(2)} MB`
+                          : "PDF Max 5MB"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2 flex-shrink-0">
+                    {!uploadedFile ? (
+                      <button
+                        type="button"
+                        onClick={() => handleFileSelect(doc.key)}
+                        className="px-4 py-2 bg-white border-2 border-gray-100 text-[#003366] rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-sm hover:border-[#003366] hover:shadow-lg transition-all active:scale-95"
+                      >
+                        {t("Select File", "ፋይል ይምረጡ")}
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => window.open(previewUrl || "", "_blank")}
+                          className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFiles((prev) => {
+                              const next = { ...prev };
+                              delete next[doc.key];
+                              return next;
+                            });
+                          }}
+                          className="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </motion.div>
-            ))}
+              );
+            })}
           </div>
+
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept=".pdf"
+            className="hidden"
+          />
         </div>
 
-        {/* Submit */}
-        <div className="flex justify-end gap-3 pt-2">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            type="submit"
-            disabled={submitting}
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-[#003366] to-[#001F3F] text-white text-xs font-bold tracking-wide px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {submitting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <CheckCircle2 className="w-4 h-4" />
-            )}
-            {submitting
-              ? t("Sending...", "በመላክ ላይ...")
-              : t("Send Personnel Details", "የሰራተኛ ዝርዝሮችን ይላኩ")}
-          </motion.button>
-        </div>
       </motion.form>
     </motion.div>
   );

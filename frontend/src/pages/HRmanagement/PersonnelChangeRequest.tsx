@@ -4,15 +4,13 @@ import { useLanguage } from "../../context/LanguageContext";
 import {
   Send,
   History,
-  Mail,
-  Phone,
-  FileText,
   Eye,
-  CheckCircle2,
-  UserPlus,
-  Loader2,
   ArrowLeft,
   UserCheck,
+  Loader2,
+  CheckCircle2,
+  X,
+  Search,
 } from "lucide-react";
 import { LoadingSpinner } from "../../components/LoadingSpinner";
 import PersonnelDetailsForm from "./PersonnelDetailsForm";
@@ -34,19 +32,11 @@ export default function PersonnelChangeRequest() {
 
   const [activeTab, setActiveTab] = useState<"initiate" | "history" | "details">("initiate");
   const [selectedRecord, setSelectedRecord] = useState<HistoryRecord | null>(null);
-  const [positionType, setPositionType] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [reason, setReason] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [detailViewRecord, setDetailViewRecord] = useState<HistoryRecord | null>(null);
+  const [historySearch, setHistorySearch] = useState("");
+  const [historyFilter, setHistoryFilter] = useState("ALL");
   const [submitting, setSubmitting] = useState(false);
-
-  const historyData: HistoryRecord[] = [
-    { id: 1, positionType: t("Personnel Manager", "የሰራተኞች አስተዳዳሪ"), newPersonName: "Abebe Kebede", previousPersonName: "Meron Alemu", reason: t("Resignation", "ስራ መልቀቅ"), status: "Approved", date: "2025-01-15" },
-    { id: 2, positionType: t("Operations", "ኦፕሬሽን"), newPersonName: "Tigist Haile", previousPersonName: "Dawit Eshetu", reason: t("Transfer", "ዝውውር"), status: "Pending", date: "2025-03-10" },
-    { id: 3, positionType: t("Administration", "አስተዳደር"), newPersonName: "Biruk Tadesse", previousPersonName: "Sara Hailu", reason: t("Promotion", "ማስተዋወቅ"), status: "Rejected", date: "2025-02-20" },
-  ];
+  const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +47,23 @@ export default function PersonnelChangeRequest() {
       setTimeout(() => setSubmitted(false), 3000);
     }, 1500);
   };
+
+  const historyData: HistoryRecord[] = [
+    { id: 1, positionType: t("Personnel Manager", "የሰራተኞች አስተዳዳሪ"), newPersonName: "Abebe Kebede", previousPersonName: "Meron Alemu", reason: t("Resignation", "ስራ መልቀቅ"), status: "Approved", date: "2025-01-15" },
+    { id: 2, positionType: t("Operations", "ኦፕሬሽን"), newPersonName: "Tigist Haile", previousPersonName: "Dawit Eshetu", reason: t("Transfer", "ዝውውር"), status: "Pending", date: "2025-03-10" },
+    { id: 3, positionType: t("Administration", "አስተዳደር"), newPersonName: "Biruk Tadesse", previousPersonName: "Sara Hailu", reason: t("Promotion", "ማስተዋወቅ"), status: "Rejected", date: "2025-02-20" },
+  ];
+
+  const filteredHistory = historyData.filter((row) => {
+    const matchesSearch =
+      !historySearch ||
+      row.positionType.toLowerCase().includes(historySearch.toLowerCase()) ||
+      row.newPersonName.toLowerCase().includes(historySearch.toLowerCase()) ||
+      row.previousPersonName.toLowerCase().includes(historySearch.toLowerCase()) ||
+      row.reason.toLowerCase().includes(historySearch.toLowerCase());
+    const matchesFilter = historyFilter === "ALL" || row.status === historyFilter;
+    return matchesSearch && matchesFilter;
+  });
 
   return (
     <motion.div
@@ -107,118 +114,31 @@ export default function PersonnelChangeRequest() {
           </motion.button>
         ))}
       </div>
-
       {/* TAB 1: INITIATE */}
       {activeTab === "initiate" && (
+        <>
+        <PersonnelDetailsForm />
+
         <motion.form
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.3 }}
           onSubmit={handleSubmit}
-          className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-5 relative"
+          className="relative"
         >
-          {submitting && <LoadingSpinner overlay text="Submitting request..." />}
+          {submitting && <LoadingSpinner overlay text={t("Submitting request...", "ጥያቄ በማስገባት ላይ...")} />}
 
           {submitted && (
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm font-medium">
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm font-medium mb-4">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               {t("Request submitted successfully!", "ጥያቄ በተሳካ ሁኔታ ቀርቧል!")}
             </div>
           )}
 
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#003366] to-[#001F3F] text-[#FFD700] flex items-center justify-center shadow-sm">
-              <Send className="w-4 h-4" />
-            </div>
-            <h3 className="text-sm font-bold text-[#003366]">
-              {t("Personnel Change Details", "የሰራተኞች ለውጥ ዝርዝሮች")}
-            </h3>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
-              {t("Position Type", "የቦታ አይነት")} <span className="text-orange-500">*</span>
-            </label>
-            <select
-              value={positionType}
-              onChange={(e) => setPositionType(e.target.value)}
-              required
-              className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
-            >
-              <option value="">{t("Select position type...", "የቦታ አይነት ይምረጡ...")}</option>
-              <option value="Manager">{t("Personnel Manager", "የሰራተኞች አስተዳዳሪ")}</option>
-              <option value="Operations">{t("Operations", "ኦፕሬሽን")}</option>
-              <option value="Admin">{t("Administration", "አስተዳደር")}</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
-              {t("New Person Full Name", "የአዲሱ ሰው ሙሉ ስም")} <span className="text-orange-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required
-              placeholder={t("Enter full name...", "ሙሉ ስም ያስገቡ...")}
-              className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
-                <Mail className="w-3.5 h-3.5 inline mr-1 text-[#FFD700]" />
-                {t("Email Address", "የኢሜይል አድራሻ")} <span className="text-orange-500">*</span>
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder={t("email@example.com", "email@example.com")}
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
-                <Phone className="w-3.5 h-3.5 inline mr-1 text-[#FFD700]" />
-                {t("Phone Number", "ስልክ ቁጥር")} <span className="text-orange-500">*</span>
-              </label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-                placeholder="+251..."
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
-              <FileText className="w-3.5 h-3.5 inline mr-1 text-[#FFD700]" />
-              {t("Reason for Change", "የለውጡ ምክንያት")} <span className="text-orange-500">*</span>
-            </label>
-            <textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              required
-              rows={3}
-              placeholder={t("Describe the reason for this change...", "የዚህን ለውጥ ምክንያት ይግለጹ...")}
-              className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all resize-none"
-            />
-          </div>
-
-          <div className="flex justify-end pt-2">
+          <div className="flex justify-end">
             <motion.button
               whileHover={{ y: -1 }}
               whileTap={{ scale: 0.97 }}
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-[#003366] to-[#001F3F] text-white text-xs font-bold tracking-wide px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-[#003366] to-[#001F3F] text-white text-xs font-bold tracking-wide px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {submitting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -231,6 +151,7 @@ export default function PersonnelChangeRequest() {
             </motion.button>
           </div>
         </motion.form>
+        </>
       )}
 
       {/* TAB 2: REQUEST HISTORY */}
@@ -258,7 +179,28 @@ export default function PersonnelChangeRequest() {
               </div>
             </div>
           </div>
-
+          <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                value={historySearch}
+                onChange={(e) => setHistorySearch(e.target.value)}
+                placeholder={t("Search by name or position...", "በስም ወይም በቦታ ፈልግ...")}
+                className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 hover:border-[#003366]/30 transition-all"
+              />
+            </div>
+            <select
+              value={historyFilter}
+              onChange={(e) => setHistoryFilter(e.target.value)}
+              className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 hover:border-[#003366]/30 transition-all"
+            >
+              <option value="ALL">{t("All Status", "ሁሉም ሁኔታ")}</option>
+              <option value="Approved">{t("Approved", "ጸድቋል")}</option>
+              <option value="Pending">{t("Pending", "በመጠባበቅ ላይ")}</option>
+              <option value="Rejected">{t("Rejected", "ውድቅ")}</option>
+            </select>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm">
               <thead>
@@ -273,7 +215,7 @@ export default function PersonnelChangeRequest() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 text-gray-700">
-                {historyData.map((row) => (
+                {filteredHistory.map((row) => (
                   <motion.tr
                     key={row.id}
                     initial={{ opacity: 0, x: -10 }}
@@ -301,24 +243,11 @@ export default function PersonnelChangeRequest() {
                     <td className="p-4 text-xs text-gray-400">{row.date}</td>
                     <td className="p-4 text-right">
                       <div className="flex items-center gap-2 justify-end">
-                        {row.status === "Approved" && (
-                          <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            type="button"
-                            onClick={() => {
-                              setSelectedRecord(row);
-                              setActiveTab("details");
-                            }}
-                            className="px-3 py-1.5 bg-[#FFD700] text-[#003366] rounded-lg text-xs font-bold hover:shadow-md transition-shadow inline-flex items-center gap-1"
-                          >
-                            <UserPlus className="w-3.5 h-3.5" /> {t("Fill Details", "ዝርዝሮች ያስገቡ")}
-                          </motion.button>
-                        )}
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                           type="button"
+                          onClick={() => setDetailViewRecord(row)}
                           className="px-3 py-1.5 bg-[#003366] text-[#FFD700] rounded-lg text-xs font-bold hover:shadow-md transition-shadow inline-flex items-center gap-1"
                         >
                           <Eye className="w-3.5 h-3.5" /> {t("Detail View", "ዝርዝር እይታ")}
@@ -330,6 +259,104 @@ export default function PersonnelChangeRequest() {
               </tbody>
             </table>
           </div>
+        </motion.div>
+      )}
+
+      {/* Detail View Modal */}
+      {detailViewRecord && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+          onClick={() => setDetailViewRecord(null)}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ duration: 0.2 }}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden"
+          >
+            <div className="relative bg-gradient-to-r from-[#003366] to-[#001F3F] p-5">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#FFD700] via-[#C5A022] to-[#FFD700]" />
+              <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full bg-[#FFD700]/5" />
+              <div className="relative z-10 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-[#FFD700]/20 flex items-center justify-center">
+                    <Eye className="w-4 h-4 text-[#FFD700]" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white">
+                      {t("Request Detail", "የጥያቄ ዝርዝር")}
+                    </h3>
+                    <p className="text-[10px] text-white/50 font-medium">
+                      {t("Personnel change request details", "የሰራተኞች ለውጥ ጥያቄ ዝርዝሮች")}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setDetailViewRecord(null)}
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div className="p-6 space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1">
+                    {t("Position Type", "የቦታ አይነት")}
+                  </p>
+                  <p className="font-bold text-[#003366]">{detailViewRecord.positionType}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1">
+                    {t("New Person", "አዲስ ሰው")}
+                  </p>
+                  <p className="text-sm font-semibold text-gray-800">{detailViewRecord.newPersonName}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1">
+                    {t("Previous Person", "የቀድሞ ሰው")}
+                  </p>
+                  <p className="text-sm font-semibold text-gray-500">{detailViewRecord.previousPersonName}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1">
+                    {t("Reason", "ምክንያት")}
+                  </p>
+                  <p className="text-sm text-gray-700 bg-gray-50 rounded-xl p-3 border border-gray-100">
+                    {detailViewRecord.reason}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1">
+                    {t("Status", "ሁኔታ")}
+                  </p>
+                  <span className={`inline-block px-3 py-1 rounded-lg text-xs font-bold ${
+                    detailViewRecord.status === "Approved" ? "bg-green-100 text-green-700" :
+                    detailViewRecord.status === "Pending" ? "bg-amber-100 text-amber-700" :
+                    "bg-red-100 text-red-700"
+                  }`}>
+                    {isAm ?
+                      detailViewRecord.status === "Approved" ? "ጸድቋል" :
+                      detailViewRecord.status === "Pending" ? "በመጠባበቅ ላይ" :
+                      "ውድቅ"
+                      : detailViewRecord.status}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1">
+                    {t("Date", "ቀን")}
+                  </p>
+                  <p className="text-sm font-semibold text-gray-800">{detailViewRecord.date}</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </motion.div>
       )}
 

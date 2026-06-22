@@ -200,10 +200,18 @@ export default function AddressChangeRequestForm() {
   const [activeTab, setActiveTab] = useState<"form" | "history">("form");
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
-  const [requests, setRequests] = useState<Array<any>>([]);
+  const [requests, setRequests] = useState<Array<any>>([
+    { id: 1, status: "APPROVED", requestedAddressText: "Bole, Woreda 03, House 123, Addis Ababa", reason: "Moved to new residence", adminFeedback: "Verified and approved", createdAt: "2024-12-15T10:30:00Z" },
+    { id: 2, status: "PENDING", requestedAddressText: "Kazanchis, Woreda 01, House 45, Addis Ababa", reason: "Relocation for work", adminFeedback: null, createdAt: "2025-01-10T14:20:00Z" },
+    { id: 3, status: "REJECTED", requestedAddressText: "Megenagna, Woreda 08, Apt 7B, Addis Ababa", reason: "Incomplete documentation", adminFeedback: "Missing utility bill proof", createdAt: "2025-02-20T09:15:00Z" },
+    { id: 4, status: "APPROVED", requestedAddressText: "CMC, Woreda 12, Villa 9, Addis Ababa", reason: "Purchased new house", adminFeedback: "Documents verified", createdAt: "2025-03-05T16:45:00Z" },
+    { id: 5, status: "PENDING", requestedAddressText: "Saris, Woreda 07, House 88, Addis Ababa", reason: "Family relocation", adminFeedback: null, createdAt: "2025-03-18T11:00:00Z" },
+    { id: 6, status: "REJECTED", requestedAddressText: "Piassa, Woreda 02, Apt 12A, Addis Ababa", reason: "Address already updated", adminFeedback: "Duplicate request", createdAt: "2025-04-01T08:30:00Z" },
+  ]);
   const [historyFilter, setHistoryFilter] = useState<
     "ALL" | "PENDING" | "APPROVED" | "REJECTED"
   >("ALL");
+  const [historySearch, setHistorySearch] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
@@ -258,7 +266,9 @@ export default function AddressChangeRequestForm() {
         else if (Array.isArray(res?.data?.data)) list = res.data.data;
         else list = [];
 
-        setRequests(list || []);
+        if (list.length > 0) {
+          setRequests(list);
+        }
       } catch (err: any) {
         if (!isMounted) return;
         setHistoryError(
@@ -851,7 +861,17 @@ export default function AddressChangeRequestForm() {
                 {isAm ? "የአድራሻ ለውጥ ታሪክ" : "Address Change History"}
               </h3>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
+              <div className="relative flex-1 sm:min-w-[220px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={historySearch}
+                  onChange={(e) => setHistorySearch(e.target.value)}
+                  placeholder={isAm ? "በአድራሻ ፈልግ..." : "Search by address..."}
+                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-xs bg-gray-50 outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 transition-all"
+                />
+              </div>
               <select
                 value={historyFilter}
                 onChange={(e) => setHistoryFilter(e.target.value as any)}
@@ -862,7 +882,7 @@ export default function AddressChangeRequestForm() {
                 <option value="APPROVED">{isAm ? "ጸድቋል" : "Approved"}</option>
                 <option value="REJECTED">{isAm ? "ውድቅ ሆኗል" : "Rejected"}</option>
               </select>
-              <span className="text-xs font-medium text-gray-400 bg-gray-50 px-3 py-2 rounded-xl">
+              <span className="text-xs font-medium text-gray-400 bg-gray-50 px-3 py-2 rounded-xl whitespace-nowrap">
                 {historyLoading
                   ? isAm ? "በማምጣት ላይ..." : "Loading..."
                   : `${requests.length} ${isAm ? "ጥያቄዎች" : "requests"}`}
@@ -877,46 +897,63 @@ export default function AddressChangeRequestForm() {
             </div>
           ) : null}
 
-          <div className="space-y-3">
-            {(requests || [])
-              .filter(
-                (r) => historyFilter === "ALL" || r.status === historyFilter,
-              )
-              .map((r, idx) => (
-                <motion.div
-                  key={r.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: idx * 0.05 }}
-                  whileHover={{ y: -1 }}
-                  className="group p-4 rounded-2xl bg-gray-50/50 border border-gray-100 hover:border-[#FFD700]/30 hover:bg-gradient-to-r hover:from-[#FFD700]/5 hover:to-transparent transition-all duration-300"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-gray-900">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr className="bg-[#003366] text-white text-[11px] uppercase tracking-[0.2em]">
+                  <th className="p-4">{isAm ? "የጥያቄ መለያ" : "Request ID"}</th>
+                  <th className="p-4">{isAm ? "አድራሻ" : "Address"}</th>
+                  <th className="p-4">{isAm ? "ምክንያት" : "Reason"}</th>
+                  <th className="p-4">{isAm ? "የአስተዳዳሪ አስተያየት" : "Admin Feedback"}</th>
+                  <th className="p-4">{isAm ? "ሁኔታ" : "Status"}</th>
+                  <th className="p-4">{isAm ? "ቀን" : "Date"}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 text-gray-700">
+                {(requests || [])
+                  .filter(
+                    (r) => {
+                      if (historyFilter !== "ALL" && r.status !== historyFilter) return false;
+                      if (historySearch) {
+                        const q = historySearch.toLowerCase();
+                        if (!r.requestedAddressText.toLowerCase().includes(q) &&
+                            !(r.reason || "").toLowerCase().includes(q) &&
+                            !(r.adminFeedback || "").toLowerCase().includes(q) &&
+                            !String(r.id).includes(q)) return false;
+                      }
+                      return true;
+                    },
+                  )
+                  .map((r, idx) => (
+                    <motion.tr
+                      key={r.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, delay: idx * 0.05 }}
+                      whileHover={{ backgroundColor: "rgba(0,51,102,0.02)" }}
+                      className="transition-colors"
+                    >
+                      <td className="p-4 font-bold text-[#003366]">
                         {isAm ? "ጥያቄ #" : "Request #"}{r.id}
-                      </span>
-                    </div>
-                    <span className={`flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full ${statusColors(r.status)}`}>
-                      {statusIcon(r.status)}
-                      {r.status === "PENDING" ? (isAm ? "በመጠባበቅ ላይ" : "Pending") : r.status === "APPROVED" ? (isAm ? "ጸድቋል" : "Approved") : (isAm ? "ውድቅ" : "Rejected")}
-                    </span>
-                  </div>
-
-                  <p className="text-sm text-gray-600 mb-1">{r.requestedAddressText}</p>
-                  <p className="text-xs text-gray-400">
-                    {isAm ? "ምክንያት" : "Reason"}: {r.reason || "-"}
-                  </p>
-                  {r.adminFeedback ? (
-                    <p className="text-xs text-gray-400 mt-1">
-                      {isAm ? "የአስተዳዳሪ አስተያየት" : "Admin feedback"}: {r.adminFeedback}
-                    </p>
-                  ) : null}
-                  <p className="text-[10px] text-gray-400 mt-2">
-                    {isAm ? "የቀረበበት ቀን" : "Submitted"}: {new Date(r.createdAt).toLocaleString()}
-                  </p>
-                </motion.div>
-              ))}
+                      </td>
+                      <td className="p-4 whitespace-nowrap">{r.requestedAddressText}</td>
+                      <td className="p-4 whitespace-nowrap">{r.reason || "-"}</td>
+                      <td className="p-4 whitespace-nowrap text-gray-400">
+                        {r.adminFeedback || "-"}
+                      </td>
+                      <td className="p-4">
+                        <span className={`flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full w-fit ${statusColors(r.status)}`}>
+                          {statusIcon(r.status)}
+                          {r.status === "PENDING" ? (isAm ? "በመጠባበቅ ላይ" : "Pending") : r.status === "APPROVED" ? (isAm ? "ጸድቋል" : "Approved") : (isAm ? "ውድቅ" : "Rejected")}
+                        </span>
+                      </td>
+                      <td className="p-4 text-xs text-gray-400">
+                        {new Date(r.createdAt).toLocaleString()}
+                      </td>
+                    </motion.tr>
+                  ))}
+              </tbody>
+            </table>
             {(!requests || requests.length === 0) && !historyLoading && (
               <div className="text-center py-12">
                 <Search className="w-8 h-8 text-gray-300 mx-auto mb-3" />

@@ -22,6 +22,8 @@ import {
   IdCard,
   BookOpen,
   Building2,
+  Eye,
+  Trash2,
 } from "lucide-react";
 import { apiRequest } from "../../lib/api";
 import { uploadOrganizationDocuments } from "../../lib/fileUploadHelper";
@@ -1277,7 +1279,7 @@ export default function EmployeeRegistration() {
                   <span className="text-[#003366]">{isAm ? "የሚፈለጉ ሰነዶች" : "Required Documents"}</span>
                 </h2>
                 <p className="text-sm text-slate-500 mb-6">
-                  {isAm ? "ሁሉንም አስፈላጊ ፋይሎች በPDF ወይም DOCX ቅርጸት ይስቀሉ (ከፍተኛ 5ሜባ በአንድ ፋይል)" : "Upload all mandatory files in PDF or DOCX format (Max 5MB per file)."}
+                  {isAm ? "ሁሉንም አስፈላጊ ፋይሎች በPDF ቅርጸት ይስቀሉ (ከፍተኛ 5ሜባ በአንድ ፋይል)" : "Upload all mandatory files in PDF format (Max 5MB per file)."}
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1309,37 +1311,73 @@ export default function EmployeeRegistration() {
                               )}
                             </div>
                             <p className="text-xs text-slate-400 mt-1">
-                              {isAm ? "PDF፣ DOCX ከፍተኛ 5ሜባ" : "PDF, DOCX Max 5MB"}
+                              {isAm ? "PDF ከፍተኛ 5ሜባ" : "PDF Max 5MB"}
                             </p>
                           </div>
                         </div>
                       </div>
 
-                      <div className="relative">
+                      <div className="space-y-2">
                         <input
                           type="file"
                           id={doc.key}
-                          accept=".pdf,.docx"
+                          accept=".pdf"
                           onChange={(e) => handleFileChange(e, doc.key)}
                           className="hidden"
                         />
-                        <label
-                          htmlFor={doc.key}
-                          className={`flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg text-sm font-semibold cursor-pointer transition-all duration-200 border-2 border-dashed ${
-                            formData.documents[doc.key]
-                              ? "bg-[#003366]/5 border-[#003366]/40 text-[#003366]"
-                              : "bg-white border-slate-300 text-slate-600 hover:border-[#003366]/50 hover:bg-[#003366]/5"
-                          }`}
-                        >
-                          {formData.documents[doc.key] ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-600" />
-                          ) : (
+                        {formData.documents[doc.key] ? (
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#003366]/5 border border-[#003366]/20 text-sm">
+                              <File className="h-4 w-4 text-[#003366] shrink-0" />
+                              <span className="flex-1 truncate font-medium text-[#003366] text-xs">
+                                {formData.documents[doc.key]?.name}
+                              </span>
+                              <span className="text-[10px] font-bold text-gray-400 shrink-0">
+                                {((formData.documents[doc.key]?.size || 0) / (1024 * 1024)).toFixed(2)} MB
+                              </span>
+                            </div>
+                            <div className="flex gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const url = URL.createObjectURL(formData.documents[doc.key]!);
+                                  window.open(url, "_blank");
+                                  setTimeout(() => URL.revokeObjectURL(url), 60000);
+                                }}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border border-[#003366]/20 text-[10px] font-bold text-[#003366] hover:bg-[#003366]/5 transition-colors"
+                              >
+                                <Eye className="h-3.5 w-3.5" /> {isAm ? "ተመልከት" : "Preview"}
+                              </button>
+                              <label
+                                htmlFor={doc.key}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border border-amber-200 text-[10px] font-bold text-amber-600 hover:bg-amber-50 cursor-pointer transition-colors"
+                              >
+                                <UploadCloud className="h-3.5 w-3.5" /> {isAm ? "እንደገና ጫን" : "Reupload"}
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setFormData((prev) => {
+                                    const docs = { ...prev.documents };
+                                    delete docs[doc.key];
+                                    return { ...prev, documents: docs };
+                                  });
+                                }}
+                                className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-red-200 text-[10px] font-bold text-red-600 hover:bg-red-50 transition-colors"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <label
+                            htmlFor={doc.key}
+                            className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg text-sm font-semibold cursor-pointer transition-all duration-200 border-2 border-dashed bg-white border-slate-300 text-slate-600 hover:border-[#003366]/50 hover:bg-[#003366]/5"
+                          >
                             <UploadCloud className="h-4 w-4" />
-                          )}
-                          {formData.documents[doc.key]
-                            ? formData.documents[doc.key]?.name
-                            : (isAm ? "ፋይል ይምረጡ" : "Select File")}
-                        </label>
+                            {isAm ? "ፋይል ይምረጡ" : "Select File"}
+                          </label>
+                        )}
                       </div>
                     </motion.div>
                   ))}
