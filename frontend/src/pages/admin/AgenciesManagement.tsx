@@ -230,10 +230,25 @@ const defaultOrg = (): OrganizationMock => ({
   numberOfComputers: 0,
   hasStoreHouse: false,
   incidents: [],
-  employees: [],
+  employees: [
+    { id: 1, userId: 1, organizationId: 1, fullName: "Abebe Kebede", email: "abebe.k@example.com", phone: "+251911111111", faydaId: "FAN-001", positionName: "Security Manager", gender: "Male", citizenship: "Ethiopian", age: 38, educationLevel: "Degree", workExpYears: 12, totalExpYears: 15, isBlacklisted: false, employmentStatus: "Active", employmentStartDate: "2019-03-15", documents: [] },
+    { id: 2, userId: 2, organizationId: 1, fullName: "Tigist Haile", email: "tigist.h@example.com", phone: "+251922222222", faydaId: "FAN-002", positionName: "Operations Head", gender: "Female", citizenship: "Ethiopian", age: 42, educationLevel: "Degree", workExpYears: 16, totalExpYears: 18, isBlacklisted: false, employmentStatus: "Active", employmentStartDate: "2018-07-22", documents: [] },
+    { id: 3, userId: 3, organizationId: 1, fullName: "Dawit Eshetu", email: "dawit.e@example.com", phone: "+251933333333", faydaId: "FAN-003", positionName: "Admin Head", gender: "Male", citizenship: "Ethiopian", age: 45, educationLevel: "Degree", workExpYears: 20, totalExpYears: 22, isBlacklisted: false, employmentStatus: "Active", employmentStartDate: "2017-01-10", documents: [] },
+    { id: 4, userId: 4, organizationId: 1, fullName: "Meron Alemu", email: "meron.a@example.com", phone: "+251944444444", faydaId: "FAN-004", positionName: "Security Officer", gender: "Female", citizenship: "Ethiopian", age: 29, educationLevel: "Certificate", workExpYears: 5, totalExpYears: 6, isBlacklisted: false, employmentStatus: "Active", employmentStartDate: "2021-11-05", documents: [] },
+    { id: 5, userId: 5, organizationId: 1, fullName: "Biruk Tadesse", email: "biruk.t@example.com", phone: "+251955555555", faydaId: "FAN-005", positionName: "Field Agent", gender: "Male", citizenship: "Ethiopian", age: 32, educationLevel: "Diploma", workExpYears: 8, totalExpYears: 10, isBlacklisted: false, employmentStatus: "Inactive", employmentStartDate: "2022-09-12", documents: [] },
+    { id: 6, userId: 6, organizationId: 1, fullName: "Sara Hailu", email: "sara.h@example.com", phone: "+251966666666", faydaId: "FAN-006", positionName: "Compliance Officer", gender: "Female", citizenship: "Ethiopian", age: 35, educationLevel: "Degree", workExpYears: 10, totalExpYears: 12, isBlacklisted: false, employmentStatus: "Approved", employmentStartDate: "2020-04-18", documents: [] },
+    { id: 7, userId: 7, organizationId: 1, fullName: "Henok Mesfin", email: "henok.m@example.com", phone: "+251977777777", faydaId: "FAN-007", positionName: "IT Support", gender: "Male", citizenship: "Ethiopian", age: 27, educationLevel: "Degree", workExpYears: 4, totalExpYears: 5, isBlacklisted: false, employmentStatus: "Pending", employmentStartDate: "2023-06-30", documents: [] },
+    { id: 8, userId: 8, organizationId: 1, fullName: "Betelhem Assefa", email: "betelhem.a@example.com", phone: "+251988888888", faydaId: "FAN-008", positionName: "HR Assistant", gender: "Female", citizenship: "Ethiopian", age: 24, educationLevel: "Diploma", workExpYears: 2, totalExpYears: 3, isBlacklisted: false, employmentStatus: "Pending", employmentStartDate: "2024-02-14", documents: [] },
+    { id: 9, userId: 9, organizationId: 1, fullName: "Tekle Ayele", email: "tekle.a@example.com", phone: "+251999999999", faydaId: "FAN-009", positionName: "Security Guard", gender: "Male", citizenship: "Ethiopian", age: 31, educationLevel: "Grade 10-12", workExpYears: 7, totalExpYears: 9, isBlacklisted: false, employmentStatus: "Rejected", employmentStartDate: "2023-11-01", documents: [] },
+    { id: 10, userId: 10, organizationId: 1, fullName: "Lemlem Wondimu", email: "lemlem.w@example.com", phone: "+251910101010", faydaId: "FAN-010", positionName: "Secretary", gender: "Female", citizenship: "Ethiopian", age: 26, educationLevel: "Degree", workExpYears: 3, totalExpYears: 4, isBlacklisted: false, employmentStatus: "Suspended", employmentStartDate: "2023-08-20", documents: [] },
+  ],
   educationStats: emptyEducationStats(),
   trainingDetails: [],
-  serviceContracts: [],
+  serviceContracts: [
+    { id: 1, serviceUserName: "Addis Security PLC", contractUrl: "/contracts/001.pdf", assignedPersonnelCount: 15, addressText: "Bole, Addis Ababa", status: "Active", createdAt: "2023-06-01", updatedAt: "2024-06-01" },
+    { id: 2, serviceUserName: "Ethio Guard Solutions", contractUrl: "/contracts/002.pdf", assignedPersonnelCount: 8, addressText: "Kazanchis, Addis Ababa", status: "Active", createdAt: "2023-09-15", updatedAt: "2024-09-15" },
+    { id: 3, serviceUserName: "Tena Security Services", contractUrl: "/contracts/003.pdf", assignedPersonnelCount: 22, addressText: "Megenagna, Addis Ababa", status: "Expiring Soon", createdAt: "2022-01-10", updatedAt: "2024-01-10" },
+  ],
   branches: [],
   dmsDocuments: [],
 });
@@ -252,6 +267,8 @@ export function AgenciesManagement({
   const [selectedContractName, setSelectedContractName] = useState<string>("");
   const [selectedDocUrl, setSelectedDocUrl] = useState<string | null>(null);
   const [selectedDocName, setSelectedDocName] = useState<string>("");
+  const [showAppendContract, setShowAppendContract] = useState(false);
+  const [newContract, setNewContract] = useState({ serviceUserName: "", addressText: "", assignedPersonnelCount: 0, status: "Active", contractYears: 1, contractDoc: null as File | null });
   // Toast state
   const [toastOpen, setToastOpen] = useState(false);
   const [toastType, setToastType] = useState<ToastType>("success");
@@ -1016,7 +1033,7 @@ export function AgenciesManagement({
                   {(() => {
                     const filtered = org.employees.filter((emp) => {
                       const matchesSearch = emp.fullName.toLowerCase().includes(personnelSearch.toLowerCase());
-                      const matchesFilter = personnelFilter === "ALL" || emp.employmentStatus === personnelFilter;
+                      const matchesFilter = personnelFilter === "ALL" || (emp.employmentStatus ?? "").toLowerCase() === personnelFilter.toLowerCase();
                       return matchesSearch && matchesFilter;
                     });
                     return filtered.map((emp, idx) => (
@@ -1059,10 +1076,20 @@ export function AgenciesManagement({
                             className={`px-2 py-0.5 rounded text-xs font-semibold ${
                               emp.employmentStatus === "Active"
                                 ? "bg-green-50 text-green-700 border border-green-200"
-                                : "bg-amber-50 text-amber-700 border border-amber-200"
+                                : emp.employmentStatus === "Inactive"
+                                  ? "bg-gray-100 text-gray-600 border border-gray-200"
+                                  : emp.employmentStatus === "Approved"
+                                    ? "bg-blue-50 text-blue-700 border border-blue-200"
+                                    : emp.employmentStatus === "Pending"
+                                      ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                      : emp.employmentStatus === "Rejected"
+                                        ? "bg-red-50 text-red-700 border border-red-200"
+                                        : emp.employmentStatus === "Suspended"
+                                          ? "bg-purple-50 text-purple-700 border border-purple-200"
+                                          : "bg-amber-50 text-amber-700 border border-amber-200"
                             }`}
                           >
-                            {emp.employmentStatus === "Active" && isAm ? "ንቁ" : emp.employmentStatus === "Inactive" && isAm ? "የማይንቀሳቀስ" : emp.employmentStatus}
+                            {emp.employmentStatus === "Active" && isAm ? "ንቁ" : emp.employmentStatus === "Inactive" && isAm ? "የማይንቀሳቀስ" : emp.employmentStatus === "Approved" && isAm ? "የጸደቀ" : emp.employmentStatus === "Pending" && isAm ? "በመጠባበቅ ላይ" : emp.employmentStatus === "Rejected" && isAm ? "አልተቀበለም" : emp.employmentStatus === "Suspended" && isAm ? "የታገደ" : emp.employmentStatus}
                           </span>
                         </div>
                       </td>
@@ -1285,6 +1312,7 @@ export function AgenciesManagement({
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowAppendContract(true)}
                   className="px-3 py-1.5 bg-gradient-to-r from-[#003366] to-[#001F3F] hover:from-[#001F3F] hover:to-[#003366] text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 self-start sm:self-auto shadow-sm"
                 >
                   <Plus size={14} /> {isAm ? "ውል ያክሉ" : "Append Contract"}
@@ -1842,6 +1870,163 @@ export function AgenciesManagement({
               </motion.div>
             </div>
           </div>
+        )}
+
+        {showAppendContract && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            onClick={() => setShowAppendContract(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden"
+            >
+              <div className="relative bg-gradient-to-r from-[#003366] to-[#001F3F] p-5">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#FFD700] via-[#C5A022] to-[#FFD700]" />
+                <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full bg-[#FFD700]/5" />
+                <div className="relative z-10 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-[#FFD700]/20 flex items-center justify-center">
+                      <Plus className="w-4 h-4 text-[#FFD700]" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-white">
+                        {isAm ? "አዲስ ውል ያክሉ" : "Append Contract"}
+                      </h3>
+                      <p className="text-[10px] text-white/50 font-medium">
+                        {isAm ? "አዲስ የአገልግሎት ውል ያስገቡ" : "Enter new service contract details"}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowAppendContract(false)}
+                    className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1.5 block">
+                    {isAm ? "የደንበኛ ስም" : "Client Name"}
+                  </label>
+                  <input
+                    type="text"
+                    value={newContract.serviceUserName}
+                    onChange={(e) => setNewContract({ ...newContract, serviceUserName: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 outline-none transition-all"
+                    placeholder={isAm ? "የድርጅት ስም ያስገቡ" : "Enter organization name"}
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1.5 block">
+                    {isAm ? "የቦታ አድራሻ" : "Site Address"}
+                  </label>
+                  <input
+                    type="text"
+                    value={newContract.addressText}
+                    onChange={(e) => setNewContract({ ...newContract, addressText: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 outline-none transition-all"
+                    placeholder={isAm ? "አድራሻ ያስገቡ" : "Enter address"}
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1.5 block">
+                    {isAm ? "የተመደቡ ጠባቂዎች" : "Assigned Guards"}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={newContract.assignedPersonnelCount}
+                    onChange={(e) => setNewContract({ ...newContract, assignedPersonnelCount: parseInt(e.target.value) || 0 })}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 outline-none transition-all"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1.5 block">
+                    {isAm ? "ሁኔታ" : "Status"}
+                  </label>
+                  <select
+                    value={newContract.status}
+                    onChange={(e) => setNewContract({ ...newContract, status: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 outline-none transition-all"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Expiring Soon">Expiring Soon</option>
+                    <option value="Expired">Expired</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1.5 block">
+                    {isAm ? "የውል ዓመታት" : "Contract Duration (Years)"}
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="99"
+                    value={newContract.contractYears}
+                    onChange={(e) => setNewContract({ ...newContract, contractYears: parseInt(e.target.value) || 1 })}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 outline-none transition-all"
+                    placeholder="1"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1.5 block">
+                    {isAm ? "የውል ሰነድ" : "Contract Document"}
+                  </label>
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    onChange={(e) => setNewContract({ ...newContract, contractDoc: e.target.files?.[0] || null })}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-[#003366] file:text-white file:text-xs file:font-bold hover:file:bg-[#001F3F] focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 outline-none transition-all"
+                  />
+                  {newContract.contractDoc && (
+                    <p className="text-xs text-gray-500 mt-1">{newContract.contractDoc.name}</p>
+                  )}
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setShowAppendContract(false)}
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-500 hover:bg-gray-50 transition-colors"
+                  >
+                    {isAm ? "ሰርዝ" : "Cancel"}
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      if (!newContract.serviceUserName.trim() || !newContract.addressText.trim()) return;
+                      const now = new Date().toISOString().slice(0, 10);
+                      const contractFileName = newContract.contractDoc ? newContract.contractDoc.name : "";
+                      setSelectedOrg((prev) => {
+                        if (!prev) return prev;
+                        return {
+                          ...prev,
+                          serviceContracts: [
+                            ...prev.serviceContracts,
+                            { id: Date.now(), serviceUserName: newContract.serviceUserName, addressText: newContract.addressText, assignedPersonnelCount: newContract.assignedPersonnelCount, status: newContract.status, contractUrl: contractFileName, createdAt: now, updatedAt: now },
+                          ],
+                        };
+                      });
+                      setNewContract({ serviceUserName: "", addressText: "", assignedPersonnelCount: 0, status: "Active", contractYears: 1, contractDoc: null });
+                      setShowAppendContract(false);
+                    }}
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#003366] to-[#001F3F] text-white text-sm font-bold shadow-md hover:shadow-lg transition-all"
+                  >
+                    {isAm ? "ውል ያስገቡ" : "Add Contract"}
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
 
         {selectedEmployee && (

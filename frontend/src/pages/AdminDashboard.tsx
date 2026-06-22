@@ -25,6 +25,7 @@ import {
   MessageSquare,
   ClipboardCheck,
   MapPin,
+  UserCheck,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useLanguage } from "../context/LanguageContext";
@@ -65,6 +66,7 @@ import AdminAgreementManager from "./admin/AdminAgreementManager";
 import AdminAgreementDetail from "./admin/AdminAgreementDetail";
 import { AdminInspections } from "./AdminInspections";
 import { AdminAddressApproval } from "./admin/AdminAddressApproval";
+import { PersonnelChangeApprovals } from "./admin/PersonnelChangeApprovals";
 
 const Overview = () => {
   const { language } = useLanguage();
@@ -793,6 +795,11 @@ export const AdminDashboard = () => {
       path: "/admin/address-approvals",
     },
     {
+      icon: <UserCheck className="w-5 h-5" />,
+      label: isAm ? "የሰራተኞች ለውጥ ማረጋገጫ" : "Personnel Change Approvals",
+      path: "/admin/personnel-change-approvals",
+    },
+    {
       icon: <ShieldCheck className="w-5 h-5" />,
       label: t.dashboard.licenseManagement,
       path: "/admin/licenses",
@@ -882,6 +889,7 @@ export const AdminDashboard = () => {
         <Route path="applications" element={<ApplicationsReview />} />
         <Route path="inspections" element={<AdminInspections />} />
         <Route path="address-approvals" element={<AdminAddressApproval />} />
+        <Route path="personnel-change-approvals" element={<PersonnelChangeApprovals />} />
         <Route path="licenses" element={<LicenseManagement />} />
         <Route path="licenses/:certificateId?" element={<LicenseViewer />} />
         <Route path="gps" element={<GPSTracking />} />

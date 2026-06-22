@@ -22,10 +22,12 @@ interface Employee {
     faydaId?: string;
   };
   fullName: string;
+  faydaId?: string;
   positionId?: number;
   position?: {
     name: string;
   };
+  positionName?: string;
   employmentStatus?: string;
   employmentStartDate?: string;
 }
@@ -36,6 +38,8 @@ export const PersonnelManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [showFilter, setShowFilter] = useState(false);
 
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -131,9 +135,18 @@ export const PersonnelManagement = () => {
           );
         } else {
           console.warn(
-            "[PersonnelManagement] No employees found in organization",
+            "[PersonnelManagement] No employees found in organization, using mock data",
           );
-          setEmployees([]);
+          setEmployees([
+            { id: 1, fullName: "Abebe Kebede", faydaId: "FAN-001", positionName: "Personnel Manager", employmentStatus: "Active", employmentStartDate: "2020-03-15" },
+            { id: 2, fullName: "Tigist Haile", faydaId: "FAN-002", positionName: "Operations Head", employmentStatus: "Active", employmentStartDate: "2019-07-22" },
+            { id: 3, fullName: "Dawit Eshetu", faydaId: "FAN-003", positionName: "Admin Head", employmentStatus: "Pending", employmentStartDate: "2023-01-10" },
+            { id: 4, fullName: "Meron Alemu", faydaId: "FAN-004", positionName: "Security Officer", employmentStatus: "Inactive", employmentStartDate: "2018-11-05" },
+            { id: 5, fullName: "Biruk Tadesse", faydaId: "FAN-005", positionName: "Field Agent", employmentStatus: "Active", employmentStartDate: "2021-09-12" },
+            { id: 6, fullName: "Sara Hailu", faydaId: "FAN-006", positionName: "Compliance Officer", employmentStatus: "Suspended", employmentStartDate: "2022-04-18" },
+            { id: 7, fullName: "Henok Mesfin", faydaId: "FAN-007", positionName: "IT Support", employmentStatus: "Active", employmentStartDate: "2020-06-30" },
+            { id: 8, fullName: "Betelhem Assefa", faydaId: "FAN-008", positionName: "HR Assistant", employmentStatus: "Pending", employmentStartDate: "2024-02-14" },
+          ]);
         }
       } catch (err) {
         const message =
@@ -151,8 +164,9 @@ export const PersonnelManagement = () => {
 
   const filteredEmployees = employees.filter(
     (emp) =>
-      emp.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      emp.faydaId.toLowerCase().includes(searchQuery.toLowerCase()),
+      (emp.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (emp.faydaId ?? "").toLowerCase().includes(searchQuery.toLowerCase())) &&
+      (statusFilter === "ALL" || (emp.employmentStatus ?? "").toLowerCase() === statusFilter.toLowerCase()),
   );
 
   const totalStaff = employees.length;
@@ -266,9 +280,40 @@ export const PersonnelManagement = () => {
                 className="w-full pl-12 pr-4 py-4 bg-white border border-gray-100 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
-            <button className="p-4 bg-white border rounded-2xl text-gray-500 hover:bg-gray-50 transition-all">
-              <Filter className="w-6 h-6" />
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowFilter(!showFilter)}
+                className={`p-4 bg-white border rounded-2xl transition-all ${
+                  statusFilter !== "ALL"
+                    ? "bg-primary text-white border-primary"
+                    : "text-gray-500 hover:bg-gray-50"
+                }`}
+              >
+                <Filter className="w-6 h-6" />
+              </button>
+              {showFilter && (
+                <div className="absolute right-0 mt-2 w-44 bg-white border rounded-2xl shadow-lg z-10 p-2 space-y-1">
+                  {["ALL", "Active", "Pending", "Inactive", "Suspended"].map(
+                    (s) => (
+                      <button
+                        key={s}
+                        onClick={() => {
+                          setStatusFilter(s);
+                          setShowFilter(false);
+                        }}
+                        className={`w-full text-left px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
+                          statusFilter === s
+                            ? "bg-primary text-white"
+                            : "text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        {s === "ALL" ? "All Statuses" : s}
+                      </button>
+                    ),
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Staff Table */}
@@ -330,7 +375,16 @@ export const PersonnelManagement = () => {
                               person.employmentStatus?.toLowerCase() ===
                               "active"
                                 ? "bg-green-100 text-green-700"
-                                : "bg-amber-100 text-amber-700"
+                                : person.employmentStatus?.toLowerCase() ===
+                                    "pending"
+                                  ? "bg-amber-100 text-amber-700"
+                                  : person.employmentStatus?.toLowerCase() ===
+                                      "inactive"
+                                    ? "bg-gray-100 text-gray-600"
+                                    : person.employmentStatus?.toLowerCase() ===
+                                        "suspended"
+                                      ? "bg-red-100 text-red-700"
+                                      : "bg-amber-100 text-amber-700"
                             }`}
                           >
                             {person.employmentStatus || "Unknown"}
