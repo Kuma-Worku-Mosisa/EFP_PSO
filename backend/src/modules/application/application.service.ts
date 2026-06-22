@@ -771,19 +771,16 @@ export class ApplicationService {
           manager: {
             include: {
               documents: true,
-              educationDocs: true,
             },
           },
           operationsHead: {
             include: {
               documents: true,
-              educationDocs: true,
             },
           },
           adminHead: {
             include: {
               documents: true,
-              educationDocs: true,
             },
           },
         },
@@ -821,7 +818,11 @@ export class ApplicationService {
       collectUnverified("manager", application.manager?.documents);
       collectUnverified(
         "manager-education",
-        application.manager?.educationDocs,
+        (application.manager?.documents || []).filter((d) =>
+          String(d.documentType || "")
+            .toLowerCase()
+            .includes("education"),
+        ),
       );
       collectUnverified(
         "operations-head",
@@ -829,12 +830,20 @@ export class ApplicationService {
       );
       collectUnverified(
         "operations-head-education",
-        application.operationsHead?.educationDocs,
+        (application.operationsHead?.documents || []).filter((d) =>
+          String(d.documentType || "")
+            .toLowerCase()
+            .includes("education"),
+        ),
       );
       collectUnverified("admin-head", application.adminHead?.documents);
       collectUnverified(
         "admin-head-education",
-        application.adminHead?.educationDocs,
+        (application.adminHead?.documents || []).filter((d) =>
+          String(d.documentType || "")
+            .toLowerCase()
+            .includes("education"),
+        ),
       );
 
       if (unverifiedDocuments.length > 0) {
@@ -1236,7 +1245,6 @@ export class ApplicationService {
                 },
               },
               documents: true,
-              educationDocs: true,
               address: {
                 include: {
                   kebele: {
@@ -1268,7 +1276,6 @@ export class ApplicationService {
                 },
               },
               documents: true,
-              educationDocs: true,
               address: {
                 include: {
                   kebele: {
@@ -1300,7 +1307,6 @@ export class ApplicationService {
                 },
               },
               documents: true,
-              educationDocs: true,
               address: {
                 include: {
                   kebele: {
@@ -1423,7 +1429,14 @@ export class ApplicationService {
           TotalExpYears: employee.TotalExpYears ?? 0,
           isBlacklisted: Boolean(employee.isBlacklisted),
           address: employee.address,
-          educationDocs: toFileList(employee.educationDocs || []),
+          // Derive education documents from general documents by filtering types
+          educationDocs: toFileList(
+            (employee.documents || []).filter((d) =>
+              String(d.documentType || "")
+                .toLowerCase()
+                .includes("education"),
+            ),
+          ),
           documents: toFileList(employee.documents || []),
         };
       };

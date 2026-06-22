@@ -6,8 +6,8 @@
 // filepath: frontend/src/lib/api.ts
 
 // 1. Point to your backend port 5000 explicitly
-export const API_BASE = import.meta.env.DEV 
-  ? "http://localhost:5000/api" 
+export const API_BASE = import.meta.env.DEV
+  ? "http://localhost:5000/api"
   : "/api"; // Keep /api for production (where frontend/backend are served together)
 
 const IS_DEV = import.meta.env.DEV;
@@ -101,10 +101,6 @@ export async function apiRequest<T = any>(
       headers.set("Authorization", `Bearer ${savedToken}`);
     }
 
-    if (IS_DEV) {
-      console.log(` API Request: ${options?.method || "GET"} ${endpoint}`);
-    }
-
     const res = await fetch(url, {
       ...restOptions,
       signal: controller.signal,
@@ -152,10 +148,6 @@ export async function apiRequest<T = any>(
         data?.errors,
         data?.code,
       );
-    }
-
-    if (IS_DEV) {
-      console.log(`📥 API Response: ${endpoint}`, data);
     }
 
     return data as T;
