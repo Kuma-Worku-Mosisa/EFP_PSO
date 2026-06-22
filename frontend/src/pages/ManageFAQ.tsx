@@ -1,5 +1,5 @@
 //filepath: frontend/src/pages/ManageFAQ.tsx
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLanguage } from "../context/LanguageContext";
 import {
   HelpCircle,

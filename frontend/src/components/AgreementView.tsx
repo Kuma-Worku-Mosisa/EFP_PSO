@@ -11,6 +11,8 @@ interface AgreementViewProps {
   error?: string | null;
   org?: {
     name?: string;
+    nameEnglish?: string;
+    nameAmharic?: string;
     email?: string;
     phone?: string;
     faxNumber?: string;
@@ -32,9 +34,17 @@ interface AgreementViewProps {
   setRecruitmentDeadline?: (value: string) => void;
   effectiveDeadline?: string;
   regionName?: string;
+  regionNameEnglish?: string;
+  regionNameAmharic?: string;
   zoneName?: string;
+  zoneNameEnglish?: string;
+  zoneNameAmharic?: string;
   woredaName?: string;
+  woredaNameEnglish?: string;
+  woredaNameAmharic?: string;
   kebeleName?: string;
+  kebeleNameEnglish?: string;
+  kebeleNameAmharic?: string;
   address?: {
     specialLocation?: string;
     houseNumber?: string;
@@ -52,9 +62,17 @@ export const AgreementView: React.FC<AgreementViewProps> = ({
   setRecruitmentDeadline,
   effectiveDeadline,
   regionName = "",
+  regionNameEnglish,
+  regionNameAmharic,
   zoneName = "",
+  zoneNameEnglish,
+  zoneNameAmharic,
   woredaName = "",
+  woredaNameEnglish,
+  woredaNameAmharic,
   kebeleName = "",
+  kebeleNameEnglish,
+  kebeleNameAmharic,
   address,
 }) => {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -76,12 +94,29 @@ export const AgreementView: React.FC<AgreementViewProps> = ({
     }
   };
 
+  const localizedRegionName =
+    language === "am"
+      ? regionNameAmharic || regionName || regionNameEnglish || ""
+      : regionNameEnglish || regionName || regionNameAmharic || "";
+  const localizedZoneName =
+    language === "am"
+      ? zoneNameAmharic || zoneName || zoneNameEnglish || ""
+      : zoneNameEnglish || zoneName || zoneNameAmharic || "";
+  const localizedWoredaName =
+    language === "am"
+      ? woredaNameAmharic || woredaName || woredaNameEnglish || ""
+      : woredaNameEnglish || woredaName || woredaNameAmharic || "";
+  const localizedKebeleName =
+    language === "am"
+      ? kebeleNameAmharic || kebeleName || kebeleNameEnglish || ""
+      : kebeleNameEnglish || kebeleName || kebeleNameAmharic || "";
+
   const concatenatedAddress =
     [
-      regionName,
-      zoneName,
-      woredaName,
-      kebeleName,
+      localizedRegionName,
+      localizedZoneName,
+      localizedWoredaName,
+      localizedKebeleName,
       address?.specialLocation,
       address?.houseNumber,
     ]
@@ -274,19 +309,19 @@ export const AgreementView: React.FC<AgreementViewProps> = ({
                       የግል ጥበቃ አገልግሎት ተቋማት ኃላ/የተ/የግ/ማህበር የከፈትነው ዋና መስሪያ ቤት አድራሻ፡
                       ክልል{" "}
                       <span className="font-semibold text-gray-900">
-                        {safeText(regionName, "---")}
+                        {safeText(localizedRegionName, "---")}
                       </span>
                       , ዞን{" "}
                       <span className="font-semibold text-gray-900">
-                        {safeText(zoneName, "---")}
+                        {safeText(localizedZoneName, "---")}
                       </span>
                       , ወረደ{" "}
                       <span className="font-semibold text-gray-900">
-                        {safeText(woredaName, "---")}
+                        {safeText(localizedWoredaName, "---")}
                       </span>
                       , ቀበሌ{" "}
                       <span className="font-semibold text-gray-900">
-                        {safeText(kebeleName, "---")}
+                        {safeText(localizedKebeleName, "---")}
                       </span>
                       , ልዩ ቦታ{" "}
                       <span className="font-semibold text-gray-900">
@@ -367,19 +402,19 @@ export const AgreementView: React.FC<AgreementViewProps> = ({
                       , a Private Protection Service Institution, having our
                       main office address at: Region/City{" "}
                       <span className="font-semibold text-gray-900">
-                        {safeText(regionName, "---")}
+                        {safeText(localizedRegionName, "---")}
                       </span>
                       , Zone/Sub-city{" "}
                       <span className="font-semibold text-gray-900">
-                        {safeText(zoneName, "---")}
+                        {safeText(localizedZoneName, "---")}
                       </span>
                       , Woreda{" "}
                       <span className="font-semibold text-gray-900">
-                        {safeText(woredaName, "---")}
+                        {safeText(localizedWoredaName, "---")}
                       </span>
                       , Kebele{" "}
                       <span className="font-semibold text-gray-900">
-                        {safeText(kebeleName, "---")}
+                        {safeText(localizedKebeleName, "---")}
                       </span>
                       , Special Place{" "}
                       <span className="font-semibold text-gray-900">

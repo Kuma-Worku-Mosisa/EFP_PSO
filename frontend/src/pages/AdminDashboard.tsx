@@ -1,6 +1,6 @@
 //frontend/src/pages/AdminDashboard.tsx
-import { useState } from "react";
-import { Routes, Route } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "../components/DashboardLayout";
 import {
   LayoutDashboard,
@@ -24,7 +24,6 @@ import {
   HelpCircle,
   MessageSquare,
   ClipboardCheck,
-  Building2,
   MapPin,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -61,7 +60,6 @@ import { ManageFAQ } from "./ManageFAQ";
 import { Communications } from "./Communications";
 import { Notifications } from "./Notifications";
 import PositionManagement from "./PositionManagement";
-import EFPPositionManagement from "./admin/EFPPositionManagement";
 import FormalRequestManager from "../components/FormalRequestManager";
 import AdminAgreementManager from "./admin/AdminAgreementManager";
 import AdminAgreementDetail from "./admin/AdminAgreementDetail";
@@ -75,47 +73,369 @@ const Overview = () => {
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterType, setFilterType] = useState("All");
 
-  const data = [
-    { name: isAm ? "ጥር" : "Jan", apps: 45 },
-    { name: isAm ? "የካ" : "Feb", apps: 52 },
-    { name: isAm ? "መጋ" : "Mar", apps: 38 },
-    { name: isAm ? "ሚያ" : "Apr", apps: 65 },
-    { name: isAm ? "ግን" : "May", apps: 48 },
-    { name: isAm ? "ሰኔ" : "Jun", apps: 59 },
+  const navigate = useNavigate();
+  const [summary, setSummary] = useState<any | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [applications, setApplications] = useState<any[]>([]);
+  const [appsLoading, setAppsLoading] = useState(false);
+  const [certificationsLoading, setCertificationsLoading] = useState(false);
+  const [regionsCount, setRegionsCount] = useState<number>(0);
+  const [regionsLoading, setRegionsLoading] = useState(false);
+  const [trendBuckets, setTrendBuckets] = useState<
+    { key: string; month: number; year: number; count: number }[]
+  >([]);
+  const [licenseDistributionCounts, setLicenseDistributionCounts] = useState<{
+    Active: number;
+    Suspended: number;
+    Expired: number;
+    Revoked: number;
+  }>({ Active: 0, Suspended: 0, Expired: 0, Revoked: 0 });
+
+  const getApplicationDate = (app: any) => {
+    const rawDate =
+      app.applicationDate || app.createdAt || app.date || app.application_date;
+    const parsed = new Date(rawDate);
+    return Number.isFinite(parsed.getTime()) ? parsed : null;
+  };
+
+  const getTrendBuckets = () => {
+    const buckets = [] as {
+      key: string;
+      month: number;
+      year: number;
+      count: number;
+    }[];
+    const now = new Date();
+    for (let i = 5; i >= 0; i -= 1) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      buckets.push({
+        key: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`,
+        month: date.getMonth() + 1,
+        year: date.getFullYear(),
+        count: 0,
+      });
+    }
+    return buckets;
+  };
+
+  const normalizeCertificationStatus = (status: any) => {
+    const raw = String(status || "")
+      .trim()
+      .toLowerCase();
+    if (raw === "active") return "Active";
+    if (raw === "suspended" || raw.includes("suspend")) return "Suspended";
+    if (raw === "expired" || raw === "expired") return "Expired";
+    if (raw === "revoked" || raw.includes("revoke")) return "Revoked";
+    return "Active";
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      setSummaryLoading(true);
+      try {
+        const { apiRequest } = await import("../lib/api");
+        const res = await apiRequest<any>("/admin/summary");
+        if (mounted && res) setSummary(res.data || res);
+      } catch (e) {
+        // keep UI functional with fallbacks
+      } finally {
+        if (mounted) setSummaryLoading(false);
+      }
+    };
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadApplications = async () => {
+      setAppsLoading(true);
+      try {
+        const { apiRequest } = await import("../lib/api");
+        const res = await apiRequest<any>(
+          "/applications?limit=10&orderBy=desc",
+        );
+        if (mounted && res?.data) {
+          const apps = Array.isArray(res.data) ? res.data : res.data.data || [];
+          const parsedApps = Array.isArray(apps) ? apps : [];
+          const currentBuckets = getTrendBuckets();
+
+          parsedApps.forEach((app: any) => {
+            const date = getApplicationDate(app);
+            if (!date) return;
+            const bucketKey = `${date.getFullYear()}-${String(
+              date.getMonth() + 1,
+            ).padStart(2, "0")}`;
+            const bucket = currentBuckets.find((b) => b.key === bucketKey);
+            if (bucket) bucket.count += 1;
+          });
+
+          const transformed = parsedApps.slice(0, 4).map((app: any) => {
+            const rawType = String(
+              app.type || app.application_type || "",
+            ).trim();
+            const rawDate =
+              app.date ||
+              app.applicationDate ||
+              app.createdAt ||
+              app.application_date;
+            const rawStatus = String(
+              app.status || app.application_status || "",
+            ).trim();
+
+            const normalizedType = rawType.toUpperCase();
+            const normalizedStatus = rawStatus.toLowerCase();
+
+            const resolvedType = normalizedType.includes("RENEWAL")
+              ? isAm
+                ? "እድሳት"
+                : "Renewal"
+              : normalizedType.includes("NEW")
+                ? isAm
+                  ? "አዲስ"
+                  : "New"
+                : rawType || (isAm ? "አዲስ" : "New");
+
+            const resolvedStatus = normalizedStatus.includes("approved")
+              ? isAm
+                ? "ጸድቋል"
+                : "Approved"
+              : normalizedStatus.includes("rejected")
+                ? isAm
+                  ? "ውድቅ ተደርጓል"
+                  : "Rejected"
+                : normalizedStatus.includes("pending")
+                  ? isAm
+                    ? "በመጠባበቅ ላይ"
+                    : "Pending"
+                  : isAm
+                    ? rawStatus || "በመጠባበቅ ላይ"
+                    : rawStatus || "Pending";
+
+            let formattedDate = "N/A";
+            if (rawDate) {
+              const parsed = new Date(rawDate);
+              formattedDate = Number.isFinite(parsed.getTime())
+                ? parsed.toLocaleDateString("en-GB")
+                : String(rawDate);
+            }
+
+            return {
+              name:
+                app.organization?.nameEnglish ||
+                app.organization?.nameAmharic ||
+                app.agency ||
+                app.organization?.name ||
+                "Unknown Agency",
+              organizationId:
+                app.organization?.id || app.organizationId || null,
+              type: resolvedType,
+              date: formattedDate,
+              status: resolvedStatus,
+            };
+          });
+          if (mounted) {
+            setApplications(transformed);
+            setTrendBuckets(currentBuckets);
+          }
+        }
+      } catch (e) {
+        console.error("[DEBUG] Failed to load applications:", e);
+        if (mounted) setApplications([]);
+      } finally {
+        if (mounted) setAppsLoading(false);
+      }
+    };
+    loadApplications();
+    return () => {
+      mounted = false;
+    };
+  }, [isAm]);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadCertifications = async () => {
+      if (mounted) setCertificationsLoading(true);
+      try {
+        const { apiRequest } = await import("../lib/api");
+        const res = await apiRequest<any>("/certifications");
+        const certs = Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res?.data?.data)
+            ? res.data.data
+            : [];
+
+        const counts = { Active: 0, Suspended: 0, Expired: 0, Revoked: 0 };
+        certs.forEach((cert: any) => {
+          const status = normalizeCertificationStatus(cert.status);
+          counts[status] = (counts[status] ?? 0) + 1;
+        });
+
+        if (mounted) {
+          setLicenseDistributionCounts(counts);
+        }
+      } catch (error) {
+        console.error("[DEBUG] Failed to load certifications:", error);
+      } finally {
+        if (mounted) setCertificationsLoading(false);
+      }
+    };
+
+    loadCertifications();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadRegions = async () => {
+      if (mounted) setRegionsLoading(true);
+      try {
+        const { apiRequest } = await import("../lib/api");
+        const res = await apiRequest<any>("/organizations");
+        const orgs = Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res?.data?.data)
+            ? res.data.data
+            : [];
+
+        const uniqueRegionIds = new Set<number>();
+
+        orgs.forEach((org: any) => {
+          // Try to extract region from organization's address hierarchy
+          // Organization -> address (Address object)
+          if (org.address) {
+            const address = org.address;
+            // Address -> kebele (Kebele object)
+            if (address.kebele && address.kebele.woreda) {
+              const woreda = address.kebele.woreda;
+              // Woreda -> zone (Zone object)
+              if (woreda.zone && woreda.zone.regionId) {
+                uniqueRegionIds.add(woreda.zone.regionId);
+              }
+            }
+          }
+        });
+
+        if (mounted) {
+          setRegionsCount(uniqueRegionIds.size);
+        }
+      } catch (error) {
+        console.error("[DEBUG] Failed to load regions:", error);
+      } finally {
+        if (mounted) setRegionsLoading(false);
+      }
+    };
+
+    loadRegions();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const monthNamesEn = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
   ];
+  const monthNamesAm = [
+    "ጥር",
+    "የካ",
+    "መጋ",
+    "ሚያ",
+    "ግን",
+    "ሰኔ",
+    "ሐም",
+    "ነሐ",
+    "መስ",
+    "ጥቅ",
+    "ሕዳ",
+    "ታህ",
+  ];
+
+  const data =
+    trendBuckets.length > 0
+      ? trendBuckets.map((bucket) => ({
+          name: isAm
+            ? monthNamesAm[bucket.month - 1] || String(bucket.month)
+            : monthNamesEn[bucket.month - 1] || String(bucket.month),
+          apps: bucket.count,
+        }))
+      : [
+          { name: isAm ? "ጥር" : "Jan", apps: 45 },
+          { name: isAm ? "የካ" : "Feb", apps: 52 },
+          { name: isAm ? "መጋ" : "Mar", apps: 38 },
+          { name: isAm ? "ሚያ" : "Apr", apps: 65 },
+          { name: isAm ? "ግን" : "May", apps: 48 },
+          { name: isAm ? "ሰኔ" : "Jun", apps: 59 },
+        ];
 
   const pieData = [
-    { name: isAm ? "ንቁ" : "Active", value: 400 },
-    { name: isAm ? "ጊዜው ያለፈበት" : "Expired", value: 80 },
-    { name: isAm ? "የታገደ" : "Suspended", value: 20 },
+    {
+      name: isAm ? "ንቁ" : "Active",
+      value: licenseDistributionCounts.Active,
+    },
+    {
+      name: isAm ? "የታገደ" : "Suspended",
+      value: licenseDistributionCounts.Suspended,
+    },
+    {
+      name: isAm ? "ጊዜው ያለፈበት" : "Expired",
+      value: licenseDistributionCounts.Expired,
+    },
+    {
+      name: isAm ? "የተሰረዘ" : "Revoked",
+      value: licenseDistributionCounts.Revoked,
+    },
   ];
 
-  const recentApps = [
-    {
-      name: "Abyssinia Security",
-      type: isAm ? "አዲስ" : "New",
-      date: "Oct 12, 2024",
-      status: isAm ? "በመጠባበቅ ላይ" : "Pending",
-    },
-    {
-      name: "Lion Guard Services",
-      type: isAm ? "እድሳት" : "Renewal",
-      date: "Oct 11, 2024",
-      status: isAm ? "ጸድቋል" : "Approved",
-    },
-    {
-      name: "Nile Protection",
-      type: isAm ? "አዲስ" : "New",
-      date: "Oct 10, 2024",
-      status: isAm ? "ውድቅ ተደርጓል" : "Rejected",
-    },
-    {
-      name: "Eagle Eye Security",
-      type: isAm ? "እድሳት" : "Renewal",
-      date: "Oct 09, 2024",
-      status: isAm ? "በመጠባበቅ ላይ" : "Pending",
-    },
-  ];
+  const recentApps =
+    applications.length > 0
+      ? applications
+      : [
+          {
+            name: "Abyssinia Security",
+            type: isAm ? "አዲስ" : "New",
+            date: "Oct 12, 2024",
+            status: isAm ? "በመጠባበቅ ላይ" : "Pending",
+          },
+          {
+            name: "Lion Guard Services",
+            type: isAm ? "እድሳት" : "Renewal",
+            date: "Oct 11, 2024",
+            status: isAm ? "ጸድቋል" : "Approved",
+          },
+          {
+            name: "Nile Protection",
+            type: isAm ? "አዲስ" : "New",
+            date: "Oct 10, 2024",
+            status: isAm ? "ውድቅ ተደርጓል" : "Rejected",
+          },
+          {
+            name: "Eagle Eye Security",
+            type: isAm ? "እድሳት" : "Renewal",
+            date: "Oct 09, 2024",
+            status: isAm ? "በመጠባበቅ ላይ" : "Pending",
+          },
+        ];
+
+  const openOrganization = (organizationId: number | null) => {
+    if (!organizationId) return;
+    navigate(`/admin/organizations?organizationId=${organizationId}`);
+  };
 
   const filteredApps = recentApps.filter((app) => {
     const statusMatch = filterStatus === "All" || app.status === filterStatus;
@@ -123,7 +443,7 @@ const Overview = () => {
     return statusMatch && typeMatch;
   });
 
-  const COLORS = ["#003366", "#FFD700", "#EF4444"];
+  const COLORS = ["#22c55e", "#f59e0b", "#ef4444", "#6b7280"];
 
   return (
     <div className="space-y-8">
@@ -131,25 +451,27 @@ const Overview = () => {
         {[
           {
             label: isAm ? "የተመዘገቡ ኤጀንሲዎች" : "Registered Agencies",
-            value: "524",
+            value: summaryLoading ? "..." : (summary?.organizations ?? "—"),
             icon: <ShieldCheck className="w-6 h-6 text-primary" />,
             color: "bg-blue-50",
           },
           {
             label: isAm ? "የደህንነት ሰራተኞች" : "Security Personnel",
-            value: "25,482",
+            value: summaryLoading ? "..." : (summary?.users ?? "—"),
             icon: <Users className="w-6 h-6 text-amber-500" />,
             color: "bg-amber-50",
           },
           {
             label: isAm ? "ንቁ ፈቃዶች" : "Active Licenses",
-            value: "482",
+            value: certificationsLoading
+              ? "..."
+              : licenseDistributionCounts.Active,
             icon: <CheckCircle className="w-6 h-6 text-green-500" />,
             color: "bg-green-50",
           },
           {
             label: isAm ? "የተሸፈኑ ክልሎች" : "Regions Covered",
-            value: "11",
+            value: regionsLoading ? "..." : regionsCount,
             icon: <Map className="w-6 h-6 text-purple-500" />,
             color: "bg-purple-50",
           },
@@ -160,10 +482,21 @@ const Overview = () => {
             color: "bg-amber-50",
           },
           {
-            label: isAm ? "ንቁ ያልሆኑ ፈቃዶች" : "Inactive Licenses",
-            value: "38",
+            label: isAm ? "ጠቅላላ ውሎች" : "Total Agreements",
+            value: summaryLoading ? "..." : (summary?.agreements?.total ?? "—"),
             icon: <ShieldAlert className="w-6 h-6 text-red-400" />,
             color: "bg-red-50",
+          },
+          {
+            label: isAm ? "ጠቅላላ ፈቃዶች" : "Total Licenses",
+            value: certificationsLoading
+              ? "..."
+              : licenseDistributionCounts.Active +
+                licenseDistributionCounts.Suspended +
+                licenseDistributionCounts.Expired +
+                licenseDistributionCounts.Revoked,
+            icon: <ShieldCheck className="w-6 h-6 text-blue-500" />,
+            color: "bg-blue-50",
           },
           {
             label: isAm ? "ውድቅ የተደረጉ" : "Rejected Applications",
@@ -200,11 +533,14 @@ const Overview = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 space-y-6">
+        <div
+          className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 space-y-6"
+          style={{ minWidth: 0 }}
+        >
           <h3 className="text-lg font-bold text-primary">
             {isAm ? "የማመልከቻዎች አዝማሚያ" : "Applications Trend"}
           </h3>
-          <div className="h-[300px]">
+          <div className="w-full" style={{ height: "300px", minWidth: 0 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -217,11 +553,14 @@ const Overview = () => {
           </div>
         </div>
 
-        <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 space-y-6">
+        <div
+          className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 space-y-6"
+          style={{ minWidth: 0 }}
+        >
           <h3 className="text-lg font-bold text-primary">
             {isAm ? "የፈቃድ ስርጭት" : "License Distribution"}
           </h3>
-          <div className="h-[300px]">
+          <div className="w-full" style={{ height: "300px", minWidth: 0 }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -254,9 +593,13 @@ const Overview = () => {
               {isAm ? "የቅርብ ጊዜ ማመልከቻዎች" : "Recent Applications"}
             </h3>
             <p className="text-xs text-gray-400 font-medium">
-              {isAm
-                ? "የማመልከቻዎችን ዝርዝር ይከታተሉ"
-                : "Track and review the latest commission submissions"}
+              {appsLoading
+                ? isAm
+                  ? "በመጫን ላይ..."
+                  : "Loading..."
+                : isAm
+                  ? "የማመልከቻዎችን ዝርዝር ይከታተሉ"
+                  : "Track and review the latest commission submissions"}
             </p>
           </div>
 
@@ -334,13 +677,13 @@ const Overview = () => {
             </thead>
             <tbody className="divide-y divide-gray-100">
               <AnimatePresence mode="popLayout">
-                {filteredApps.map((app) => (
+                {filteredApps.map((app, idx) => (
                   <motion.tr
                     layout
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    key={app.name}
+                    key={`app-${app.organizationId ?? idx}-${app.name}`}
                     className="hover:bg-gray-50/50 transition-colors"
                   >
                     <td className="px-8 py-4 font-bold text-primary text-sm">
@@ -366,7 +709,12 @@ const Overview = () => {
                       </span>
                     </td>
                     <td className="px-8 py-4 text-right">
-                      <button className="text-secondary hover:text-primary font-black text-[10px] uppercase tracking-widest transition-colors">
+                      <button
+                        type="button"
+                        onClick={() => openOrganization(app.organizationId)}
+                        disabled={!app.organizationId}
+                        className="text-secondary hover:text-primary font-black text-[10px] uppercase tracking-widest transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
                         {isAm ? "ገምግም" : "Review"}
                       </button>
                     </td>
@@ -465,11 +813,6 @@ export const AdminDashboard = () => {
       path: "/admin/positions",
     },
     {
-      icon: <ShieldCheck className="w-5 h-5" />,
-      label: isAm ? "የEFP ቦታ አስተዳደር" : "EFP Position Management",
-      path: "/admin/efp-positions",
-    },
-    {
       icon: <FileCheck className="w-5 h-5" />,
       label: t.dashboard.hrmsReports,
       path: "/admin/hrms-reports",
@@ -544,7 +887,6 @@ export const AdminDashboard = () => {
         <Route path="gps" element={<GPSTracking />} />
         <Route path="reports" element={<AdminReports />} />
         <Route path="positions" element={<PositionManagement />} />
-        <Route path="efp-positions" element={<EFPPositionManagement />} />
         <Route path="hrms-reports" element={<HRMSReports />} />
         <Route path="agreements" element={<AdminAgreementManager />} />
         <Route

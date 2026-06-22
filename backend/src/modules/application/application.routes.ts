@@ -57,7 +57,7 @@ router.get("/:id/history", getApplicationTrackingHistory);
 router.get(
   "/",
   authenticate,
-  authorize(["admin", "system_admin"]),
+  authorize(["admin", "super_admin"]),
   getApplications,
 );
 
@@ -68,7 +68,7 @@ router.get(
 router.post(
   "/:id/approve",
   authenticate,
-  authorize(["admin", "system_admin"]),
+  authorize(["admin", "super_admin"]),
   (req, res, next) => {
     const { approveApplication } = require("./application.controller");
     return approveApplication(req, res, next);
@@ -82,7 +82,7 @@ router.post(
 router.post(
   "/:id/reject",
   authenticate,
-  authorize(["admin", "system_admin"]),
+  authorize(["admin", "super_admin"]),
   (req, res, next) => {
     const { rejectApplication } = require("./application.controller");
     return rejectApplication(req, res, next);
@@ -96,7 +96,7 @@ router.post(
 router.post(
   "/:id/correction",
   authenticate,
-  authorize(["admin", "system_admin"]),
+  authorize(["admin", "super_admin"]),
   (req, res, next) => {
     const { requestCorrection } = require("./application.controller");
     return requestCorrection(req, res, next);
@@ -110,7 +110,7 @@ router.post(
 router.post(
   "/:id/under-review",
   authenticate,
-  authorize(["admin", "system_admin"]),
+  authorize(["admin", "super_admin"]),
   (req, res, next) => {
     const { markUnderReview } = require("./application.controller");
     return markUnderReview(req, res, next);

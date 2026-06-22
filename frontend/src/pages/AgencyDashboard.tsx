@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Routes, Route, Link } from "react-router-dom";
 import { DashboardLayout } from "../components/DashboardLayout";
 import {
@@ -8,13 +8,14 @@ import {
   Search,
   Award,
   FileText,
-  AlertCircle,
   CheckCircle2,
   Clock,
   ShieldCheck,
   CreditCard,
+  Building2,
 } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
+import { apiRequest } from "../lib/api";
 
 import { NewApplication } from "./NewApplication";
 import { LicenseViewer } from "./LicenseViewer";
@@ -28,32 +29,73 @@ import { Notifications } from "./Notifications";
 
 const Overview = () => {
   const { t, language } = useLanguage();
+  const [summary, setSummary] = useState<{
+    licenseStatus: string;
+    expiryDate: string | null;
+    organizationStatus: string;
+    organizationName: string;
+    pendingTasks: number;
+    applicationProgress: number;
+    activity: Array<{ title: string; status?: string; time: string }>;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadSummary = async () => {
+      try {
+        const response = await apiRequest<{ data: any }>("/dashboard/agency");
+        setSummary(response.data);
+      } catch (err: any) {
+        setError(
+          err?.message ||
+            "Failed to load dashboard summary. Please refresh the page.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSummary();
+  }, []);
+
   const stats = [
     {
       label: language === "am" ? "የፈቃድ ሁኔታ" : "License Status",
-      value: language === "am" ? "ንቁ" : "Active",
+      value:
+        summary?.licenseStatus ?? (language === "am" ? "በጥንቃቄ" : "Pending"),
       icon: <Award className="text-green-500" />,
       color: "bg-green-50",
     },
     {
       label: language === "am" ? "የማብቂያ ቀን" : "Expiry Date",
-      value: language === "am" ? "ጥቅምት 12, 2026" : "Oct 12, 2026",
+      value: summary?.expiryDate
+        ? new Date(summary.expiryDate).toLocaleDateString("en-GB")
+        : language === "am"
+          ? "አልተወሰነም"
+          : "---",
       icon: <Clock className="text-blue-500" />,
       color: "bg-blue-50",
     },
     {
-      label: language === "am" ? "የሚጠባበቁ ተግባራት" : "Pending Tasks",
-      value: "2",
-      icon: <AlertCircle className="text-amber-500" />,
-      color: "bg-amber-50",
+      label: language === "am" ? "ድርጅት ሁኔታ" : "Organization Status",
+      value:
+        summary?.organizationStatus ?? (language === "am" ? "አልተወሰነም" : "N/A"),
+      icon: <Building2 className="text-indigo-500" />,
+      color: "bg-indigo-50",
     },
     {
       label: language === "am" ? "የማመልከቻ ሂደት" : "Application Progress",
-      value: "75%",
+      value:
+        typeof summary?.applicationProgress === "number"
+          ? `${summary.applicationProgress}%`
+          : "—",
       icon: <CheckCircle2 className="text-purple-500" />,
       color: "bg-purple-50",
     },
   ];
+
+  const activityItems = summary?.activity ?? [];
 
   return (
     <div className="space-y-8">
@@ -66,7 +108,13 @@ const Overview = () => {
             <div className={`p-4 rounded-xl ${stat.color}`}>{stat.icon}</div>
             <div>
               <p className="text-sm text-gray-500 font-medium">{stat.label}</p>
-              <p className="text-xl font-bold text-primary">{stat.value}</p>
+              {loading ? (
+                <p className="text-xl font-bold text-primary">
+                  {language === "am" ? "በታጣቂ" : "Loading..."}
+                </p>
+              ) : (
+                <p className="text-xl font-bold text-primary">{stat.value}</p>
+              )}
             </div>
           </div>
         ))}
@@ -77,66 +125,43 @@ const Overview = () => {
           <h3 className="text-lg font-bold text-primary">
             {language === "am" ? "የቅርብ ጊዜ እንቅስቃሴ" : "Recent Activity"}
           </h3>
-          <div className="space-y-6">
-            {[
-              {
-                title:
-                  language === "am"
-                    ? "የይፋዊ ደብዳቤ ጸድቋል"
-                    : "Formal Letter Approved",
-                time: language === "am" ? "ከ2 ሰዓት በፊት" : "2 hours ago",
-                status: language === "am" ? "ጸድቋል" : "Approved",
-                icon: <CheckCircle2 className="text-green-500" />,
-              },
-              {
-                title:
-                  language === "am"
-                    ? "አዲስ ማመልከቻ ገብቷል"
-                    : "New Application Submitted",
-                time: language === "am" ? "ትላንትና" : "Yesterday",
-                status: language === "am" ? "በግምገማ ላይ" : "Under Review",
-                icon: <Clock className="text-amber-500" />,
-              },
-              {
-                title:
-                  language === "am"
-                    ? "ዓመታዊ የእድሳት ማሳሰቢያ"
-                    : "Annual Renewal Reminder",
-                time: language === "am" ? "ከ3 ቀናት በፊት" : "3 days ago",
-                status: language === "am" ? "በመጠባበቅ ላይ" : "Pending",
-                icon: <Clock className="text-amber-500" />,
-              },
-            ].map((item, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl"
-              >
-                <div className="flex items-center space-x-4">
-                  <div className="p-2 bg-white rounded-lg shadow-sm">
-                    {item.icon}
-                  </div>
-                  <div>
+
+          {loading ? (
+            <div className="py-12 text-center text-gray-500">
+              {language === "am" ? "መጫን እየተከናወን..." : "Loading activity..."}
+            </div>
+          ) : error ? (
+            <div className="rounded-2xl border border-red-100 bg-red-50 p-6 text-red-700">
+              {error}
+            </div>
+          ) : activityItems.length === 0 ? (
+            <div className="rounded-2xl border border-gray-100 bg-gray-50 p-6 text-gray-600">
+              {language === "am"
+                ? "ምንም እንቅስቃሴ አልተገኘም።"
+                : "No recent activity found."}
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {activityItems.map((item, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl"
+                >
+                  <div className="space-y-1">
                     <p className="font-bold text-primary text-sm">
                       {item.title}
                     </p>
-                    <p className="text-xs text-gray-500">{item.time}</p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(item.time).toLocaleString("en-GB")}
+                    </p>
                   </div>
+                  <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-wider">
+                    {item.status || (language === "am" ? "የላከ" : "Status")}
+                  </span>
                 </div>
-                <span
-                  className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                    item.status === (language === "am" ? "ጸድቋል" : "Approved")
-                      ? "bg-green-100 text-green-700"
-                      : item.status ===
-                          (language === "am" ? "በግምገማ ላይ" : "Under Review")
-                        ? "bg-amber-100 text-amber-700"
-                        : "bg-blue-100 text-blue-700"
-                  }`}
-                >
-                  {item.status}
-                </span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="bg-primary rounded-3xl p-8 text-white space-y-6 relative overflow-hidden">

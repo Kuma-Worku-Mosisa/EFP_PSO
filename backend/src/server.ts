@@ -31,6 +31,7 @@ import employeeRoutes from "./modules/employee/employee.routes";
 import transferRoutes from "./modules/transfers/transfers.routes";
 import contactRoutes from "./modules/contact/contact.routes";
 import newsRoutes from "./modules/news/news.routes";
+import dashboardRoutes from "./modules/dashboard/dashboard.routes";
 
 const app = express();
 
@@ -96,6 +97,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/organizations", organizationRoutes);
 app.use("/api/employees", employeeRoutes);
 app.use("/api/transfers", transferRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // ... other middleware
 app.use("/api/contact", contactRoutes);

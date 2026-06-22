@@ -313,7 +313,7 @@ model Agreement {
   status          String @default("Pending") @map("agreement_status") @db.VarChar(50)
 
   // FIXED: Changed from Json to VarChar(Max) for SQL Server stringified compatibility
-  snapshotData String @map("snapshot_data") @db.VarChar(Max)
+  snapshotData String @map("snapshot_data") @db.NVarChar(Max)
 
   recruitmentDeadline DateTime @map("recruitment_deadline") @db.DateTime
   issuedDate          DateTime @default(now()) @map("issued_date") @db.DateTime

@@ -1,5 +1,6 @@
 // filepath: frontend/src/pages/admin/OrganizationsDashboard.tsx
 import { useState, useEffect } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   Building2,
   Search,
@@ -24,7 +25,7 @@ interface Organization {
   id: number; // Int @id
   nameAmharic: string; // NVarChar(255)
   nameEnglish: string; // VarChar(255)
-  tradeName?: string 
+  tradeName?: string;
   email: string;
   phone: string;
   capitalAmount?: number | null; // db.Decimal(18, 2)
@@ -41,7 +42,15 @@ interface Organization {
 }
 
 export default function OrganizationDashboard() {
-  const [selectedOrgId, setSelectedOrgId] = useState<number | null>(null);
+  const [searchParams] = useSearchParams();
+  const queryOrganizationId = searchParams.get("organizationId");
+  const [selectedOrgId, setSelectedOrgId] = useState<number | null>(
+    queryOrganizationId ? Number(queryOrganizationId) : null,
+  );
+  useEffect(() => {
+    setSelectedOrgId(queryOrganizationId ? Number(queryOrganizationId) : null);
+  }, [queryOrganizationId]);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [selectedLogoUrl, setSelectedLogoUrl] = useState<string | null>(null);

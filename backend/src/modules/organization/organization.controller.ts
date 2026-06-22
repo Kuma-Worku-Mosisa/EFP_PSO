@@ -24,6 +24,27 @@ export const getOrganizationsHandler = async (req: Request, res: Response) => {
         capitalAmount: true,
         status: true,
         createdAt: true,
+        address: {
+          select: {
+            id: true,
+            kebele: {
+              select: {
+                id: true,
+                woreda: {
+                  select: {
+                    id: true,
+                    zone: {
+                      select: {
+                        id: true,
+                        regionId: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
         _count: {
           select: {
             branches: true,
@@ -60,6 +81,7 @@ export const getOrganizationsHandler = async (req: Request, res: Response) => {
       capitalAmount: o.capitalAmount,
       status: o.status,
       createdAt: o.createdAt,
+      address: o.address,
       totalBranches: o._count?.branches ?? 0,
       totalEmployees: o._count?.employees ?? 0,
       totalServiceContracts: o._count?.serviceContracts ?? 0,

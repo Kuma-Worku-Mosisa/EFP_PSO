@@ -7,6 +7,8 @@ import { useLanguage } from "../../context/LanguageContext";
 
 interface AgreementSnapshot {
   agencyName?: string;
+  agencyNameEnglish?: string;
+  agencyNameAmharic?: string;
   email?: string;
   phone?: string;
   fax?: string;
@@ -14,9 +16,17 @@ interface AgreementSnapshot {
   signedByFullName?: string;
   signedByPhone?: string;
   region?: string;
+  regionEnglish?: string;
+  regionAmharic?: string;
   zone?: string;
+  zoneEnglish?: string;
+  zoneAmharic?: string;
   woreda?: string;
+  woredaEnglish?: string;
+  woredaAmharic?: string;
   kebele?: string;
+  kebeleEnglish?: string;
+  kebeleAmharic?: string;
   location?: string;
   number?: string;
   numberOfOffices?: number;
@@ -87,7 +97,8 @@ export default function AdminAgreementDetail() {
           loading={loading}
           error={error}
           org={{
-            name: snapshot?.agencyName,
+            nameEnglish: snapshot?.agencyNameEnglish,
+            nameAmharic: snapshot?.agencyNameAmharic,
             email: snapshot?.email,
             phone: snapshot?.phone,
             faxNumber: snapshot?.fax,
@@ -103,10 +114,14 @@ export default function AdminAgreementDetail() {
           }}
           agreement={{ agreementNumber: detail?.agreement_number }}
           effectiveDeadline={detail?.recruitment_deadline ?? undefined}
-          regionName={snapshot?.region}
-          zoneName={snapshot?.zone}
-          woredaName={snapshot?.woreda}
-          kebeleName={snapshot?.kebele}
+          regionNameEnglish={snapshot?.regionEnglish}
+          regionNameAmharic={snapshot?.regionAmharic}
+          zoneNameEnglish={snapshot?.zoneEnglish}
+          zoneNameAmharic={snapshot?.zoneAmharic}
+          woredaNameEnglish={snapshot?.woredaEnglish}
+          woredaNameAmharic={snapshot?.woredaAmharic}
+          kebeleNameEnglish={snapshot?.kebeleEnglish}
+          kebeleNameAmharic={snapshot?.kebeleAmharic}
           address={{
             specialLocation: snapshot?.location,
             houseNumber: snapshot?.number,

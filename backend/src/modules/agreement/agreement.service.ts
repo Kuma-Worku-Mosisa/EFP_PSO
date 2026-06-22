@@ -72,17 +72,24 @@ export class AgreementService {
 
     // Build the structural data payload to snapshot historical context
     const snapshot: AgreementSnapshot = {
-      agencyName: AgreementService.resolveOrganizationName(org),
+      agencyNameEnglish: org.nameEnglish || "N/A",
+      agencyNameAmharic: org.nameAmharic || "N/A",
       email: org.email,
       phone: org.phone,
       fax: org.faxNumber || "N/A",
       managerName,
       signedByFullName: signingUser.fullName,
       signedByPhone: signingUser.phone,
-      region: org.address?.kebele?.woreda?.zone?.region?.nameEnglish || "N/A",
-      zone: org.address?.kebele?.woreda?.zone?.nameEnglish || "N/A",
-      woreda: org.address?.kebele?.woreda?.nameEnglish || "N/A",
-      kebele: org.address?.kebele?.nameEnglish || "N/A",
+      regionEnglish:
+        org.address?.kebele?.woreda?.zone?.region?.nameEnglish || "N/A",
+      regionAmharic:
+        org.address?.kebele?.woreda?.zone?.region?.nameAmharic || "N/A",
+      zoneEnglish: org.address?.kebele?.woreda?.zone?.nameEnglish || "N/A",
+      zoneAmharic: org.address?.kebele?.woreda?.zone?.nameAmharic || "N/A",
+      woredaEnglish: org.address?.kebele?.woreda?.nameEnglish || "N/A",
+      woredaAmharic: org.address?.kebele?.woreda?.nameAmharic || "N/A",
+      kebeleEnglish: org.address?.kebele?.nameEnglish || "N/A",
+      kebeleAmharic: org.address?.kebele?.nameAmharic || "N/A",
       location: org.address?.specialLocation || "N/A",
       number: org.address?.houseNumber || "N/A",
       numberOfOffices: org.numberOfOffices || 0,

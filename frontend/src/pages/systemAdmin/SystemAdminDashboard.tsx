@@ -2,10 +2,23 @@
 import React from "react";
 import { Routes, Route, Link } from "react-router-dom";
 import { DashboardLayout } from "../../components/DashboardLayout";
-import { LayoutDashboard, FileCheck, MapPin, Users } from "lucide-react";
+import {
+  LayoutDashboard,
+  FileCheck,
+  MapPin,
+  Users,
+  Newspaper,
+  BookOpen,
+  Briefcase,
+  Database,
+} from "lucide-react";
 import AuditLogViewer from "./audit-logs";
 import LocationManager from "./LocationManager";
+import { ManageNews } from "../ManageNews";
+import { ManageFAQ } from "../ManageFAQ";
+import { BackupRecovery } from "../BackupRecovery";
 import { UserManagement } from "../UserManagement";
+import EFPPositionManagement from "../admin/EFPPositionManagement";
 import { useLanguage } from "../../context/LanguageContext";
 
 const Overview: React.FC = () => {
@@ -71,6 +84,26 @@ export const SystemAdminDashboard: React.FC = () => {
       path: "/system-admin/audit-logs",
     },
     {
+      icon: <Briefcase className="w-5 h-5" />,
+      label: isAm ? "የEFP ቦታ አስተዳደር" : "EFP Position Management",
+      path: "/system-admin/efp-positions",
+    },
+    {
+      icon: <Newspaper className="w-5 h-5" />,
+      label: isAm ? "ዜና እና ማስታወቂያዎች" : "News & Announcements",
+      path: "/system-admin/news",
+    },
+    {
+      icon: <BookOpen className="w-5 h-5" />,
+      label: isAm ? "FAQ አስተዳደር" : "FAQ Management",
+      path: "/system-admin/faq-manage",
+    },
+    {
+      icon: <Database className="w-5 h-5" />,
+      label: isAm ? "መጠባበቂያ እና ማግኛ" : "Backup & Recovery",
+      path: "/system-admin/backups",
+    },
+    {
       icon: <MapPin className="w-5 h-5" />,
       label: isAm ? "አድራሻ አስተዳደር" : "Manage Address",
       path: "/system-admin/manage-address",
@@ -88,6 +121,10 @@ export const SystemAdminDashboard: React.FC = () => {
         <Route path="users" element={<UserManagement />} />
         <Route path="audit-logs" element={<AuditLogViewer />} />
         <Route path="manage-address" element={<LocationManager />} />
+        <Route path="efp-positions" element={<EFPPositionManagement />} />
+        <Route path="news" element={<ManageNews />} />
+        <Route path="faq-manage" element={<ManageFAQ />} />
+        <Route path="backups" element={<BackupRecovery />} />
         <Route path="*" element={<Overview />} />
       </Routes>
     </DashboardLayout>

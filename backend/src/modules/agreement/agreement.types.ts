@@ -1,17 +1,22 @@
 // src/modules/agreement/agreement.types.ts
 
 export interface AgreementSnapshot {
-  agencyName: string;
+  agencyNameEnglish: string;
+  agencyNameAmharic: string;
   email: string;
   phone: string;
   fax: string;
   managerName: string;
   signedByFullName: string;
   signedByPhone: string;
-  region: string;
-  zone: string;
-  woreda: string;
-  kebele: string;
+  regionEnglish: string;
+  regionAmharic: string;
+  zoneEnglish: string;
+  zoneAmharic: string;
+  woredaEnglish: string;
+  woredaAmharic: string;
+  kebeleEnglish: string;
+  kebeleAmharic: string;
   location: string;
   number: string;
   numberOfOffices: number;

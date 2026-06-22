@@ -28,15 +28,13 @@ export default function EFPPositionManagement() {
   const isAm = language === "am";
 
   const [positions, setPositions] = useState<EfpPosition[]>([]);
-  const [selectedPosition, setSelectedPosition] = useState<EfpPosition | null>(
-    null,
-  );
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [editPositionId, setEditPositionId] = useState<number | null>(null);
   const [formEnglishName, setFormEnglishName] = useState("");
   const [formAmharicName, setFormAmharicName] = useState("");
   const [toast, setToast] = useState<{
@@ -70,7 +68,6 @@ export default function EFPPositionManagement() {
         data: EfpPosition[];
       }>("/efp-positions");
       setPositions(response.data);
-      setSelectedPosition((prev) => prev || response.data[0] || null);
     } catch (error: any) {
       setErrorMessage(error.message || "Unable to load EFP positions.");
     } finally {
@@ -83,14 +80,15 @@ export default function EFPPositionManagement() {
     setFormAmharicName("");
     setErrorMessage(null);
     setIsEditing(false);
+    setEditPositionId(null);
     setIsFormOpen(true);
   };
 
   const openEditForm = (position: EfpPosition) => {
-    setSelectedPosition(position);
     setFormEnglishName(position.nameEnglish);
     setFormAmharicName(position.nameAmharic);
     setErrorMessage(null);
+    setEditPositionId(position.id);
     setIsEditing(true);
     setIsFormOpen(true);
   };
@@ -107,8 +105,8 @@ export default function EFPPositionManagement() {
 
     try {
       const endpoint =
-        isEditing && selectedPosition
-          ? `/efp-positions/${selectedPosition.id}`
+        isEditing && editPositionId
+          ? `/efp-positions/${editPositionId}`
           : "/efp-positions";
       const method = isEditing ? "PUT" : "POST";
 
@@ -128,9 +126,9 @@ export default function EFPPositionManagement() {
           ? "EFP position updated successfully."
           : "EFP position created successfully.",
       });
+      setEditPositionId(null);
       setIsFormOpen(false);
       await fetchPositions();
-      setSelectedPosition(response.data);
     } catch (error: any) {
       setErrorMessage(error.message || "Failed to save EFP position.");
       setToast({
@@ -202,7 +200,7 @@ export default function EFPPositionManagement() {
         </button>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
+      <div className="grid gap-6">
         <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative max-w-md">
@@ -262,14 +260,7 @@ export default function EFPPositionManagement() {
                   </tr>
                 ) : (
                   filteredPositions.map((position, index) => (
-                    <tr
-                      key={position.id}
-                      className={
-                        selectedPosition?.id === position.id
-                          ? "bg-secondary/5"
-                          : "bg-transparent"
-                      }
-                    >
+                    <tr key={position.id}>
                       <td className="px-4 py-4 font-semibold text-gray-700">
                         {index + 1}
                       </td>
@@ -286,10 +277,7 @@ export default function EFPPositionManagement() {
                         <div className="inline-flex gap-2">
                           <button
                             type="button"
-                            onClick={() => {
-                              setSelectedPosition(position);
-                              openEditForm(position);
-                            }}
+                            onClick={() => openEditForm(position)}
                             className="inline-flex items-center gap-2 rounded-2xl border border-secondary/10 bg-secondary/5 px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-secondary transition hover:bg-secondary/10"
                           >
                             <Edit3 className="h-3.5 w-3.5" />
@@ -310,65 +298,6 @@ export default function EFPPositionManagement() {
                 )}
               </tbody>
             </table>
-          </div>
-        </section>
-
-        <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-black text-primary">
-                {isAm ? "የተመረጠ ስለቦታ" : "Selected position"}
-              </h2>
-              <p className="mt-2 text-sm text-gray-500">
-                {isAm
-                  ? "ይህ የፌዴራል ፖሊስ ስራ ቦታ እይታ ነው።"
-                  : "Review the current position details and official assignments."}
-              </p>
-            </div>
-            {selectedPosition && (
-              <span className="rounded-full bg-secondary/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.24em] text-secondary">
-                {selectedPosition._count?.officials ?? 0}{" "}
-                {isAm ? "ኦፊሻል" : "Officials"}
-              </span>
-            )}
-          </div>
-
-          <div className="mt-6 space-y-5">
-            {selectedPosition ? (
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-sm font-black uppercase tracking-[0.24em] text-gray-500">
-                    {isAm ? "እንግሊዝኛ ስም" : "English Name"}
-                  </h3>
-                  <p className="mt-2 rounded-3xl border border-gray-200 bg-gray-50 px-4 py-4 text-gray-800">
-                    {selectedPosition.nameEnglish}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-black uppercase tracking-[0.24em] text-gray-500">
-                    {isAm ? "አማርኛ ስም" : "Amharic Name"}
-                  </h3>
-                  <p className="mt-2 rounded-3xl border border-gray-200 bg-gray-50 px-4 py-4 text-gray-800">
-                    {selectedPosition.nameAmharic}
-                  </p>
-                </div>
-                <div className="space-y-2 rounded-3xl border border-secondary/10 bg-secondary/5 p-4 text-sm text-gray-700">
-                  <p className="font-semibold text-secondary">
-                    {isAm ? "የኦፊሻል ብዛት" : "Assigned Officials"}
-                  </p>
-                  <p>
-                    {selectedPosition._count?.officials ?? 0}{" "}
-                    {isAm ? "ኦፊሻል" : "Officials"}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-3xl border border-dashed border-gray-200 bg-gray-50 px-6 py-10 text-center text-sm text-gray-500">
-                {isAm
-                  ? "የሚገምቱ ምንም ስራ ቦታ አልተመረጠም።"
-                  : "No position selected yet. Choose a row to view details."}
-              </div>
-            )}
           </div>
         </section>
       </div>
