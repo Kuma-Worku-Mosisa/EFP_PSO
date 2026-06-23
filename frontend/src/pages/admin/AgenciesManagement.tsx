@@ -33,6 +33,7 @@ import {
   Shield,
   Search,
   SlidersHorizontal,
+  Upload,
 } from "lucide-react";
 import DocumentPreviewer from "../../components/DocumentPreviewer";
 import { AutoDismissToast, ToastType } from "../../components/AutoDismissToast";
@@ -268,7 +269,70 @@ export function AgenciesManagement({
   const [selectedDocUrl, setSelectedDocUrl] = useState<string | null>(null);
   const [selectedDocName, setSelectedDocName] = useState<string>("");
   const [showAppendContract, setShowAppendContract] = useState(false);
-  const [newContract, setNewContract] = useState({ serviceUserName: "", addressText: "", assignedPersonnelCount: 0, status: "Active", contractYears: 1, contractDoc: null as File | null });
+  const [newContract, setNewContract] = useState({
+    serviceUserName: "",
+    region: "",
+    zone: "",
+    woreda: "",
+    kebele: "",
+    houseNumber: "",
+    specialLocation: "",
+    assignedPersonnelCount: 0,
+    status: "Active",
+    contractStartDate: "",
+    contractDoc: null as File | null,
+  });
+  // Address selection state from DB
+  const [contractRegions, setContractRegions] = useState<any[]>([]);
+  const [contractZones, setContractZones] = useState<any[]>([]);
+  const [contractWoredas, setContractWoredas] = useState<any[]>([]);
+  const [contractKebeles, setContractKebeles] = useState<any[]>([]);
+  // Address dropdown open states for contract modal
+  const [regionOpen, setRegionOpen] = useState(false);
+  const [zoneOpen, setZoneOpen] = useState(false);
+  const [woredaOpen, setWoredaOpen] = useState(false);
+  const [kebeleOpen, setKebeleOpen] = useState(false);
+  const [regionSearch, setRegionSearch] = useState("");
+  const [zoneSearch, setZoneSearch] = useState("");
+  const [woredaSearch, setWoredaSearch] = useState("");
+  const [kebeleSearch, setKebeleSearch] = useState("");
+  const contractRefs = {
+    region: useRef<HTMLDivElement>(null),
+    zone: useRef<HTMLDivElement>(null),
+    woreda: useRef<HTMLDivElement>(null),
+    kebele: useRef<HTMLDivElement>(null),
+  };
+  const LOCATION_API = "http://localhost:5000/api/location";
+  const getLocationName = (obj: any) =>
+    isAm ? obj?.nameAmharic || obj?.nameEnglish || "" : obj?.nameEnglish || obj?.nameAmharic || "";
+  const fetchContractRegions = async () => {
+    try {
+      const res = await fetch(`${LOCATION_API}/regions`);
+      const data = await res.json();
+      setContractRegions(data?.data || data || []);
+    } catch { setContractRegions([]); }
+  };
+  const fetchContractZones = async (regionId: number) => {
+    try {
+      const res = await fetch(`${LOCATION_API}/regions/${regionId}/zones`);
+      const data = await res.json();
+      setContractZones(data?.data || data || []);
+    } catch { setContractZones([]); }
+  };
+  const fetchContractWoredas = async (zoneId: number) => {
+    try {
+      const res = await fetch(`${LOCATION_API}/zones/${zoneId}/woredas`);
+      const data = await res.json();
+      setContractWoredas(data?.data || data || []);
+    } catch { setContractWoredas([]); }
+  };
+  const fetchContractKebeles = async (woredaId: number) => {
+    try {
+      const res = await fetch(`${LOCATION_API}/woredas/${woredaId}/kebeles`);
+      const data = await res.json();
+      setContractKebeles(data?.data || data || []);
+    } catch { setContractKebeles([]); }
+  };
   // Toast state
   const [toastOpen, setToastOpen] = useState(false);
   const [toastType, setToastType] = useState<ToastType>("success");
@@ -401,6 +465,59 @@ export function AgenciesManagement({
 
     setAddressLoading(false);
   }, [selectedEmployee]);
+
+  // Fetch regions when append contract modal opens
+  useEffect(() => {
+    if (showAppendContract) {
+      fetchContractRegions();
+      setContractZones([]);
+      setContractWoredas([]);
+      setContractKebeles([]);
+    }
+  }, [showAppendContract]);
+
+  // Close address dropdowns on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      Object.entries(contractRefs).forEach(([key, ref]) => {
+        if (ref.current && !ref.current.contains(e.target as Node)) {
+          if (key === "region") { setRegionOpen(false); setRegionSearch(""); }
+          if (key === "zone") { setZoneOpen(false); setZoneSearch(""); }
+          if (key === "woreda") { setWoredaOpen(false); setWoredaSearch(""); }
+          if (key === "kebele") { setKebeleOpen(false); setKebeleSearch(""); }
+        }
+      });
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Fetch zones when region changes
+  const handleContractRegionChange = (value: string) => {
+    const region = contractRegions.find((r: any) => (r.nameEnglish || r.name) === value || String(r.id) === value);
+    setNewContract((prev: any) => ({ ...prev, region: value, zone: "", woreda: "", kebele: "" }));
+    if (region?.id) fetchContractZones(region.id);
+    else setContractZones([]);
+    setContractWoredas([]);
+    setContractKebeles([]);
+  };
+
+  // Fetch woredas when zone changes
+  const handleContractZoneChange = (value: string) => {
+    const zone = contractZones.find((z: any) => (z.nameEnglish || z.name) === value || String(z.id) === value);
+    setNewContract((prev: any) => ({ ...prev, zone: value, woreda: "", kebele: "" }));
+    if (zone?.id) fetchContractWoredas(zone.id);
+    else setContractWoredas([]);
+    setContractKebeles([]);
+  };
+
+  // Fetch kebeles when woreda changes
+  const handleContractWoredaChange = (value: string) => {
+    const woreda = contractWoredas.find((w: any) => (w.nameEnglish || w.name) === value || String(w.id) === value);
+    setNewContract((prev: any) => ({ ...prev, woreda: value, kebele: "" }));
+    if (woreda?.id) fetchContractKebeles(woreda.id);
+    else setContractKebeles([]);
+  };
 
   const getStatusStyles = (status: string) => {
     switch (status) {
@@ -732,8 +849,81 @@ export function AgenciesManagement({
     (d) => d.type === "Yearly Renewed",
   );
   const alertDocsCount = yearlyDocs.filter(
-    (d) => d.status === "Expired" || d.status === "Expiring Soon",
+    (d) => d.type === "Yearly Renewed",
   ).length;
+
+  // --- SearchableLocationSelect Component ---
+  const SearchableLocationSelect = ({
+    label, placeholder, searchPlaceholder, value, options, disabled = false, isOpen, onToggle, onSelect, onClear, searchTerm, onSearchChange, innerRef,
+  }: {
+    label: string; placeholder: string; searchPlaceholder: string; value: string; options: any[]; disabled?: boolean;
+    isOpen: boolean; onToggle: () => void; onSelect: (val: string) => void; onClear: () => void;
+    searchTerm: string; onSearchChange: (v: string) => void; innerRef: React.RefObject<HTMLDivElement | null>;
+  }) => {
+    const selected = options.find((o: any) => (o.nameEnglish || o.name || String(o.id)) === value);
+    const filtered = options.filter((o: any) => (getLocationName(o) || "").toLowerCase().includes(searchTerm.toLowerCase()));
+    return (
+      <div ref={innerRef} className="relative">
+        <div className="flex items-center justify-between mb-1">
+          <label className="text-[9px] uppercase tracking-[0.1em] font-bold text-[#003366]">{label} <span className="text-orange-500">*</span></label>
+        </div>
+        <button type="button" disabled={disabled}
+          onClick={onToggle}
+          className={`w-full px-3 py-2.5 rounded-xl border text-sm text-left flex items-center justify-between gap-2 transition-all relative ${disabled ? "bg-gray-50 text-gray-400 cursor-not-allowed" : "bg-white text-gray-700 hover:border-[#003366]/30 cursor-pointer"} ${isOpen ? "border-[#003366]/50 ring-2 ring-[#003366]/20" : "border-gray-200"}`}
+        >
+          <span className={`truncate ${selected ? "font-bold text-[#003366]" : "text-gray-400"}`}>
+            {selected ? getLocationName(selected) : placeholder}
+          </span>
+          <span className="flex items-center gap-1 shrink-0">
+            {selected ? (
+              <button type="button" onClick={(e) => { e.stopPropagation(); onClear(); }}
+                className="text-red-400 hover:text-red-600 transition-colors p-0.5" title="Clear">
+                <X className="w-4 h-4" />
+              </button>
+            ) : (
+              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+            )}
+          </span>
+        </button>
+        {isOpen && !disabled && (
+          <div className="absolute left-0 right-0 top-full z-30 mt-1 rounded-xl border border-gray-200 bg-white shadow-xl overflow-hidden">
+            <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-2.5 bg-gray-50">
+              <Search className="w-4 h-4 text-gray-400 shrink-0" />
+              <input type="text" value={searchTerm}
+                onChange={(e) => onSearchChange(e.target.value)}
+                placeholder={searchPlaceholder}
+                className="w-full bg-transparent outline-none text-sm text-gray-800 placeholder:text-gray-400"
+                autoFocus
+              />
+              {searchTerm && (
+                <button type="button" onClick={() => onSearchChange("")}
+                  className="shrink-0 p-0.5 rounded-full text-gray-400 hover:text-red-600 transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            <div className="max-h-44 overflow-y-auto p-1.5">
+              {filtered.length > 0 ? filtered.map((o: any) => {
+                const val = o.nameEnglish || o.name || String(o.id);
+                return (
+                  <button key={o.id} type="button"
+                    onClick={() => { onSelect(val); }}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all ${val === value ? "bg-[#003366]/10 text-[#003366] font-bold" : "text-gray-700 hover:bg-gray-100"}`}
+                  >
+                    {getLocationName(o)}
+                  </button>
+                );
+              }) : (
+                <div className="px-3 py-4 text-sm text-gray-400 text-center">
+                  {searchTerm ? (isAm ? "ምንም አማራጭ አልተገኘም" : "No matching options") : (isAm ? "ምንም አማራጭ የለም" : "No options available")}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6 font-sans">
@@ -1910,10 +2100,10 @@ export function AgenciesManagement({
                   </button>
                 </div>
               </div>
-              <div className="p-6 space-y-4">
+              <div className="p-6 max-h-[calc(100vh-10rem)] overflow-y-auto space-y-4">
                 <div>
-                  <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1.5 block">
-                    {isAm ? "የደንበኛ ስም" : "Client Name"}
+                  <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#003366] mb-1.5 block">
+                    {isAm ? "የደንበኛ ስም" : "Client Name"} <span className="text-orange-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -1923,71 +2113,182 @@ export function AgenciesManagement({
                     placeholder={isAm ? "የድርጅት ስም ያስገቡ" : "Enter organization name"}
                   />
                 </div>
+                <div className="border-t border-gray-100 pt-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <MapPin className="w-4 h-4 text-[#003366]" />
+                    <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#003366]">
+                      {isAm ? "የአገልግሎት ቦታ አድራሻ" : "Site Address"}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <SearchableLocationSelect
+                      label={isAm ? "ክልል" : "Region"}
+                      placeholder={isAm ? "ክልል ይምረጡ..." : "Select region..."}
+                      searchPlaceholder={isAm ? "ክልል ይፈልጉ..." : "Search region..."}
+                      value={newContract.region}
+                      options={contractRegions}
+                      isOpen={regionOpen}
+                      onToggle={() => { if (!regionOpen) { setContractZones([]); setContractWoredas([]); setContractKebeles([]); } setRegionOpen(!regionOpen); setRegionSearch(""); }}
+                      onSelect={(val) => { handleContractRegionChange(val); setRegionOpen(false); setRegionSearch(""); }}
+                      onClear={() => { handleContractRegionChange(""); setRegionOpen(false); setRegionSearch(""); }}
+                      searchTerm={regionSearch}
+                      onSearchChange={setRegionSearch}
+                      innerRef={contractRefs.region}
+                    />
+                    <SearchableLocationSelect
+                      label={isAm ? "ዞን/ከተማ" : "Zone/Sub-city"}
+                      placeholder={isAm ? "ዞን ይምረጡ..." : "Select zone..."}
+                      searchPlaceholder={isAm ? "ዞን ይፈልጉ..." : "Search zone..."}
+                      value={newContract.zone}
+                      options={contractZones}
+                      disabled={!newContract.region}
+                      isOpen={zoneOpen}
+                      onToggle={() => { setZoneOpen(!zoneOpen); setZoneSearch(""); }}
+                      onSelect={(val) => { handleContractZoneChange(val); setZoneOpen(false); setZoneSearch(""); }}
+                      onClear={() => { handleContractZoneChange(""); setZoneOpen(false); setZoneSearch(""); }}
+                      searchTerm={zoneSearch}
+                      onSearchChange={setZoneSearch}
+                      innerRef={contractRefs.zone}
+                    />
+                    <SearchableLocationSelect
+                      label={isAm ? "ወረዳ" : "Woreda"}
+                      placeholder={isAm ? "ወረዳ ይምረጡ..." : "Select woreda..."}
+                      searchPlaceholder={isAm ? "ወረዳ ይፈልጉ..." : "Search woreda..."}
+                      value={newContract.woreda}
+                      options={contractWoredas}
+                      disabled={!newContract.zone}
+                      isOpen={woredaOpen}
+                      onToggle={() => { setWoredaOpen(!woredaOpen); setWoredaSearch(""); }}
+                      onSelect={(val) => { handleContractWoredaChange(val); setWoredaOpen(false); setWoredaSearch(""); }}
+                      onClear={() => { handleContractWoredaChange(""); setWoredaOpen(false); setWoredaSearch(""); }}
+                      searchTerm={woredaSearch}
+                      onSearchChange={setWoredaSearch}
+                      innerRef={contractRefs.woreda}
+                    />
+                    <SearchableLocationSelect
+                      label={isAm ? "ቀበሌ" : "Kebele"}
+                      placeholder={isAm ? "ቀበሌ ይምረጡ..." : "Select kebele..."}
+                      searchPlaceholder={isAm ? "ቀበሌ ይፈልጉ..." : "Search kebele..."}
+                      value={newContract.kebele}
+                      options={contractKebeles}
+                      disabled={!newContract.woreda}
+                      isOpen={kebeleOpen}
+                      onToggle={() => { setKebeleOpen(!kebeleOpen); setKebeleSearch(""); }}
+                      onSelect={(val) => { setNewContract((prev: any) => ({ ...prev, kebele: val })); setKebeleOpen(false); setKebeleSearch(""); }}
+                      onClear={() => { setNewContract((prev: any) => ({ ...prev, kebele: "" })); setKebeleOpen(false); setKebeleSearch(""); }}
+                      searchTerm={kebeleSearch}
+                      onSearchChange={setKebeleSearch}
+                      innerRef={contractRefs.kebele}
+                    />
+                    <div>
+                      <label className="text-[9px] uppercase tracking-[0.1em] font-bold text-[#003366] mb-1 block">
+                        {isAm ? "የቤት ቁጥር" : "House Number"} <span className="text-orange-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={newContract.houseNumber}
+                        onChange={(e) => setNewContract({ ...newContract, houseNumber: e.target.value })}
+                        className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 outline-none transition-all"
+                        placeholder={isAm ? "ለምሳሌ ቤት 123" : "e.g. House 123"}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] uppercase tracking-[0.1em] font-bold text-[#003366] mb-1 block">
+                        {isAm ? "ልዩ ቦታ" : "Special Location"} <span className="text-[9px] font-bold text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded ml-1">{isAm ? "አማራጭ" : "OPTIONAL"}</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={newContract.specialLocation}
+                        onChange={(e) => setNewContract({ ...newContract, specialLocation: e.target.value })}
+                        className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 outline-none transition-all"
+                        placeholder={isAm ? "ልዩ ምልክት..." : "Near landmark..."}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#003366] mb-1.5 block">
+                      {isAm ? "የተመደቡ ጠባቂዎች" : "Assigned Guards"} <span className="text-orange-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={newContract.assignedPersonnelCount}
+                      onChange={(e) => setNewContract({ ...newContract, assignedPersonnelCount: parseInt(e.target.value) || 0 })}
+                      className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 outline-none transition-all"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#003366] mb-1.5 block">
+                      {isAm ? "ሁኔታ" : "Status"} <span className="text-orange-500">*</span>
+                    </label>
+                    <select
+                      value={newContract.status}
+                      onChange={(e) => setNewContract({ ...newContract, status: e.target.value })}
+                      className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 outline-none transition-all"
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Expiring Soon">Expiring Soon</option>
+                      <option value="Expired">Expired</option>
+                    </select>
+                  </div>
+                </div>
                 <div>
-                  <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1.5 block">
-                    {isAm ? "የቦታ አድራሻ" : "Site Address"}
+                  <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#003366] mb-1.5 block">
+                    {isAm ? "የውል መጀመሪያ ቀን" : "Contract Start Date"} <span className="text-orange-500">*</span>
                   </label>
                   <input
-                    type="text"
-                    value={newContract.addressText}
-                    onChange={(e) => setNewContract({ ...newContract, addressText: e.target.value })}
+                    type="date"
+                    value={newContract.contractStartDate}
+                    onChange={(e) => setNewContract({ ...newContract, contractStartDate: e.target.value })}
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 outline-none transition-all"
-                    placeholder={isAm ? "አድራሻ ያስገቡ" : "Enter address"}
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1.5 block">
-                    {isAm ? "የተመደቡ ጠባቂዎች" : "Assigned Guards"}
+                  <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#003366] mb-1.5 block">
+                    {isAm ? "የውል ሰነድ" : "Contract Document"} <span className="text-orange-500">*</span>
                   </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={newContract.assignedPersonnelCount}
-                    onChange={(e) => setNewContract({ ...newContract, assignedPersonnelCount: parseInt(e.target.value) || 0 })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 outline-none transition-all"
-                    placeholder="0"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1.5 block">
-                    {isAm ? "ሁኔታ" : "Status"}
-                  </label>
-                  <select
-                    value={newContract.status}
-                    onChange={(e) => setNewContract({ ...newContract, status: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 outline-none transition-all"
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Expiring Soon">Expiring Soon</option>
-                    <option value="Expired">Expired</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1.5 block">
-                    {isAm ? "የውል ዓመታት" : "Contract Duration (Years)"}
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="99"
-                    value={newContract.contractYears}
-                    onChange={(e) => setNewContract({ ...newContract, contractYears: parseInt(e.target.value) || 1 })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 outline-none transition-all"
-                    placeholder="1"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1.5 block">
-                    {isAm ? "የውል ሰነድ" : "Contract Document"}
-                  </label>
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={(e) => setNewContract({ ...newContract, contractDoc: e.target.files?.[0] || null })}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-[#003366] file:text-white file:text-xs file:font-bold hover:file:bg-[#001F3F] focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 outline-none transition-all"
-                  />
-                  {newContract.contractDoc && (
-                    <p className="text-xs text-gray-500 mt-1">{newContract.contractDoc.name}</p>
+                  {newContract.contractDoc ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-50 border border-blue-200">
+                        <FileText className="w-5 h-5 text-blue-600 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-gray-800 truncate">{newContract.contractDoc.name}</p>
+                          <p className="text-xs text-gray-500">{(newContract.contractDoc.size / 1024 / 1024).toFixed(2)} MB</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const url = URL.createObjectURL(newContract.contractDoc);
+                            setSelectedContractUrl(url);
+                            setSelectedContractName(newContract.contractDoc.name);
+                          }}
+                          className="w-8 h-8 rounded-lg bg-white border border-blue-200 flex items-center justify-center text-blue-600 hover:bg-blue-100 transition-colors"
+                          title={isAm ? "ተመልከት" : "Preview"}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setNewContract({ ...newContract, contractDoc: null })}
+                          className="w-8 h-8 rounded-lg bg-white border border-red-200 flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
+                          title={isAm ? "ሰርዝ" : "Cancel"}
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl border-2 border-dashed border-gray-300 text-sm font-semibold text-gray-500 hover:border-[#003366]/50 hover:bg-[#003366]/5 cursor-pointer transition-all">
+                      <Upload className="w-4 h-4" />
+                      {isAm ? "ፋይል ይምረጡ" : "Choose File"}
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        onChange={(e) => setNewContract({ ...newContract, contractDoc: e.target.files?.[0] || null })}
+                        className="hidden"
+                      />
+                    </label>
                   )}
                 </div>
                 <div className="flex gap-3 pt-2">
@@ -2003,20 +2304,21 @@ export function AgenciesManagement({
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => {
-                      if (!newContract.serviceUserName.trim() || !newContract.addressText.trim()) return;
+                      if (!newContract.serviceUserName.trim() || !newContract.region || !newContract.zone || !newContract.woreda || !newContract.kebele || !newContract.houseNumber || !newContract.contractStartDate || !newContract.contractDoc || newContract.assignedPersonnelCount <= 0) return;
                       const now = new Date().toISOString().slice(0, 10);
                       const contractFileName = newContract.contractDoc ? newContract.contractDoc.name : "";
+                      const fullAddress = `${newContract.region}, ${newContract.zone}, ${newContract.woreda}, ${newContract.kebele}, ${newContract.houseNumber}${newContract.specialLocation ? `, ${newContract.specialLocation}` : ""}`;
                       setSelectedOrg((prev) => {
                         if (!prev) return prev;
                         return {
                           ...prev,
                           serviceContracts: [
                             ...prev.serviceContracts,
-                            { id: Date.now(), serviceUserName: newContract.serviceUserName, addressText: newContract.addressText, assignedPersonnelCount: newContract.assignedPersonnelCount, status: newContract.status, contractUrl: contractFileName, createdAt: now, updatedAt: now },
+                            { id: Date.now(), serviceUserName: newContract.serviceUserName, addressText: fullAddress, assignedPersonnelCount: newContract.assignedPersonnelCount, status: newContract.status, contractUrl: contractFileName, createdAt: newContract.contractStartDate || now, updatedAt: now },
                           ],
                         };
                       });
-                      setNewContract({ serviceUserName: "", addressText: "", assignedPersonnelCount: 0, status: "Active", contractYears: 1, contractDoc: null });
+                      setNewContract({ serviceUserName: "", region: "", zone: "", woreda: "", kebele: "", houseNumber: "", specialLocation: "", assignedPersonnelCount: 0, status: "Active", contractStartDate: "", contractDoc: null });
                       setShowAppendContract(false);
                     }}
                     className="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#003366] to-[#001F3F] text-white text-sm font-bold shadow-md hover:shadow-lg transition-all"
