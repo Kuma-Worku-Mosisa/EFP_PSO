@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
 import {
@@ -19,49 +19,106 @@ import {
   Info,
 } from "lucide-react";
 import { LoadingSpinner } from "../../components/LoadingSpinner";
+import { apiRequest } from "../../lib/api";
 
 interface LocationOption {
   id: number;
   name: string;
 }
 
-const mockRegions: LocationOption[] = [
-  { id: 1, name: "Addis Ababa" },
-  { id: 2, name: "Oromia" },
-  { id: 3, name: "Amhara" },
+type PositionCategory = "manager" | "operations" | "administration" | "other";
+
+interface PositionOption {
+  id: number;
+  name: string;
+}
+
+const allowedPositionNames = [
+  "Manager of Institution",
+  "Operation of Institution",
+  "Administrative of Institution",
 ];
 
-const mockZones: LocationOption[] = [
-  { id: 1, name: "Arada" },
-  { id: 2, name: "Bole" },
-  { id: 3, name: "Kirkos" },
-];
-
-const mockWoredas: LocationOption[] = [
-  { id: 1, name: "Woreda 01" },
-  { id: 2, name: "Woreda 02" },
-  { id: 3, name: "Woreda 03" },
-];
-
-const mockKebeles: LocationOption[] = [
-  { id: 1, name: "Kebele 01" },
-  { id: 2, name: "Kebele 02" },
-  { id: 3, name: "Kebele 03" },
-];
+const isAllowedPosition = (name: string) => {
+  const normalized = String(name || "")
+    .trim()
+    .toLowerCase();
+  return allowedPositionNames.some(
+    (allowed) => normalized === allowed.toLowerCase(),
+  );
+};
 
 const documentTypes = [
-  { key: "fingerprint", labelEn: "Fingerprint from Police", labelAm: "ከፖሊስ የጣት አሻራ", required: true },
-  { key: "medical", labelEn: "Medical Result", labelAm: "የህክምና ውጤት", required: true },
-  { key: "training", labelEn: "Training Certificate", labelAm: "የስልጠና የምስክር ወረቀት", required: false },
-  { key: "support_letter", labelEn: "Support Letter (Kebele)", labelAm: "የድጋፍ ደብዳቤ (ቀበሌ)", required: false },
-  { key: "collateral", labelEn: "Proof of Collateral", labelAm: "የማስረጃ ማስረጃ", required: true },
-  { key: "work_exp", labelEn: "Work Experience", labelAm: "የስራ ልምድ", required: false },
-  { key: "resignation", labelEn: "Resignation Record", labelAm: "የመልቀቂያ መዝገብ", required: false },
-  { key: "education", labelEn: "Educational Certificate", labelAm: "የትምህርት የምስክር ወረቀት", required: true },
-  { key: "national_id", labelEn: "National ID", labelAm: "ብሄራዊ መታወቂያ", required: true },
-  { key: "passport_kebele", labelEn: "Renewed Kebele ID/Passport", labelAm: "የታደሰ የቀበሌ መታወቂያ/ፓስፖርት", required: true },
-  { key: "org_id", labelEn: "Organization Identification", labelAm: "የድርጅት መታወቂያ", required: true },
+  {
+    key: "fingerprint",
+    labelEn: "Fingerprint from Police",
+    labelAm: "ከፖሊስ የጣት አሻራ",
+    required: true,
+  },
+  {
+    key: "medical",
+    labelEn: "Medical Result",
+    labelAm: "የህክምና ውጤት",
+    required: true,
+  },
+  {
+    key: "training",
+    labelEn: "Training Certificate",
+    labelAm: "የስልጠና የምስክር ወረቀት",
+    required: false,
+  },
+  {
+    key: "support_letter",
+    labelEn: "Support Letter (Kebele)",
+    labelAm: "የድጋፍ ደብዳቤ (ቀበሌ)",
+    required: false,
+  },
+  {
+    key: "collateral",
+    labelEn: "Proof of Collateral",
+    labelAm: "የማስረጃ ማስረጃ",
+    required: true,
+  },
+  {
+    key: "work_exp",
+    labelEn: "Work Experience",
+    labelAm: "የስራ ልምድ",
+    required: false,
+  },
+  {
+    key: "resignation",
+    labelEn: "Resignation Record",
+    labelAm: "የመልቀቂያ መዝገብ",
+    required: false,
+  },
+  {
+    key: "education",
+    labelEn: "Educational Certificate",
+    labelAm: "የትምህርት የምስክር ወረቀት",
+    required: true,
+  },
+  {
+    key: "national_id",
+    labelEn: "National ID",
+    labelAm: "ብሄራዊ መታወቂያ",
+    required: true,
+  },
+  {
+    key: "passport_kebele",
+    labelEn: "Renewed Kebele ID/Passport",
+    labelAm: "የታደሰ የቀበሌ መታወቂያ/ፓስፖርት",
+    required: true,
+  },
+  {
+    key: "org_id",
+    labelEn: "Organization Identification",
+    labelAm: "የድርጅት መታወቂያ",
+    required: true,
+  },
 ];
+
+const getPositionLabel = (position: PositionOption, isAm: boolean) =>
+  position.name || String(position.id);
 
 export default function PersonnelDetailsForm() {
   const { language } = useLanguage();
@@ -93,7 +150,266 @@ export default function PersonnelDetailsForm() {
   const [activeDocKey, setActiveDocKey] = useState<string | null>(null);
   const [openInfo, setOpenInfo] = useState<string | null>(null);
   const [openPosInfo, setOpenPosInfo] = useState<string | null>(null);
+  const [positionOptions, setPositionOptions] = useState<PositionOption[]>([]);
+  const [regions, setRegions] = useState<LocationOption[]>([]);
+  const [zones, setZones] = useState<LocationOption[]>([]);
+  const [woredas, setWoredas] = useState<LocationOption[]>([]);
+  const [kebeles, setKebeles] = useState<LocationOption[]>([]);
+  const [positionLoading, setPositionLoading] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [educationOptions, setEducationOptions] = useState<
+    Array<{ value: string; labelEn: string; labelAm: string }>
+  >([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const selectedPosition = positionOptions.find(
+    (pos) => String(pos.id) === position,
+  );
+  const availableEducationOptions = educationOptions;
+
+  useEffect(() => {
+    const loadPositionOptions = async () => {
+      setPositionLoading(true);
+      try {
+        const response = await apiRequest<{ success: boolean; data: any }>(
+          "/positions",
+        );
+        const payload = response.data || response;
+        const positions = Array.isArray(payload)
+          ? payload
+          : payload?.data || [];
+        setPositionOptions(
+          positions
+            .map((item: any) => ({
+              id: Number(item.id),
+              name: String(item.name || item.positionName || ""),
+            }))
+            .filter((position) => isAllowedPosition(position.name)),
+        );
+      } catch (error) {
+        console.error("Failed to load positions", error);
+      } finally {
+        setPositionLoading(false);
+      }
+    };
+
+    const loadRegions = async () => {
+      setLocationLoading(true);
+      try {
+        const response = await apiRequest<{ success: boolean; data: any }>(
+          "/location/regions",
+        );
+        const payload = response.data || response;
+        const regionList = Array.isArray(payload)
+          ? payload
+          : payload?.data || [];
+        setRegions(
+          regionList.map((item: any) => ({
+            id: Number(item.id),
+            name: String(
+              item.name || item.regionName || item.nameEnglish || "",
+            ),
+          })),
+        );
+      } catch (error) {
+        console.error("Failed to load regions", error);
+      } finally {
+        setLocationLoading(false);
+      }
+    };
+
+    loadPositionOptions();
+    loadRegions();
+  }, []);
+
+  useEffect(() => {
+    if (!region) {
+      setZones([]);
+      setWoredas([]);
+      setKebeles([]);
+      setZone("");
+      setWoreda("");
+      setKebele("");
+      return;
+    }
+
+    const fetchZones = async () => {
+      setLocationLoading(true);
+      try {
+        const response = await apiRequest<{ success: boolean; data: any }>(
+          `/location/regions/${region}/zones`,
+        );
+        const payload = response.data || response;
+        const zoneList = Array.isArray(payload) ? payload : payload?.data || [];
+        setZones(
+          zoneList.map((item: any) => ({
+            id: Number(item.id),
+            name: String(item.name || item.zoneName || item.nameEnglish || ""),
+          })),
+        );
+      } catch (error) {
+        console.error("Failed to load zones", error);
+        setZones([]);
+      } finally {
+        setLocationLoading(false);
+      }
+    };
+
+    fetchZones();
+  }, [region]);
+
+  useEffect(() => {
+    if (!zone) {
+      setWoredas([]);
+      setKebeles([]);
+      setWoreda("");
+      setKebele("");
+      return;
+    }
+
+    const fetchWoredas = async () => {
+      setLocationLoading(true);
+      try {
+        const response = await apiRequest<{ success: boolean; data: any }>(
+          `/location/zones/${zone}/woredas`,
+        );
+        const payload = response.data || response;
+        const woredaList = Array.isArray(payload)
+          ? payload
+          : payload?.data || [];
+        setWoredas(
+          woredaList.map((item: any) => ({
+            id: Number(item.id),
+            name: String(
+              item.name || item.woredaName || item.nameEnglish || "",
+            ),
+          })),
+        );
+      } catch (error) {
+        console.error("Failed to load woredas", error);
+        setWoredas([]);
+      } finally {
+        setLocationLoading(false);
+      }
+    };
+
+    fetchWoredas();
+  }, [zone]);
+
+  useEffect(() => {
+    if (!woreda) {
+      setKebeles([]);
+      setKebele("");
+      return;
+    }
+
+    const fetchKebeles = async () => {
+      setLocationLoading(true);
+      try {
+        const response = await apiRequest<{ success: boolean; data: any }>(
+          `/location/woredas/${woreda}/kebeles`,
+        );
+        const payload = response.data || response;
+        const kebeleList = Array.isArray(payload)
+          ? payload
+          : payload?.data || [];
+        setKebeles(
+          kebeleList.map((item: any) => ({
+            id: Number(item.id),
+            name: String(
+              item.name || item.kebeleName || item.nameEnglish || "",
+            ),
+          })),
+        );
+      } catch (error) {
+        console.error("Failed to load kebeles", error);
+        setKebeles([]);
+      } finally {
+        setLocationLoading(false);
+      }
+    };
+
+    fetchKebeles();
+  }, [woreda]);
+
+  useEffect(() => {
+    if (!position) {
+      setEducationOptions([]);
+      setEducationLevel("");
+      return;
+    }
+
+    const loadPositionRequirements = async () => {
+      try {
+        const response = await apiRequest<{ success: boolean; data: any }>(
+          `/positions/${position}`,
+        );
+        const payload = response.data || response;
+        let requirements =
+          payload?.requirements ||
+          payload?.positionRequirements ||
+          payload?.data?.requirements ||
+          payload?.data?.positionRequirements ||
+          [];
+
+        if (!Array.isArray(requirements)) {
+          requirements = [];
+        }
+
+        if (requirements.length === 0) {
+          try {
+            const reqResponse = await apiRequest<{
+              success: boolean;
+              data: any;
+            }>(`/positions/${position}/requirements`);
+            const reqPayload = reqResponse.data || reqResponse;
+            requirements = Array.isArray(reqPayload)
+              ? reqPayload
+              : reqPayload?.data || [];
+          } catch (innerError) {
+            requirements = [];
+          }
+        }
+
+        const optionSets = Array.from(
+          new Map(
+            (requirements || [])
+              .filter(
+                (req: any) =>
+                  req?.requiredEducationLevel !== undefined &&
+                  req?.requiredEducationLevel !== null &&
+                  String(req.requiredEducationLevel).trim().length > 0,
+              )
+              .map((req: any) => {
+                const rawValue = String(req.requiredEducationLevel).trim();
+                return [
+                  rawValue,
+                  {
+                    value: rawValue,
+                    labelEn: rawValue,
+                    labelAm: rawValue,
+                  },
+                ];
+              }),
+          ).values(),
+        );
+
+        setEducationOptions(optionSets);
+        setEducationLevel((prev) =>
+          optionSets.length === 0 ||
+          !optionSets.some((opt) => opt.value === prev)
+            ? ""
+            : prev,
+        );
+      } catch (error) {
+        console.error("Failed to load position requirements", error);
+        setEducationOptions([]);
+        setEducationLevel("");
+      }
+    };
+
+    loadPositionRequirements();
+  }, [position]);
 
   const infoTexts: Record<string, { en: string; am: string }> = {
     fingerprint: {
@@ -148,7 +464,10 @@ export default function PersonnelDetailsForm() {
             {t("New Personnel Details", "የአዲስ ሰራተኛ ዝርዝሮች")}
           </h1>
           <p className="text-xs text-white/50 font-medium mt-1">
-            {t("Fill in the details for the new personnel member", "የአዲሱን የሰራተኛ አባል ዝርዝሮች ያስገቡ")}
+            {t(
+              "Fill in the details for the new personnel member",
+              "የአዲሱን የሰራተኛ አባል ዝርዝሮች ያስገቡ",
+            )}
           </p>
         </div>
       </div>
@@ -160,12 +479,17 @@ export default function PersonnelDetailsForm() {
         onSubmit={handleSubmit}
         className="space-y-8 relative"
       >
-        {submitting && <LoadingSpinner overlay text="Sending personnel details..." />}
+        {submitting && (
+          <LoadingSpinner overlay text="Sending personnel details..." />
+        )}
 
         {submitted && (
           <div className="flex items-center gap-2 p-3 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm font-medium">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
-            {t("Personnel details sent successfully!", "የሰራተኛ ዝርዝሮች በተሳካ ሁኔታ ተልከዋል!")}
+            {t(
+              "Personnel details sent successfully!",
+              "የሰራተኛ ዝርዝሮች በተሳካ ሁኔታ ተልከዋል!",
+            )}
           </div>
         )}
 
@@ -183,7 +507,8 @@ export default function PersonnelDetailsForm() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
-                {t("First Name", "ስም")} <span className="text-orange-500">*</span>
+                {t("First Name", "ስም")}{" "}
+                <span className="text-orange-500">*</span>
               </label>
               <input
                 type="text"
@@ -196,7 +521,8 @@ export default function PersonnelDetailsForm() {
             </div>
             <div>
               <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
-                {t("Middle Name", "የአባት ስም")} <span className="text-orange-500">*</span>
+                {t("Middle Name", "የአባት ስም")}{" "}
+                <span className="text-orange-500">*</span>
               </label>
               <input
                 type="text"
@@ -209,7 +535,8 @@ export default function PersonnelDetailsForm() {
             </div>
             <div>
               <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
-                {t("Last Name", "የአያት ስም")} <span className="text-orange-500">*</span>
+                {t("Last Name", "የአያት ስም")}{" "}
+                <span className="text-orange-500">*</span>
               </label>
               <input
                 type="text"
@@ -222,34 +549,34 @@ export default function PersonnelDetailsForm() {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
-                  {t("Gender", "ጾታ")} <span className="text-orange-500">*</span>
-                </label>
-                <select
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value)}
-                  required
-                  className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
-                >
-                  <option value="">{t("Select...", "ይምረጡ...")}</option>
-                  <option value="Male">{t("Male", "ወንድ")}</option>
-                  <option value="Female">{t("Female", "ሴት")}</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
-                  {t("Citizenship", "ዜግነት")}
-                </label>
-                <input
-                  type="text"
-                  value={citizenship}
-                  disabled
-                  className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm bg-gray-50 text-gray-500 outline-none cursor-not-allowed"
-                />
-              </div>
+            <div>
+              <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
+                {t("Gender", "ጾታ")} <span className="text-orange-500">*</span>
+              </label>
+              <select
+                value={gender}
+                onChange={(e) => setGender(e.target.value)}
+                required
+                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
+              >
+                <option value="">{t("Select...", "ይምረጡ...")}</option>
+                <option value="Male">{t("Male", "ወንድ")}</option>
+                <option value="Female">{t("Female", "ሴት")}</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
+                {t("Citizenship", "ዜግነት")}
+              </label>
+              <input
+                type="text"
+                value={citizenship}
+                disabled
+                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm bg-gray-50 text-gray-500 outline-none cursor-not-allowed"
+              />
             </div>
           </div>
+        </div>
 
         {/* Identity & Contact */}
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-6">
@@ -266,7 +593,8 @@ export default function PersonnelDetailsForm() {
             <div>
               <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
                 <Fingerprint className="w-3.5 h-3.5 inline mr-1 text-[#FFD700]" />
-                {t("Fayda ID", "የፋይዳ መታወቂያ")} <span className="text-orange-500">*</span>
+                {t("Fayda ID", "የፋይዳ መታወቂያ")}{" "}
+                <span className="text-orange-500">*</span>
               </label>
               <input
                 type="text"
@@ -323,7 +651,8 @@ export default function PersonnelDetailsForm() {
             <div>
               <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
                 <Briefcase className="w-3.5 h-3.5 inline mr-1 text-[#FFD700]" />
-                {t("Position", "ሹመት")} <span className="text-orange-500">*</span>
+                {t("Position", "ሹመት")}{" "}
+                <span className="text-orange-500">*</span>
               </label>
               <select
                 value={position}
@@ -331,17 +660,34 @@ export default function PersonnelDetailsForm() {
                 required
                 className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
               >
-                <option value="">{t("Select position...", "ሹመት ይምረጡ...")}</option>
-                <option value="Manager">{t("Personnel Manager", "የሰራተኞች አስተዳዳሪ")}</option>
-                <option value="Operations">{t("Operations Head", "የኦፕሬሽን ኃላፊ")}</option>
-                <option value="Admin">{t("Administration Head", "የአስተዳደር ኃላፊ")}</option>
+                <option value="">
+                  {t("Select position...", "ሹመት ይምረጡ...")}
+                </option>
+                {positionLoading ? (
+                  <option value="" disabled>
+                    {t("Loading positions...", "ክፍል እየተጫነ ነው...")}
+                  </option>
+                ) : positionOptions.length > 0 ? (
+                  positionOptions.map((pos) => (
+                    <option key={pos.id} value={pos.id}>
+                      {pos.name}
+                    </option>
+                  ))
+                ) : (
+                  <option value="" disabled>
+                    {t(
+                      "No authorized positions available",
+                      "ለማስተዳደር ብቻ የተፈቀዱ ሹመቶች አልተገኙም",
+                    )}
+                  </option>
+                )}
               </select>
             </div>
             <div>
               <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
                 <GraduationCap className="w-3.5 h-3.5 inline mr-1 text-[#FFD700]" />
-                {t("Education Level", "የትምህርት ደረጃ")}
-                <span className="text-orange-500 font-normal ml-1">({t("Optional", "አማራጭ")})</span>
+                {t("Education Level", "የትምህርት ደረጃ")}{" "}
+                <span className="text-orange-500">*</span>
               </label>
               <select
                 value={educationLevel}
@@ -349,21 +695,32 @@ export default function PersonnelDetailsForm() {
                 className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
               >
                 <option value="">{t("Select...", "ይምረጡ...")}</option>
-                <option value="PhD">{t("PhD", "ዶክትሬት")}</option>
-                <option value="Masters">{t("Master's Degree", "የማስተርስ ዲግሪ")}</option>
-                <option value="Bachelor">{t("Bachelor's Degree", "የባችለር ዲግሪ")}</option>
-                <option value="Diploma">{t("Diploma", "ዲፕሎማ")}</option>
-                <option value="HighSchool">{t("High School", "ሁለተኛ ደረጃ")}</option>
+                {availableEducationOptions.length > 0 ? (
+                  availableEducationOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {isAm ? option.labelAm : option.labelEn}
+                    </option>
+                  ))
+                ) : (
+                  <option value="" disabled>
+                    {t(
+                      "Choose a position to see level options",
+                      "እባክዎ የዲግሪ አማራጮችን ለማየት ሹመት ይምረጡ",
+                    )}
+                  </option>
+                )}
               </select>
             </div>
             <div>
               <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
-                {t("Work Experience (Years)", "የስራ ልምድ (ዓመታት)")}
-                <span className="text-orange-500 font-normal ml-1">({t("Optional", "አማራጭ")})</span>
+                {t("Work Experience (Years)", "የስራ ልምድ (ዓመታት)")}{" "}
+                <span className="text-orange-500">*</span>
               </label>
               <button
                 type="button"
-                onClick={() => setOpenPosInfo(openPosInfo === "workExp" ? null : "workExp")}
+                onClick={() =>
+                  setOpenPosInfo(openPosInfo === "workExp" ? null : "workExp")
+                }
                 className="inline-flex items-center space-x-1 text-[10px] font-bold text-orange-600 hover:text-orange-500 transition-all duration-300 hover:scale-105 active:scale-95 mb-1"
               >
                 <motion.span
@@ -394,7 +751,10 @@ export default function PersonnelDetailsForm() {
                   >
                     <div className="mb-2 p-2 bg-gradient-to-br from-orange-50 to-amber-50/50 border border-orange-200/70 rounded-xl shadow-sm">
                       <p className="text-[10px] text-orange-900 leading-relaxed font-medium">
-                        {t("Enter your work experience years relevant to your current position.", "ከአሁን ሹመትዎ ጋር የሚዛመድ የስራ ልምድ ዓመታትዎን ያስገቡ።")}
+                        {t(
+                          "Enter your work experience years relevant to your current position.",
+                          "ከአሁን ሹመትዎ ጋር የሚዛመድ የስራ ልምድ ዓመታትዎን ያስገቡ።",
+                        )}
                       </p>
                     </div>
                   </motion.div>
@@ -411,12 +771,14 @@ export default function PersonnelDetailsForm() {
             </div>
             <div>
               <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
-                {t("Total Experience (Years)", "አጠቃላይ ልምድ (ዓመታት)")}
-                <span className="text-orange-500 font-normal ml-1">({t("Optional", "አማራጭ")})</span>
+                {t("Total Experience (Years)", "አጠቃላይ ልምድ (ዓመታት)")}{" "}
+                <span className="text-orange-500">*</span>
               </label>
               <button
                 type="button"
-                onClick={() => setOpenPosInfo(openPosInfo === "totalExp" ? null : "totalExp")}
+                onClick={() =>
+                  setOpenPosInfo(openPosInfo === "totalExp" ? null : "totalExp")
+                }
                 className="inline-flex items-center space-x-1 text-[10px] font-bold text-orange-600 hover:text-orange-500 transition-all duration-300 hover:scale-105 active:scale-95 mb-1"
               >
                 <motion.span
@@ -447,7 +809,10 @@ export default function PersonnelDetailsForm() {
                   >
                     <div className="mb-2 p-2 bg-gradient-to-br from-orange-50 to-amber-50/50 border border-orange-200/70 rounded-xl shadow-sm">
                       <p className="text-[10px] text-orange-900 leading-relaxed font-medium">
-                        {t("Enter your total experience years across Police, Defence force, or other work areas.", "በፖሊስ፣ በመከላከያ ሠራዊት ወይም በሌሎች የስራ ዘርፎች ያለዎትን አጠቃላይ የልምድ ዓመታት ያስገቡ።")}
+                        {t(
+                          "Enter your total experience years across Police, Defence force, or other work areas.",
+                          "በፖሊስ፣ በመከላከያ ሠራዊት ወይም በሌሎች የስራ ዘርፎች ያለዎትን አጠቃላይ የልምድ ዓመታት ያስገቡ።",
+                        )}
                       </p>
                     </div>
                   </motion.div>
@@ -488,7 +853,17 @@ export default function PersonnelDetailsForm() {
                 className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
               >
                 <option value="">{t("Select region...", "ክልል ይምረጡ...")}</option>
-                {mockRegions.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                {locationLoading && regions.length === 0 ? (
+                  <option value="" disabled>
+                    {t("Loading regions...", "ክልሎች እየተጫኑ ናቸው...")}
+                  </option>
+                ) : (
+                  regions.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
             <div>
@@ -499,10 +874,21 @@ export default function PersonnelDetailsForm() {
                 value={zone}
                 onChange={(e) => setZone(e.target.value)}
                 required
+                disabled={!region}
                 className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
               >
                 <option value="">{t("Select zone...", "ዞን ይምረጡ...")}</option>
-                {mockZones.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
+                {locationLoading && zones.length === 0 ? (
+                  <option value="" disabled>
+                    {t("Loading zones...", "ዞኖች እየተጫኑ ናቸው...")}
+                  </option>
+                ) : (
+                  zones.map((z) => (
+                    <option key={z.id} value={z.id}>
+                      {z.name}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
             <div>
@@ -513,10 +899,21 @@ export default function PersonnelDetailsForm() {
                 value={woreda}
                 onChange={(e) => setWoreda(e.target.value)}
                 required
+                disabled={!zone}
                 className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
               >
                 <option value="">{t("Select woreda...", "ወረዳ ይምረጡ...")}</option>
-                {mockWoredas.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
+                {locationLoading && woredas.length === 0 ? (
+                  <option value="" disabled>
+                    {t("Loading woredas...", "ወረዳዎች እየተጫኑ ናቸው...")}
+                  </option>
+                ) : (
+                  woredas.map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {w.name}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
             <div>
@@ -527,15 +924,27 @@ export default function PersonnelDetailsForm() {
                 value={kebele}
                 onChange={(e) => setKebele(e.target.value)}
                 required
+                disabled={!woreda}
                 className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
               >
                 <option value="">{t("Select kebele...", "ቀበሌ ይምረጡ...")}</option>
-                {mockKebeles.map((k) => <option key={k.id} value={k.id}>{k.name}</option>)}
+                {locationLoading && kebeles.length === 0 ? (
+                  <option value="" disabled>
+                    {t("Loading kebeles...", "ቀበሌዎች እየተጫኑ ናቸው...")}
+                  </option>
+                ) : (
+                  kebeles.map((k) => (
+                    <option key={k.id} value={k.id}>
+                      {k.name}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
             <div>
               <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
-                {t("House Number", "የቤት ቁጥር")} <span className="text-orange-500">*</span>
+                {t("House Number", "የቤት ቁጥር")}{" "}
+                <span className="text-orange-500">*</span>
               </label>
               <input
                 type="text"
@@ -549,7 +958,9 @@ export default function PersonnelDetailsForm() {
             <div>
               <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
                 {t("Special Location", "ልዩ ቦታ")}
-                <span className="text-orange-500 font-normal ml-1">({t("Optional", "አማራጭ")})</span>
+                <span className="text-orange-500 font-normal ml-1">
+                  ({t("Optional", "አማራጭ")})
+                </span>
               </label>
               <input
                 type="text"
@@ -569,7 +980,8 @@ export default function PersonnelDetailsForm() {
               <FileText className="w-4 h-4" />
             </div>
             <h3 className="text-sm font-bold text-[#003366]">
-              {t("Reason for Change", "የለውጡ ምክንያት")} <span className="text-orange-500">*</span>
+              {t("Reason for Change", "የለውጡ ምክንያት")}{" "}
+              <span className="text-orange-500">*</span>
             </h3>
           </div>
           <textarea
@@ -577,7 +989,10 @@ export default function PersonnelDetailsForm() {
             onChange={(e) => setReason(e.target.value)}
             required
             rows={4}
-            placeholder={t("Describe the reason for this personnel change...", "የዚህን የሰራተኛ ለውጥ ምክንያት ይግለጹ...")}
+            placeholder={t(
+              "Describe the reason for this personnel change...",
+              "የዚህን የሰራተኛ ለውጥ ምክንያት ይግለጹ...",
+            )}
             className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all resize-none"
           />
         </div>
@@ -596,144 +1011,171 @@ export default function PersonnelDetailsForm() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {documentTypes.map((doc) => {
               const uploadedFile = files[doc.key];
-              const previewUrl = uploadedFile ? URL.createObjectURL(uploadedFile) : null;
-              const hasExperience = Number(workExpYears) > 0 || Number(totalExpYears) > 0;
-              const isRequired = doc.required || (hasExperience && (doc.key === "work_exp" || doc.key === "resignation"));
+              const previewUrl = uploadedFile
+                ? URL.createObjectURL(uploadedFile)
+                : null;
+              const hasExperience =
+                Number(workExpYears) > 0 || Number(totalExpYears) > 0;
+              const isRequired =
+                doc.required ||
+                (hasExperience &&
+                  (doc.key === "work_exp" || doc.key === "resignation"));
               return (
-              <motion.div
-                key={doc.key}
-                whileHover={{ y: -2 }}
-                className={`group relative rounded-[20px] border-2 transition-all duration-500 p-4 ${
-                  uploadedFile
-                    ? "bg-white border-solid border-green-200 shadow-lg shadow-green-500/5 ring-4 ring-green-50/30"
-                    : "bg-gray-50/50 border-dashed border-gray-200 hover:border-[#003366]/40 hover:bg-white"
-                }`}
-              >
-                {uploadedFile && (
-                  <div className="absolute -top-3 -right-3 z-10">
-                    <div className="flex items-center space-x-1 bg-green-500 text-white px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-xl shadow-green-500/30 border-2 border-white">
-                      <CheckCircle2 className="w-3 h-3" />
-                      <span>{t("UPLOADED", "ተሰቅሏል")}</span>
+                <motion.div
+                  key={doc.key}
+                  whileHover={{ y: -2 }}
+                  className={`group relative rounded-[20px] border-2 transition-all duration-500 p-4 ${
+                    uploadedFile
+                      ? "bg-white border-solid border-green-200 shadow-lg shadow-green-500/5 ring-4 ring-green-50/30"
+                      : "bg-gray-50/50 border-dashed border-gray-200 hover:border-[#003366]/40 hover:bg-white"
+                  }`}
+                >
+                  {uploadedFile && (
+                    <div className="absolute -top-3 -right-3 z-10">
+                      <div className="flex items-center space-x-1 bg-green-500 text-white px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-xl shadow-green-500/30 border-2 border-white">
+                        <CheckCircle2 className="w-3 h-3" />
+                        <span>{t("UPLOADED", "ተሰቅሏል")}</span>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {["fingerprint", "medical", "national_id"].includes(doc.key) && infoTexts[doc.key] && (
-                  <div className="mb-3">
-                    <button
-                      type="button"
-                      onClick={() => setOpenInfo(openInfo === doc.key ? null : doc.key)}
-                      className="inline-flex items-center space-x-1.5 text-[11px] font-bold text-orange-600 hover:text-orange-500 transition-all duration-300 hover:scale-105 active:scale-95"
+                  {["fingerprint", "medical", "national_id"].includes(
+                    doc.key,
+                  ) &&
+                    infoTexts[doc.key] && (
+                      <div className="mb-3">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setOpenInfo(openInfo === doc.key ? null : doc.key)
+                          }
+                          className="inline-flex items-center space-x-1.5 text-[11px] font-bold text-orange-600 hover:text-orange-500 transition-all duration-300 hover:scale-105 active:scale-95"
+                        >
+                          <motion.span
+                            animate={{ rotate: openInfo === doc.key ? 180 : 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="flex items-center justify-center w-5 h-5 rounded-full bg-orange-50 text-orange-600"
+                          >
+                            <Info className="w-3 h-3" />
+                          </motion.span>
+                          <span>{t("Learn more", "ተጨማሪ ይወቁ")}</span>
+                          <motion.span
+                            animate={{ rotate: openInfo === doc.key ? 180 : 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="text-orange-400"
+                          >
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          </motion.span>
+                        </button>
+                        <AnimatePresence initial={false}>
+                          {openInfo === doc.key && (
+                            <motion.div
+                              key="info"
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.3, ease: "easeInOut" }}
+                              className="overflow-hidden"
+                            >
+                              <div className="mt-2 p-3 bg-gradient-to-br from-orange-50 to-amber-50/50 border border-orange-200/70 rounded-xl shadow-sm">
+                                <p className="text-[11px] text-orange-900 leading-relaxed font-medium">
+                                  {isAm
+                                    ? infoTexts[doc.key]?.am
+                                    : infoTexts[doc.key]?.en}
+                                </p>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    )}
+
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 flex-shrink-0 shadow-sm ${
+                        uploadedFile
+                          ? "bg-green-50 text-green-500"
+                          : "bg-white border text-gray-400"
+                      }`}
                     >
-                      <motion.span
-                        animate={{ rotate: openInfo === doc.key ? 180 : 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="flex items-center justify-center w-5 h-5 rounded-full bg-orange-50 text-orange-600"
-                      >
-                        <Info className="w-3 h-3" />
-                      </motion.span>
-                      <span>{t("Learn more", "ተጨማሪ ይወቁ")}</span>
-                      <motion.span
-                        animate={{ rotate: openInfo === doc.key ? 180 : 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="text-orange-400"
-                      >
-                        <ChevronDown className="w-3.5 h-3.5" />
-                      </motion.span>
-                    </button>
-                    <AnimatePresence initial={false}>
-                      {openInfo === doc.key && (
-                        <motion.div
-                          key="info"
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.3, ease: "easeInOut" }}
-                          className="overflow-hidden"
+                      {uploadedFile ? (
+                        <FileText className="w-6 h-6" />
+                      ) : (
+                        <Upload className="w-6 h-6" />
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <h4
+                          className={`text-sm font-black tracking-tight break-words leading-snug ${
+                            uploadedFile ? "text-green-600" : "text-[#003366]"
+                          }`}
                         >
-                          <div className="mt-2 p-3 bg-gradient-to-br from-orange-50 to-amber-50/50 border border-orange-200/70 rounded-xl shadow-sm">
-                            <p className="text-[11px] text-orange-900 leading-relaxed font-medium">
-                              {isAm ? infoTexts[doc.key]?.am : infoTexts[doc.key]?.en}
-                            </p>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 flex-shrink-0 shadow-sm ${
-                    uploadedFile ? "bg-green-50 text-green-500" : "bg-white border text-gray-400"
-                  }`}>
-                    {uploadedFile ? (
-                      <FileText className="w-6 h-6" />
-                    ) : (
-                      <Upload className="w-6 h-6" />
-                    )}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <h4 className={`text-sm font-black tracking-tight break-words leading-snug ${
-                        uploadedFile ? "text-green-600" : "text-[#003366]"
-                      }`}>
-                        {uploadedFile ? uploadedFile.name : (isAm ? doc.labelAm : doc.labelEn)}
-                      </h4>
-                      {isRequired && !uploadedFile && (
-                        <span className="text-xs text-orange-500 font-black bg-orange-50 px-1.5 rounded-md">*</span>
-                      )}
-                      {!isRequired && !uploadedFile && (
-                        <span className="text-[10px] text-amber-700 bg-amber-50 font-black rounded-md px-1.5 py-0.5 uppercase tracking-widest">
-                          {t("Optional", "አማራጭ")}
+                          {uploadedFile
+                            ? uploadedFile.name
+                            : isAm
+                              ? doc.labelAm
+                              : doc.labelEn}
+                        </h4>
+                        {isRequired && !uploadedFile && (
+                          <span className="text-xs text-orange-500 font-black bg-orange-50 px-1.5 rounded-md">
+                            *
+                          </span>
+                        )}
+                        {!isRequired && !uploadedFile && (
+                          <span className="text-[10px] text-amber-700 bg-amber-50 font-black rounded-md px-1.5 py-0.5 uppercase tracking-widest">
+                            {t("Optional", "አማራጭ")}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="text-[11px] text-gray-400 font-bold uppercase tracking-widest">
+                          {uploadedFile
+                            ? `${(uploadedFile.size / 1024 / 1024).toFixed(2)} MB`
+                            : "PDF Max 5MB"}
                         </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2 flex-shrink-0">
+                      {!uploadedFile ? (
+                        <button
+                          type="button"
+                          onClick={() => handleFileSelect(doc.key)}
+                          className="px-4 py-2 bg-white border-2 border-gray-100 text-[#003366] rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-sm hover:border-[#003366] hover:shadow-lg transition-all active:scale-95"
+                        >
+                          {t("Select File", "ፋይል ይምረጡ")}
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              window.open(previewUrl || "", "_blank")
+                            }
+                            className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFiles((prev) => {
+                                const next = { ...prev };
+                                delete next[doc.key];
+                                return next;
+                              });
+                            }}
+                            className="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
                       )}
                     </div>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="text-[11px] text-gray-400 font-bold uppercase tracking-widest">
-                        {uploadedFile
-                          ? `${(uploadedFile.size / 1024 / 1024).toFixed(2)} MB`
-                          : "PDF Max 5MB"}
-                      </span>
-                    </div>
                   </div>
-
-                  <div className="flex items-center space-x-2 flex-shrink-0">
-                    {!uploadedFile ? (
-                      <button
-                        type="button"
-                        onClick={() => handleFileSelect(doc.key)}
-                        className="px-4 py-2 bg-white border-2 border-gray-100 text-[#003366] rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-sm hover:border-[#003366] hover:shadow-lg transition-all active:scale-95"
-                      >
-                        {t("Select File", "ፋይል ይምረጡ")}
-                      </button>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => window.open(previewUrl || "", "_blank")}
-                          className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setFiles((prev) => {
-                              const next = { ...prev };
-                              delete next[doc.key];
-                              return next;
-                            });
-                          }}
-                          className="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
+                </motion.div>
               );
             })}
           </div>
@@ -746,7 +1188,6 @@ export default function PersonnelDetailsForm() {
             className="hidden"
           />
         </div>
-
       </motion.form>
     </motion.div>
   );

@@ -30,13 +30,30 @@ export default function PersonnelChangeRequest() {
   const isAm = language === "am";
   const t = (en: string, am: string) => (isAm ? am : en);
 
-  const [activeTab, setActiveTab] = useState<"initiate" | "history" | "details">("initiate");
-  const [selectedRecord, setSelectedRecord] = useState<HistoryRecord | null>(null);
-  const [detailViewRecord, setDetailViewRecord] = useState<HistoryRecord | null>(null);
+  const [activeTab, setActiveTab] = useState<
+    "initiate" | "history" | "details"
+  >("initiate");
+  const [selectedRecord, setSelectedRecord] = useState<HistoryRecord | null>(
+    null,
+  );
+  const [detailViewRecord, setDetailViewRecord] =
+    useState<HistoryRecord | null>(null);
   const [historySearch, setHistorySearch] = useState("");
   const [historyFilter, setHistoryFilter] = useState("ALL");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [employeeType, setEmployeeType] = useState<"new" | "existing" | null>(
+    null,
+  );
+  const [existingFan, setExistingFan] = useState("");
+  const [existingLookupDone, setExistingLookupDone] = useState(false);
+  const [existingEmployeeData, setExistingEmployeeData] = useState<{
+    fullName: string;
+    faydaId: string;
+    organization: string;
+    position: string;
+    currentRole: string;
+  } | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,10 +65,46 @@ export default function PersonnelChangeRequest() {
     }, 1500);
   };
 
+  const handleExistingLookup = () => {
+    if (!existingFan.trim()) return;
+    setExistingLookupDone(true);
+    setExistingEmployeeData({
+      fullName: "Existing User",
+      faydaId: existingFan.trim().toUpperCase(),
+      organization: "Central Personnel Database",
+      position: "Registered Employee",
+      currentRole: "Current position from central registry",
+    });
+  };
+
   const historyData: HistoryRecord[] = [
-    { id: 1, positionType: t("Personnel Manager", "የሰራተኞች አስተዳዳሪ"), newPersonName: "Abebe Kebede", previousPersonName: "Meron Alemu", reason: t("Resignation", "ስራ መልቀቅ"), status: "Approved", date: "2025-01-15" },
-    { id: 2, positionType: t("Operations", "ኦፕሬሽን"), newPersonName: "Tigist Haile", previousPersonName: "Dawit Eshetu", reason: t("Transfer", "ዝውውር"), status: "Pending", date: "2025-03-10" },
-    { id: 3, positionType: t("Administration", "አስተዳደር"), newPersonName: "Biruk Tadesse", previousPersonName: "Sara Hailu", reason: t("Promotion", "ማስተዋወቅ"), status: "Rejected", date: "2025-02-20" },
+    {
+      id: 1,
+      positionType: t("Personnel Manager", "የሰራተኞች አስተዳዳሪ"),
+      newPersonName: "Abebe Kebede",
+      previousPersonName: "Meron Alemu",
+      reason: t("Resignation", "ስራ መልቀቅ"),
+      status: "Approved",
+      date: "2025-01-15",
+    },
+    {
+      id: 2,
+      positionType: t("Operations", "ኦፕሬሽን"),
+      newPersonName: "Tigist Haile",
+      previousPersonName: "Dawit Eshetu",
+      reason: t("Transfer", "ዝውውር"),
+      status: "Pending",
+      date: "2025-03-10",
+    },
+    {
+      id: 3,
+      positionType: t("Administration", "አስተዳደር"),
+      newPersonName: "Biruk Tadesse",
+      previousPersonName: "Sara Hailu",
+      reason: t("Promotion", "ማስተዋወቅ"),
+      status: "Rejected",
+      date: "2025-02-20",
+    },
   ];
 
   const filteredHistory = historyData.filter((row) => {
@@ -59,9 +112,12 @@ export default function PersonnelChangeRequest() {
       !historySearch ||
       row.positionType.toLowerCase().includes(historySearch.toLowerCase()) ||
       row.newPersonName.toLowerCase().includes(historySearch.toLowerCase()) ||
-      row.previousPersonName.toLowerCase().includes(historySearch.toLowerCase()) ||
+      row.previousPersonName
+        .toLowerCase()
+        .includes(historySearch.toLowerCase()) ||
       row.reason.toLowerCase().includes(historySearch.toLowerCase());
-    const matchesFilter = historyFilter === "ALL" || row.status === historyFilter;
+    const matchesFilter =
+      historyFilter === "ALL" || row.status === historyFilter;
     return matchesSearch && matchesFilter;
   });
 
@@ -81,7 +137,10 @@ export default function PersonnelChangeRequest() {
             {t("Personnel Change Request", "የሰራተኞች ለውጥ ጥያቄ")}
           </h1>
           <p className="text-xs text-white/50 font-medium mt-1">
-            {t("Request changes to key personnel positions", "የቁልፍ የሰራተኞች ቦታዎች ለውጥ ይጠይቁ")}
+            {t(
+              "Request changes to key personnel positions",
+              "የቁልፍ የሰራተኞች ቦታዎች ለውጥ ይጠይቁ",
+            )}
           </p>
         </div>
       </div>
@@ -89,9 +148,25 @@ export default function PersonnelChangeRequest() {
       {/* Tabs */}
       <div className="flex gap-2 mb-6">
         {[
-          { key: "initiate" as const, label: t("Initiate Request", "ጥያቄ ይጀምሩ"), icon: <Send className="w-4 h-4" /> },
-          { key: "history" as const, label: t("Request History", "የጥያቄ ታሪክ"), icon: <History className="w-4 h-4" /> },
-          ...(activeTab === "details" ? [{ key: "details" as const, label: t("Fill Details", "ዝርዝሮች ያስገቡ"), icon: <UserCheck className="w-4 h-4" /> }] : []),
+          {
+            key: "initiate" as const,
+            label: t("Initiate Request", "ጥያቄ ይጀምሩ"),
+            icon: <Send className="w-4 h-4" />,
+          },
+          {
+            key: "history" as const,
+            label: t("Request History", "የጥያቄ ታሪክ"),
+            icon: <History className="w-4 h-4" />,
+          },
+          ...(activeTab === "details"
+            ? [
+                {
+                  key: "details" as const,
+                  label: t("Fill Details", "ዝርዝሮች ያስገቡ"),
+                  icon: <UserCheck className="w-4 h-4" />,
+                },
+              ]
+            : []),
         ].map((tab) => (
           <motion.button
             key={tab.key}
@@ -117,40 +192,198 @@ export default function PersonnelChangeRequest() {
       {/* TAB 1: INITIATE */}
       {activeTab === "initiate" && (
         <>
-        <PersonnelDetailsForm />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+            {[
+              {
+                key: "new",
+                title: t("New Employee", "አዲስ ሰራተኛ"),
+                description: t(
+                  "Create a new personnel request when the employee is not yet recorded in the central database.",
+                  "ሰራተኛው ከመዋቅሩ ውስጥ ካልተመዘገበ አዲስ ጥያቄ ይፍጠሩ።",
+                ),
+              },
+              {
+                key: "existing",
+                title: t("Existing Employee", "የነበረ ሰራተኛ"),
+                description: t(
+                  "Lookup the employee by FAN from the centralized database and attach the existing record.",
+                  "ከማእከላዊ መረጃ ጋብዣ በተጠቃሚ ቁጥር FAN ይፈልጉ።",
+                ),
+              },
+            ].map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => {
+                  setEmployeeType(item.key as "new" | "existing");
+                  setExistingLookupDone(false);
+                  setExistingEmployeeData(null);
+                }}
+                className={`rounded-3xl border p-6 text-left transition-all shadow-sm hover:shadow-lg ${
+                  employeeType === item.key
+                    ? "border-[#003366] bg-[#003366]/10"
+                    : "border-gray-200 bg-white"
+                }`}
+              >
+                <span className="text-xs uppercase tracking-[0.3em] text-gray-500">
+                  {item.key === "new" ? t("New", "አዲስ") : t("Existing", "ነበረ")}
+                </span>
+                <h3 className="mt-3 text-lg font-bold text-[#003366]">
+                  {item.title}
+                </h3>
+                <p className="mt-2 text-sm text-gray-600">{item.description}</p>
+              </button>
+            ))}
+          </div>
 
-        <motion.form
-          onSubmit={handleSubmit}
-          className="relative"
-        >
-          {submitting && <LoadingSpinner overlay text={t("Submitting request...", "ጥያቄ በማስገባት ላይ...")} />}
-
-          {submitted && (
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm font-medium mb-4">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
-              {t("Request submitted successfully!", "ጥያቄ በተሳካ ሁኔታ ቀርቧል!")}
+          {employeeType === null ? (
+            <div className="rounded-3xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center text-sm text-gray-500">
+              {t(
+                "Choose how you want to submit the personnel change request.",
+                "የሰራተኛ ለውጥ ጥያቄ እንዴት እንደሚሰጥ ይምረጡ።",
+              )}
             </div>
+          ) : employeeType === "existing" ? (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-6"
+            >
+              <div className="space-y-3">
+                <p className="text-sm font-bold text-[#003366]">
+                  {t(
+                    "Lookup existing employee with FAN",
+                    "በFAN የነበረውን ሰራተኛ ይፈልጉ",
+                  )}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {t(
+                    "Use the centralized database FAN number to load the registered employee record and avoid duplicate entries.",
+                    "በማእከላዊ የመረጃ ጎታ FAN ቁጥር ይጠቀሙ እና የቀና ዝርዝር መረጃ ያግኙ።",
+                  )}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <input
+                  type="text"
+                  value={existingFan}
+                  onChange={(e) => setExistingFan(e.target.value)}
+                  placeholder={t("Enter FAN number...", "FAN ቁጥር ያስገቡ...")}
+                  className="col-span-2 rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={handleExistingLookup}
+                  className="rounded-2xl bg-[#003366] text-white px-5 py-3 text-sm font-bold hover:bg-[#00264d] transition-all"
+                >
+                  {t("Lookup", "ፈልግ")}
+                </button>
+              </div>
+
+              {existingLookupDone ? (
+                existingEmployeeData ? (
+                  <div className="rounded-3xl border border-gray-200 bg-gray-50 p-5">
+                    <div className="mb-4 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-[#003366]/10 flex items-center justify-center text-[#003366]">
+                        <UserCheck className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-[#003366]">
+                          {t("Employee record loaded", "የሰራተኛ መዝገብ ተጫኗል")}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {t(
+                            "Review the employee details before submitting the request.",
+                            "እባክዎ ከጥያቄ ማስገባት በፊት ዝርዝሩን ይመልከቱ.",
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
+                      <div className="space-y-2">
+                        <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
+                          {t("Full Name", "ሙሉ ስም")}
+                        </p>
+                        <p className="font-semibold">
+                          {existingEmployeeData.fullName}
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
+                          {t("FAN Number", "FAN ቁጥር")}
+                        </p>
+                        <p className="font-semibold">
+                          {existingEmployeeData.faydaId}
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
+                          {t("Organization", "ድርጅት")}
+                        </p>
+                        <p className="font-semibold">
+                          {existingEmployeeData.organization}
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
+                          {t("Position", "ሹመት")}
+                        </p>
+                        <p className="font-semibold">
+                          {existingEmployeeData.position}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-3xl border border-gray-200 bg-yellow-50 p-5 text-sm text-amber-800">
+                    {t(
+                      "No employee record was found for this FAN. Please verify the number and try again.",
+                      "ለዚህ የFAN ቁጥር የሰራተኛ መዝገብ አልተገኘም። እባክዎን ቁጥሩን ያረጋግጡ እና እንደገና ይሞክሩ.",
+                    )}
+                  </div>
+                )
+              ) : null}
+            </motion.div>
+          ) : (
+            <PersonnelDetailsForm />
           )}
 
-          <div className="flex justify-end">
-            <motion.button
-              whileHover={{ y: -1 }}
-              whileTap={{ scale: 0.97 }}
-              type="submit"
-              disabled={submitting}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-[#003366] to-[#001F3F] text-white text-xs font-bold tracking-wide px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {submitting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-              {submitting
-                ? t("Submitting...", "በማስገባት ላይ...")
-                : t("Submit Request", "ጥያቄ ያስገቡ")}
-            </motion.button>
-          </div>
-        </motion.form>
+          <motion.form onSubmit={handleSubmit} className="relative">
+            {submitting && (
+              <LoadingSpinner
+                overlay
+                text={t("Submitting request...", "ጥያቄ በማስገባት ላይ...")}
+              />
+            )}
+
+            {submitted && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm font-medium mb-4">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                {t("Request submitted successfully!", "ጥያቄ በተሳካ ሁኔታ ቀርቧል!")}
+              </div>
+            )}
+
+            <div className="flex justify-end">
+              <motion.button
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.97 }}
+                type="submit"
+                disabled={submitting}
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-[#003366] to-[#001F3F] text-white text-xs font-bold tracking-wide px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {submitting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+                {submitting
+                  ? t("Submitting...", "በማስገባት ላይ...")
+                  : t("Submit Request", "ጥያቄ ያስገቡ")}
+              </motion.button>
+            </div>
+          </motion.form>
         </>
       )}
 
@@ -174,7 +407,10 @@ export default function PersonnelChangeRequest() {
                   {t("Request History", "የጥያቄ ታሪክ")}
                 </h3>
                 <p className="text-[10px] text-white/50 font-medium">
-                  {t("View previous personnel change requests", "የቀድሞ የሰራተኞች ለውጥ ጥያቄዎችን ይመልከቱ")}
+                  {t(
+                    "View previous personnel change requests",
+                    "የቀድሞ የሰራተኞች ለውጥ ጥያቄዎችን ይመልከቱ",
+                  )}
                 </p>
               </div>
             </div>
@@ -186,7 +422,10 @@ export default function PersonnelChangeRequest() {
                 type="text"
                 value={historySearch}
                 onChange={(e) => setHistorySearch(e.target.value)}
-                placeholder={t("Search by name or position...", "በስም ወይም በቦታ ፈልግ...")}
+                placeholder={t(
+                  "Search by name or position...",
+                  "በስም ወይም በቦታ ፈልግ...",
+                )}
                 className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 hover:border-[#003366]/30 transition-all"
               />
             </div>
@@ -223,20 +462,30 @@ export default function PersonnelChangeRequest() {
                     whileHover={{ backgroundColor: "rgba(0,51,102,0.02)" }}
                     className="transition-colors"
                   >
-                    <td className="p-4 font-bold text-[#003366]">{row.positionType}</td>
+                    <td className="p-4 font-bold text-[#003366]">
+                      {row.positionType}
+                    </td>
                     <td className="p-4">{row.newPersonName}</td>
-                    <td className="p-4 text-gray-500">{row.previousPersonName}</td>
+                    <td className="p-4 text-gray-500">
+                      {row.previousPersonName}
+                    </td>
                     <td className="p-4">{row.reason}</td>
                     <td className="p-4">
-                      <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
-                        row.status === "Approved" ? "bg-green-50 text-green-700 border border-green-200" :
-                        row.status === "Pending" ? "bg-amber-50 text-amber-700 border border-amber-200" :
-                        "bg-red-50 text-red-700 border border-red-200"
-                      }`}>
-                        {isAm ?
-                          row.status === "Approved" ? "ጸድቋል" :
-                          row.status === "Pending" ? "በመጠባበቅ ላይ" :
-                          "ውድቅ"
+                      <span
+                        className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                          row.status === "Approved"
+                            ? "bg-green-50 text-green-700 border border-green-200"
+                            : row.status === "Pending"
+                              ? "bg-amber-50 text-amber-700 border border-amber-200"
+                              : "bg-red-50 text-red-700 border border-red-200"
+                        }`}
+                      >
+                        {isAm
+                          ? row.status === "Approved"
+                            ? "ጸድቋል"
+                            : row.status === "Pending"
+                              ? "በመጠባበቅ ላይ"
+                              : "ውድቅ"
                           : row.status}
                       </span>
                     </td>
@@ -250,7 +499,8 @@ export default function PersonnelChangeRequest() {
                           onClick={() => setDetailViewRecord(row)}
                           className="px-3 py-1.5 bg-[#003366] text-[#FFD700] rounded-lg text-xs font-bold hover:shadow-md transition-shadow inline-flex items-center gap-1"
                         >
-                          <Eye className="w-3.5 h-3.5" /> {t("Detail View", "ዝርዝር እይታ")}
+                          <Eye className="w-3.5 h-3.5" />{" "}
+                          {t("Detail View", "ዝርዝር እይታ")}
                         </motion.button>
                       </div>
                     </td>
@@ -292,7 +542,10 @@ export default function PersonnelChangeRequest() {
                       {t("Request Detail", "የጥያቄ ዝርዝር")}
                     </h3>
                     <p className="text-[10px] text-white/50 font-medium">
-                      {t("Personnel change request details", "የሰራተኞች ለውጥ ጥያቄ ዝርዝሮች")}
+                      {t(
+                        "Personnel change request details",
+                        "የሰራተኞች ለውጥ ጥያቄ ዝርዝሮች",
+                      )}
                     </p>
                   </div>
                 </div>
@@ -310,19 +563,25 @@ export default function PersonnelChangeRequest() {
                   <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1">
                     {t("Position Type", "የቦታ አይነት")}
                   </p>
-                  <p className="font-bold text-[#003366]">{detailViewRecord.positionType}</p>
+                  <p className="font-bold text-[#003366]">
+                    {detailViewRecord.positionType}
+                  </p>
                 </div>
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1">
                     {t("New Person", "አዲስ ሰው")}
                   </p>
-                  <p className="text-sm font-semibold text-gray-800">{detailViewRecord.newPersonName}</p>
+                  <p className="text-sm font-semibold text-gray-800">
+                    {detailViewRecord.newPersonName}
+                  </p>
                 </div>
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1">
                     {t("Previous Person", "የቀድሞ ሰው")}
                   </p>
-                  <p className="text-sm font-semibold text-gray-500">{detailViewRecord.previousPersonName}</p>
+                  <p className="text-sm font-semibold text-gray-500">
+                    {detailViewRecord.previousPersonName}
+                  </p>
                 </div>
                 <div className="col-span-2">
                   <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1">
@@ -336,15 +595,21 @@ export default function PersonnelChangeRequest() {
                   <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1">
                     {t("Status", "ሁኔታ")}
                   </p>
-                  <span className={`inline-block px-3 py-1 rounded-lg text-xs font-bold ${
-                    detailViewRecord.status === "Approved" ? "bg-green-100 text-green-700" :
-                    detailViewRecord.status === "Pending" ? "bg-amber-100 text-amber-700" :
-                    "bg-red-100 text-red-700"
-                  }`}>
-                    {isAm ?
-                      detailViewRecord.status === "Approved" ? "ጸድቋል" :
-                      detailViewRecord.status === "Pending" ? "በመጠባበቅ ላይ" :
-                      "ውድቅ"
+                  <span
+                    className={`inline-block px-3 py-1 rounded-lg text-xs font-bold ${
+                      detailViewRecord.status === "Approved"
+                        ? "bg-green-100 text-green-700"
+                        : detailViewRecord.status === "Pending"
+                          ? "bg-amber-100 text-amber-700"
+                          : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {isAm
+                      ? detailViewRecord.status === "Approved"
+                        ? "ጸድቋል"
+                        : detailViewRecord.status === "Pending"
+                          ? "በመጠባበቅ ላይ"
+                          : "ውድቅ"
                       : detailViewRecord.status}
                   </span>
                 </div>
@@ -352,7 +617,9 @@ export default function PersonnelChangeRequest() {
                   <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-1">
                     {t("Date", "ቀን")}
                   </p>
-                  <p className="text-sm font-semibold text-gray-800">{detailViewRecord.date}</p>
+                  <p className="text-sm font-semibold text-gray-800">
+                    {detailViewRecord.date}
+                  </p>
                 </div>
               </div>
             </div>
@@ -371,7 +638,10 @@ export default function PersonnelChangeRequest() {
             whileHover={{ x: -2 }}
             whileTap={{ scale: 0.97 }}
             type="button"
-            onClick={() => { setActiveTab("history"); setSelectedRecord(null); }}
+            onClick={() => {
+              setActiveTab("history");
+              setSelectedRecord(null);
+            }}
             className="inline-flex items-center gap-1.5 text-xs font-bold text-[#003366] hover:text-[#FFD700] transition-colors mb-4"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
@@ -382,14 +652,20 @@ export default function PersonnelChangeRequest() {
               <UserCheck className="w-4 h-4 text-[#FFD700]" />
             </div>
             <div>
-              <p className="text-xs font-bold text-[#003366]">{selectedRecord.positionType}</p>
+              <p className="text-xs font-bold text-[#003366]">
+                {selectedRecord.positionType}
+              </p>
               <p className="text-xs text-gray-500">
                 {selectedRecord.newPersonName} &middot; {selectedRecord.date}
               </p>
             </div>
-            <span className={`ml-auto px-2 py-0.5 rounded text-xs font-semibold ${
-              selectedRecord.status === "Approved" ? "bg-green-50 text-green-700 border border-green-200" : ""
-            }`}>
+            <span
+              className={`ml-auto px-2 py-0.5 rounded text-xs font-semibold ${
+                selectedRecord.status === "Approved"
+                  ? "bg-green-50 text-green-700 border border-green-200"
+                  : ""
+              }`}
+            >
               {isAm ? "ጸድቋል" : selectedRecord.status}
             </span>
           </div>

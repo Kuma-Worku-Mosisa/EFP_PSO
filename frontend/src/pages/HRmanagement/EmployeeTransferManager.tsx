@@ -94,26 +94,15 @@ export default function EmployeeTransferManager() {
   });
 
   // Tab 2: Incoming Requests State
-  const [pendingRequests, setPendingRequests] = useState<TransferRequestItem[]>([
-    { id: 1, employeeId: 101, employee: { user: { fullName: "Abebe Kebede", faydaId: "FAN-2024-001" }, position: { name: "Security Guard" } }, sourceOrganization: { name: "Alpha Security Plc" }, targetOrganization: { name: "Beta Logistics" }, position: { name: "Senior Security Guard" }, status: "PENDING", reason: "Career advancement within the security division", createdAt: "2025-01-15T10:00:00Z", updatedAt: "2025-01-15T10:00:00Z" },
-    { id: 2, employeeId: 102, employee: { user: { fullName: "Tigist Haile", faydaId: "FAN-2024-002" }, position: { name: "Admin Officer" } }, sourceOrganization: { name: "Beta Logistics" }, targetOrganization: { name: "Gamma Industries" }, position: { name: "Senior Admin Officer" }, status: "PENDING", reason: "Promotion to senior administrative role", createdAt: "2025-02-20T14:30:00Z", updatedAt: "2025-02-20T14:30:00Z" },
-    { id: 3, employeeId: 103, employee: { user: { fullName: "Dawit Eshetu", faydaId: "FAN-2024-003" }, position: { name: "Operations Head" } }, sourceOrganization: { name: "Gamma Industries" }, targetOrganization: { name: "Alpha Security Plc" }, position: { name: "Regional Operations Manager" }, status: "PENDING", reason: "Inter-company transfer for expanded operational oversight", createdAt: "2025-03-10T09:15:00Z", updatedAt: "2025-03-10T09:15:00Z" },
-  ]);
+  const [pendingRequests, setPendingRequests] = useState<TransferRequestItem[]>(
+    [],
+  );
   const [incomingSearch, setIncomingSearch] = useState("");
   const [incomingFilter, setIncomingFilter] = useState<string>("ALL");
   const [historySearch, setHistorySearch] = useState("");
   const [historyFilter, setHistoryFilter] = useState<string>("ALL");
   const [transferHistory, setTransferHistory] =
-    useState<TransferHistoryResponse | null>({
-      initiated: [
-        { id: 4, employeeId: 104, employee: { user: { fullName: "Meron Alemu", faydaId: "FAN-2024-004" }, position: { name: "HR Coordinator" } }, sourceOrganization: { name: "Alpha Security Plc" }, targetOrganization: { name: "Delta Construction" }, position: { name: "HR Manager" }, status: "APPROVED", reason: "Promotion to managerial position", createdAt: "2024-11-01T08:00:00Z", updatedAt: "2024-11-15T10:00:00Z" },
-        { id: 5, employeeId: 105, employee: { user: { fullName: "Biruk Tadesse", faydaId: "FAN-2024-005" }, position: { name: "IT Support" } }, sourceOrganization: { name: "Alpha Security Plc" }, targetOrganization: { name: "Epsilon Tech" }, position: { name: "IT Team Lead" }, status: "REJECTED", reason: "Skills mismatch with target role", createdAt: "2025-01-05T11:00:00Z", updatedAt: "2025-01-12T16:00:00Z" },
-      ],
-      incoming: [
-        { id: 6, employeeId: 106, employee: { user: { fullName: "Sara Hailu", faydaId: "FAN-2024-006" }, position: { name: "Accountant" } }, sourceOrganization: { name: "Zeta Finance" }, targetOrganization: { name: "Alpha Security Plc" }, position: { name: "Senior Accountant" }, status: "APPROVED", reason: "Financial expertise needed for expansion", createdAt: "2025-02-10T07:30:00Z", updatedAt: "2025-02-25T09:00:00Z" },
-        { id: 7, employeeId: 107, employee: { user: { fullName: "Lemma Hailu", faydaId: "FAN-2024-007" }, position: { name: "Field Officer" } }, sourceOrganization: { name: "Eta Services" }, targetOrganization: { name: "Alpha Security Plc" }, position: { name: "Senior Field Officer" }, status: "SOURCE_RELEASED", reason: "Experienced field personnel transfer", createdAt: "2025-03-01T13:00:00Z", updatedAt: "2025-03-10T08:00:00Z" },
-      ],
-    });
+    useState<TransferHistoryResponse | null>(null);
 
   // Automatically fetch pending items or history when changing tabs
   useEffect(() => {
@@ -212,7 +201,10 @@ export default function EmployeeTransferManager() {
     setGlobalError(null);
     try {
       const result = await apiRequest("/transfers/history");
-      if (result?.data && (result.data.initiated?.length > 0 || result.data.incoming?.length > 0)) {
+      if (
+        result?.data &&
+        (result.data.initiated?.length > 0 || result.data.incoming?.length > 0)
+      ) {
         setTransferHistory(result.data);
       }
     } catch (err: any) {
@@ -359,10 +351,21 @@ export default function EmployeeTransferManager() {
         type={confirmType}
         isLoading={confirmLoading}
         isConfirmDisabled={confirmType === "reject" && !rejectionReason.trim()}
-        inputLabel={confirmType === "reject" ? t("Rejection Justification", "የመቀበል ማረጋገጫ") : undefined}
+        inputLabel={
+          confirmType === "reject"
+            ? t("Rejection Justification", "የመቀበል ማረጋገጫ")
+            : undefined
+        }
         inputValue={rejectionReason}
         onInputChange={(v) => setRejectionReason(v)}
-        inputPlaceholder={confirmType === "reject" ? t("Enter a concise justification for rejection", "እባክዎ አጭር ማረጋገጫ ያስገቡ") : undefined}
+        inputPlaceholder={
+          confirmType === "reject"
+            ? t(
+                "Enter a concise justification for rejection",
+                "እባክዎ አጭር ማረጋገጫ ያስገቡ",
+              )
+            : undefined
+        }
       />
 
       <AutoDismissToast
@@ -390,7 +393,10 @@ export default function EmployeeTransferManager() {
               {t("Employee Inter-Organization Transfer", "የሰራተኞች ዝውውር")}
             </h2>
             <p className="text-sm text-white/60">
-              {t("Transfer personnel across organizational structures safely.", "ሰራተኞችን በድርጅት መዋቅሮች መካከል በደህና ያስተላልፉ።")}
+              {t(
+                "Transfer personnel across organizational structures safely.",
+                "ሰራተኞችን በድርጅት መዋቅሮች መካከል በደህና ያስተላልፉ።",
+              )}
             </p>
           </div>
         </div>
@@ -399,9 +405,21 @@ export default function EmployeeTransferManager() {
       {/* Tabs */}
       <div className="flex gap-2 mb-6">
         {[
-          { key: "initiate", label: t("Initiate Request", "ጥያቄ ይጀምሩ"), icon: <Send className="w-4 h-4" /> },
-          { key: "incoming", label: t("Incoming Requests", "ገቢ ጥያቄዎች"), icon: <UserCheck className="w-4 h-4" /> },
-          { key: "history", label: t("Transfer History", "የዝውውር ታሪክ"), icon: <History className="w-4 h-4" /> },
+          {
+            key: "initiate",
+            label: t("Initiate Request", "ጥያቄ ይጀምሩ"),
+            icon: <Send className="w-4 h-4" />,
+          },
+          {
+            key: "incoming",
+            label: t("Incoming Requests", "ገቢ ጥያቄዎች"),
+            icon: <UserCheck className="w-4 h-4" />,
+          },
+          {
+            key: "history",
+            label: t("Transfer History", "የዝውውር ታሪክ"),
+            icon: <History className="w-4 h-4" />,
+          },
         ].map((tab) => (
           <motion.button
             key={tab.key}
@@ -449,7 +467,10 @@ export default function EmployeeTransferManager() {
                 <input
                   type="text"
                   disabled={isLoading}
-                  placeholder={t("Enter Fayda ID or Email...", "የፋይዳ መታወቂያ ወይም ኢሜይል ያስገቡ...")}
+                  placeholder={t(
+                    "Enter Fayda ID or Email...",
+                    "የፋይዳ መታወቂያ ወይም ኢሜይል ያስገቡ...",
+                  )}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 outline-none text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] transition-all"
@@ -463,7 +484,9 @@ export default function EmployeeTransferManager() {
                 onClick={handleEmployeeLookup}
                 className="bg-gradient-to-r from-[#003366] to-[#001F3F] hover:from-[#001F3F] hover:to-[#000F1F] disabled:from-gray-300 disabled:to-gray-300 text-white text-xs font-bold tracking-wide px-6 py-3 rounded-xl transition-all shadow-md whitespace-nowrap"
               >
-                {isLoading ? t("Verifying...", "በማረጋገጥ ላይ...") : t("Verify Identity", "ማንነት ያረጋግጡ")}
+                {isLoading
+                  ? t("Verifying...", "በማረጋገጥ ላይ...")
+                  : t("Verify Identity", "ማንነት ያረጋግጡ")}
               </motion.button>
             </div>
           </div>
@@ -548,9 +571,17 @@ export default function EmployeeTransferManager() {
                 </div>
 
                 <div className="text-xs text-gray-500 space-y-1 mb-4 p-3 bg-gray-50 rounded-xl">
-                  <p>{t("Employee:", "ሰራተኛ፡")} {searchedEmployee.faydaId || searchedEmployee.user.email}</p>
-                  <p>{t("Organization:", "ድርጅት፡")} {searchedEmployee.organization.name}</p>
-                  <p>{t("Position:", "ሹመት፡")} {searchedEmployee.position.name}</p>
+                  <p>
+                    {t("Employee:", "ሰራተኛ፡")}{" "}
+                    {searchedEmployee.faydaId || searchedEmployee.user.email}
+                  </p>
+                  <p>
+                    {t("Organization:", "ድርጅት፡")}{" "}
+                    {searchedEmployee.organization.name}
+                  </p>
+                  <p>
+                    {t("Position:", "ሹመት፡")} {searchedEmployee.position.name}
+                  </p>
                 </div>
 
                 <div>
@@ -569,7 +600,10 @@ export default function EmployeeTransferManager() {
                         transferReason: e.target.value,
                       })
                     }
-                    placeholder={t("State the official justification for reassignment...", "የዝውውሩን ይፋዊ ማረጋገጫ ያስገቡ...")}
+                    placeholder={t(
+                      "State the official justification for reassignment...",
+                      "የዝውውሩን ይፋዊ ማረጋገጫ ያስገቡ...",
+                    )}
                     className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] resize-none"
                   />
                 </div>
@@ -583,7 +617,9 @@ export default function EmployeeTransferManager() {
                     className="flex items-center gap-2 bg-gradient-to-r from-[#003366] to-[#001F3F] hover:from-[#001F3F] hover:to-[#000F1F] disabled:from-gray-300 disabled:to-gray-300 text-white px-6 py-2.5 rounded-xl font-bold text-sm tracking-wide transition-all shadow-md"
                   >
                     <Send className="w-4 h-4" />
-                    {isLoading ? t("Processing...", "በማስኬድ ላይ...") : t("Submit Transfer Request", "የዝውውር ጥያቄ ያስገቡ")}
+                    {isLoading
+                      ? t("Processing...", "በማስኬድ ላይ...")
+                      : t("Submit Transfer Request", "የዝውውር ጥያቄ ያስገቡ")}
                   </motion.button>
                 </div>
               </div>
@@ -612,7 +648,10 @@ export default function EmployeeTransferManager() {
                   {t("Pending Transfer Requests", "በመጠባበቅ ላይ ያሉ የዝውውር ጥያቄዎች")}
                 </h3>
                 <p className="text-[10px] text-white/50 font-medium">
-                  {t("Review and decide on incoming transfer requests", "የገቡ የዝውውር ጥያቄዎችን ይገምግሙ እና ይወስኑ")}
+                  {t(
+                    "Review and decide on incoming transfer requests",
+                    "የገቡ የዝውውር ጥያቄዎችን ይገምግሙ እና ይወስኑ",
+                  )}
                 </p>
               </div>
             </div>
@@ -626,7 +665,10 @@ export default function EmployeeTransferManager() {
                   type="text"
                   value={incomingSearch}
                   onChange={(e) => setIncomingSearch(e.target.value)}
-                  placeholder={t("Search by name, Fayda ID, or organization...", "በስም፣ በፋይዳ መታወቂያ ወይም በድርጅት ይፈልጉ...")}
+                  placeholder={t(
+                    "Search by name, Fayda ID, or organization...",
+                    "በስም፣ በፋይዳ መታወቂያ ወይም በድርጅት ይፈልጉ...",
+                  )}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] transition-all"
                 />
               </div>
@@ -647,7 +689,10 @@ export default function EmployeeTransferManager() {
                 <FileCheck className="w-6 h-6 text-gray-400" />
               </div>
               <p className="text-sm font-medium text-gray-400">
-                {t("No incoming transfer requests pending.", "ምንም የገባ የዝውውር ጥያቄ የለም።")}
+                {t(
+                  "No incoming transfer requests pending.",
+                  "ምንም የገባ የዝውውር ጥያቄ የለም።",
+                )}
               </p>
             </div>
           ) : (
@@ -669,12 +714,14 @@ export default function EmployeeTransferManager() {
                   {(() => {
                     const filtered = pendingRequests.filter((r) => {
                       const q = incomingSearch.toLowerCase();
-                      const matchesSearch = !incomingSearch ||
+                      const matchesSearch =
+                        !incomingSearch ||
                         r.employee?.user?.fullName.toLowerCase().includes(q) ||
                         r.employee?.user?.faydaId.toLowerCase().includes(q) ||
                         r.sourceOrganization?.name.toLowerCase().includes(q) ||
                         r.targetOrganization?.name.toLowerCase().includes(q);
-                      const matchesFilter = incomingFilter === "ALL" || r.status === incomingFilter;
+                      const matchesFilter =
+                        incomingFilter === "ALL" || r.status === incomingFilter;
                       return matchesSearch && matchesFilter;
                     });
                     if (filtered.length === 0) {
@@ -683,7 +730,10 @@ export default function EmployeeTransferManager() {
                           <td colSpan={8} className="p-12 text-center">
                             <Search className="w-8 h-8 text-gray-300 mx-auto mb-3" />
                             <p className="text-sm text-gray-400 font-medium">
-                              {t("No matching requests found", "ምንም የሚዛመድ ጥያቄ አልተገኘም")}
+                              {t(
+                                "No matching requests found",
+                                "ምንም የሚዛመድ ጥያቄ አልተገኘም",
+                              )}
                             </p>
                           </td>
                         </tr>
@@ -691,49 +741,74 @@ export default function EmployeeTransferManager() {
                     }
                     return filtered.map((request, idx) => (
                       <motion.tr
-                      key={request.id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3, delay: idx * 0.05 }}
-                      whileHover={{ backgroundColor: "rgba(0,51,102,0.02)" }}
-                      className="transition-colors"
-                    >
-                      <td className="p-4 font-bold text-[#003366]">{request.employee?.user?.fullName}</td>
-                      <td className="p-4 text-xs text-gray-500">{request.employee?.user?.faydaId}</td>
-                      <td className="p-4">{request.sourceOrganization?.name}</td>
-                      <td className="p-4">{request.targetOrganization?.name}</td>
-                      <td className="p-4">{request.position?.name || request.employee?.position?.name || "-"}</td>
-                      <td className="p-4 max-w-[160px] truncate">{request.reason}</td>
-                      <td className="p-4">
-                        <span className="text-[10px] bg-[#FFD700]/15 text-[#C5A022] font-bold px-2.5 py-1 rounded-full">
-                          {t("Pending Review", "በግምገማ ላይ")}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.97 }}
-                            type="button"
-                            disabled={isLoading}
-                            onClick={() => openApproveDialog(request.id, request.employee?.user?.fullName)}
-                            className="px-3 py-1.5 bg-gradient-to-r from-[#003366] to-[#001F3F] text-white rounded-lg text-xs font-bold hover:shadow-md transition-all disabled:opacity-50 inline-flex items-center gap-1"
-                          >
-                            <Check className="w-3 h-3" /> {t("Release", "ልቀቅ")}
-                          </motion.button>
-                          <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.97 }}
-                            type="button"
-                            disabled={isLoading}
-                            onClick={() => openRejectDialog(request.id, request.employee?.user?.fullName)}
-                            className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-lg text-xs font-bold hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all disabled:opacity-50 inline-flex items-center gap-1"
-                          >
-                            <X className="w-3 h-3" /> {t("Decline", "አይቀበል")}
-                          </motion.button>
-                        </div>
-                      </td>
-                    </motion.tr>
+                        key={request.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, delay: idx * 0.05 }}
+                        whileHover={{ backgroundColor: "rgba(0,51,102,0.02)" }}
+                        className="transition-colors"
+                      >
+                        <td className="p-4 font-bold text-[#003366]">
+                          {request.employee?.user?.fullName}
+                        </td>
+                        <td className="p-4 text-xs text-gray-500">
+                          {request.employee?.user?.faydaId}
+                        </td>
+                        <td className="p-4">
+                          {request.sourceOrganization?.name}
+                        </td>
+                        <td className="p-4">
+                          {request.targetOrganization?.name}
+                        </td>
+                        <td className="p-4">
+                          {request.position?.name ||
+                            request.employee?.position?.name ||
+                            "-"}
+                        </td>
+                        <td className="p-4 max-w-[160px] truncate">
+                          {request.reason}
+                        </td>
+                        <td className="p-4">
+                          <span className="text-[10px] bg-[#FFD700]/15 text-[#C5A022] font-bold px-2.5 py-1 rounded-full">
+                            {t("Pending Review", "በግምገማ ላይ")}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-2">
+                            <motion.button
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.97 }}
+                              type="button"
+                              disabled={isLoading}
+                              onClick={() =>
+                                openApproveDialog(
+                                  request.id,
+                                  request.employee?.user?.fullName,
+                                )
+                              }
+                              className="px-3 py-1.5 bg-gradient-to-r from-[#003366] to-[#001F3F] text-white rounded-lg text-xs font-bold hover:shadow-md transition-all disabled:opacity-50 inline-flex items-center gap-1"
+                            >
+                              <Check className="w-3 h-3" />{" "}
+                              {t("Release", "ልቀቅ")}
+                            </motion.button>
+                            <motion.button
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.97 }}
+                              type="button"
+                              disabled={isLoading}
+                              onClick={() =>
+                                openRejectDialog(
+                                  request.id,
+                                  request.employee?.user?.fullName,
+                                )
+                              }
+                              className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-lg text-xs font-bold hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all disabled:opacity-50 inline-flex items-center gap-1"
+                            >
+                              <X className="w-3 h-3" /> {t("Decline", "አይቀበል")}
+                            </motion.button>
+                          </div>
+                        </td>
+                      </motion.tr>
                     ));
                   })()}
                 </tbody>
@@ -763,7 +838,10 @@ export default function EmployeeTransferManager() {
                   {t("Transfer History", "የዝውውር ታሪክ")}
                 </h3>
                 <p className="text-[10px] text-white/50 font-medium">
-                  {t("View completed transfer requests", "የተጠናቀቁ የዝውውር ጥያቄዎችን ይመልከቱ")}
+                  {t(
+                    "View completed transfer requests",
+                    "የተጠናቀቁ የዝውውር ጥያቄዎችን ይመልከቱ",
+                  )}
                 </p>
               </div>
             </div>
@@ -777,7 +855,10 @@ export default function EmployeeTransferManager() {
                   type="text"
                   value={historySearch}
                   onChange={(e) => setHistorySearch(e.target.value)}
-                  placeholder={t("Search history by name, Fayda ID, or organization...", "በስም፣ በፋይዳ መታወቂያ ወይም በድርጅት ታሪክ ይፈልጉ...")}
+                  placeholder={t(
+                    "Search history by name, Fayda ID, or organization...",
+                    "በስም፣ በፋይዳ መታወቂያ ወይም በድርጅት ታሪክ ይፈልጉ...",
+                  )}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] transition-all"
                 />
               </div>
@@ -789,7 +870,9 @@ export default function EmployeeTransferManager() {
                 <option value="ALL">{t("All Status", "ሁሉም ሁኔታ")}</option>
                 <option value="APPROVED">{t("Approved", "ጸድቋል")}</option>
                 <option value="REJECTED">{t("Rejected", "ውድቅ")}</option>
-                <option value="SOURCE_RELEASED">{t("Released", "የተለቀቀ")}</option>
+                <option value="SOURCE_RELEASED">
+                  {t("Released", "የተለቀቀ")}
+                </option>
               </select>
             </div>
           </div>
@@ -813,13 +896,20 @@ export default function EmployeeTransferManager() {
                   {t("Initiated by Your Organization", "በድርጅትዎ የተጀመሩ")}
                 </h4>
                 {transferHistory.initiated.length === 0 ? (
-                  <p className="text-xs text-gray-400 ml-8">{t("No initiated transfers completed yet.", "ገና ምንም የተጀመረ ዝውውር አልተጠናቀቀም።")}</p>
+                  <p className="text-xs text-gray-400 ml-8">
+                    {t(
+                      "No initiated transfers completed yet.",
+                      "ገና ምንም የተጀመረ ዝውውር አልተጠናቀቀም።",
+                    )}
+                  </p>
                 ) : (
                   <div className="overflow-x-auto rounded-xl border border-gray-100">
                     <table className="w-full text-left border-collapse text-sm">
                       <thead>
                         <tr className="bg-[#003366] text-white text-[11px] uppercase tracking-[0.2em]">
-                          <th className="p-3">{t("Employee Name", "የሰራተኛ ስም")}</th>
+                          <th className="p-3">
+                            {t("Employee Name", "የሰራተኛ ስም")}
+                          </th>
                           <th className="p-3">{t("Fayda ID", "የፋይዳ መታወቂያ")}</th>
                           <th className="p-3">{t("Destination", "መድረሻ")}</th>
                           <th className="p-3">{t("Position", "ሹመት")}</th>
@@ -829,45 +919,84 @@ export default function EmployeeTransferManager() {
                       </thead>
                       <tbody className="divide-y divide-gray-200 text-gray-700">
                         {(() => {
-                          const filtered = transferHistory.initiated.filter((r) => {
-                            const q = historySearch.toLowerCase();
-                            const matchesSearch = !historySearch ||
-                              r.employee.user.fullName.toLowerCase().includes(q) ||
-                              r.employee.user.faydaId.toLowerCase().includes(q) ||
-                              r.targetOrganization.name.toLowerCase().includes(q);
-                            const matchesFilter = historyFilter === "ALL" || r.status === historyFilter;
-                            return matchesSearch && matchesFilter;
-                          });
-                          return filtered.length > 0 ? filtered.map((request, idx) => (
-                          <motion.tr
-                            key={`initiated-${request.id}`}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.3, delay: idx * 0.05 }}
-                            whileHover={{ backgroundColor: "rgba(0,51,102,0.02)" }}
-                            className="transition-colors"
-                          >
-                            <td className="p-3 font-bold text-[#003366]">{request.employee.user.fullName}</td>
-                            <td className="p-3 text-xs text-gray-500">{request.employee.user.faydaId}</td>
-                            <td className="p-3">{request.targetOrganization.name}</td>
-                            <td className="p-3">{request.position?.name || request.employee.position?.name || t("Unspecified", "ያልተገለጸ")}</td>
-                            <td className="p-3">
-                              <span className={`px-2 py-0.5 rounded text-xs font-semibold ${statusBadge(request.status)}`}>
-                                {isAm ? 
-                                  request.status === "APPROVED" ? "ጸድቋል" : 
-                                  request.status === "REJECTED" ? "ውድቅ" : 
-                                  request.status.includes("RELEASE") ? "የተለቀቀ" : request.status : 
-                                  request.status.replace("_", " ")}
-                              </span>
-                            </td>
-                            <td className="p-3 text-xs text-gray-400">{new Date(request.updatedAt).toLocaleString()}</td>
-                           </motion.tr>
-                          )) : (
+                          const filtered = transferHistory.initiated.filter(
+                            (r) => {
+                              const q = historySearch.toLowerCase();
+                              const matchesSearch =
+                                !historySearch ||
+                                r.employee.user.fullName
+                                  .toLowerCase()
+                                  .includes(q) ||
+                                r.employee.user.faydaId
+                                  .toLowerCase()
+                                  .includes(q) ||
+                                r.targetOrganization.name
+                                  .toLowerCase()
+                                  .includes(q);
+                              const matchesFilter =
+                                historyFilter === "ALL" ||
+                                r.status === historyFilter;
+                              return matchesSearch && matchesFilter;
+                            },
+                          );
+                          return filtered.length > 0 ? (
+                            filtered.map((request, idx) => (
+                              <motion.tr
+                                key={`initiated-${request.id}`}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{
+                                  duration: 0.3,
+                                  delay: idx * 0.05,
+                                }}
+                                whileHover={{
+                                  backgroundColor: "rgba(0,51,102,0.02)",
+                                }}
+                                className="transition-colors"
+                              >
+                                <td className="p-3 font-bold text-[#003366]">
+                                  {request.employee.user.fullName}
+                                </td>
+                                <td className="p-3 text-xs text-gray-500">
+                                  {request.employee.user.faydaId}
+                                </td>
+                                <td className="p-3">
+                                  {request.targetOrganization.name}
+                                </td>
+                                <td className="p-3">
+                                  {request.position?.name ||
+                                    request.employee.position?.name ||
+                                    t("Unspecified", "ያልተገለጸ")}
+                                </td>
+                                <td className="p-3">
+                                  <span
+                                    className={`px-2 py-0.5 rounded text-xs font-semibold ${statusBadge(request.status)}`}
+                                  >
+                                    {isAm
+                                      ? request.status === "APPROVED"
+                                        ? "ጸድቋል"
+                                        : request.status === "REJECTED"
+                                          ? "ውድቅ"
+                                          : request.status.includes("RELEASE")
+                                            ? "የተለቀቀ"
+                                            : request.status
+                                      : request.status.replace("_", " ")}
+                                  </span>
+                                </td>
+                                <td className="p-3 text-xs text-gray-400">
+                                  {new Date(request.updatedAt).toLocaleString()}
+                                </td>
+                              </motion.tr>
+                            ))
+                          ) : (
                             <tr>
                               <td colSpan={6} className="p-8 text-center">
                                 <Search className="w-6 h-6 text-gray-300 mx-auto mb-2" />
                                 <p className="text-sm text-gray-400 font-medium">
-                                  {t("No matching history found", "ምንም የሚዛመድ ታሪክ አልተገኘም")}
+                                  {t(
+                                    "No matching history found",
+                                    "ምንም የሚዛመድ ታሪክ አልተገኘም",
+                                  )}
                                 </p>
                               </td>
                             </tr>
@@ -887,13 +1016,20 @@ export default function EmployeeTransferManager() {
                   {t("Incoming to Your Organization", "ወደ ድርጅትዎ የገቡ")}
                 </h4>
                 {transferHistory.incoming.length === 0 ? (
-                  <p className="text-xs text-gray-400 ml-8">{t("No incoming transfers completed yet.", "ገና ምንም የገባ ዝውውር አልተጠናቀቀም።")}</p>
+                  <p className="text-xs text-gray-400 ml-8">
+                    {t(
+                      "No incoming transfers completed yet.",
+                      "ገና ምንም የገባ ዝውውር አልተጠናቀቀም።",
+                    )}
+                  </p>
                 ) : (
                   <div className="overflow-x-auto rounded-xl border border-gray-100">
                     <table className="w-full text-left border-collapse text-sm">
                       <thead>
                         <tr className="bg-[#003366] text-white text-[11px] uppercase tracking-[0.2em]">
-                          <th className="p-3">{t("Employee Name", "የሰራተኛ ስም")}</th>
+                          <th className="p-3">
+                            {t("Employee Name", "የሰራተኛ ስም")}
+                          </th>
                           <th className="p-3">{t("Fayda ID", "የፋይዳ መታወቂያ")}</th>
                           <th className="p-3">{t("Source", "ምንጭ")}</th>
                           <th className="p-3">{t("Position", "ሹመት")}</th>
@@ -903,45 +1039,84 @@ export default function EmployeeTransferManager() {
                       </thead>
                       <tbody className="divide-y divide-gray-200 text-gray-700">
                         {(() => {
-                          const filtered = transferHistory.incoming.filter((r) => {
-                            const q = historySearch.toLowerCase();
-                            const matchesSearch = !historySearch ||
-                              r.employee.user.fullName.toLowerCase().includes(q) ||
-                              r.employee.user.faydaId.toLowerCase().includes(q) ||
-                              r.sourceOrganization.name.toLowerCase().includes(q);
-                            const matchesFilter = historyFilter === "ALL" || r.status === historyFilter;
-                            return matchesSearch && matchesFilter;
-                          });
-                          return filtered.length > 0 ? filtered.map((request, idx) => (
-                          <motion.tr
-                            key={`incoming-${request.id}`}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.3, delay: idx * 0.05 }}
-                            whileHover={{ backgroundColor: "rgba(0,51,102,0.02)" }}
-                            className="transition-colors"
-                          >
-                            <td className="p-3 font-bold text-[#003366]">{request.employee.user.fullName}</td>
-                            <td className="p-3 text-xs text-gray-500">{request.employee.user.faydaId}</td>
-                            <td className="p-3">{request.sourceOrganization.name}</td>
-                            <td className="p-3">{request.position?.name || request.employee.position?.name || t("Unspecified", "ያልተገለጸ")}</td>
-                            <td className="p-3">
-                              <span className={`px-2 py-0.5 rounded text-xs font-semibold ${statusBadge(request.status)}`}>
-                                {isAm ? 
-                                  request.status === "APPROVED" ? "ጸድቋል" : 
-                                  request.status === "REJECTED" ? "ውድቅ" : 
-                                  request.status.includes("RELEASE") ? "የተለቀቀ" : request.status : 
-                                  request.status.replace("_", " ")}
-                              </span>
-                            </td>
-                            <td className="p-3 text-xs text-gray-400">{new Date(request.updatedAt).toLocaleString()}</td>
-                          </motion.tr>
-                          )) : (
+                          const filtered = transferHistory.incoming.filter(
+                            (r) => {
+                              const q = historySearch.toLowerCase();
+                              const matchesSearch =
+                                !historySearch ||
+                                r.employee.user.fullName
+                                  .toLowerCase()
+                                  .includes(q) ||
+                                r.employee.user.faydaId
+                                  .toLowerCase()
+                                  .includes(q) ||
+                                r.sourceOrganization.name
+                                  .toLowerCase()
+                                  .includes(q);
+                              const matchesFilter =
+                                historyFilter === "ALL" ||
+                                r.status === historyFilter;
+                              return matchesSearch && matchesFilter;
+                            },
+                          );
+                          return filtered.length > 0 ? (
+                            filtered.map((request, idx) => (
+                              <motion.tr
+                                key={`incoming-${request.id}`}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{
+                                  duration: 0.3,
+                                  delay: idx * 0.05,
+                                }}
+                                whileHover={{
+                                  backgroundColor: "rgba(0,51,102,0.02)",
+                                }}
+                                className="transition-colors"
+                              >
+                                <td className="p-3 font-bold text-[#003366]">
+                                  {request.employee.user.fullName}
+                                </td>
+                                <td className="p-3 text-xs text-gray-500">
+                                  {request.employee.user.faydaId}
+                                </td>
+                                <td className="p-3">
+                                  {request.sourceOrganization.name}
+                                </td>
+                                <td className="p-3">
+                                  {request.position?.name ||
+                                    request.employee.position?.name ||
+                                    t("Unspecified", "ያልተገለጸ")}
+                                </td>
+                                <td className="p-3">
+                                  <span
+                                    className={`px-2 py-0.5 rounded text-xs font-semibold ${statusBadge(request.status)}`}
+                                  >
+                                    {isAm
+                                      ? request.status === "APPROVED"
+                                        ? "ጸድቋል"
+                                        : request.status === "REJECTED"
+                                          ? "ውድቅ"
+                                          : request.status.includes("RELEASE")
+                                            ? "የተለቀቀ"
+                                            : request.status
+                                      : request.status.replace("_", " ")}
+                                  </span>
+                                </td>
+                                <td className="p-3 text-xs text-gray-400">
+                                  {new Date(request.updatedAt).toLocaleString()}
+                                </td>
+                              </motion.tr>
+                            ))
+                          ) : (
                             <tr>
                               <td colSpan={6} className="p-8 text-center">
                                 <Search className="w-6 h-6 text-gray-300 mx-auto mb-2" />
                                 <p className="text-sm text-gray-400 font-medium">
-                                  {t("No matching history found", "ምንም የሚዛመድ ታሪክ አልተገኘም")}
+                                  {t(
+                                    "No matching history found",
+                                    "ምንም የሚዛመድ ታሪክ አልተገኘም",
+                                  )}
                                 </p>
                               </td>
                             </tr>
@@ -956,7 +1131,6 @@ export default function EmployeeTransferManager() {
           )}
         </motion.div>
       )}
-
     </motion.div>
   );
 }
