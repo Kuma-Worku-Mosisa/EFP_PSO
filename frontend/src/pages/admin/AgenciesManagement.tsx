@@ -2260,9 +2260,10 @@ export function AgenciesManagement({
                         </div>
                         <button
                           onClick={() => {
-                            const url = URL.createObjectURL(newContract.contractDoc);
+                            const doc = newContract.contractDoc!;
+                            const url = URL.createObjectURL(doc);
                             setSelectedContractUrl(url);
-                            setSelectedContractName(newContract.contractDoc.name);
+                            setSelectedContractName(doc.name);
                           }}
                           className="w-8 h-8 rounded-lg bg-white border border-blue-200 flex items-center justify-center text-blue-600 hover:bg-blue-100 transition-colors"
                           title={isAm ? "ተመልከት" : "Preview"}
@@ -2769,6 +2770,7 @@ export function AgenciesManagement({
                 <DocumentPreviewer
                   url={selectedContractUrl}
                   fileName={selectedContractName || "Contract Document"}
+                  fileType="pdf"
                   className="h-full w-full border-none rounded-none"
                 />
               ) : (

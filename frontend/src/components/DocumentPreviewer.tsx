@@ -1,5 +1,5 @@
 // filepath: frontend/src/components/DocumentPreviewer.tsx
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   ExternalLink,
   FileText,
@@ -32,8 +32,8 @@ export default function DocumentPreviewer({
   const normalizeUrl = (inputUrl: string) => {
     if (!inputUrl) return "";
 
-    // If it's already an absolute URL (http/https), return as-is
-    if (inputUrl.startsWith("http://") || inputUrl.startsWith("https://")) {
+    // If it's already an absolute URL (http/https/blob/data), return as-is
+    if (inputUrl.startsWith("http://") || inputUrl.startsWith("https://") || inputUrl.startsWith("blob:") || inputUrl.startsWith("data:")) {
       return inputUrl;
     }
 
@@ -51,7 +51,7 @@ export default function DocumentPreviewer({
   // Auto-detect file type if not explicitly provided
   const detectedType =
     fileType ||
-    (normalizedUrl.toLowerCase().includes(".pdf") ? "pdf" : "image");
+    (normalizedUrl.toLowerCase().includes(".pdf") || fileName.toLowerCase().includes(".pdf") ? "pdf" : "image");
 
   if (!normalizedUrl) {
     return (
