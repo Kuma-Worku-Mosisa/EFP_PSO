@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { X, Loader2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE, resolveBackendAssetUrl } from "../../lib/api";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface ActorUser {
   id: number;
@@ -23,6 +24,8 @@ interface ActorUser {
 // System Admin Audit Log Viewer — protected: requires `system_admin` role
 export default function AuditLogViewer() {
   const { user, token, isAuthenticated } = useAuth() as any;
+  const { language } = useLanguage();
+  const isAm = language === "am";
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
@@ -142,10 +145,6 @@ export default function AuditLogViewer() {
     token,
     page,
     pageSize,
-    userFilter,
-    entityFilter,
-    fromDate,
-    actionFilter,
     refreshKey,
   ]);
 
@@ -198,19 +197,20 @@ export default function AuditLogViewer() {
 
   if (loading)
     return (
-      <div className="p-10 text-center text-gray-500">
-        Loading System Logs...
+      <div className="p-10 text-center text-[#003366] font-medium">
+        {isAm ? "የስርዓት መዝገቦችን በመጫን ላይ..." : "Loading System Logs..."}
       </div>
     );
 
   if (!isSystemAdmin) {
     return (
       <div className="max-w-3xl mx-auto p-6">
-        <h2 className="text-xl font-bold text-rose-600">Access Denied</h2>
+        <h2 className="text-xl font-bold text-rose-600">{isAm ? "መዳረሻ ተከልክሏል" : "Access Denied"}</h2>
         <p className="text-sm text-gray-600 mt-2">
-          You do not have permission to view system audit logs. This area is
-          restricted to users with the{" "}
-          <span className="font-mono">system_admin</span> role.
+          {isAm
+            ? "የስርዓት መዝገቦችን ለማየት ፈቃድ የለዎትም። ይህ ቦታ የsystem_admin ሚና ላላቸው ተጠቃሚዎች ብቻ ነው።"
+            : "You do not have permission to view system audit logs. This area is restricted to users with the"}
+          <span className="font-mono"> system_admin</span> {isAm ? "ሚና" : "role"}.
         </p>
       </div>
     );
@@ -220,77 +220,52 @@ export default function AuditLogViewer() {
     <div className="max-w-7xl mx-auto p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">System Audit Logs</h1>
-        <p className="text-sm text-gray-500">
-          Immutable record of all administrative and user actions.
+        <h1 className="text-2xl font-bold text-[#003366]">{isAm ? "የስርዓት መዝገቦች" : "System Audit Logs"}</h1>
+        <p className="text-sm text-gray-500 mt-1">
+          {isAm ? "የሁሉም አስተዳደራዊ እና የተጠቃሚ ድርጊቶች የማይሻር መዝገብ" : "Immutable record of all administrative and user actions."}
         </p>
       </div>
 
       {/* Filters */}
       <div
         onKeyDown={(e) => {
-          // Intercept Enter and run the same apply logic without causing a native submit
           if (e.key === "Enter") {
             e.preventDefault();
             handleApply();
           }
         }}
-        className="bg-white p-4 rounded-lg shadow-sm border flex flex-wrap items-center gap-3"
+        className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 flex flex-wrap items-center gap-3"
       >
         <input
-          placeholder="User ID"
+          placeholder={isAm ? "የተጠቃሚ መለያ" : "User ID"}
           value={userFilter}
           onChange={(e) => setUserFilter(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              handleApply();
-            }
-          }}
-          className="px-3 py-2 border rounded-lg w-32"
+          className="px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] transition-all w-32"
         />
         <input
-          placeholder="Entity Name"
+          placeholder={isAm ? "የድርጅት ስም" : "Entity Name"}
           value={entityFilter}
           onChange={(e) => setEntityFilter(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              handleApply();
-            }
-          }}
-          className="px-3 py-2 border rounded-lg w-48"
+          className="px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] transition-all w-48"
         />
         <label className="sr-only" htmlFor="fromDate">
-          Date (from)
+          {isAm ? "ቀን (ከ)" : "Date (from)"}
         </label>
         <input
           id="fromDate"
           type="date"
-          title="Filter results on or after this date"
-          aria-label="Date from"
+          title={isAm ? "በዚህ ቀን ወይም በኋላ ውጤቶችን አጣራ" : "Filter results on or after this date"}
+          aria-label={isAm ? "ቀን ከ" : "Date from"}
           value={fromDate}
           onChange={(e) => setFromDate(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              handleApply();
-            }
-          }}
-          className="px-3 py-2 border rounded-lg"
+          className="px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] transition-all"
         />
         <select
           value={actionFilter}
           onChange={(e) => setActionFilter(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              handleApply();
-            }
-          }}
-          className="px-3 py-2 border rounded-lg"
+          className="px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] transition-all"
         >
-          <option value="">All Actions</option>
+          <option value="">{isAm ? "ሁሉም ድርጊቶች" : "All Actions"}</option>
           <option value="CREATE">CREATE</option>
           <option value="UPDATE">UPDATE</option>
           <option value="DELETE">DELETE</option>
@@ -299,116 +274,108 @@ export default function AuditLogViewer() {
         <button
           type="button"
           onClick={() => handleApply()}
-          className="px-4 py-2 bg-primary text-white rounded-lg"
-          title="Filter audit logs"
+          className="px-5 py-2.5 bg-[#003366] text-white rounded-xl font-bold text-sm hover:bg-[#002244] transition-all shadow-md hover:shadow-lg"
         >
-          Filter
+          {isAm ? "አጣራ" : "Filter"}
         </button>
-        <div className="ml-auto flex items-center space-x-2">
-          <span className="text-sm text-gray-500">Page Size</span>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-sm text-gray-500 font-medium">{isAm ? "የገጽ መጠን" : "Page Size"}</span>
           <select
             value={pageSize}
             onChange={(e) => {
               setPageSize(Number(e.target.value));
               setPage(1);
             }}
-            className="px-2 py-1 border rounded-lg"
+            className="px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] transition-all"
           >
             {[10, 25, 50, 100].map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
+              <option key={s} value={s}>{s}</option>
             ))}
           </select>
         </div>
       </div>
 
       {/* Data Table */}
-      <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
-        <table className="w-full text-left text-sm text-gray-600">
-          <thead className="bg-gray-50 border-b text-gray-900">
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
-              <th className="p-4 font-semibold">Timestamp</th>
-              <th className="p-4 font-semibold">Action</th>
-              <th className="p-4 font-semibold">Entity Target</th>
-              <th className="p-4 font-semibold">Actor (User ID)</th>
-              <th className="p-4 font-semibold text-right">Details</th>
+              <th className="px-6 py-4 font-bold text-[#003366] text-xs uppercase tracking-wider">{isAm ? "የተፈጠረበት ቀን" : "Timestamp"}</th>
+              <th className="px-6 py-4 font-bold text-[#003366] text-xs uppercase tracking-wider">{isAm ? "ድርጊት" : "Action"}</th>
+              <th className="px-6 py-4 font-bold text-[#003366] text-xs uppercase tracking-wider">{isAm ? "ዒላማ" : "Entity Target"}</th>
+              <th className="px-6 py-4 font-bold text-[#003366] text-xs uppercase tracking-wider">{isAm ? "ተጠቃሚ" : "Actor (User ID)"}</th>
+              <th className="px-6 py-4 font-bold text-[#003366] text-xs uppercase tracking-wider text-right">{isAm ? "ዝርዝር" : "Details"}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {logs.map((log) => (
               <React.Fragment key={log.id}>
                 {/* Main Row */}
-                <tr className="hover:bg-gray-50 transition-colors">
-                  <td className="p-4 whitespace-nowrap">
+                <tr className="hover:bg-blue-50/30 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-600">
                     {new Date(log.createdAt).toLocaleString()}
                   </td>
-                  <td className="p-4">{getActionBadge(log.action)}</td>
-                  <td className="p-4 font-medium text-gray-900">
+                  <td className="px-6 py-4">{getActionBadge(log.action)}</td>
+                  <td className="px-6 py-4 font-medium text-[#003366]">
                     {log.entityName}{" "}
                     <span className="text-gray-400 font-mono text-xs">
                       #{log.entityId}
                     </span>
                   </td>
-                  <td className="p-4">
+                  <td className="px-6 py-4">
                     {log.userId ? (
                       <div className="flex items-center gap-2">
-                        <span className="bg-gray-100 px-2 py-1 rounded text-xs font-mono border">
+                        <span className="bg-[#003366]/5 text-[#003366] px-2.5 py-1 rounded-lg text-xs font-mono border border-[#003366]/10">
                           ID: {log.userId}
                         </span>
                         <button
                           type="button"
                           onClick={() => openActorDetails(log.userId)}
-                          className="text-blue-600 hover:text-blue-800 font-medium text-xs transition-colors whitespace-nowrap"
+                          className="text-[#003366] hover:text-[#001F3F] font-semibold text-xs transition-colors whitespace-nowrap"
                         >
-                          View Details
+                          {isAm ? "ዝርዝር ይመልከቱ" : "View Details"}
                         </button>
                       </div>
                     ) : (
-                      <span className="text-gray-400 italic">
-                        System / Anonymous
-                      </span>
+                      <span className="text-gray-400 italic">System / Anonymous</span>
                     )}
                   </td>
-                  <td className="p-4 text-right">
+                  <td className="px-6 py-4 text-right">
                     <button
-                      onClick={() =>
-                        setExpandedRow(expandedRow === log.id ? null : log.id)
-                      }
-                      className="text-blue-600 hover:text-blue-800 font-medium text-sm transition-colors"
+                      onClick={() => setExpandedRow(expandedRow === log.id ? null : log.id)}
+                      className="text-[#003366] hover:text-[#001F3F] font-semibold text-sm transition-colors"
                     >
-                      {expandedRow === log.id ? "Hide Data" : "View Payload"}
+                      {expandedRow === log.id
+                        ? isAm ? "ውሂብ ደብቅ" : "Hide Data"
+                        : isAm ? "ውሂብ ይመልከቱ" : "View Payload"}
                     </button>
                   </td>
                 </tr>
 
                 {/* Expanded Payload Row */}
                 {expandedRow === log.id && (
-                  <tr className="bg-slate-50 border-b">
+                  <tr className="bg-[#003366]/[0.02] border-b border-gray-100">
                     <td colSpan={5} className="p-0">
-                      <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 shadow-inner border-y border-slate-200">
-                        {/* Old Value Box */}
+                      <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-gray-100">
                         <div>
-                          <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                            Previous State
+                          <h4 className="text-xs font-bold text-[#003366] uppercase tracking-wider mb-2">
+                            {isAm ? "የቀድሞ ሁኔታ" : "Previous State"}
                           </h4>
                           {log.oldValue ? (
-                            <pre className="bg-white p-3 rounded-md border border-gray-200 text-xs text-red-700 overflow-x-auto shadow-sm font-mono">
+                            <pre className="bg-white p-3 rounded-xl border border-gray-200 text-xs text-red-700 overflow-x-auto shadow-sm font-mono">
                               {JSON.stringify(parseJSON(log.oldValue), null, 2)}
                             </pre>
                           ) : (
-                            <div className="bg-gray-100 p-3 rounded-md border text-xs text-gray-400 italic text-center">
-                              No previous data (New Creation)
+                            <div className="bg-gray-100 p-3 rounded-xl border text-xs text-gray-400 italic text-center">
+                              {isAm ? "ምንም የቀድሞ ውሂብ የለም" : "No previous data (New Creation)"}
                             </div>
                           )}
                         </div>
-
-                        {/* New Value Box */}
                         <div>
-                          <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                            New State
+                          <h4 className="text-xs font-bold text-[#003366] uppercase tracking-wider mb-2">
+                            {isAm ? "አዲስ ሁኔታ" : "New State"}
                           </h4>
-                          <pre className="bg-white p-3 rounded-md border border-green-200 text-xs text-green-800 overflow-x-auto shadow-sm font-mono">
+                          <pre className="bg-white p-3 rounded-xl border border-green-200 text-xs text-green-800 overflow-x-auto shadow-sm font-mono">
                             {JSON.stringify(parseJSON(log.newValue), null, 2)}
                           </pre>
                         </div>
@@ -571,28 +538,25 @@ export default function AuditLogViewer() {
       {/* Pagination */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-gray-600">
-          Showing {total === 0 ? 0 : (page - 1) * pageSize + 1} -{" "}
-          {Math.min(total, page * pageSize)} of {total}
+          {isAm ? "የሚታየው" : "Showing"} {total === 0 ? 0 : (page - 1) * pageSize + 1} -{" "}
+          {Math.min(total, page * pageSize)} {isAm ? "ከ" : "of"} {total}
         </div>
         <div className="flex items-center space-x-2">
-          {/** First */}
           <button
             disabled={page <= 1}
             onClick={() => setPage(1)}
-            className="px-2 py-1 bg-white border rounded disabled:opacity-50"
+            className="px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-sm text-[#003366] font-medium disabled:opacity-50 hover:bg-gray-50 transition-all"
           >
-            First
+            {isAm ? "መጀመሪያ" : "First"}
           </button>
-          {/** Prev */}
           <button
             disabled={page <= 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="px-2 py-1 bg-white border rounded disabled:opacity-50"
+            className="px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-sm text-[#003366] font-medium disabled:opacity-50 hover:bg-gray-50 transition-all"
           >
-            Prev
+            {isAm ? "ቀዳሚ" : "Prev"}
           </button>
 
-          {/** Page numbers window */}
           {(() => {
             const totalPages = Math.max(1, Math.ceil(total / pageSize));
             const windowSize = 5;
@@ -608,40 +572,41 @@ export default function AuditLogViewer() {
                   <button
                     key={p}
                     onClick={() => setPage(p)}
-                    className={`px-2 py-1 border rounded ${p === page ? "bg-primary text-white" : "bg-white"}`}
+                    className={`px-3 py-1.5 border border-gray-200 rounded-xl text-sm font-medium transition-all ${
+                      p === page
+                        ? "bg-[#003366] text-white shadow-md"
+                        : "bg-white text-[#003366] hover:bg-gray-50"
+                    }`}
                   >
                     {p}
                   </button>
                 ))}
-                {end < totalPages && <span className="px-2">...</span>}
+                {end < totalPages && <span className="px-2 text-sm text-gray-400">...</span>}
               </div>
             );
           })()}
 
-          {/** Next */}
           <button
             disabled={page * pageSize >= total}
             onClick={() => setPage((p) => p + 1)}
-            className="px-2 py-1 bg-white border rounded disabled:opacity-50"
+            className="px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-sm text-[#003366] font-medium disabled:opacity-50 hover:bg-gray-50 transition-all"
           >
-            Next
+            {isAm ? "ቀጣይ" : "Next"}
           </button>
-          {/** Last */}
           <button
             disabled={page * pageSize >= total}
             onClick={() => setPage(Math.max(1, Math.ceil(total / pageSize)))}
-            className="px-2 py-1 bg-white border rounded disabled:opacity-50"
+            className="px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-sm text-[#003366] font-medium disabled:opacity-50 hover:bg-gray-50 transition-all"
           >
-            Last
+            {isAm ? "መጨረሻ" : "Last"}
           </button>
 
-          {/** Jump to page */}
           <div className="flex items-center space-x-2">
             <input
               type="number"
               min={1}
               max={Math.max(1, Math.ceil(total / pageSize))}
-              placeholder="Go to"
+              placeholder={isAm ? "ሂድ ወደ" : "Go to"}
               value={jumpPage}
               onChange={(e) => setJumpPage(e.target.value)}
               onKeyDown={(e) => {
@@ -654,7 +619,7 @@ export default function AuditLogViewer() {
                   }
                 }
               }}
-              className="w-20 px-2 py-1 border rounded"
+              className="w-20 px-3 py-1.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] transition-all"
             />
             <button
               onClick={() => {
@@ -664,9 +629,9 @@ export default function AuditLogViewer() {
                   setPage(v);
                 }
               }}
-              className="px-3 py-1 bg-primary text-white rounded"
+              className="px-4 py-1.5 bg-[#003366] text-white rounded-xl text-sm font-medium hover:bg-[#002244] transition-all"
             >
-              Go
+              {isAm ? "ሂድ" : "Go"}
             </button>
           </div>
         </div>

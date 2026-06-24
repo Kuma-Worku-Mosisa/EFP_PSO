@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   UserPlus,
   Shield,
@@ -9,6 +9,7 @@ import {
   Eye,
   EyeOff,
   Loader2,
+  Search,
 } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 import { useAuth } from "../context/AuthContext";
@@ -84,6 +85,34 @@ export const UserManagement = () => {
   const [toastOpen, setToastOpen] = useState(false);
   const [toastType, setToastType] = useState<ToastType>("success");
   const [toastMessage, setToastMessage] = useState("");
+
+  // Search, Filter & Pagination
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [jumpPage, setJumpPage] = useState("");
+
+  const filteredUsers = useMemo(() => {
+    return users.filter((u) => {
+      const q = searchQuery.toLowerCase();
+      const matchesSearch =
+        !q ||
+        u.fullName?.toLowerCase().includes(q) ||
+        u.username?.toLowerCase().includes(q) ||
+        u.email?.toLowerCase().includes(q) ||
+        u.phone?.toLowerCase().includes(q);
+      const matchesFilter = statusFilter === "all" || u.status === statusFilter;
+      return matchesSearch && matchesFilter;
+    });
+  }, [users, searchQuery, statusFilter]);
+
+  const totalFiltered = filteredUsers.length;
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / pageSize));
+  const paginatedUsers = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredUsers.slice(start, start + pageSize);
+  }, [filteredUsers, page, pageSize]);
 
   // Controlled Form Inputs
   const [firstName, setFirstName] = useState("");
@@ -667,6 +696,51 @@ export const UserManagement = () => {
         </button>
       </div>
 
+      {/* Search, Filter & Page Size */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="relative flex-1 w-full">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(1);
+            }}
+            placeholder={isAm ? "ፈልግ..." : "Search users..."}
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+          />
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setPage(1);
+          }}
+          className="px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+        >
+          <option value="all">{isAm ? "ሁሉም ሁኔታ" : "All Status"}</option>
+          <option value="Active">{t.status.active}</option>
+          <option value="Inactive">{t.status.inactive}</option>
+          <option value="Suspended">{t.status.suspended}</option>
+        </select>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-500 whitespace-nowrap">{isAm ? "የገጽ መጠን" : "Page Size"}</span>
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setPage(1);
+            }}
+            className="px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+          >
+            {[10, 25, 50, 100].map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       {loading ? (
         <div className="flex flex-col items-center justify-center py-12 space-y-4">
           <Loader2 className="w-8 h-8 text-primary animate-spin" />
@@ -677,6 +751,7 @@ export const UserManagement = () => {
           {error}
         </div>
       ) : (
+        <>
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
@@ -692,7 +767,7 @@ export const UserManagement = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {users.map((user) => (
+                {paginatedUsers.map((user) => (
                   <tr
                     key={user.id}
                     className="hover:bg-gray-50 transition-colors"
@@ -789,6 +864,100 @@ export const UserManagement = () => {
             </table>
           </div>
         </div>
+
+        {/* Pagination */}
+        <div className="flex items-center justify-between mt-4">
+          <div className="text-sm text-gray-600">
+            {isAm ? "የሚታየው" : "Showing"} {totalFiltered === 0 ? 0 : (page - 1) * pageSize + 1} -{" "}
+            {Math.min(totalFiltered, page * pageSize)} {isAm ? "ከ" : "of"} {totalFiltered}
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              disabled={page <= 1}
+              onClick={() => setPage(1)}
+              className="px-2 py-1 bg-white border rounded disabled:opacity-50 text-sm"
+            >
+              {isAm ? "መጀመሪያ" : "First"}
+            </button>
+            <button
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="px-2 py-1 bg-white border rounded disabled:opacity-50 text-sm"
+            >
+              {isAm ? "ቀዳሚ" : "Prev"}
+            </button>
+            {(() => {
+              const windowSize = 5;
+              let start = Math.max(1, page - Math.floor(windowSize / 2));
+              let end = Math.min(totalPages, start + windowSize - 1);
+              if (end - start + 1 < windowSize)
+                start = Math.max(1, end - windowSize + 1);
+              const pages = [];
+              for (let p = start; p <= end; p++) pages.push(p);
+              return (
+                <div className="flex items-center space-x-1">
+                  {pages.map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p)}
+                      className={`px-2 py-1 border rounded text-sm ${p === page ? "bg-primary text-white" : "bg-white"}`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                  {end < totalPages && <span className="px-2 text-sm">...</span>}
+                </div>
+              );
+            })()}
+            <button
+              disabled={page * pageSize >= totalFiltered}
+              onClick={() => setPage((p) => p + 1)}
+              className="px-2 py-1 bg-white border rounded disabled:opacity-50 text-sm"
+            >
+              {isAm ? "ቀጣይ" : "Next"}
+            </button>
+            <button
+              disabled={page * pageSize >= totalFiltered}
+              onClick={() => setPage(totalPages)}
+              className="px-2 py-1 bg-white border rounded disabled:opacity-50 text-sm"
+            >
+              {isAm ? "መጨረሻ" : "Last"}
+            </button>
+            <div className="flex items-center space-x-2">
+              <input
+                type="number"
+                min={1}
+                max={totalPages}
+                placeholder={isAm ? "ሂድ" : "Go to"}
+                value={jumpPage}
+                onChange={(e) => setJumpPage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const v = Number(jumpPage);
+                    if (!isNaN(v) && v >= 1 && v <= totalPages) {
+                      setPage(v);
+                      setJumpPage("");
+                    }
+                  }
+                }}
+                className="w-20 px-2 py-1 border rounded text-sm"
+              />
+              <button
+                onClick={() => {
+                  const v = Number(jumpPage);
+                  if (!isNaN(v) && v >= 1 && v <= totalPages) {
+                    setPage(v);
+                    setJumpPage("");
+                  }
+                }}
+                className="px-3 py-1 bg-primary text-white rounded text-sm"
+              >
+                {isAm ? "ሂድ" : "Go"}
+              </button>
+            </div>
+          </div>
+        </div>
+        </>
       )}
 
       <AnimatePresence>

@@ -436,46 +436,72 @@ export const ManageNews = () => {
                 {/* Image Upload Area */}
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">
-                    Announcement Image
+                    {isAm ? "ምስል" : "Announcement Image"}
                   </label>
-                  <div
-                    onClick={() =>
-                      document.getElementById("news-image-upload")?.click()
-                    }
-                    className="w-full h-48 bg-gray-50 rounded-[30px] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center group hover:bg-secondary/5 hover:border-secondary/40 transition-all cursor-pointer relative overflow-hidden"
-                  >
-                    {formData.imageUrl ? (
-                      <img
-                        src={formData.imageUrl}
-                        alt="Preview"
-                        className="w-full h-full object-cover rounded-[28px]"
+                  <div className="space-y-4">
+                    <div
+                      onClick={() =>
+                        !formData.imageUrl && document.getElementById("news-image-upload")?.click()
+                      }
+                      className="w-full h-96 bg-gray-50 rounded-[30px] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center group hover:bg-secondary/5 hover:border-secondary/40 transition-all cursor-pointer relative overflow-hidden"
+                    >
+                      {formData.imageUrl ? (
+                        <img
+                          src={formData.imageUrl}
+                          alt="Preview"
+                          className="w-full h-full object-cover rounded-[28px]"
+                        />
+                      ) : (
+                        <>
+                          <ImageIcon className="w-12 h-12 text-gray-300 group-hover:text-secondary group-hover:scale-110 transition-all" />
+                          <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-2">
+                            {t.uploadImg}
+                          </p>
+                        </>
+                      )}
+                      <input
+                        id="news-image-upload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const previewUrl = URL.createObjectURL(file);
+                            setFormData({
+                              ...formData,
+                              imageUrl: previewUrl,
+                              imageFile: file,
+                            });
+                          }
+                        }}
                       />
-                    ) : (
-                      <>
-                        <ImageIcon className="w-12 h-12 text-gray-300 group-hover:text-secondary group-hover:scale-110 transition-all" />
-                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-2">
-                          {t.uploadImg}
-                        </p>
-                      </>
+                    </div>
+                    {formData.imageUrl && (
+                      <div className="flex items-center justify-center gap-4">
+                        <button
+                          type="button"
+                          onClick={() => document.getElementById("news-image-upload")?.click()}
+                          className="px-6 py-3 bg-white text-[#003366] border-2 border-[#003366] rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg hover:scale-105 transition-all"
+                        >
+                          {isAm ? "ምስል ቀይር" : "Change Image"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData({
+                              ...formData,
+                              imageUrl: "",
+                              imageFile: undefined,
+                            });
+                          }}
+                          className="px-6 py-3 bg-red-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg hover:bg-red-600 hover:scale-105 transition-all flex items-center gap-2"
+                        >
+                          <X className="w-4 h-4" />
+                          {isAm ? "አስወግድ" : "Remove"}
+                        </button>
+                      </div>
                     )}
-                    <input
-                      id="news-image-upload"
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          // preview using object URL and keep file for upload
-                          const previewUrl = URL.createObjectURL(file);
-                          setFormData({
-                            ...formData,
-                            imageUrl: previewUrl,
-                            imageFile: file,
-                          });
-                        }
-                      }}
-                    />
                   </div>
                 </div>
 

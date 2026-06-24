@@ -376,9 +376,9 @@ export default function LocationManager() {
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto min-h-screen flex flex-col space-y-6">
       <div className="flex flex-col gap-2 sm:gap-3">
-        <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
-          Geographic Address Matrix
-        </h1>
+<h1 className="text-2xl sm:text-3xl font-black text-[#003366] tracking-tight">
+  Geographic Address Matrix
+</h1>
         <p className="text-sm sm:text-base text-gray-600">
           Search, filter, and manage cascading administrative regional settings
           dynamically.

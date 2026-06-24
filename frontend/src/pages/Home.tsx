@@ -334,7 +334,7 @@ export const Home = () => {
                   viewport={{ once: true }}
                   className="group bg-white rounded-[32px] border border-gray-100 shadow-sm hover:shadow-2xl transition-all overflow-hidden"
                 >
-                  <div className="h-48 relative overflow-hidden bg-gray-50 group-hover:bg-gray-100 transition-colors duration-700">
+                  <div className="h-72 relative overflow-hidden bg-gray-50 group-hover:bg-gray-100 transition-colors duration-700">
                     <img
                       src={item.image}
                       alt={item.title}
@@ -350,14 +350,14 @@ export const Home = () => {
                       </span>
                     </div>
                   </div>
-                  <div className="p-8">
-                    <span className="text-[10px] font-black text-primary/40 uppercase tracking-widest block mb-4">
+                  <div className="p-6">
+                    <span className="text-[10px] font-black text-primary/40 uppercase tracking-widest block mb-3">
                       {item.date}
                     </span>
-                    <h4 className="text-xl font-black text-primary mb-4 uppercase tracking-tight group-hover:text-accent transition-colors">
+                    <h4 className="text-lg font-black text-primary mb-3 uppercase tracking-tight group-hover:text-accent transition-colors">
                       {item.title}
                     </h4>
-                    <p className="text-sm text-gray-500 font-medium leading-relaxed italic line-clamp-2 mb-8">
+                    <p className="text-sm text-gray-500 font-medium leading-relaxed italic line-clamp-2 mb-6">
                       {item.desc}
                     </p>
                     <button
