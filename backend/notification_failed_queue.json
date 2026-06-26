@@ -1,0 +1,54 @@
+[
+  {
+    "id": "d1fc225a-8b15-4cbf-8366-a17e96a45f73",
+    "createdAt": "2026-06-26T11:30:19.379Z",
+    "recipientUserId": 27,
+    "notificationType": "TRANSFER_REQUEST_INITIATED_SOURCE",
+    "context": {
+      "organizationName": "Eagle Security plc",
+      "organizationNameAm": "ንስር የጥበቃ አገልግሎት::",
+      "currentOrganizationName": "Eagle Security plc",
+      "currentOrganizationNameAm": "ንስር የጥበቃ አገልግሎት::",
+      "destinationOrganizationName": "Vital Security PLC",
+      "destinationOrganizationNameAm": "ቫይታል ሴኪዩሪቲ ኃ/የተ/የግ/ማህበር",
+      "employeeName": "Tolashe Bulcha Girma",
+      "faydaId": "121314151630",
+      "transferReason": "becuase we him and he he said i haved released my organization work"
+    },
+    "mailOptions": {
+      "from": "\"EFP-PSO\" <kumaworku90@gmail.com>",
+      "to": "eliyasxuri97@gmail.com",
+      "subject": "[EFP-PSO] 📤 Employee Transfer Request - Action Required",
+      "text": "An employee transfer request has been initiated from your organization.\n\n👤 Employee Details:\n• Name: Tolashe Bulcha Girma\n• Fayida ID: 121314151630\n• Current Organization: Eagle Security plc\n• Destination Organization: Vital Security PLC\n• Transfer Reason: becuase we him and he he said i haved released my organization work\n\n⏱️ Timeline:\n• Status: PENDING - Awaiting your approval\n• Action Required: RELEASE or REJECT the transfer\n• Deadline: 7 business days\n\n📋 Next Steps:\n1. Review the employee's current performance and record\n2. Approve (RELEASE) or reject the transfer request\n3. Provide feedback if rejection is necessary\n\nPlease log in to the HR Management portal to take action.\n\nከ ድርጅትዎ የሰራተኛ ሰ ዋደ ጥያቄ ጀምርዋል።\n\n👤 የሰራተኛ ዝርዝር:\n• ስም: Tolashe Bulcha Girma\n• ፋይዳ ቁጥር: 121314151630\n• ወቅታዊ ድርጅት: ንስር የጥበቃ አገልግሎት::\n• የሚገባ ድርጅት: ቫይታል ሴኪዩሪቲ ኃ/የተ/የግ/ማህበር\n• የሰራተኛ ሰ ዋደ ምክንያት: becuase we him and he he said i haved released my organization work\n\n⏱️ ጊዜ:\n• ሁኔታ: ተጠብቆ ነበር - ለ ማጽደቅ ይጠብቃል\n• ተግባር: ሰ ዋደውን ሩብ ወይም ውድቅ ያድርጉ\n• ወሳኝ ቀን: 7 ሥራ ቀናት\n\n📋 ቀጣይ ደረጃዎች:\n1. የሰራተኛውን ወቅታዊ አፈፃፀም እና ዝርዝር ይገምግሙ\n2. ሰ ዋደውን ይፈቅዱ (RELEASE) ወይም ውድቅ ያድርጉ\n3. ውድቅ ከሆነ ግብረመልስ ያቅርቡ\n\nእባክዎ ተግባር ለ ማድረግ ወደ HR ሥራ ሰራዊት ወንጌል ይግቡ።",
+      "html": "\n              <div style=\"font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 25px; line-height: 1.6; max-width: 650px; border: 1px solid #e9ecef; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin: 0 auto; color: #333333;\">\n                \n                <div style=\"background-color: #17a2b8; color: #ffffff; padding: 20px; font-size: 20px; font-weight: bold; border-radius: 8px 8px 0 0; text-align: center; letter-spacing: 0.5px;\">\n                  EFP-PSO Central Operations Alert Node\n                </div>\n                \n                <div style=\"padding: 20px 10px;\">\n                  <h3 style=\"color: #17a2b8; border-bottom: 2px solid #f1f3f5; padding-bottom: 8px; margin-top: 0; font-size: 17px;\">\n                    📤 Employee Transfer Request - Action Required\n                  </h3>\n                  <p style=\"font-size: 15px; color: #2d3748; margin-bottom: 25px; background-color: #f8f9fa; padding: 15px; border-left: 4px solid #17a2b8; border-radius: 4px;\">\n                    An employee transfer request has been initiated from your organization.\n\n👤 Employee Details:\n• Name: Tolashe Bulcha Girma\n• Fayida ID: 121314151630\n• Current Organization: Eagle Security plc\n• Destination Organization: Vital Security PLC\n• Transfer Reason: becuase we him and he he said i haved released my organization work\n\n⏱️ Timeline:\n• Status: PENDING - Awaiting your approval\n• Action Required: RELEASE or REJECT the transfer\n• Deadline: 7 business days\n\n📋 Next Steps:\n1. Review the employee's current performance and record\n2. Approve (RELEASE) or reject the transfer request\n3. Provide feedback if rejection is necessary\n\nPlease log in to the HR Management portal to take action.\n                  </p>\n\n                  <h3 style=\"color: #17a2b8; border-bottom: 2px solid #f1f3f5; padding-bottom: 8px; font-size: 16px; margin-top: 25px;\">\n                    📤 የሰራተኛ ሰ ዋደ ጥያቄ - እርምጃ ያስፈልጋል\n                  </h3>\n                  <p style=\"font-size: 15px; color: #2d3748; margin-bottom: 25px; background-color: #f8f9fa; padding: 15px; border-left: 4px solid #17a2b8; border-radius: 4px; direction: ltr; text-align: left;\">\n                    ከ ድርጅትዎ የሰራተኛ ሰ ዋደ ጥያቄ ጀምርዋል።\n\n👤 የሰራተኛ ዝርዝር:\n• ስም: Tolashe Bulcha Girma\n• ፋይዳ ቁጥር: 121314151630\n• ወቅታዊ ድርጅት: ንስር የጥበቃ አገልግሎት::\n• የሚገባ ድርጅት: ቫይታል ሴኪዩሪቲ ኃ/የተ/የግ/ማህበር\n• የሰራተኛ ሰ ዋደ ምክንያት: becuase we him and he he said i haved released my organization work\n\n⏱️ ጊዜ:\n• ሁኔታ: ተጠብቆ ነበር - ለ ማጽደቅ ይጠብቃል\n• ተግባር: ሰ ዋደውን ሩብ ወይም ውድቅ ያድርጉ\n• ወሳኝ ቀን: 7 ሥራ ቀናት\n\n📋 ቀጣይ ደረጃዎች:\n1. የሰራተኛውን ወቅታዊ አፈፃፀም እና ዝርዝር ይገምግሙ\n2. ሰ ዋደውን ይፈቅዱ (RELEASE) ወይም ውድቅ ያድርጉ\n3. ውድቅ ከሆነ ግብረመልስ ያቅርቡ\n\nእባክዎ ተግባር ለ ማድረግ ወደ HR ሥራ ሰራዊት ወንጌል ይግቡ።\n                  </p>\n                </div>\n\n                <hr style=\"border: 0; border-top: 1px solid #dee2e6; margin: 25px 0;\" />\n                <p style=\"font-size: 11px; color: #adb5bd; text-align: center; margin-bottom: 0;\">\n                  This is a secure automated notification generated from your institutional administrative account profile on the EFP-PSO ERP Platform. Please do not reply directly to this mailer node.\n                </p>\n              </div>\n            "
+    },
+    "attempts": 0,
+    "lastError": "Error: SMTP send timeout after 8000ms"
+  },
+  {
+    "id": "51165e19-1410-4022-a0f0-85f1c860d420",
+    "createdAt": "2026-06-26T11:43:49.029Z",
+    "recipientUserId": 61,
+    "notificationType": "TRANSFER_REQUEST_INITIATED_SOURCE",
+    "context": {
+      "organizationName": "Zetseat Security Service plc",
+      "organizationNameAm": "ዘፀአት ሴኩሪቲ ሰርቪስ.",
+      "currentOrganizationName": "Zetseat Security Service plc",
+      "currentOrganizationNameAm": "ዘፀአት ሴኩሪቲ ሰርቪስ.",
+      "destinationOrganizationName": "Vital Security PLC",
+      "destinationOrganizationNameAm": "ቫይታል ሴኪዩሪቲ ኃ/የተ/የግ/ማህበር",
+      "employeeName": "KEBEDE ABABE tESEMA",
+      "faydaId": "121314151637",
+      "transferReason": "He want to join as"
+    },
+    "mailOptions": {
+      "from": "\"EFP-PSO\" <kumaworku90@gmail.com>",
+      "to": "galenachimdesa12@gmail.com",
+      "subject": "[EFP-PSO] 📤 Employee Transfer Request - Action Required",
+      "text": "An employee transfer request has been initiated from your organization.\n\n👤 Employee Details:\n• Name: KEBEDE ABABE tESEMA\n• Fayida ID: 121314151637\n• Current Organization: Zetseat Security Service plc\n• Destination Organization: Vital Security PLC\n• Transfer Reason: He want to join as\n\n⏱️ Timeline:\n• Status: PENDING - Awaiting your approval\n• Action Required: RELEASE or REJECT the transfer\n• Deadline: 7 business days\n\n📋 Next Steps:\n1. Review the employee's current performance and record\n2. Approve (RELEASE) or reject the transfer request\n3. Provide feedback if rejection is necessary\n\nPlease log in to the HR Management portal to take action.\n\nከ ድርጅትዎ የሰራተኛ ሰ ዋደ ጥያቄ ጀምርዋል።\n\n👤 የሰራተኛ ዝርዝር:\n• ስም: KEBEDE ABABE tESEMA\n• ፋይዳ ቁጥር: 121314151637\n• ወቅታዊ ድርጅት: ዘፀአት ሴኩሪቲ ሰርቪስ.\n• የሚገባ ድርጅት: ቫይታል ሴኪዩሪቲ ኃ/የተ/የግ/ማህበር\n• የሰራተኛ ሰ ዋደ ምክንያት: He want to join as\n\n⏱️ ጊዜ:\n• ሁኔታ: ተጠብቆ ነበር - ለ ማጽደቅ ይጠብቃል\n• ተግባር: ሰ ዋደውን ሩብ ወይም ውድቅ ያድርጉ\n• ወሳኝ ቀን: 7 ሥራ ቀናት\n\n📋 ቀጣይ ደረጃዎች:\n1. የሰራተኛውን ወቅታዊ አፈፃፀም እና ዝርዝር ይገምግሙ\n2. ሰ ዋደውን ይፈቅዱ (RELEASE) ወይም ውድቅ ያድርጉ\n3. ውድቅ ከሆነ ግብረመልስ ያቅርቡ\n\nእባክዎ ተግባር ለ ማድረግ ወደ HR ሥራ ሰራዊት ወንጌል ይግቡ።",
+      "html": "\n              <div style=\"font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 25px; line-height: 1.6; max-width: 650px; border: 1px solid #e9ecef; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin: 0 auto; color: #333333;\">\n                \n                <div style=\"background-color: #17a2b8; color: #ffffff; padding: 20px; font-size: 20px; font-weight: bold; border-radius: 8px 8px 0 0; text-align: center; letter-spacing: 0.5px;\">\n                  EFP-PSO Central Operations Alert Node\n                </div>\n                \n                <div style=\"padding: 20px 10px;\">\n                  <h3 style=\"color: #17a2b8; border-bottom: 2px solid #f1f3f5; padding-bottom: 8px; margin-top: 0; font-size: 17px;\">\n                    📤 Employee Transfer Request - Action Required\n                  </h3>\n                  <p style=\"font-size: 15px; color: #2d3748; margin-bottom: 25px; background-color: #f8f9fa; padding: 15px; border-left: 4px solid #17a2b8; border-radius: 4px;\">\n                    An employee transfer request has been initiated from your organization.\n\n👤 Employee Details:\n• Name: KEBEDE ABABE tESEMA\n• Fayida ID: 121314151637\n• Current Organization: Zetseat Security Service plc\n• Destination Organization: Vital Security PLC\n• Transfer Reason: He want to join as\n\n⏱️ Timeline:\n• Status: PENDING - Awaiting your approval\n• Action Required: RELEASE or REJECT the transfer\n• Deadline: 7 business days\n\n📋 Next Steps:\n1. Review the employee's current performance and record\n2. Approve (RELEASE) or reject the transfer request\n3. Provide feedback if rejection is necessary\n\nPlease log in to the HR Management portal to take action.\n                  </p>\n\n                  <h3 style=\"color: #17a2b8; border-bottom: 2px solid #f1f3f5; padding-bottom: 8px; font-size: 16px; margin-top: 25px;\">\n                    📤 የሰራተኛ ሰ ዋደ ጥያቄ - እርምጃ ያስፈልጋል\n                  </h3>\n                  <p style=\"font-size: 15px; color: #2d3748; margin-bottom: 25px; background-color: #f8f9fa; padding: 15px; border-left: 4px solid #17a2b8; border-radius: 4px; direction: ltr; text-align: left;\">\n                    ከ ድርጅትዎ የሰራተኛ ሰ ዋደ ጥያቄ ጀምርዋል።\n\n👤 የሰራተኛ ዝርዝር:\n• ስም: KEBEDE ABABE tESEMA\n• ፋይዳ ቁጥር: 121314151637\n• ወቅታዊ ድርጅት: ዘፀአት ሴኩሪቲ ሰርቪስ.\n• የሚገባ ድርጅት: ቫይታል ሴኪዩሪቲ ኃ/የተ/የግ/ማህበር\n• የሰራተኛ ሰ ዋደ ምክንያት: He want to join as\n\n⏱️ ጊዜ:\n• ሁኔታ: ተጠብቆ ነበር - ለ ማጽደቅ ይጠብቃል\n• ተግባር: ሰ ዋደውን ሩብ ወይም ውድቅ ያድርጉ\n• ወሳኝ ቀን: 7 ሥራ ቀናት\n\n📋 ቀጣይ ደረጃዎች:\n1. የሰራተኛውን ወቅታዊ አፈፃፀም እና ዝርዝር ይገምግሙ\n2. ሰ ዋደውን ይፈቅዱ (RELEASE) ወይም ውድቅ ያድርጉ\n3. ውድቅ ከሆነ ግብረመልስ ያቅርቡ\n\nእባክዎ ተግባር ለ ማድረግ ወደ HR ሥራ ሰራዊት ወንጌል ይግቡ።\n                  </p>\n                </div>\n\n                <hr style=\"border: 0; border-top: 1px solid #dee2e6; margin: 25px 0;\" />\n                <p style=\"font-size: 11px; color: #adb5bd; text-align: center; margin-bottom: 0;\">\n                  This is a secure automated notification generated from your institutional administrative account profile on the EFP-PSO ERP Platform. Please do not reply directly to this mailer node.\n                </p>\n              </div>\n            "
+    },
+    "attempts": 0,
+    "lastError": "Error: SMTP send timeout after 8000ms"
+  }
+]

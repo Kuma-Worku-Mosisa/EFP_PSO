@@ -21,6 +21,7 @@ import {
   BookOpen,
   FileCheck,
   ArrowUpRight,
+  Pencil,
   Eye,
   X,
   Trash2,
@@ -39,8 +40,6 @@ import DocumentPreviewer from "../../components/DocumentPreviewer";
 import { AutoDismissToast, ToastType } from "../../components/AutoDismissToast";
 import { useAuth } from "../../context/AuthContext";
 import { apiRequest } from "../../lib/api";
-
-
 
 interface IncidentPenaltyMock {
   id: number;
@@ -146,9 +145,16 @@ interface ServiceContractMock {
   contractUrl: string;
   assignedPersonnelCount: number;
   addressText: string;
+  region?: string;
+  zone?: string;
+  woreda?: string;
+  kebele?: string;
+  houseNumber?: string;
+  specialLocation?: string;
   status?: string;
   createdAt: string;
   updatedAt: string;
+  terminatedAt: string;
 }
 
 interface OrganizationBranchMock {
@@ -232,23 +238,243 @@ const defaultOrg = (): OrganizationMock => ({
   hasStoreHouse: false,
   incidents: [],
   employees: [
-    { id: 1, userId: 1, organizationId: 1, fullName: "Abebe Kebede", email: "abebe.k@example.com", phone: "+251911111111", faydaId: "FAN-001", positionName: "Security Manager", gender: "Male", citizenship: "Ethiopian", age: 38, educationLevel: "Degree", workExpYears: 12, totalExpYears: 15, isBlacklisted: false, employmentStatus: "Active", employmentStartDate: "2019-03-15", documents: [] },
-    { id: 2, userId: 2, organizationId: 1, fullName: "Tigist Haile", email: "tigist.h@example.com", phone: "+251922222222", faydaId: "FAN-002", positionName: "Operations Head", gender: "Female", citizenship: "Ethiopian", age: 42, educationLevel: "Degree", workExpYears: 16, totalExpYears: 18, isBlacklisted: false, employmentStatus: "Active", employmentStartDate: "2018-07-22", documents: [] },
-    { id: 3, userId: 3, organizationId: 1, fullName: "Dawit Eshetu", email: "dawit.e@example.com", phone: "+251933333333", faydaId: "FAN-003", positionName: "Admin Head", gender: "Male", citizenship: "Ethiopian", age: 45, educationLevel: "Degree", workExpYears: 20, totalExpYears: 22, isBlacklisted: false, employmentStatus: "Active", employmentStartDate: "2017-01-10", documents: [] },
-    { id: 4, userId: 4, organizationId: 1, fullName: "Meron Alemu", email: "meron.a@example.com", phone: "+251944444444", faydaId: "FAN-004", positionName: "Security Officer", gender: "Female", citizenship: "Ethiopian", age: 29, educationLevel: "Certificate", workExpYears: 5, totalExpYears: 6, isBlacklisted: false, employmentStatus: "Active", employmentStartDate: "2021-11-05", documents: [] },
-    { id: 5, userId: 5, organizationId: 1, fullName: "Biruk Tadesse", email: "biruk.t@example.com", phone: "+251955555555", faydaId: "FAN-005", positionName: "Field Agent", gender: "Male", citizenship: "Ethiopian", age: 32, educationLevel: "Diploma", workExpYears: 8, totalExpYears: 10, isBlacklisted: false, employmentStatus: "Inactive", employmentStartDate: "2022-09-12", documents: [] },
-    { id: 6, userId: 6, organizationId: 1, fullName: "Sara Hailu", email: "sara.h@example.com", phone: "+251966666666", faydaId: "FAN-006", positionName: "Compliance Officer", gender: "Female", citizenship: "Ethiopian", age: 35, educationLevel: "Degree", workExpYears: 10, totalExpYears: 12, isBlacklisted: false, employmentStatus: "Approved", employmentStartDate: "2020-04-18", documents: [] },
-    { id: 7, userId: 7, organizationId: 1, fullName: "Henok Mesfin", email: "henok.m@example.com", phone: "+251977777777", faydaId: "FAN-007", positionName: "IT Support", gender: "Male", citizenship: "Ethiopian", age: 27, educationLevel: "Degree", workExpYears: 4, totalExpYears: 5, isBlacklisted: false, employmentStatus: "Pending", employmentStartDate: "2023-06-30", documents: [] },
-    { id: 8, userId: 8, organizationId: 1, fullName: "Betelhem Assefa", email: "betelhem.a@example.com", phone: "+251988888888", faydaId: "FAN-008", positionName: "HR Assistant", gender: "Female", citizenship: "Ethiopian", age: 24, educationLevel: "Diploma", workExpYears: 2, totalExpYears: 3, isBlacklisted: false, employmentStatus: "Pending", employmentStartDate: "2024-02-14", documents: [] },
-    { id: 9, userId: 9, organizationId: 1, fullName: "Tekle Ayele", email: "tekle.a@example.com", phone: "+251999999999", faydaId: "FAN-009", positionName: "Security Guard", gender: "Male", citizenship: "Ethiopian", age: 31, educationLevel: "Grade 10-12", workExpYears: 7, totalExpYears: 9, isBlacklisted: false, employmentStatus: "Rejected", employmentStartDate: "2023-11-01", documents: [] },
-    { id: 10, userId: 10, organizationId: 1, fullName: "Lemlem Wondimu", email: "lemlem.w@example.com", phone: "+251910101010", faydaId: "FAN-010", positionName: "Secretary", gender: "Female", citizenship: "Ethiopian", age: 26, educationLevel: "Degree", workExpYears: 3, totalExpYears: 4, isBlacklisted: false, employmentStatus: "Suspended", employmentStartDate: "2023-08-20", documents: [] },
+    {
+      id: 1,
+      userId: 1,
+      organizationId: 1,
+      fullName: "Abebe Kebede",
+      email: "abebe.k@example.com",
+      phone: "+251911111111",
+      faydaId: "FAN-001",
+      positionName: "Security Manager",
+      gender: "Male",
+      citizenship: "Ethiopian",
+      age: 38,
+      educationLevel: "Degree",
+      workExpYears: 12,
+      totalExpYears: 15,
+      isBlacklisted: false,
+      employmentStatus: "Active",
+      employmentStartDate: "2019-03-15",
+      documents: [],
+    },
+    {
+      id: 2,
+      userId: 2,
+      organizationId: 1,
+      fullName: "Tigist Haile",
+      email: "tigist.h@example.com",
+      phone: "+251922222222",
+      faydaId: "FAN-002",
+      positionName: "Operations Head",
+      gender: "Female",
+      citizenship: "Ethiopian",
+      age: 42,
+      educationLevel: "Degree",
+      workExpYears: 16,
+      totalExpYears: 18,
+      isBlacklisted: false,
+      employmentStatus: "Active",
+      employmentStartDate: "2018-07-22",
+      documents: [],
+    },
+    {
+      id: 3,
+      userId: 3,
+      organizationId: 1,
+      fullName: "Dawit Eshetu",
+      email: "dawit.e@example.com",
+      phone: "+251933333333",
+      faydaId: "FAN-003",
+      positionName: "Admin Head",
+      gender: "Male",
+      citizenship: "Ethiopian",
+      age: 45,
+      educationLevel: "Degree",
+      workExpYears: 20,
+      totalExpYears: 22,
+      isBlacklisted: false,
+      employmentStatus: "Active",
+      employmentStartDate: "2017-01-10",
+      documents: [],
+    },
+    {
+      id: 4,
+      userId: 4,
+      organizationId: 1,
+      fullName: "Meron Alemu",
+      email: "meron.a@example.com",
+      phone: "+251944444444",
+      faydaId: "FAN-004",
+      positionName: "Security Officer",
+      gender: "Female",
+      citizenship: "Ethiopian",
+      age: 29,
+      educationLevel: "Certificate",
+      workExpYears: 5,
+      totalExpYears: 6,
+      isBlacklisted: false,
+      employmentStatus: "Active",
+      employmentStartDate: "2021-11-05",
+      documents: [],
+    },
+    {
+      id: 5,
+      userId: 5,
+      organizationId: 1,
+      fullName: "Biruk Tadesse",
+      email: "biruk.t@example.com",
+      phone: "+251955555555",
+      faydaId: "FAN-005",
+      positionName: "Field Agent",
+      gender: "Male",
+      citizenship: "Ethiopian",
+      age: 32,
+      educationLevel: "Diploma",
+      workExpYears: 8,
+      totalExpYears: 10,
+      isBlacklisted: false,
+      employmentStatus: "Inactive",
+      employmentStartDate: "2022-09-12",
+      documents: [],
+    },
+    {
+      id: 6,
+      userId: 6,
+      organizationId: 1,
+      fullName: "Sara Hailu",
+      email: "sara.h@example.com",
+      phone: "+251966666666",
+      faydaId: "FAN-006",
+      positionName: "Compliance Officer",
+      gender: "Female",
+      citizenship: "Ethiopian",
+      age: 35,
+      educationLevel: "Degree",
+      workExpYears: 10,
+      totalExpYears: 12,
+      isBlacklisted: false,
+      employmentStatus: "Approved",
+      employmentStartDate: "2020-04-18",
+      documents: [],
+    },
+    {
+      id: 7,
+      userId: 7,
+      organizationId: 1,
+      fullName: "Henok Mesfin",
+      email: "henok.m@example.com",
+      phone: "+251977777777",
+      faydaId: "FAN-007",
+      positionName: "IT Support",
+      gender: "Male",
+      citizenship: "Ethiopian",
+      age: 27,
+      educationLevel: "Degree",
+      workExpYears: 4,
+      totalExpYears: 5,
+      isBlacklisted: false,
+      employmentStatus: "Pending",
+      employmentStartDate: "2023-06-30",
+      documents: [],
+    },
+    {
+      id: 8,
+      userId: 8,
+      organizationId: 1,
+      fullName: "Betelhem Assefa",
+      email: "betelhem.a@example.com",
+      phone: "+251988888888",
+      faydaId: "FAN-008",
+      positionName: "HR Assistant",
+      gender: "Female",
+      citizenship: "Ethiopian",
+      age: 24,
+      educationLevel: "Diploma",
+      workExpYears: 2,
+      totalExpYears: 3,
+      isBlacklisted: false,
+      employmentStatus: "Pending",
+      employmentStartDate: "2024-02-14",
+      documents: [],
+    },
+    {
+      id: 9,
+      userId: 9,
+      organizationId: 1,
+      fullName: "Tekle Ayele",
+      email: "tekle.a@example.com",
+      phone: "+251999999999",
+      faydaId: "FAN-009",
+      positionName: "Security Guard",
+      gender: "Male",
+      citizenship: "Ethiopian",
+      age: 31,
+      educationLevel: "Grade 10-12",
+      workExpYears: 7,
+      totalExpYears: 9,
+      isBlacklisted: false,
+      employmentStatus: "Rejected",
+      employmentStartDate: "2023-11-01",
+      documents: [],
+    },
+    {
+      id: 10,
+      userId: 10,
+      organizationId: 1,
+      fullName: "Lemlem Wondimu",
+      email: "lemlem.w@example.com",
+      phone: "+251910101010",
+      faydaId: "FAN-010",
+      positionName: "Secretary",
+      gender: "Female",
+      citizenship: "Ethiopian",
+      age: 26,
+      educationLevel: "Degree",
+      workExpYears: 3,
+      totalExpYears: 4,
+      isBlacklisted: false,
+      employmentStatus: "Suspended",
+      employmentStartDate: "2023-08-20",
+      documents: [],
+    },
   ],
   educationStats: emptyEducationStats(),
   trainingDetails: [],
   serviceContracts: [
-    { id: 1, serviceUserName: "Addis Security PLC", contractUrl: "/contracts/001.pdf", assignedPersonnelCount: 15, addressText: "Bole, Addis Ababa", status: "Active", createdAt: "2023-06-01", updatedAt: "2024-06-01" },
-    { id: 2, serviceUserName: "Ethio Guard Solutions", contractUrl: "/contracts/002.pdf", assignedPersonnelCount: 8, addressText: "Kazanchis, Addis Ababa", status: "Active", createdAt: "2023-09-15", updatedAt: "2024-09-15" },
-    { id: 3, serviceUserName: "Tena Security Services", contractUrl: "/contracts/003.pdf", assignedPersonnelCount: 22, addressText: "Megenagna, Addis Ababa", status: "Expiring Soon", createdAt: "2022-01-10", updatedAt: "2024-01-10" },
+    {
+      id: 1,
+      serviceUserName: "Addis Security PLC",
+      contractUrl: "/contracts/001.pdf",
+      assignedPersonnelCount: 15,
+      addressText: "Bole, Addis Ababa",
+      status: "Active",
+      createdAt: "2023-06-01",
+      updatedAt: "2024-06-01",
+      terminatedAt: "2024-06-01",
+    },
+    {
+      id: 2,
+      serviceUserName: "Ethio Guard Solutions",
+      contractUrl: "/contracts/002.pdf",
+      assignedPersonnelCount: 8,
+      addressText: "Kazanchis, Addis Ababa",
+      status: "Active",
+      createdAt: "2023-09-15",
+      updatedAt: "2024-09-15",
+      terminatedAt: "2024-09-15",
+    },
+    {
+      id: 3,
+      serviceUserName: "Tena Security Services",
+      contractUrl: "/contracts/003.pdf",
+      assignedPersonnelCount: 22,
+      addressText: "Megenagna, Addis Ababa",
+      status: "Expiring Soon",
+      createdAt: "2022-01-10",
+      updatedAt: "2024-01-10",
+      terminatedAt: "2024-01-10",
+    },
   ],
   branches: [],
   dmsDocuments: [],
@@ -269,7 +495,11 @@ export function AgenciesManagement({
   const [selectedDocUrl, setSelectedDocUrl] = useState<string | null>(null);
   const [selectedDocName, setSelectedDocName] = useState<string>("");
   const [showAppendContract, setShowAppendContract] = useState(false);
-  const [newContract, setNewContract] = useState({
+  const [isSubmittingContract, setIsSubmittingContract] = useState(false);
+  const [editingContractId, setEditingContractId] = useState<number | null>(
+    null,
+  );
+  const createEmptyContractForm = () => ({
     serviceUserName: "",
     region: "",
     zone: "",
@@ -280,8 +510,10 @@ export function AgenciesManagement({
     assignedPersonnelCount: 0,
     status: "Active",
     contractStartDate: "",
+    terminatedAt: "",
     contractDoc: null as File | null,
   });
+  const [newContract, setNewContract] = useState(createEmptyContractForm);
   // Address selection state from DB
   const [contractRegions, setContractRegions] = useState<any[]>([]);
   const [contractZones, setContractZones] = useState<any[]>([]);
@@ -304,34 +536,56 @@ export function AgenciesManagement({
   };
   const LOCATION_API = "http://localhost:5000/api/location";
   const getLocationName = (obj: any) =>
-    isAm ? obj?.nameAmharic || obj?.nameEnglish || "" : obj?.nameEnglish || obj?.nameAmharic || "";
+    isAm
+      ? obj?.nameAmharic || obj?.nameEnglish || ""
+      : obj?.nameEnglish || obj?.nameAmharic || "";
   const fetchContractRegions = async () => {
     try {
       const res = await fetch(`${LOCATION_API}/regions`);
       const data = await res.json();
-      setContractRegions(data?.data || data || []);
-    } catch { setContractRegions([]); }
+      const regions = data?.data || data || [];
+      setContractRegions(regions);
+      return regions;
+    } catch {
+      setContractRegions([]);
+      return [];
+    }
   };
   const fetchContractZones = async (regionId: number) => {
     try {
       const res = await fetch(`${LOCATION_API}/regions/${regionId}/zones`);
       const data = await res.json();
-      setContractZones(data?.data || data || []);
-    } catch { setContractZones([]); }
+      const zones = data?.data || data || [];
+      setContractZones(zones);
+      return zones;
+    } catch {
+      setContractZones([]);
+      return [];
+    }
   };
   const fetchContractWoredas = async (zoneId: number) => {
     try {
       const res = await fetch(`${LOCATION_API}/zones/${zoneId}/woredas`);
       const data = await res.json();
-      setContractWoredas(data?.data || data || []);
-    } catch { setContractWoredas([]); }
+      const woredas = data?.data || data || [];
+      setContractWoredas(woredas);
+      return woredas;
+    } catch {
+      setContractWoredas([]);
+      return [];
+    }
   };
   const fetchContractKebeles = async (woredaId: number) => {
     try {
       const res = await fetch(`${LOCATION_API}/woredas/${woredaId}/kebeles`);
       const data = await res.json();
-      setContractKebeles(data?.data || data || []);
-    } catch { setContractKebeles([]); }
+      const kebeles = data?.data || data || [];
+      setContractKebeles(kebeles);
+      return kebeles;
+    } catch {
+      setContractKebeles([]);
+      return [];
+    }
   };
   // Toast state
   const [toastOpen, setToastOpen] = useState(false);
@@ -349,9 +603,21 @@ export function AgenciesManagement({
   ) => {
     if (loading) return isAm ? "በማዘመን ላይ..." : "Updating...";
     if (isOrgHrManager) {
-      return doc.isVerified ? (isAm ? "የተረጋገጠ" : "Verified") : (isAm ? "አዘምን" : "Update");
+      return doc.isVerified
+        ? isAm
+          ? "የተረጋገጠ"
+          : "Verified"
+        : isAm
+          ? "አዘምን"
+          : "Update";
     }
-    return doc.isVerified ? (isAm ? "ያልተረጋገጠ አድርግ" : "Mark Unverified") : (isAm ? "የተረጋገጠ አድርግ" : "Mark Verified");
+    return doc.isVerified
+      ? isAm
+        ? "ያልተረጋገጠ አድርግ"
+        : "Mark Unverified"
+      : isAm
+        ? "የተረጋገጠ አድርግ"
+        : "Mark Verified";
   };
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -466,25 +732,112 @@ export function AgenciesManagement({
     setAddressLoading(false);
   }, [selectedEmployee]);
 
-  // Fetch regions when append contract modal opens
+  // Fetch regions when append contract modal opens and hydrate the saved address hierarchy for edits
   useEffect(() => {
-    if (showAppendContract) {
-      fetchContractRegions();
-      setContractZones([]);
-      setContractWoredas([]);
-      setContractKebeles([]);
+    if (!showAppendContract) {
+      return;
     }
-  }, [showAppendContract]);
+
+    const loadLocationHierarchy = async () => {
+      const regions = await fetchContractRegions();
+      const regionValue = newContract.region?.trim();
+      const zoneValue = newContract.zone?.trim();
+      const woredaValue = newContract.woreda?.trim();
+      const kebeleValue = newContract.kebele?.trim();
+
+      if (!regionValue) {
+        setContractZones([]);
+        setContractWoredas([]);
+        setContractKebeles([]);
+        return;
+      }
+
+      const region = regions.find(
+        (r: any) =>
+          (r.nameEnglish || r.name || String(r.id)) === regionValue ||
+          String(r.id) === regionValue,
+      );
+
+      if (!region?.id) {
+        setContractZones([]);
+        setContractWoredas([]);
+        setContractKebeles([]);
+        return;
+      }
+
+      const zones = await fetchContractZones(region.id);
+      if (!zoneValue) {
+        setContractWoredas([]);
+        setContractKebeles([]);
+        return;
+      }
+
+      const zone = zones.find(
+        (z: any) =>
+          (z.nameEnglish || z.name || String(z.id)) === zoneValue ||
+          String(z.id) === zoneValue,
+      );
+
+      if (!zone?.id) {
+        setContractWoredas([]);
+        setContractKebeles([]);
+        return;
+      }
+
+      const woredas = await fetchContractWoredas(zone.id);
+      if (!woredaValue) {
+        setContractKebeles([]);
+        return;
+      }
+
+      const woreda = woredas.find(
+        (w: any) =>
+          (w.nameEnglish || w.name || String(w.id)) === woredaValue ||
+          String(w.id) === woredaValue,
+      );
+
+      if (!woreda?.id) {
+        setContractKebeles([]);
+        return;
+      }
+
+      if (kebeleValue) {
+        await fetchContractKebeles(woreda.id);
+      } else {
+        setContractKebeles([]);
+      }
+    };
+
+    loadLocationHierarchy();
+  }, [
+    showAppendContract,
+    newContract.region,
+    newContract.zone,
+    newContract.woreda,
+    newContract.kebele,
+  ]);
 
   // Close address dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       Object.entries(contractRefs).forEach(([key, ref]) => {
         if (ref.current && !ref.current.contains(e.target as Node)) {
-          if (key === "region") { setRegionOpen(false); setRegionSearch(""); }
-          if (key === "zone") { setZoneOpen(false); setZoneSearch(""); }
-          if (key === "woreda") { setWoredaOpen(false); setWoredaSearch(""); }
-          if (key === "kebele") { setKebeleOpen(false); setKebeleSearch(""); }
+          if (key === "region") {
+            setRegionOpen(false);
+            setRegionSearch("");
+          }
+          if (key === "zone") {
+            setZoneOpen(false);
+            setZoneSearch("");
+          }
+          if (key === "woreda") {
+            setWoredaOpen(false);
+            setWoredaSearch("");
+          }
+          if (key === "kebele") {
+            setKebeleOpen(false);
+            setKebeleSearch("");
+          }
         }
       });
     };
@@ -494,8 +847,16 @@ export function AgenciesManagement({
 
   // Fetch zones when region changes
   const handleContractRegionChange = (value: string) => {
-    const region = contractRegions.find((r: any) => (r.nameEnglish || r.name) === value || String(r.id) === value);
-    setNewContract((prev: any) => ({ ...prev, region: value, zone: "", woreda: "", kebele: "" }));
+    const region = contractRegions.find(
+      (r: any) => (r.nameEnglish || r.name) === value || String(r.id) === value,
+    );
+    setNewContract((prev: any) => ({
+      ...prev,
+      region: value,
+      zone: "",
+      woreda: "",
+      kebele: "",
+    }));
     if (region?.id) fetchContractZones(region.id);
     else setContractZones([]);
     setContractWoredas([]);
@@ -504,8 +865,15 @@ export function AgenciesManagement({
 
   // Fetch woredas when zone changes
   const handleContractZoneChange = (value: string) => {
-    const zone = contractZones.find((z: any) => (z.nameEnglish || z.name) === value || String(z.id) === value);
-    setNewContract((prev: any) => ({ ...prev, zone: value, woreda: "", kebele: "" }));
+    const zone = contractZones.find(
+      (z: any) => (z.nameEnglish || z.name) === value || String(z.id) === value,
+    );
+    setNewContract((prev: any) => ({
+      ...prev,
+      zone: value,
+      woreda: "",
+      kebele: "",
+    }));
     if (zone?.id) fetchContractWoredas(zone.id);
     else setContractWoredas([]);
     setContractKebeles([]);
@@ -513,7 +881,9 @@ export function AgenciesManagement({
 
   // Fetch kebeles when woreda changes
   const handleContractWoredaChange = (value: string) => {
-    const woreda = contractWoredas.find((w: any) => (w.nameEnglish || w.name) === value || String(w.id) === value);
+    const woreda = contractWoredas.find(
+      (w: any) => (w.nameEnglish || w.name) === value || String(w.id) === value,
+    );
     setNewContract((prev: any) => ({ ...prev, woreda: value, kebele: "" }));
     if (woreda?.id) fetchContractKebeles(woreda.id);
     else setContractKebeles([]);
@@ -553,6 +923,212 @@ export function AgenciesManagement({
     return "bg-gray-50 text-gray-600 border border-gray-200";
   };
 
+  const handleOpenContractModal = (contract?: ServiceContractMock | null) => {
+    if (contract) {
+      setEditingContractId(contract.id);
+      setNewContract({
+        serviceUserName: contract.serviceUserName,
+        region: contract.region || "",
+        zone: contract.zone || "",
+        woreda: contract.woreda || "",
+        kebele: contract.kebele || "",
+        houseNumber: contract.houseNumber || "",
+        specialLocation: contract.specialLocation || "",
+        assignedPersonnelCount: contract.assignedPersonnelCount,
+        status: contract.status || "Active",
+        contractStartDate: contract.createdAt || "",
+        terminatedAt: contract.terminatedAt || "",
+        contractDoc: null,
+      });
+    } else {
+      setEditingContractId(null);
+      setNewContract(createEmptyContractForm());
+    }
+    setShowAppendContract(true);
+  };
+
+  const handleCloseContractModal = () => {
+    setShowAppendContract(false);
+    setEditingContractId(null);
+    setNewContract(createEmptyContractForm());
+  };
+
+  const validateNewContract = (isEditMode = false) => {
+    const errors: string[] = [];
+    if (!newContract.serviceUserName.trim()) {
+      errors.push(isAm ? "የደንበኛ ስም አስፈላጊ ነው።" : "Client name is required.");
+    }
+    if (!isEditMode) {
+      if (
+        !newContract.region ||
+        !newContract.zone ||
+        !newContract.woreda ||
+        !newContract.kebele
+      ) {
+        errors.push(
+          isAm
+            ? "ሙሉ የአድራሻ ምርጫ ያስፈልጋል።"
+            : "Complete address selection is required.",
+        );
+      }
+      if (!newContract.houseNumber.trim()) {
+        errors.push(isAm ? "የቤት ቁጥር አስፈላጊ ነው።" : "House number is required.");
+      }
+      if (!newContract.contractDoc) {
+        errors.push(
+          isAm ? "የውል ሰነድ አስፈላጊ ነው።" : "Contract document is required.",
+        );
+      }
+    }
+    if (!newContract.contractStartDate) {
+      errors.push(
+        isAm
+          ? "የውል መጀመሪያ ቀን እንዲሆን ያስፈልጋል።"
+          : "Contract start date is required.",
+      );
+    }
+    if (
+      newContract.terminatedAt &&
+      isNaN(new Date(newContract.terminatedAt).getTime())
+    ) {
+      errors.push(
+        isAm
+          ? "የተወሰነ የውል መዝጊያ ቀን ትክክል መሆን አለበት።"
+          : "Contract termination date must be valid.",
+      );
+    }
+    if (
+      !newContract.assignedPersonnelCount ||
+      newContract.assignedPersonnelCount <= 0
+    ) {
+      errors.push(
+        isAm
+          ? "የተመደቡ ጠባቂዎች ብዛት ከ0 በላይ ይሁን።"
+          : "Assigned personnel count must be greater than 0.",
+      );
+    }
+    return errors;
+  };
+
+  const handleSubmitServiceContract = async () => {
+    if (!selectedOrg) {
+      return;
+    }
+
+    const isEditMode = editingContractId !== null;
+    const errors = validateNewContract(isEditMode);
+    if (errors.length > 0) {
+      showToast("error", errors.join(" "));
+      return;
+    }
+
+    setIsSubmittingContract(true);
+    try {
+      const orgId = Number(organizationId);
+      const formData = new FormData();
+      formData.append("serviceUserName", newContract.serviceUserName.trim());
+      formData.append("status", newContract.status);
+      formData.append("contractStartDate", newContract.contractStartDate);
+      if (newContract.terminatedAt) {
+        formData.append("terminatedAt", newContract.terminatedAt);
+      }
+      formData.append(
+        "assignedPersonnelCount",
+        String(newContract.assignedPersonnelCount),
+      );
+      formData.append("houseNumber", newContract.houseNumber.trim());
+      formData.append("specialLocation", newContract.specialLocation.trim());
+      formData.append("region", newContract.region);
+      formData.append("zone", newContract.zone);
+      formData.append("woreda", newContract.woreda);
+      formData.append("kebele", newContract.kebele);
+      if (newContract.contractDoc) {
+        formData.append("contractDoc", newContract.contractDoc as File);
+      }
+
+      const endpoint = isEditMode
+        ? `/organizations/${orgId}/service-contracts/${editingContractId}`
+        : `/organizations/${orgId}/service-contracts`;
+      const res = await apiRequest(endpoint, {
+        method: isEditMode ? "PATCH" : "POST",
+        body: formData,
+      });
+
+      const saved = res?.data ?? res;
+      if (!saved || typeof saved !== "object") {
+        throw new Error(
+          isAm ? "የአገልግሎት ውል መልስ አልተገኘም።" : "Invalid server response.",
+        );
+      }
+
+      setSelectedOrg((prev) => {
+        if (!prev) return prev;
+        if (isEditMode) {
+          return {
+            ...prev,
+            serviceContracts: prev.serviceContracts.map((contract) =>
+              contract.id === editingContractId
+                ? {
+                    id: saved.id,
+                    serviceUserName: saved.serviceUserName,
+                    contractUrl: saved.contractUrl,
+                    assignedPersonnelCount: saved.assignedPersonnelCount,
+                    addressText: saved.addressText,
+                    status: saved.status,
+                    createdAt: saved.createdAt,
+                    updatedAt: saved.updatedAt,
+                    terminatedAt: saved.terminatedAt || saved.updatedAt,
+                  }
+                : contract,
+            ),
+          };
+        }
+
+        return {
+          ...prev,
+          serviceContracts: [
+            ...prev.serviceContracts,
+            {
+              id: saved.id,
+              serviceUserName: saved.serviceUserName,
+              contractUrl: saved.contractUrl,
+              assignedPersonnelCount: saved.assignedPersonnelCount,
+              addressText: saved.addressText,
+              status: saved.status,
+              createdAt: saved.createdAt,
+              updatedAt: saved.updatedAt,
+              terminatedAt: saved.terminatedAt || saved.updatedAt,
+            },
+          ],
+        };
+      });
+      setNewContract(createEmptyContractForm());
+      setEditingContractId(null);
+      setShowAppendContract(false);
+      showToast(
+        "success",
+        isEditMode
+          ? isAm
+            ? "ውል በትክክል ተሻሽሏል።"
+            : "Contract updated successfully."
+          : isAm
+            ? "ውል በትክክል ተወስዷል።"
+            : "Contract saved successfully.",
+      );
+    } catch (error: any) {
+      console.error("Failed to save service contract:", error);
+      showToast(
+        "error",
+        error?.message ||
+          (isAm
+            ? "የውል መዝግብ ላይ ስህተት ሆኗል።"
+            : "Failed to save contract. Please try again."),
+      );
+    } finally {
+      setIsSubmittingContract(false);
+    }
+  };
+
   const getDocumentBadgeStyle = (isVerified: boolean) =>
     isVerified
       ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
@@ -575,10 +1151,10 @@ export function AgenciesManagement({
   const translateDocStatus = (status: string) => {
     if (!isAm) return status;
     const map: Record<string, string> = {
-      "Permanent": "ቋሚ",
-      "Active": "ንቁ",
+      Permanent: "ቋሚ",
+      Active: "ንቁ",
       "Expiring Soon": "በቅርቡ የሚያልቅ",
-      "Expired": "ያለፈበት",
+      Expired: "ያለፈበት",
     };
     return map[status] || status;
   };
@@ -593,12 +1169,30 @@ export function AgenciesManagement({
   ];
   const eduStatRows = eduStatLabels.map(([en, am], i) => {
     const data = [
-      { male: org.educationStats.grade_3_9_male, female: org.educationStats.grade_3_9_female },
-      { male: org.educationStats.grade_10_12_male, female: org.educationStats.grade_10_12_female },
-      { male: org.educationStats.certificate_male, female: org.educationStats.certificate_female },
-      { male: org.educationStats.diploma_male, female: org.educationStats.diploma_female },
-      { male: org.educationStats.degree_male, female: org.educationStats.degree_female },
-      { male: org.educationStats.second_degree_male, female: org.educationStats.second_degree_female },
+      {
+        male: org.educationStats.grade_3_9_male,
+        female: org.educationStats.grade_3_9_female,
+      },
+      {
+        male: org.educationStats.grade_10_12_male,
+        female: org.educationStats.grade_10_12_female,
+      },
+      {
+        male: org.educationStats.certificate_male,
+        female: org.educationStats.certificate_female,
+      },
+      {
+        male: org.educationStats.diploma_male,
+        female: org.educationStats.diploma_female,
+      },
+      {
+        male: org.educationStats.degree_male,
+        female: org.educationStats.degree_female,
+      },
+      {
+        male: org.educationStats.second_degree_male,
+        female: org.educationStats.second_degree_female,
+      },
     ];
     return { label: isAm ? am : en, ...data[i] };
   });
@@ -854,34 +1448,81 @@ export function AgenciesManagement({
 
   // --- SearchableLocationSelect Component ---
   const SearchableLocationSelect = ({
-    label, placeholder, searchPlaceholder, value, options, disabled = false, isOpen, onToggle, onSelect, onClear, searchTerm, onSearchChange, innerRef,
+    label,
+    placeholder,
+    searchPlaceholder,
+    value,
+    options,
+    disabled = false,
+    isOpen,
+    onToggle,
+    onSelect,
+    onClear,
+    searchTerm,
+    onSearchChange,
+    innerRef,
   }: {
-    label: string; placeholder: string; searchPlaceholder: string; value: string; options: any[]; disabled?: boolean;
-    isOpen: boolean; onToggle: () => void; onSelect: (val: string) => void; onClear: () => void;
-    searchTerm: string; onSearchChange: (v: string) => void; innerRef: React.RefObject<HTMLDivElement | null>;
+    label: string;
+    placeholder: string;
+    searchPlaceholder: string;
+    value: string;
+    options: any[];
+    disabled?: boolean;
+    isOpen: boolean;
+    onToggle: () => void;
+    onSelect: (val: string) => void;
+    onClear: () => void;
+    searchTerm: string;
+    onSearchChange: (v: string) => void;
+    innerRef: React.RefObject<HTMLDivElement | null>;
   }) => {
-    const selected = options.find((o: any) => (o.nameEnglish || o.name || String(o.id)) === value);
-    const filtered = options.filter((o: any) => (getLocationName(o) || "").toLowerCase().includes(searchTerm.toLowerCase()));
+    const normalizeValue = (raw: string) => (raw || "").trim().toLowerCase();
+    const selected = options.find((o: any) => {
+      const optionValues = [o.nameEnglish, o.nameAmharic, o.name, String(o.id)];
+      return optionValues.some(
+        (item) => normalizeValue(String(item || "")) === normalizeValue(value),
+      );
+    });
+    const filtered = options.filter((o: any) =>
+      (getLocationName(o) || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()),
+    );
     return (
       <div ref={innerRef} className="relative">
         <div className="flex items-center justify-between mb-1">
-          <label className="text-[9px] uppercase tracking-[0.1em] font-bold text-[#003366]">{label} <span className="text-orange-500">*</span></label>
+          <label className="text-[9px] uppercase tracking-[0.1em] font-bold text-[#003366]">
+            {label} <span className="text-orange-500">*</span>
+          </label>
         </div>
-        <button type="button" disabled={disabled}
+        <button
+          type="button"
+          disabled={disabled}
           onClick={onToggle}
           className={`w-full px-3 py-2.5 rounded-xl border text-sm text-left flex items-center justify-between gap-2 transition-all relative ${disabled ? "bg-gray-50 text-gray-400 cursor-not-allowed" : "bg-white text-gray-700 hover:border-[#003366]/30 cursor-pointer"} ${isOpen ? "border-[#003366]/50 ring-2 ring-[#003366]/20" : "border-gray-200"}`}
         >
-          <span className={`truncate ${selected ? "font-bold text-[#003366]" : "text-gray-400"}`}>
+          <span
+            className={`truncate ${selected ? "font-bold text-[#003366]" : "text-gray-400"}`}
+          >
             {selected ? getLocationName(selected) : placeholder}
           </span>
           <span className="flex items-center gap-1 shrink-0">
             {selected ? (
-              <button type="button" onClick={(e) => { e.stopPropagation(); onClear(); }}
-                className="text-red-400 hover:text-red-600 transition-colors p-0.5" title="Clear">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClear();
+                }}
+                className="text-red-400 hover:text-red-600 transition-colors p-0.5"
+                title="Clear"
+              >
                 <X className="w-4 h-4" />
               </button>
             ) : (
-              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+              <ChevronDown
+                className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
+              />
             )}
           </span>
         </button>
@@ -889,33 +1530,50 @@ export function AgenciesManagement({
           <div className="absolute left-0 right-0 top-full z-30 mt-1 rounded-xl border border-gray-200 bg-white shadow-xl overflow-hidden">
             <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-2.5 bg-gray-50">
               <Search className="w-4 h-4 text-gray-400 shrink-0" />
-              <input type="text" value={searchTerm}
+              <input
+                type="text"
+                value={searchTerm}
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder={searchPlaceholder}
                 className="w-full bg-transparent outline-none text-sm text-gray-800 placeholder:text-gray-400"
                 autoFocus
               />
               {searchTerm && (
-                <button type="button" onClick={() => onSearchChange("")}
-                  className="shrink-0 p-0.5 rounded-full text-gray-400 hover:text-red-600 transition-colors">
+                <button
+                  type="button"
+                  onClick={() => onSearchChange("")}
+                  className="shrink-0 p-0.5 rounded-full text-gray-400 hover:text-red-600 transition-colors"
+                >
                   <X className="w-4 h-4" />
                 </button>
               )}
             </div>
             <div className="max-h-44 overflow-y-auto p-1.5">
-              {filtered.length > 0 ? filtered.map((o: any) => {
-                const val = o.nameEnglish || o.name || String(o.id);
-                return (
-                  <button key={o.id} type="button"
-                    onClick={() => { onSelect(val); }}
-                    className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all ${val === value ? "bg-[#003366]/10 text-[#003366] font-bold" : "text-gray-700 hover:bg-gray-100"}`}
-                  >
-                    {getLocationName(o)}
-                  </button>
-                );
-              }) : (
+              {filtered.length > 0 ? (
+                filtered.map((o: any) => {
+                  const val = o.nameEnglish || o.name || String(o.id);
+                  return (
+                    <button
+                      key={o.id}
+                      type="button"
+                      onClick={() => {
+                        onSelect(val);
+                      }}
+                      className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all ${val === value ? "bg-[#003366]/10 text-[#003366] font-bold" : "text-gray-700 hover:bg-gray-100"}`}
+                    >
+                      {getLocationName(o)}
+                    </button>
+                  );
+                })
+              ) : (
                 <div className="px-3 py-4 text-sm text-gray-400 text-center">
-                  {searchTerm ? (isAm ? "ምንም አማራጭ አልተገኘም" : "No matching options") : (isAm ? "ምንም አማራጭ የለም" : "No options available")}
+                  {searchTerm
+                    ? isAm
+                      ? "ምንም አማራጭ አልተገኘም"
+                      : "No matching options"
+                    : isAm
+                      ? "ምንም አማራጭ የለም"
+                      : "No options available"}
                 </div>
               )}
             </div>
@@ -942,7 +1600,8 @@ export function AgenciesManagement({
               onClick={onBack}
               className="text-xs font-bold text-[#FFD700] hover:text-[#FFD700]/80 flex items-center gap-1 transition-colors"
             >
-              <ArrowLeft className="w-3.5 h-3.5" /> {isAm ? "ወደ ድርጅቶች ተመለስ" : "Back to Organizations"}
+              <ArrowLeft className="w-3.5 h-3.5" />{" "}
+              {isAm ? "ወደ ድርጅቶች ተመለስ" : "Back to Organizations"}
             </motion.button>
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl bg-[#FFD700] flex items-center justify-center shrink-0 shadow-md">
@@ -962,7 +1621,8 @@ export function AgenciesManagement({
                 </h2>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
                   <span className="inline-flex items-center gap-1.5 text-[11px] font-bold bg-white/10 text-white px-2.5 py-1 rounded-full border border-white/20">
-                    <FileText size={14} /> {isAm ? "ቲን" : "TIN"}: {org.tinNumber}
+                    <FileText size={14} /> {isAm ? "ቲን" : "TIN"}:{" "}
+                    {org.tinNumber}
                   </span>
                 </div>
               </div>
@@ -982,13 +1642,21 @@ export function AgenciesManagement({
       <div className="bg-white border border-gray-200 border-b-0 rounded-t-xl px-6 pt-2 mb-6">
         <nav className="flex gap-6 overflow-x-auto">
           {[
-            { id: "overview", label: isAm ? "አጠቃላይ እይታ" : "Overview", icon: Building2 },
+            {
+              id: "overview",
+              label: isAm ? "አጠቃላይ እይታ" : "Overview",
+              icon: Building2,
+            },
             {
               id: "personnel",
               label: `${isAm ? "ሰራተኞች" : "HR & Personnel"} (${org.employees.length})`,
               icon: Users,
             },
-            { id: "compliance", label: isAm ? "የትምህርት ስታቲስቲክስ" : "Education Stats", icon: GraduationCap },
+            {
+              id: "compliance",
+              label: isAm ? "የትምህርት ስታቲስቲክስ" : "Education Stats",
+              icon: GraduationCap,
+            },
             {
               id: "training",
               label: `${isAm ? "የስልጠና ዝርዝሮች" : "Training Details"} (${org.trainingDetails.length})`,
@@ -1036,25 +1704,52 @@ export function AgenciesManagement({
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { title: isAm ? "ጠቅላላ ካፒታል (ETB)" : "Total Capital (ETB)", value: org.capitalAmount, icon: Briefcase, delay: 0.1 },
-                { title: isAm ? "የተመዘገቡ ተሽከርካሪዎች" : "Registered Vehicles", value: org.numberOfVehicles, icon: Car, delay: 0.2 },
-                { title: isAm ? "የተመዘገቡ ኮምፒውተሮች" : "Registered Computers", value: org.numberOfComputers, icon: Monitor, delay: 0.3 },
-                { title: isAm ? "የቢሮዎች ብዛት" : "Number of Offices", value: org.numberOfOffices, icon: MapPin, delay: 0.4 },
+                {
+                  title: isAm ? "ጠቅላላ ካፒታል (ETB)" : "Total Capital (ETB)",
+                  value: org.capitalAmount,
+                  icon: Briefcase,
+                  delay: 0.1,
+                },
+                {
+                  title: isAm ? "የተመዘገቡ ተሽከርካሪዎች" : "Registered Vehicles",
+                  value: org.numberOfVehicles,
+                  icon: Car,
+                  delay: 0.2,
+                },
+                {
+                  title: isAm ? "የተመዘገቡ ኮምፒውተሮች" : "Registered Computers",
+                  value: org.numberOfComputers,
+                  icon: Monitor,
+                  delay: 0.3,
+                },
+                {
+                  title: isAm ? "የቢሮዎች ብዛት" : "Number of Offices",
+                  value: org.numberOfOffices,
+                  icon: MapPin,
+                  delay: 0.4,
+                },
               ].map((card) => (
                 <motion.div
                   key={card.title}
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: card.delay }}
-                  whileHover={{ y: -4, boxShadow: "0 12px 24px rgba(0,51,102,0.12)" }}
+                  whileHover={{
+                    y: -4,
+                    boxShadow: "0 12px 24px rgba(0,51,102,0.12)",
+                  }}
                   className="bg-gradient-to-br from-white to-[#f8faff] p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 hover:border-[#FFD700]/40 transition-all duration-300"
                 >
                   <div className="p-3 rounded-lg bg-gradient-to-br from-[#003366] to-[#001F3F] shrink-0">
                     <card.icon className="h-6 w-6 text-[#FFD700]" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-[#003366] uppercase tracking-wider">{card.title}</p>
-                    <p className="text-xl font-bold text-slate-900 mt-0.5">{card.value}</p>
+                    <p className="text-sm font-bold text-[#003366] uppercase tracking-wider">
+                      {card.title}
+                    </p>
+                    <p className="text-xl font-bold text-slate-900 mt-0.5">
+                      {card.value}
+                    </p>
                   </div>
                 </motion.div>
               ))}
@@ -1075,10 +1770,40 @@ export function AgenciesManagement({
               <div className="bg-white border border-gray-200 border-t-0 rounded-b-xl p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8">
                   {[
-                    { icon: Phone, label: isAm ? "ኦፊሴላዊ ስልክ ቁጥር" : "Official Phone Number", value: org.phone, delay: 0.3 },
-                    { icon: Mail, label: isAm ? "ኦፊሴላዊ የኢሜይል አድራሻ" : "Official Email Address", value: org.email, delay: 0.35 },
-                    { icon: Phone, label: isAm ? "ኦፊሴላዊ የፋክስ ቁጥር" : "Official Fax number", value: org.fax || (isAm ? "የለም" : "N/A"), delay: 0.4 },
-                    { icon: Shield, label: isAm ? "መጋዘን / የጦር መሳሪያ ክምችት" : "Store House / Armory", value: org.hasStoreHouse ? (isAm ? "አዎ፣ የተረጋገጠ ደህንነቱ የተጠበቀ ተቋም" : "Yes, Verified Secure Facility") : (isAm ? "ምንም አልተመዘገበም" : "None Registered"), delay: 0.45 },
+                    {
+                      icon: Phone,
+                      label: isAm ? "ኦፊሴላዊ ስልክ ቁጥር" : "Official Phone Number",
+                      value: org.phone,
+                      delay: 0.3,
+                    },
+                    {
+                      icon: Mail,
+                      label: isAm
+                        ? "ኦፊሴላዊ የኢሜይል አድራሻ"
+                        : "Official Email Address",
+                      value: org.email,
+                      delay: 0.35,
+                    },
+                    {
+                      icon: Phone,
+                      label: isAm ? "ኦፊሴላዊ የፋክስ ቁጥር" : "Official Fax number",
+                      value: org.fax || (isAm ? "የለም" : "N/A"),
+                      delay: 0.4,
+                    },
+                    {
+                      icon: Shield,
+                      label: isAm
+                        ? "መጋዘን / የጦር መሳሪያ ክምችት"
+                        : "Store House / Armory",
+                      value: org.hasStoreHouse
+                        ? isAm
+                          ? "አዎ፣ የተረጋገጠ ደህንነቱ የተጠበቀ ተቋም"
+                          : "Yes, Verified Secure Facility"
+                        : isAm
+                          ? "ምንም አልተመዘገበም"
+                          : "None Registered",
+                      delay: 0.45,
+                    },
                   ].map((field) => (
                     <motion.div
                       key={field.label}
@@ -1093,9 +1818,7 @@ export function AgenciesManagement({
                         </span>
                         {field.label}
                       </label>
-                      <p className="text-gray-900 pl-9">
-                        {field.value}
-                      </p>
+                      <p className="text-gray-900 pl-9">{field.value}</p>
                     </motion.div>
                   ))}
                 </div>
@@ -1131,7 +1854,8 @@ export function AgenciesManagement({
                         {isAm ? "የቅርንጫፍ ቢሮ አድራሻዎች" : "Branch Office Addresses"}
                       </h4>
                       <span className="text-[10px] font-bold text-[#003366] bg-[#003366]/5 border border-[#003366]/10 px-2 py-0.5 rounded-full">
-                        {org.branches.length} {isAm ? "ቅርንጫፍ" : "branch"}{org.branches.length > 1 ? (isAm ? "ዎች" : "es") : ""}
+                        {org.branches.length} {isAm ? "ቅርንጫፍ" : "branch"}
+                        {org.branches.length > 1 ? (isAm ? "ዎች" : "es") : ""}
                       </span>
                     </div>
                     <div className="space-y-2">
@@ -1162,22 +1886,25 @@ export function AgenciesManagement({
             className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
           >
             <div className="bg-gradient-to-r from-[#003366] to-[#001F3F] border-t-4 border-[#FFD700]">
-            <div className="p-4 flex justify-between items-center">
-              <span className="font-bold text-sm text-white">
-                {isAm ? "ንቁ የሰራተኞች ዳይሬክተሪ" : "Active Operational Personnel Directory"}
-              </span>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                type="button"
-                onClick={() =>
-                  navigate("/org-hr-manager/employee-registration")
-                }
-                className="px-3 py-1.5 bg-[#FFD700] text-[#003366] hover:bg-[#FFD700]/90 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm"
-              >
-                <UserPlus size={14} /> {isAm ? "ሰራተኛ ይመዝገቡ" : "Register Employee"}
-              </motion.button>
-            </div>
+              <div className="p-4 flex justify-between items-center">
+                <span className="font-bold text-sm text-white">
+                  {isAm
+                    ? "ንቁ የሰራተኞች ዳይሬክተሪ"
+                    : "Active Operational Personnel Directory"}
+                </span>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  type="button"
+                  onClick={() =>
+                    navigate("/org-hr-manager/employee-registration")
+                  }
+                  className="px-3 py-1.5 bg-[#FFD700] text-[#003366] hover:bg-[#FFD700]/90 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm"
+                >
+                  <UserPlus size={14} />{" "}
+                  {isAm ? "ሰራተኛ ይመዝገቡ" : "Register Employee"}
+                </motion.button>
+              </div>
             </div>
             <div className="p-4 border-b border-gray-200 bg-gray-50/50 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
               <div className="relative flex-1 max-w-sm">
@@ -1199,11 +1926,19 @@ export function AgenciesManagement({
                 >
                   <option value="ALL">{isAm ? "ሁሉም" : "All Status"}</option>
                   <option value="Active">{isAm ? "ንቁ" : "Active"}</option>
-                  <option value="Inactive">{isAm ? "የማይንቀሳቀስ" : "Inactive"}</option>
+                  <option value="Inactive">
+                    {isAm ? "የማይንቀሳቀስ" : "Inactive"}
+                  </option>
                   <option value="Approved">{isAm ? "የጸደቀ" : "Approved"}</option>
-                  <option value="Pending">{isAm ? "በመጠባበቅ ላይ" : "Pending"}</option>
-                  <option value="Rejected">{isAm ? "አልተቀበለም" : "Rejected"}</option>
-                  <option value="Suspended">{isAm ? "የታገደ" : "Suspended"}</option>
+                  <option value="Pending">
+                    {isAm ? "በመጠባበቅ ላይ" : "Pending"}
+                  </option>
+                  <option value="Rejected">
+                    {isAm ? "አልተቀበለም" : "Rejected"}
+                  </option>
+                  <option value="Suspended">
+                    {isAm ? "የታገደ" : "Suspended"}
+                  </option>
                 </select>
               </div>
             </div>
@@ -1211,91 +1946,125 @@ export function AgenciesManagement({
               <table className="w-full text-left border-collapse text-sm">
                 <thead>
                   <tr className="bg-[#003366] text-white text-[11px] uppercase tracking-[0.2em]">
-                    <th className="p-4">{isAm ? "የሰራተኛ ሙሉ ስም" : "Employee FULL Name"}</th>
-                    <th className="p-4">{isAm ? "የተሰጠ ሀላፊነት" : "Assigned Position"}</th>
-                    <th className="p-4">{isAm ? "የፋይዳ ቁጥር" : "Fayda Number (FAN)"}</th>
-                    <th className="p-4">{isAm ? "የስራ ልምድ" : "Work Experience"}</th>
-                    <th className="p-4">{isAm ? "ሁኔታ እና ማረጋገጫ" : "Status & Clearances"}</th>
+                    <th className="p-4">
+                      {isAm ? "የሰራተኛ ሙሉ ስም" : "Employee FULL Name"}
+                    </th>
+                    <th className="p-4">
+                      {isAm ? "የተሰጠ ሀላፊነት" : "Assigned Position"}
+                    </th>
+                    <th className="p-4">
+                      {isAm ? "የፋይዳ ቁጥር" : "Fayda Number (FAN)"}
+                    </th>
+                    <th className="p-4">
+                      {isAm ? "የስራ ልምድ" : "Work Experience"}
+                    </th>
+                    <th className="p-4">
+                      {isAm ? "ሁኔታ እና ማረጋገጫ" : "Status & Clearances"}
+                    </th>
                     <th className="p-4">{isAm ? "ድርጊት" : "Action"}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 text-gray-700">
                   {(() => {
                     const filtered = org.employees.filter((emp) => {
-                      const matchesSearch = emp.fullName.toLowerCase().includes(personnelSearch.toLowerCase());
-                      const matchesFilter = personnelFilter === "ALL" || (emp.employmentStatus ?? "").toLowerCase() === personnelFilter.toLowerCase();
+                      const matchesSearch = emp.fullName
+                        .toLowerCase()
+                        .includes(personnelSearch.toLowerCase());
+                      const matchesFilter =
+                        personnelFilter === "ALL" ||
+                        (emp.employmentStatus ?? "").toLowerCase() ===
+                          personnelFilter.toLowerCase();
                       return matchesSearch && matchesFilter;
                     });
                     return filtered.map((emp, idx) => (
-                    <motion.tr
-                      key={emp.id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.2 + idx * 0.03 }}
-                      whileHover={{ backgroundColor: "rgba(0,51,102,0.02)" }}
-                      className="transition-colors"
-                    >
-                      <td className="p-4">
-                        <div className="font-bold text-[#003366]">
-                          {emp.fullName}
-                        </div>
-                        <div className="text-xs text-gray-400 mt-0.5">
-                          {emp.email}
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-1.5 font-medium text-gray-800">
-                          <User size={14} className="text-[#003366]/40" /> {emp.positionName}
-                        </div>
-                      </td>
-                      <td className="p-4 text-xs space-y-0.5">
-                        <p>
-                          <span className="text-gray-400">{isAm ? "ፋይዳ:" : "FAN:"} </span>{" "}
-                          {emp.faydaId}
-                        </p>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-1 font-medium text-gray-900">
-                          <Clock size={14} className="text-[#003366]/40" />
-                          <span>{emp.workExpYears} {isAm ? "ዓመታት" : "Years"}</span>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex flex-col gap-1.5 items-start">
-                          <span
-                            className={`px-2 py-0.5 rounded text-xs font-semibold ${
-                              emp.employmentStatus === "Active"
-                                ? "bg-green-50 text-green-700 border border-green-200"
-                                : emp.employmentStatus === "Inactive"
-                                  ? "bg-gray-100 text-gray-600 border border-gray-200"
-                                  : emp.employmentStatus === "Approved"
-                                    ? "bg-blue-50 text-blue-700 border border-blue-200"
-                                    : emp.employmentStatus === "Pending"
-                                      ? "bg-amber-50 text-amber-700 border border-amber-200"
-                                      : emp.employmentStatus === "Rejected"
-                                        ? "bg-red-50 text-red-700 border border-red-200"
-                                        : emp.employmentStatus === "Suspended"
-                                          ? "bg-purple-50 text-purple-700 border border-purple-200"
-                                          : "bg-amber-50 text-amber-700 border border-amber-200"
-                            }`}
+                      <motion.tr
+                        key={emp.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.2 + idx * 0.03 }}
+                        whileHover={{ backgroundColor: "rgba(0,51,102,0.02)" }}
+                        className="transition-colors"
+                      >
+                        <td className="p-4">
+                          <div className="font-bold text-[#003366]">
+                            {emp.fullName}
+                          </div>
+                          <div className="text-xs text-gray-400 mt-0.5">
+                            {emp.email}
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-1.5 font-medium text-gray-800">
+                            <User size={14} className="text-[#003366]/40" />{" "}
+                            {emp.positionName}
+                          </div>
+                        </td>
+                        <td className="p-4 text-xs space-y-0.5">
+                          <p>
+                            <span className="text-gray-400">
+                              {isAm ? "ፋይዳ:" : "FAN:"}{" "}
+                            </span>{" "}
+                            {emp.faydaId}
+                          </p>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-1 font-medium text-gray-900">
+                            <Clock size={14} className="text-[#003366]/40" />
+                            <span>
+                              {emp.workExpYears} {isAm ? "ዓመታት" : "Years"}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex flex-col gap-1.5 items-start">
+                            <span
+                              className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                                emp.employmentStatus === "Active"
+                                  ? "bg-green-50 text-green-700 border border-green-200"
+                                  : emp.employmentStatus === "Inactive"
+                                    ? "bg-gray-100 text-gray-600 border border-gray-200"
+                                    : emp.employmentStatus === "Approved"
+                                      ? "bg-blue-50 text-blue-700 border border-blue-200"
+                                      : emp.employmentStatus === "Pending"
+                                        ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                        : emp.employmentStatus === "Rejected"
+                                          ? "bg-red-50 text-red-700 border border-red-200"
+                                          : emp.employmentStatus === "Suspended"
+                                            ? "bg-purple-50 text-purple-700 border border-purple-200"
+                                            : "bg-amber-50 text-amber-700 border border-amber-200"
+                              }`}
+                            >
+                              {emp.employmentStatus === "Active" && isAm
+                                ? "ንቁ"
+                                : emp.employmentStatus === "Inactive" && isAm
+                                  ? "የማይንቀሳቀስ"
+                                  : emp.employmentStatus === "Approved" && isAm
+                                    ? "የጸደቀ"
+                                    : emp.employmentStatus === "Pending" && isAm
+                                      ? "በመጠባበቅ ላይ"
+                                      : emp.employmentStatus === "Rejected" &&
+                                          isAm
+                                        ? "አልተቀበለም"
+                                        : emp.employmentStatus ===
+                                              "Suspended" && isAm
+                                          ? "የታገደ"
+                                          : emp.employmentStatus}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-4 text-right">
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            type="button"
+                            onClick={() => setSelectedEmployee(emp)}
+                            className="px-3 py-1.5 bg-[#003366] text-[#FFD700] rounded-lg text-xs font-bold hover:shadow-md transition-shadow"
                           >
-                            {emp.employmentStatus === "Active" && isAm ? "ንቁ" : emp.employmentStatus === "Inactive" && isAm ? "የማይንቀሳቀስ" : emp.employmentStatus === "Approved" && isAm ? "የጸደቀ" : emp.employmentStatus === "Pending" && isAm ? "በመጠባበቅ ላይ" : emp.employmentStatus === "Rejected" && isAm ? "አልተቀበለም" : emp.employmentStatus === "Suspended" && isAm ? "የታገደ" : emp.employmentStatus}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="p-4 text-right">
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          type="button"
-                          onClick={() => setSelectedEmployee(emp)}
-                          className="px-3 py-1.5 bg-[#003366] text-[#FFD700] rounded-lg text-xs font-bold hover:shadow-md transition-shadow"
-                        >
-                          {isAm ? "ዝርዝር እይታ" : "Detail View"}
-                        </motion.button>
-                      </td>
-                    </motion.tr>
-                  ));
+                            {isAm ? "ዝርዝር እይታ" : "Detail View"}
+                          </motion.button>
+                        </td>
+                      </motion.tr>
+                    ));
                   })()}
                 </tbody>
               </table>
@@ -1318,10 +2087,18 @@ export function AgenciesManagement({
             <table className="w-full text-left border-collapse text-sm">
               <thead>
                 <tr className="bg-[#003366] text-white font-bold text-xs uppercase tracking-wider">
-                  <th className="p-4">{isAm ? "የትምህርት ደረጃ" : "Education Level"}</th>
-                  <th className="p-4 text-center">{isAm ? "ወንድ" : "Number of Males"}</th>
-                  <th className="p-4 text-center">{isAm ? "ሴት" : "Number of Females"}</th>
-                  <th className="p-4 text-right">{isAm ? "አጠቃላይ" : "Sub-Total"}</th>
+                  <th className="p-4">
+                    {isAm ? "የትምህርት ደረጃ" : "Education Level"}
+                  </th>
+                  <th className="p-4 text-center">
+                    {isAm ? "ወንድ" : "Number of Males"}
+                  </th>
+                  <th className="p-4 text-center">
+                    {isAm ? "ሴት" : "Number of Females"}
+                  </th>
+                  <th className="p-4 text-right">
+                    {isAm ? "አጠቃላይ" : "Sub-Total"}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 text-gray-700">
@@ -1334,17 +2111,27 @@ export function AgenciesManagement({
                     whileHover={{ backgroundColor: "rgba(0,51,102,0.02)" }}
                     className="transition-colors"
                   >
-                    <td className="p-4 font-bold text-[#003366]">{row.label}</td>
-                    <td className="p-4 text-center text-blue-600 font-medium">{row.male}</td>
-                    <td className="p-4 text-center text-pink-600 font-medium">{row.female}</td>
-                    <td className="p-4 text-right font-bold text-gray-800">{row.male + row.female}</td>
+                    <td className="p-4 font-bold text-[#003366]">
+                      {row.label}
+                    </td>
+                    <td className="p-4 text-center text-blue-600 font-medium">
+                      {row.male}
+                    </td>
+                    <td className="p-4 text-center text-pink-600 font-medium">
+                      {row.female}
+                    </td>
+                    <td className="p-4 text-right font-bold text-gray-800">
+                      {row.male + row.female}
+                    </td>
                   </motion.tr>
                 ))}
                 <tr className="bg-[#003366]/5 text-[#003366] font-bold">
                   <td className="p-4">{isAm ? "ድምር" : "Total"}</td>
                   <td className="p-4 text-center">{educationTotals.male}</td>
                   <td className="p-4 text-center">{educationTotals.female}</td>
-                  <td className="p-4 text-right">{educationTotals.male + educationTotals.female}</td>
+                  <td className="p-4 text-right">
+                    {educationTotals.male + educationTotals.female}
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -1366,10 +2153,14 @@ export function AgenciesManagement({
               >
                 <BookOpen className="mx-auto mb-4 text-slate-400" size={32} />
                 <p className="text-lg font-bold text-[#003366]">
-                  {isAm ? "እስካሁን የስልጠና ዝርዝሮች የሉም" : "No training details available yet"}
+                  {isAm
+                    ? "እስካሁን የስልጠና ዝርዝሮች የሉም"
+                    : "No training details available yet"}
                 </p>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  {isAm ? "የስልጠና መረጃዎች ከተዛማጅ መተግበሪያዎች የተሰበሰቡ ናቸው" : "Training records are loaded from related applications and help you review the trainee cohort, venue, and timeline."}
+                  {isAm
+                    ? "የስልጠና መረጃዎች ከተዛማጅ መተግበሪያዎች የተሰበሰቡ ናቸው"
+                    : "Training records are loaded from related applications and help you review the trainee cohort, venue, and timeline."}
                 </p>
               </motion.div>
             ) : (
@@ -1377,17 +2168,39 @@ export function AgenciesManagement({
                 <table className="min-w-full border-collapse text-sm">
                   <thead>
                     <tr className="bg-[#003366] text-white text-[11px] uppercase tracking-[0.2em]">
-                      <th className="p-4 text-left">{isAm ? "የስልጠና ተቋም" : "Training Body"}</th>
-                      <th className="p-4 text-left">{isAm ? "ቦታ" : "Location"}</th>
-                      <th className="p-4 text-center">{isAm ? "ቆይታ" : "Duration"}</th>
-                      <th className="p-4 text-center">{isAm ? "የመጀመሪያ ቀን" : "Start Date"}</th>
-                      <th className="p-4 text-center">{isAm ? "የማጠናቀቂያ ቀን" : "End Date"}</th>
-                      <th className="p-4 text-center">{isAm ? "ወንድ የሰለጠኑ" : "Male Trained"}</th>
-                      <th className="p-4 text-center">{isAm ? "ሴት የሰለጠኑ" : "Female Trained"}</th>
-                      <th className="p-4 text-center">{isAm ? "ያልሰለጠኑ ወንድ" : "Male Not Trained"}</th>
-                      <th className="p-4 text-center">{isAm ? "ያልሰለጠኑ ሴት" : "Female Not Trained"}</th>
-                      <th className="p-4 text-center">{isAm ? "ድምር" : "Total"}</th>
-                      <th className="p-4 text-right">{isAm ? "ስኬት" : "Success"}</th>
+                      <th className="p-4 text-left">
+                        {isAm ? "የስልጠና ተቋም" : "Training Body"}
+                      </th>
+                      <th className="p-4 text-left">
+                        {isAm ? "ቦታ" : "Location"}
+                      </th>
+                      <th className="p-4 text-center">
+                        {isAm ? "ቆይታ" : "Duration"}
+                      </th>
+                      <th className="p-4 text-center">
+                        {isAm ? "የመጀመሪያ ቀን" : "Start Date"}
+                      </th>
+                      <th className="p-4 text-center">
+                        {isAm ? "የማጠናቀቂያ ቀን" : "End Date"}
+                      </th>
+                      <th className="p-4 text-center">
+                        {isAm ? "ወንድ የሰለጠኑ" : "Male Trained"}
+                      </th>
+                      <th className="p-4 text-center">
+                        {isAm ? "ሴት የሰለጠኑ" : "Female Trained"}
+                      </th>
+                      <th className="p-4 text-center">
+                        {isAm ? "ያልሰለጠኑ ወንድ" : "Male Not Trained"}
+                      </th>
+                      <th className="p-4 text-center">
+                        {isAm ? "ያልሰለጠኑ ሴት" : "Female Not Trained"}
+                      </th>
+                      <th className="p-4 text-center">
+                        {isAm ? "ድምር" : "Total"}
+                      </th>
+                      <th className="p-4 text-right">
+                        {isAm ? "ስኬት" : "Success"}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 text-slate-700">
@@ -1409,7 +2222,9 @@ export function AgenciesManagement({
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: 0.2 + idx * 0.03 }}
-                          whileHover={{ backgroundColor: "rgba(0,51,102,0.02)" }}
+                          whileHover={{
+                            backgroundColor: "rgba(0,51,102,0.02)",
+                          }}
                           className="transition-colors"
                         >
                           <td className="p-4 font-bold text-[#003366]">
@@ -1461,24 +2276,46 @@ export function AgenciesManagement({
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
-                { title: isAm ? "ንቁ የአገልግሎት ውሎች" : "Active Service Contracts", value: `${org.serviceContracts.length} ${isAm ? "የድርጅት ደንበኞች" : "Corporate Clients"}`, icon: FileCheck, delay: 0.1 },
-                { title: isAm ? "የተሰማራ የጥበቃ ሃይል" : "Deployed Guard Strength", value: `${totalContractedPersonnel} ${isAm ? "ሰራተኞች" : "Personnel"}`, icon: Users, delay: 0.2 },
-                { title: isAm ? "የአሰራር አጠቃቀም" : "Operational Utilization", value: isAm ? "100% ንቁ" : "100% Active", icon: Building2, delay: 0.3 },
+                {
+                  title: isAm ? "ንቁ የአገልግሎት ውሎች" : "Active Service Contracts",
+                  value: `${org.serviceContracts.length} ${isAm ? "የድርጅት ደንበኞች" : "Corporate Clients"}`,
+                  icon: FileCheck,
+                  delay: 0.1,
+                },
+                {
+                  title: isAm ? "የተሰማራ የጥበቃ ሃይል" : "Deployed Guard Strength",
+                  value: `${totalContractedPersonnel} ${isAm ? "ሰራተኞች" : "Personnel"}`,
+                  icon: Users,
+                  delay: 0.2,
+                },
+                {
+                  title: isAm ? "የአሰራር አጠቃቀም" : "Operational Utilization",
+                  value: isAm ? "100% ንቁ" : "100% Active",
+                  icon: Building2,
+                  delay: 0.3,
+                },
               ].map((card) => (
                 <motion.div
                   key={card.title}
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: card.delay }}
-                  whileHover={{ y: -4, boxShadow: "0 12px 24px rgba(0,51,102,0.12)" }}
+                  whileHover={{
+                    y: -4,
+                    boxShadow: "0 12px 24px rgba(0,51,102,0.12)",
+                  }}
                   className="bg-gradient-to-br from-white to-[#f8faff] p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 hover:border-[#FFD700]/40 transition-all duration-300"
                 >
                   <div className="p-3 rounded-lg bg-gradient-to-br from-[#003366] to-[#001F3F] shrink-0">
                     <card.icon className="h-6 w-6 text-[#FFD700]" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-[#003366] uppercase tracking-wider">{card.title}</p>
-                    <p className="text-2xl font-bold text-slate-900 mt-0.5">{card.value}</p>
+                    <p className="text-xs font-bold text-[#003366] uppercase tracking-wider">
+                      {card.title}
+                    </p>
+                    <p className="text-2xl font-bold text-slate-900 mt-0.5">
+                      {card.value}
+                    </p>
                   </div>
                 </motion.div>
               ))}
@@ -1493,16 +2330,20 @@ export function AgenciesManagement({
               <div className="p-5 bg-gradient-to-r from-gray-50 to-[#f8faff] border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h3 className="font-bold text-[#003366] text-sm">
-                    {isAm ? "ንቁ የB2B አገልግሎት ውሎች" : "Active B2B Service Engagements"}
+                    {isAm
+                      ? "ንቁ የB2B አገልግሎት ውሎች"
+                      : "Active B2B Service Engagements"}
                   </h3>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    {isAm ? "በፌዴራል ፖሊስ መዝገብ የተረጋገጡ ህጋዊ ዲጂታል ሰነዶች" : "Legal binding digital document entries verified by Federal Police Registry."}
+                    {isAm
+                      ? "በፌዴራል ፖሊስ መዝገብ የተረጋገጡ ህጋዊ ዲጂታል ሰነዶች"
+                      : "Legal binding digital document entries verified by Federal Police Registry."}
                   </p>
                 </div>
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => setShowAppendContract(true)}
+                  onClick={() => handleOpenContractModal()}
                   className="px-3 py-1.5 bg-gradient-to-r from-[#003366] to-[#001F3F] hover:from-[#001F3F] hover:to-[#003366] text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 self-start sm:self-auto shadow-sm"
                 >
                   <Plus size={14} /> {isAm ? "ውል ያክሉ" : "Append Contract"}
@@ -1513,12 +2354,27 @@ export function AgenciesManagement({
                 <table className="w-full text-left border-collapse text-sm">
                   <thead>
                     <tr className="bg-[#003366] text-white text-[11px] uppercase tracking-[0.2em]">
-                      <th className="p-4">{isAm ? "የውል መለያ እና ደንበኛ" : "Contract ID & Client Entity"}</th>
-                      <th className="p-4">{isAm ? "የተሰማራበት ቦታ" : "Deployment Site Location"}</th>
+                      <th className="p-4">
+                        {isAm
+                          ? "የውል መለያ እና ደንበኛ"
+                          : "Contract ID & Client Entity"}
+                      </th>
+                      <th className="p-4">
+                        {isAm ? "የተሰማራበት ቦታ" : "Deployment Site Location"}
+                      </th>
                       <th className="p-4">{isAm ? "ሁኔታ" : "Status"}</th>
-                      <th className="p-4 text-center">{isAm ? "የተመደቡ ጠባቂዎች" : "Assigned Guards"}</th>
-                      <th className="p-4">{isAm ? "የኦዲት ቀናት" : "Audit Dates"}</th>
-                      <th className="p-4 text-right">{isAm ? "ህጋዊ ሰነዶች" : "Legal Documents"}</th>
+                      <th className="p-4 text-center">
+                        {isAm ? "የተመደቡ ጠባቂዎች" : "Assigned Guards"}
+                      </th>
+                      <th className="p-4 text-center">
+                        {isAm ? "የውል መጀመሪያ ቀን" : "Start Date"}
+                      </th>
+                      <th className="p-4">
+                        {isAm ? "የውል መዝጊያ ቀን" : "Termination Date"}
+                      </th>
+                      <th className="p-4 text-right">
+                        {isAm ? "ህጋዊ ሰነዶች" : "Legal Documents"}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 text-gray-700">
@@ -1543,7 +2399,10 @@ export function AgenciesManagement({
                         </td>
                         <td className="p-4">
                           <div className="flex items-start gap-1 text-xs text-gray-600 max-w-xs leading-relaxed">
-                            <MapPin size={14} className="text-[#003366]/40 shrink-0 mt-0.5" />
+                            <MapPin
+                              size={14}
+                              className="text-[#003366]/40 shrink-0 mt-0.5"
+                            />
                             <span>{contract.addressText}</span>
                           </div>
                         </td>
@@ -1559,34 +2418,48 @@ export function AgenciesManagement({
                             {contract.assignedPersonnelCount}
                           </span>
                         </td>
+                        <td className="p-4 text-center">
+                          <div className="text-sm text-gray-700 font-medium">
+                            {contract.createdAt}
+                          </div>
+                        </td>
                         <td className="p-4 text-xs space-y-1 text-gray-500">
                           <p>
-                            <span className="text-gray-400 font-medium">
-                              {isAm ? "የተመዘገበ:" : "Logged:"}
-                            </span>{" "}
-                            {contract.createdAt}
-                          </p>
-                          <p>
-                            <span className="text-gray-400 font-medium">
-                              {isAm ? "የተሻሻለ:" : "Updated:"}
-                            </span>{" "}
-                            {contract.updatedAt}
+                            {contract.terminatedAt ||
+                              contract.updatedAt ||
+                              contract.createdAt}
                           </p>
                         </td>
                         <td className="p-4 text-right">
-                          <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            type="button"
-                            onClick={() => {
-                              setSelectedContractUrl(contract.contractUrl);
-                              setSelectedContractName(contract.serviceUserName);
-                            }}
-                            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#003366] bg-[#003366]/5 hover:bg-[#003366]/10 px-3 py-1.5 rounded-lg border border-[#003366]/10 transition"
-                          >
-                            <span>{isAm ? "ውሉን ይመልከቱ" : "Review Contract"}</span>
-                            <ArrowUpRight size={14} />
-                          </motion.button>
+                          <div className="flex items-center justify-end gap-2">
+                            <motion.button
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              type="button"
+                              onClick={() => handleOpenContractModal(contract)}
+                              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#003366] bg-[#003366]/5 hover:bg-[#003366]/10 px-3 py-1.5 rounded-lg border border-[#003366]/10 transition"
+                            >
+                              <Pencil size={14} />
+                              <span>{isAm ? "አስተካክል" : "Edit"}</span>
+                            </motion.button>
+                            <motion.button
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              type="button"
+                              onClick={() => {
+                                setSelectedContractUrl(contract.contractUrl);
+                                setSelectedContractName(
+                                  contract.serviceUserName,
+                                );
+                              }}
+                              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#003366] bg-[#003366]/5 hover:bg-[#003366]/10 px-3 py-1.5 rounded-lg border border-[#003366]/10 transition"
+                            >
+                              <span>
+                                {isAm ? "ውሉን ይመልከቱ" : "Review Contract"}
+                              </span>
+                              <ArrowUpRight size={14} />
+                            </motion.button>
+                          </div>
                         </td>
                       </motion.tr>
                     ))}
@@ -1612,7 +2485,12 @@ export function AgenciesManagement({
               animate={{ opacity: 1, y: 0 }}
               className="rounded-xl border border-[#003366]/10 bg-[#003366]/5 p-3 text-sm text-[#003366]"
             >
-              <strong>{isAm ? "ለኤችአር አስተዳዳሪዎች ማሳሰቢያ:" : "Note for HR Managers:"}</strong> {isAm ? "ዝማኔው ያልተረጋገጠውን የድርጅት ሰነድ ይተካና አዲሱን ፋይል በዝማኔ ስም መቅድም ያስቀምጣል።" : "Update replaces the selected unverified organization document and saves the new file with an update-specific filename prefix."}
+              <strong>
+                {isAm ? "ለኤችአር አስተዳዳሪዎች ማሳሰቢያ:" : "Note for HR Managers:"}
+              </strong>{" "}
+              {isAm
+                ? "ዝማኔው ያልተረጋገጠውን የድርጅት ሰነድ ይተካና አዲሱን ፋይል በዝማኔ ስም መቅድም ያስቀምጣል።"
+                : "Update replaces the selected unverified organization document and saves the new file with an update-specific filename prefix."}
             </motion.div>
             {documentUpdateFile && documentReplacementTarget && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-6">
@@ -1622,14 +2500,16 @@ export function AgenciesManagement({
                       <div className="rounded-2xl bg-blue-50 p-3 text-blue-700">
                         <Eye size={20} />
                       </div>
-                    <div>
-                      <p className="text-sm font-bold text-[#003366]">
-                        {isAm ? "የሰነድ ዝማኔ ያረጋግጡ" : "Confirm document update"}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {isAm ? "የተመረጠውን ፋይል ይመልከቱ፣ ከዚያ ያልተረጋገጠውን ሰነድ ለመተካት ያረጋግጡ።" : "Preview the selected file, then confirm to replace the unverified document."}
-                      </p>
-                    </div>
+                      <div>
+                        <p className="text-sm font-bold text-[#003366]">
+                          {isAm ? "የሰነድ ዝማኔ ያረጋግጡ" : "Confirm document update"}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {isAm
+                            ? "የተመረጠውን ፋይል ይመልከቱ፣ ከዚያ ያልተረጋገጠውን ሰነድ ለመተካት ያረጋግጡ።"
+                            : "Preview the selected file, then confirm to replace the unverified document."}
+                        </p>
+                      </div>
                     </div>
                     <button
                       type="button"
@@ -1648,7 +2528,8 @@ export function AgenciesManagement({
                             {documentReplacementTarget.docName}
                           </p>
                           <p className="text-xs text-slate-500 mt-1">
-                            {isAm ? "የሚሰቀል ፋይል:" : "File to upload:"} {documentUpdateFile.name}
+                            {isAm ? "የሚሰቀል ፋይል:" : "File to upload:"}{" "}
+                            {documentUpdateFile.name}
                           </p>
                         </div>
                         <div className="rounded-2xl bg-white p-3 text-blue-700 border border-blue-100">
@@ -1664,7 +2545,9 @@ export function AgenciesManagement({
                         {documentUpdatePreviewUrl ? (
                           <div className="space-y-3">
                             <p className="text-xs text-slate-500">
-                              {isAm ? "ቅድመ እይታ ከተመረጠው ፋይል የመነጨ ነው። እስኪያረጋግጡ ድረስ አይላክም።" : "Preview is generated from the selected file. It will not be sent until you confirm."}
+                              {isAm
+                                ? "ቅድመ እይታ ከተመረጠው ፋይል የመነጨ ነው። እስኪያረጋግጡ ድረስ አይላክም።"
+                                : "Preview is generated from the selected file. It will not be sent until you confirm."}
                             </p>
                             <a
                               href={documentUpdatePreviewUrl}
@@ -1678,7 +2561,9 @@ export function AgenciesManagement({
                           </div>
                         ) : (
                           <p className="text-sm text-slate-500">
-                            {isAm ? "ለማረጋገጥ አዲስ ሰነድ ይምረጡ።" : "Select a new document to preview before confirming."}
+                            {isAm
+                              ? "ለማረጋገጥ አዲስ ሰነድ ይምረጡ።"
+                              : "Select a new document to preview before confirming."}
                           </p>
                         )}
                       </div>
@@ -1710,24 +2595,51 @@ export function AgenciesManagement({
             {/* Top Info Cards specific to Document Control */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
-                { title: isAm ? "መሰረታዊ መዝገቦች" : "Basic Records", value: `${basicDocs.length} ${isAm ? "ቋሚ" : "Permanent"}`, icon: FileText, delay: 0.1, bg: "from-[#003366] to-[#001F3F]" },
-                { title: isAm ? "ዓመታዊ አስተዳደር" : "Yearly Managed", value: `${yearlyDocs.length} ${isAm ? "ዓመታዊ ዑደቶች" : "Annual Cycles"}`, icon: Calendar, delay: 0.2, bg: "from-[#003366] to-[#001F3F]" },
-                { title: isAm ? "የሚፈለግ እርምጃ" : "Action Required", value: `${alertDocsCount} ${isAm ? "ማስጠንቀቂያዎች" : "Alerts"}`, icon: AlertTriangle, delay: 0.3, bg: "from-[#003366] to-[#001F3F]" },
+                {
+                  title: isAm ? "መሰረታዊ መዝገቦች" : "Basic Records",
+                  value: `${basicDocs.length} ${isAm ? "ቋሚ" : "Permanent"}`,
+                  icon: FileText,
+                  delay: 0.1,
+                  bg: "from-[#003366] to-[#001F3F]",
+                },
+                {
+                  title: isAm ? "ዓመታዊ አስተዳደር" : "Yearly Managed",
+                  value: `${yearlyDocs.length} ${isAm ? "ዓመታዊ ዑደቶች" : "Annual Cycles"}`,
+                  icon: Calendar,
+                  delay: 0.2,
+                  bg: "from-[#003366] to-[#001F3F]",
+                },
+                {
+                  title: isAm ? "የሚፈለግ እርምጃ" : "Action Required",
+                  value: `${alertDocsCount} ${isAm ? "ማስጠንቀቂያዎች" : "Alerts"}`,
+                  icon: AlertTriangle,
+                  delay: 0.3,
+                  bg: "from-[#003366] to-[#001F3F]",
+                },
               ].map((card) => (
                 <motion.div
                   key={card.title}
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: card.delay }}
-                  whileHover={{ y: -4, boxShadow: "0 12px 24px rgba(0,51,102,0.12)" }}
+                  whileHover={{
+                    y: -4,
+                    boxShadow: "0 12px 24px rgba(0,51,102,0.12)",
+                  }}
                   className="bg-gradient-to-br from-white to-[#f8faff] p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 hover:border-[#FFD700]/40 transition-all duration-300"
                 >
-                  <div className={`p-3 rounded-lg bg-gradient-to-br ${card.bg} shrink-0`}>
+                  <div
+                    className={`p-3 rounded-lg bg-gradient-to-br ${card.bg} shrink-0`}
+                  >
                     <card.icon className="h-6 w-6 text-[#FFD700]" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-[#003366] uppercase tracking-wider">{card.title}</p>
-                    <p className="text-2xl font-bold text-slate-900 mt-0.5">{card.value}</p>
+                    <p className="text-xs font-bold text-[#003366] uppercase tracking-wider">
+                      {card.title}
+                    </p>
+                    <p className="text-2xl font-bold text-slate-900 mt-0.5">
+                      {card.value}
+                    </p>
                   </div>
                 </motion.div>
               ))}
@@ -1741,10 +2653,14 @@ export function AgenciesManagement({
                   <div className="p-4 bg-gray-50/70 border-b border-gray-200 flex items-start justify-between gap-4">
                     <div>
                       <h4 className="font-bold text-[#003366] text-sm">
-                        {isAm ? "መሰረታዊ / ህጋዊ ማረጋገጫዎች" : "Basic / Statutory Credentials"}
+                        {isAm
+                          ? "መሰረታዊ / ህጋዊ ማረጋገጫዎች"
+                          : "Basic / Statutory Credentials"}
                       </h4>
                       <p className="text-[11px] text-gray-400 mt-0.5">
-                        {isAm ? "ቋሚ የድርጅት መሰረታዊ መዝገብ ሰነዶች።" : "Permanent organizational foundational registry documents."}
+                        {isAm
+                          ? "ቋሚ የድርጅት መሰረታዊ መዝገብ ሰነዶች።"
+                          : "Permanent organizational foundational registry documents."}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1757,8 +2673,12 @@ export function AgenciesManagement({
                         className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                         aria-label={
                           basicDocsExpanded
-                            ? isAm ? "የሰነድ ዝርዝር ዘጋ" : "Collapse document list"
-                            : isAm ? "የሰነድ ዝርዝር ዘርጋ" : "Expand document list"
+                            ? isAm
+                              ? "የሰነድ ዝርዝር ዘጋ"
+                              : "Collapse document list"
+                            : isAm
+                              ? "የሰነድ ዝርዝር ዘርጋ"
+                              : "Expand document list"
                         }
                       >
                         {basicDocsExpanded ? (
@@ -1876,7 +2796,13 @@ export function AgenciesManagement({
                                         } inline-flex items-center gap-1`}
                                       >
                                         <Trash2 size={12} />
-                                        {loading ? (isAm ? "በማስወገድ ላይ..." : "Deleting...") : (isAm ? "አስወግድ" : "Delete")}
+                                        {loading
+                                          ? isAm
+                                            ? "በማስወገድ ላይ..."
+                                            : "Deleting..."
+                                          : isAm
+                                            ? "አስወግድ"
+                                            : "Delete"}
                                       </button>
                                     )}
                                   </>
@@ -1915,7 +2841,9 @@ export function AgenciesManagement({
                         {isAm ? "ዓመታዊ የታደሱ ሰነዶች" : "Yearly Renewed Documents"}
                       </h4>
                       <p className="text-[11px] text-gray-400 mt-0.5">
-                        {isAm ? "ወቅታዊ የምስክር ወረቀቶች በህግ መሰረት የሚታደሱ" : "Time-bound certifications subject to cyclical statutory renewal checks."}
+                        {isAm
+                          ? "ወቅታዊ የምስክር ወረቀቶች በህግ መሰረት የሚታደሱ"
+                          : "Time-bound certifications subject to cyclical statutory renewal checks."}
                       </p>
                     </div>
                     <span className="text-[10px] bg-[#003366]/10 text-[#003366] px-2 py-0.5 rounded font-mono font-bold">
@@ -1935,7 +2863,8 @@ export function AgenciesManagement({
                     ).map(([year, docsForYear]) => (
                       <details key={year} className="border rounded-lg">
                         <summary className="px-4 py-2 bg-gray-50 cursor-pointer font-bold text-[#003366]">
-                          {year} {isAm ? "የእድሳት ሰነዶች" : "Renewal Documents"} ({docsForYear.length})
+                          {year} {isAm ? "የእድሳት ሰነዶች" : "Renewal Documents"} (
+                          {docsForYear.length})
                         </summary>
                         <div className="divide-y">
                           {docsForYear.map((doc: any) => (
@@ -1957,7 +2886,13 @@ export function AgenciesManagement({
                                         : "bg-amber-100 text-amber-700"
                                     }`}
                                   >
-                                {doc.isVerified ? (isAm ? "የተረጋገጠ" : "Verified") : (isAm ? "በመጠባበቅ ላይ" : "Pending")}
+                                    {doc.isVerified
+                                      ? isAm
+                                        ? "የተረጋገጠ"
+                                        : "Verified"
+                                      : isAm
+                                        ? "በመጠባበቅ ላይ"
+                                        : "Pending"}
                                   </span>
                                 </p>
                                 <p className="text-xs text-gray-500 mt-1">
@@ -1976,7 +2911,8 @@ export function AgenciesManagement({
                                   }}
                                   className="text-xxs text-[#003366] hover:underline cursor-pointer flex items-center gap-1 font-bold"
                                 >
-                                  {isAm ? "ክፈት" : "Open"} <ArrowUpRight size={12} />
+                                  {isAm ? "ክፈት" : "Open"}{" "}
+                                  <ArrowUpRight size={12} />
                                 </button>
                                 {(() => {
                                   const key = Number(doc.id);
@@ -2038,7 +2974,13 @@ export function AgenciesManagement({
                                           } inline-flex items-center gap-1`}
                                         >
                                           <Trash2 size={12} />
-                                          {loading ? (isAm ? "እየሰረዘ..." : "Deleting...") : (isAm ? "ሰርዝ" : "Delete")}
+                                          {loading
+                                            ? isAm
+                                              ? "እየሰረዘ..."
+                                              : "Deleting..."
+                                            : isAm
+                                              ? "ሰርዝ"
+                                              : "Delete"}
                                         </button>
                                       )}
                                     </>
@@ -2067,7 +3009,7 @@ export function AgenciesManagement({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-            onClick={() => setShowAppendContract(false)}
+            onClick={handleCloseContractModal}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -2085,15 +3027,27 @@ export function AgenciesManagement({
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-white">
-                        {isAm ? "አዲስ ውል ያክሉ" : "Append Contract"}
+                        {editingContractId !== null
+                          ? isAm
+                            ? "የውል ዝማኔ"
+                            : "Edit Contract"
+                          : isAm
+                            ? "አዲስ ውል ያክሉ"
+                            : "Append Contract"}
                       </h3>
                       <p className="text-[10px] text-white/50 font-medium">
-                        {isAm ? "አዲስ የአገልግሎት ውል ያስገቡ" : "Enter new service contract details"}
+                        {editingContractId !== null
+                          ? isAm
+                            ? "የነበረውን ውል ያሻሽሉ"
+                            : "Update the selected service contract"
+                          : isAm
+                            ? "አዲስ የአገልግሎት ውል ያስገቡ"
+                            : "Enter new service contract details"}
                       </p>
                     </div>
                   </div>
                   <button
-                    onClick={() => setShowAppendContract(false)}
+                    onClick={handleCloseContractModal}
                     className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
                   >
                     <X className="w-4 h-4" />
@@ -2103,14 +3057,22 @@ export function AgenciesManagement({
               <div className="p-6 max-h-[calc(100vh-10rem)] overflow-y-auto space-y-4">
                 <div>
                   <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#003366] mb-1.5 block">
-                    {isAm ? "የደንበኛ ስም" : "Client Name"} <span className="text-orange-500">*</span>
+                    {isAm ? "የደንበኛ ስም" : "Client Name"}{" "}
+                    <span className="text-orange-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={newContract.serviceUserName}
-                    onChange={(e) => setNewContract({ ...newContract, serviceUserName: e.target.value })}
+                    onChange={(e) =>
+                      setNewContract({
+                        ...newContract,
+                        serviceUserName: e.target.value,
+                      })
+                    }
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 outline-none transition-all"
-                    placeholder={isAm ? "የድርጅት ስም ያስገቡ" : "Enter organization name"}
+                    placeholder={
+                      isAm ? "የድርጅት ስም ያስገቡ" : "Enter organization name"
+                    }
                   />
                 </div>
                 <div className="border-t border-gray-100 pt-4">
@@ -2124,13 +3086,31 @@ export function AgenciesManagement({
                     <SearchableLocationSelect
                       label={isAm ? "ክልል" : "Region"}
                       placeholder={isAm ? "ክልል ይምረጡ..." : "Select region..."}
-                      searchPlaceholder={isAm ? "ክልል ይፈልጉ..." : "Search region..."}
+                      searchPlaceholder={
+                        isAm ? "ክልል ይፈልጉ..." : "Search region..."
+                      }
                       value={newContract.region}
                       options={contractRegions}
                       isOpen={regionOpen}
-                      onToggle={() => { if (!regionOpen) { setContractZones([]); setContractWoredas([]); setContractKebeles([]); } setRegionOpen(!regionOpen); setRegionSearch(""); }}
-                      onSelect={(val) => { handleContractRegionChange(val); setRegionOpen(false); setRegionSearch(""); }}
-                      onClear={() => { handleContractRegionChange(""); setRegionOpen(false); setRegionSearch(""); }}
+                      onToggle={() => {
+                        if (!regionOpen) {
+                          setContractZones([]);
+                          setContractWoredas([]);
+                          setContractKebeles([]);
+                        }
+                        setRegionOpen(!regionOpen);
+                        setRegionSearch("");
+                      }}
+                      onSelect={(val) => {
+                        handleContractRegionChange(val);
+                        setRegionOpen(false);
+                        setRegionSearch("");
+                      }}
+                      onClear={() => {
+                        handleContractRegionChange("");
+                        setRegionOpen(false);
+                        setRegionSearch("");
+                      }}
                       searchTerm={regionSearch}
                       onSearchChange={setRegionSearch}
                       innerRef={contractRefs.region}
@@ -2143,9 +3123,20 @@ export function AgenciesManagement({
                       options={contractZones}
                       disabled={!newContract.region}
                       isOpen={zoneOpen}
-                      onToggle={() => { setZoneOpen(!zoneOpen); setZoneSearch(""); }}
-                      onSelect={(val) => { handleContractZoneChange(val); setZoneOpen(false); setZoneSearch(""); }}
-                      onClear={() => { handleContractZoneChange(""); setZoneOpen(false); setZoneSearch(""); }}
+                      onToggle={() => {
+                        setZoneOpen(!zoneOpen);
+                        setZoneSearch("");
+                      }}
+                      onSelect={(val) => {
+                        handleContractZoneChange(val);
+                        setZoneOpen(false);
+                        setZoneSearch("");
+                      }}
+                      onClear={() => {
+                        handleContractZoneChange("");
+                        setZoneOpen(false);
+                        setZoneSearch("");
+                      }}
                       searchTerm={zoneSearch}
                       onSearchChange={setZoneSearch}
                       innerRef={contractRefs.zone}
@@ -2153,14 +3144,27 @@ export function AgenciesManagement({
                     <SearchableLocationSelect
                       label={isAm ? "ወረዳ" : "Woreda"}
                       placeholder={isAm ? "ወረዳ ይምረጡ..." : "Select woreda..."}
-                      searchPlaceholder={isAm ? "ወረዳ ይፈልጉ..." : "Search woreda..."}
+                      searchPlaceholder={
+                        isAm ? "ወረዳ ይፈልጉ..." : "Search woreda..."
+                      }
                       value={newContract.woreda}
                       options={contractWoredas}
                       disabled={!newContract.zone}
                       isOpen={woredaOpen}
-                      onToggle={() => { setWoredaOpen(!woredaOpen); setWoredaSearch(""); }}
-                      onSelect={(val) => { handleContractWoredaChange(val); setWoredaOpen(false); setWoredaSearch(""); }}
-                      onClear={() => { handleContractWoredaChange(""); setWoredaOpen(false); setWoredaSearch(""); }}
+                      onToggle={() => {
+                        setWoredaOpen(!woredaOpen);
+                        setWoredaSearch("");
+                      }}
+                      onSelect={(val) => {
+                        handleContractWoredaChange(val);
+                        setWoredaOpen(false);
+                        setWoredaSearch("");
+                      }}
+                      onClear={() => {
+                        handleContractWoredaChange("");
+                        setWoredaOpen(false);
+                        setWoredaSearch("");
+                      }}
                       searchTerm={woredaSearch}
                       onSearchChange={setWoredaSearch}
                       innerRef={contractRefs.woreda}
@@ -2168,38 +3172,71 @@ export function AgenciesManagement({
                     <SearchableLocationSelect
                       label={isAm ? "ቀበሌ" : "Kebele"}
                       placeholder={isAm ? "ቀበሌ ይምረጡ..." : "Select kebele..."}
-                      searchPlaceholder={isAm ? "ቀበሌ ይፈልጉ..." : "Search kebele..."}
+                      searchPlaceholder={
+                        isAm ? "ቀበሌ ይፈልጉ..." : "Search kebele..."
+                      }
                       value={newContract.kebele}
                       options={contractKebeles}
                       disabled={!newContract.woreda}
                       isOpen={kebeleOpen}
-                      onToggle={() => { setKebeleOpen(!kebeleOpen); setKebeleSearch(""); }}
-                      onSelect={(val) => { setNewContract((prev: any) => ({ ...prev, kebele: val })); setKebeleOpen(false); setKebeleSearch(""); }}
-                      onClear={() => { setNewContract((prev: any) => ({ ...prev, kebele: "" })); setKebeleOpen(false); setKebeleSearch(""); }}
+                      onToggle={() => {
+                        setKebeleOpen(!kebeleOpen);
+                        setKebeleSearch("");
+                      }}
+                      onSelect={(val) => {
+                        setNewContract((prev: any) => ({
+                          ...prev,
+                          kebele: val,
+                        }));
+                        setKebeleOpen(false);
+                        setKebeleSearch("");
+                      }}
+                      onClear={() => {
+                        setNewContract((prev: any) => ({
+                          ...prev,
+                          kebele: "",
+                        }));
+                        setKebeleOpen(false);
+                        setKebeleSearch("");
+                      }}
                       searchTerm={kebeleSearch}
                       onSearchChange={setKebeleSearch}
                       innerRef={contractRefs.kebele}
                     />
                     <div>
                       <label className="text-[9px] uppercase tracking-[0.1em] font-bold text-[#003366] mb-1 block">
-                        {isAm ? "የቤት ቁጥር" : "House Number"} <span className="text-orange-500">*</span>
+                        {isAm ? "የቤት ቁጥር" : "House Number"}{" "}
+                        <span className="text-orange-500">*</span>
                       </label>
                       <input
                         type="text"
                         value={newContract.houseNumber}
-                        onChange={(e) => setNewContract({ ...newContract, houseNumber: e.target.value })}
+                        onChange={(e) =>
+                          setNewContract({
+                            ...newContract,
+                            houseNumber: e.target.value,
+                          })
+                        }
                         className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 outline-none transition-all"
                         placeholder={isAm ? "ለምሳሌ ቤት 123" : "e.g. House 123"}
                       />
                     </div>
                     <div>
                       <label className="text-[9px] uppercase tracking-[0.1em] font-bold text-[#003366] mb-1 block">
-                        {isAm ? "ልዩ ቦታ" : "Special Location"} <span className="text-[9px] font-bold text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded ml-1">{isAm ? "አማራጭ" : "OPTIONAL"}</span>
+                        {isAm ? "ልዩ ቦታ" : "Special Location"}{" "}
+                        <span className="text-[9px] font-bold text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded ml-1">
+                          {isAm ? "አማራጭ" : "OPTIONAL"}
+                        </span>
                       </label>
                       <input
                         type="text"
                         value={newContract.specialLocation}
-                        onChange={(e) => setNewContract({ ...newContract, specialLocation: e.target.value })}
+                        onChange={(e) =>
+                          setNewContract({
+                            ...newContract,
+                            specialLocation: e.target.value,
+                          })
+                        }
                         className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 outline-none transition-all"
                         placeholder={isAm ? "ልዩ ምልክት..." : "Near landmark..."}
                       />
@@ -2209,24 +3246,36 @@ export function AgenciesManagement({
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#003366] mb-1.5 block">
-                      {isAm ? "የተመደቡ ጠባቂዎች" : "Assigned Guards"} <span className="text-orange-500">*</span>
+                      {isAm ? "የተመደቡ ጠባቂዎች" : "Assigned Guards"}{" "}
+                      <span className="text-orange-500">*</span>
                     </label>
                     <input
                       type="number"
                       min="0"
                       value={newContract.assignedPersonnelCount}
-                      onChange={(e) => setNewContract({ ...newContract, assignedPersonnelCount: parseInt(e.target.value) || 0 })}
+                      onChange={(e) =>
+                        setNewContract({
+                          ...newContract,
+                          assignedPersonnelCount: parseInt(e.target.value) || 0,
+                        })
+                      }
                       className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 outline-none transition-all"
                       placeholder="0"
                     />
                   </div>
                   <div>
                     <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#003366] mb-1.5 block">
-                      {isAm ? "ሁኔታ" : "Status"} <span className="text-orange-500">*</span>
+                      {isAm ? "ሁኔታ" : "Status"}{" "}
+                      <span className="text-orange-500">*</span>
                     </label>
                     <select
                       value={newContract.status}
-                      onChange={(e) => setNewContract({ ...newContract, status: e.target.value })}
+                      onChange={(e) =>
+                        setNewContract({
+                          ...newContract,
+                          status: e.target.value,
+                        })
+                      }
                       className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 outline-none transition-all"
                     >
                       <option value="Active">Active</option>
@@ -2237,26 +3286,67 @@ export function AgenciesManagement({
                 </div>
                 <div>
                   <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#003366] mb-1.5 block">
-                    {isAm ? "የውል መጀመሪያ ቀን" : "Contract Start Date"} <span className="text-orange-500">*</span>
+                    {isAm ? "የውል መጀመሪያ ቀን" : "Contract Start Date"}{" "}
+                    <span className="text-orange-500">*</span>
                   </label>
                   <input
                     type="date"
                     value={newContract.contractStartDate}
-                    onChange={(e) => setNewContract({ ...newContract, contractStartDate: e.target.value })}
+                    onChange={(e) =>
+                      setNewContract({
+                        ...newContract,
+                        contractStartDate: e.target.value,
+                      })
+                    }
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 outline-none transition-all"
                   />
                 </div>
                 <div>
                   <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#003366] mb-1.5 block">
-                    {isAm ? "የውል ሰነድ" : "Contract Document"} <span className="text-orange-500">*</span>
+                    {isAm ? "የውል መዝጊያ ቀን" : "Contract Termination Date"}
                   </label>
+                  <input
+                    type="date"
+                    value={newContract.terminatedAt}
+                    onChange={(e) =>
+                      setNewContract({
+                        ...newContract,
+                        terminatedAt: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]/50 outline-none transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#003366] mb-1.5 block">
+                    {isAm ? "የውል ሰነድ" : "Contract Document"}{" "}
+                    {editingContractId === null && (
+                      <span className="text-orange-500">*</span>
+                    )}
+                  </label>
+                  {editingContractId !== null && (
+                    <p className="text-[11px] text-gray-500 mb-2">
+                      {isAm
+                        ? "ባዶ ቢተው የነበረውን ሰነድ ይቆያል።"
+                        : "Leave blank to keep the current document."}
+                    </p>
+                  )}
                   {newContract.contractDoc ? (
                     <div className="space-y-2">
                       <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-50 border border-blue-200">
                         <FileText className="w-5 h-5 text-blue-600 shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-gray-800 truncate">{newContract.contractDoc.name}</p>
-                          <p className="text-xs text-gray-500">{(newContract.contractDoc.size / 1024 / 1024).toFixed(2)} MB</p>
+                          <p className="text-sm font-bold text-gray-800 truncate">
+                            {newContract.contractDoc.name}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {(
+                              newContract.contractDoc.size /
+                              1024 /
+                              1024
+                            ).toFixed(2)}{" "}
+                            MB
+                          </p>
                         </div>
                         <button
                           onClick={() => {
@@ -2271,7 +3361,12 @@ export function AgenciesManagement({
                           <Eye className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => setNewContract({ ...newContract, contractDoc: null })}
+                          onClick={() =>
+                            setNewContract({
+                              ...newContract,
+                              contractDoc: null,
+                            })
+                          }
                           className="w-8 h-8 rounded-lg bg-white border border-red-200 flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
                           title={isAm ? "ሰርዝ" : "Cancel"}
                         >
@@ -2286,7 +3381,12 @@ export function AgenciesManagement({
                       <input
                         type="file"
                         accept=".pdf"
-                        onChange={(e) => setNewContract({ ...newContract, contractDoc: e.target.files?.[0] || null })}
+                        onChange={(e) =>
+                          setNewContract({
+                            ...newContract,
+                            contractDoc: e.target.files?.[0] || null,
+                          })
+                        }
                         className="hidden"
                       />
                     </label>
@@ -2296,7 +3396,7 @@ export function AgenciesManagement({
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => setShowAppendContract(false)}
+                    onClick={handleCloseContractModal}
                     className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-500 hover:bg-gray-50 transition-colors"
                   >
                     {isAm ? "ሰርዝ" : "Cancel"}
@@ -2304,27 +3404,21 @@ export function AgenciesManagement({
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => {
-                      if (!newContract.serviceUserName.trim() || !newContract.region || !newContract.zone || !newContract.woreda || !newContract.kebele || !newContract.houseNumber || !newContract.contractStartDate || !newContract.contractDoc || newContract.assignedPersonnelCount <= 0) return;
-                      const now = new Date().toISOString().slice(0, 10);
-                      const contractFileName = newContract.contractDoc ? newContract.contractDoc.name : "";
-                      const fullAddress = `${newContract.region}, ${newContract.zone}, ${newContract.woreda}, ${newContract.kebele}, ${newContract.houseNumber}${newContract.specialLocation ? `, ${newContract.specialLocation}` : ""}`;
-                      setSelectedOrg((prev) => {
-                        if (!prev) return prev;
-                        return {
-                          ...prev,
-                          serviceContracts: [
-                            ...prev.serviceContracts,
-                            { id: Date.now(), serviceUserName: newContract.serviceUserName, addressText: fullAddress, assignedPersonnelCount: newContract.assignedPersonnelCount, status: newContract.status, contractUrl: contractFileName, createdAt: newContract.contractStartDate || now, updatedAt: now },
-                          ],
-                        };
-                      });
-                      setNewContract({ serviceUserName: "", region: "", zone: "", woreda: "", kebele: "", houseNumber: "", specialLocation: "", assignedPersonnelCount: 0, status: "Active", contractStartDate: "", contractDoc: null });
-                      setShowAppendContract(false);
-                    }}
-                    className="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#003366] to-[#001F3F] text-white text-sm font-bold shadow-md hover:shadow-lg transition-all"
+                    onClick={handleSubmitServiceContract}
+                    disabled={isSubmittingContract}
+                    className={`flex-1 px-4 py-2.5 rounded-xl text-white text-sm font-bold shadow-md transition-all ${isSubmittingContract ? "bg-gray-400 cursor-not-allowed shadow-none" : "bg-gradient-to-r from-[#003366] to-[#001F3F] hover:shadow-lg"}`}
                   >
-                    {isAm ? "ውል ያስገቡ" : "Add Contract"}
+                    {isSubmittingContract
+                      ? isAm
+                        ? "እየተስተናገደ..."
+                        : "Saving..."
+                      : editingContractId !== null
+                        ? isAm
+                          ? "ውል ያስተካክሉ"
+                          : "Update Contract"
+                        : isAm
+                          ? "ውል ያስገቡ"
+                          : "Add Contract"}
                   </motion.button>
                 </div>
               </div>
@@ -2349,7 +3443,9 @@ export function AgenciesManagement({
                     {isAm ? "የሰራተኛ ዝርዝር መረጃ" : "Personnel Details"}
                   </h2>
                   <p className="text-sm text-slate-500 mt-1 uppercase">
-                    {isAm ? "የተሟላ የሰራተኛ መረጃ ለ:" : "Detailed employee profile for:"}{" "}
+                    {isAm
+                      ? "የተሟላ የሰራተኛ መረጃ ለ:"
+                      : "Detailed employee profile for:"}{" "}
                     <strong>{selectedEmployee.fullName}</strong>.
                   </p>
                 </div>
@@ -2369,19 +3465,27 @@ export function AgenciesManagement({
                       {isAm ? "የግል መረጃ" : "Personal Profile"}
                     </p>
                     <p className="mt-2 text-sm text-slate-700">
-                      <span className="font-bold text-[#003366]">{isAm ? "ሙሉ ስም:" : "Full Name:"}</span>{" "}
+                      <span className="font-bold text-[#003366]">
+                        {isAm ? "ሙሉ ስም:" : "Full Name:"}
+                      </span>{" "}
                       {selectedEmployee.fullName}
                     </p>
                     <p className="mt-1 text-sm text-slate-700">
-                      <span className="font-bold text-[#003366]">{isAm ? "ጾታ:" : "Gender:"}</span>{" "}
+                      <span className="font-bold text-[#003366]">
+                        {isAm ? "ጾታ:" : "Gender:"}
+                      </span>{" "}
                       {selectedEmployee.gender || "---"}
                     </p>
                     <p className="mt-1 text-sm text-slate-700">
-                      <span className="font-bold text-[#003366]">{isAm ? "ዜግነት:" : "Citizenship:"}</span>{" "}
+                      <span className="font-bold text-[#003366]">
+                        {isAm ? "ዜግነት:" : "Citizenship:"}
+                      </span>{" "}
                       {selectedEmployee.citizenship || "---"}
                     </p>
                     <p className="mt-1 text-sm text-slate-700">
-                      <span className="font-bold text-[#003366]">{isAm ? "ዕድሜ:" : "Age:"}</span>{" "}
+                      <span className="font-bold text-[#003366]">
+                        {isAm ? "ዕድሜ:" : "Age:"}
+                      </span>{" "}
                       {selectedEmployee.age ?? "---"}
                     </p>
                   </div>
@@ -2390,18 +3494,25 @@ export function AgenciesManagement({
                       {isAm ? "ልምድ" : "Experience"}
                     </p>
                     <p className="mt-2 text-sm text-slate-700">
-                      <span className="font-bold text-[#003366]">{isAm ? "የስራ ልምድ:" : "Work Experience:"}</span>{" "}
+                      <span className="font-bold text-[#003366]">
+                        {isAm ? "የስራ ልምድ:" : "Work Experience:"}
+                      </span>{" "}
                       {selectedEmployee.workExpYears} {isAm ? "ዓመታት" : "years"}
                     </p>
                     <p className="mt-1 text-sm text-slate-700">
-                      <span className="font-bold text-[#003366]">{isAm ? "አጠቃላይ ልምድ:" : "Total Experience:"}</span>{" "}
+                      <span className="font-bold text-[#003366]">
+                        {isAm ? "አጠቃላይ ልምድ:" : "Total Experience:"}
+                      </span>{" "}
                       {selectedEmployee.totalExpYears ??
                         selectedEmployee.workExpYears}{" "}
                       {isAm ? "ዓመታት" : "years"}
                     </p>
                     <p className="mt-1 text-sm text-slate-700">
-                      <span className="font-bold text-[#003366]">{isAm ? "ትምህርት:" : "Education:"}</span>{" "}
-                      {selectedEmployee.educationLevel || (isAm ? "አልተገለጸም" : "Not specified")}
+                      <span className="font-bold text-[#003366]">
+                        {isAm ? "ትምህርት:" : "Education:"}
+                      </span>{" "}
+                      {selectedEmployee.educationLevel ||
+                        (isAm ? "አልተገለጸም" : "Not specified")}
                     </p>
                   </div>
                   <div>
@@ -2409,7 +3520,9 @@ export function AgenciesManagement({
                       {isAm ? "አደጋ እና አካባቢ" : "Risk & Location"}
                     </p>
                     <p className="mt-2 text-sm text-slate-700">
-                      <span className="font-bold text-[#003366]">{isAm ? "በጥቁር ዝርዝር ውስጥ:" : "Blacklisted:"}</span>{" "}
+                      <span className="font-bold text-[#003366]">
+                        {isAm ? "በጥቁር ዝርዝር ውስጥ:" : "Blacklisted:"}
+                      </span>{" "}
                       <span
                         className={`inline-flex rounded-full px-2 py-1 text-[11px] font-semibold ${
                           selectedEmployee.isBlacklisted
@@ -2417,7 +3530,13 @@ export function AgenciesManagement({
                             : "bg-emerald-100 text-emerald-700"
                         }`}
                       >
-                        {selectedEmployee.isBlacklisted ? (isAm ? "አዎ" : "Yes") : (isAm ? "አይ" : "No")}
+                        {selectedEmployee.isBlacklisted
+                          ? isAm
+                            ? "አዎ"
+                            : "Yes"
+                          : isAm
+                            ? "አይ"
+                            : "No"}
                       </span>
                     </p>
                   </div>
@@ -2428,20 +3547,31 @@ export function AgenciesManagement({
                       {isAm ? "ግንኙነት እና ሚና" : "Contact & Role"}
                     </p>
                     <p className="mt-2 text-sm text-slate-700">
-                      <span className="font-bold text-[#003366]">{isAm ? "ኢሜይል:" : "Email:"}</span>{" "}
+                      <span className="font-bold text-[#003366]">
+                        {isAm ? "ኢሜይል:" : "Email:"}
+                      </span>{" "}
                       {selectedEmployee.email}
                     </p>
                     <p className="mt-2 text-sm text-slate-700">
-                      <span className="font-bold text-[#003366]">{isAm ? "ስልክ ቁጥር:" : "Phone Number:"}</span>{" "}
-                      {selectedEmployee.phone || (isAm ? "አልተሟላም" : "Not provided")}
+                      <span className="font-bold text-[#003366]">
+                        {isAm ? "ስልክ ቁጥር:" : "Phone Number:"}
+                      </span>{" "}
+                      {selectedEmployee.phone ||
+                        (isAm ? "አልተሟላም" : "Not provided")}
                     </p>
                     <p className="mt-2 text-sm text-slate-700">
-                      <span className="font-bold text-[#003366]">{isAm ? "የፋይዳ ቁጥር:" : "FAN Number:"}</span>{" "}
-                      {selectedEmployee.faydaId || (isAm ? "አልተሟላም" : "Not provided")}
+                      <span className="font-bold text-[#003366]">
+                        {isAm ? "የፋይዳ ቁጥር:" : "FAN Number:"}
+                      </span>{" "}
+                      {selectedEmployee.faydaId ||
+                        (isAm ? "አልተሟላም" : "Not provided")}
                     </p>
                     <p className="mt-1 text-sm text-slate-700 mb-2">
-                      <span className="font-bold text-[#003366]">{isAm ? "ሀላፊነት:" : "Position:"}</span>{" "}
-                      {selectedEmployee.positionName || (isAm ? "አልተመደበም" : "Unassigned")}
+                      <span className="font-bold text-[#003366]">
+                        {isAm ? "ሀላፊነት:" : "Position:"}
+                      </span>{" "}
+                      {selectedEmployee.positionName ||
+                        (isAm ? "አልተመደበም" : "Unassigned")}
                     </p>
                     {selectedEmployee.addressId && (
                       <div>
@@ -2450,37 +3580,49 @@ export function AgenciesManagement({
                         </p>
                         {addressLoading ? (
                           <p className="mt-2 text-sm text-slate-600 italic">
-                            {isAm ? "የአድራሻ ዝርዝሮችን በመጫን ላይ..." : "Loading address details..."}
+                            {isAm
+                              ? "የአድራሻ ዝርዝሮችን በመጫን ላይ..."
+                              : "Loading address details..."}
                           </p>
                         ) : addressDetails ? (
                           <div className="mt-2 space-y-1">
                             {addressDetails.regionName && (
                               <p className="text-sm text-slate-700">
-                                <span className="font-bold text-[#003366]">{isAm ? "ክልል:" : "Region:"}</span>{" "}
+                                <span className="font-bold text-[#003366]">
+                                  {isAm ? "ክልል:" : "Region:"}
+                                </span>{" "}
                                 {addressDetails.regionName}
                               </p>
                             )}
                             {addressDetails.zoneName && (
                               <p className="text-sm text-slate-700">
-                                <span className="font-bold text-[#003366]">{isAm ? "ክፍለ ከተማ/ዞን:" : "Subcity/Zone:"}</span>{" "}
+                                <span className="font-bold text-[#003366]">
+                                  {isAm ? "ክፍለ ከተማ/ዞን:" : "Subcity/Zone:"}
+                                </span>{" "}
                                 {addressDetails.zoneName}
                               </p>
                             )}
                             {addressDetails.woredaName && (
                               <p className="text-sm text-slate-700">
-                                <span className="font-bold text-[#003366]">{isAm ? "ወረዳ:" : "Woreda:"}</span>{" "}
+                                <span className="font-bold text-[#003366]">
+                                  {isAm ? "ወረዳ:" : "Woreda:"}
+                                </span>{" "}
                                 {addressDetails.woredaName}
                               </p>
                             )}
                             {addressDetails.kebeleName && (
                               <p className="text-sm text-slate-700">
-                                <span className="font-bold text-[#003366]">{isAm ? "ቀበሌ:" : "Kebele:"}</span>{" "}
+                                <span className="font-bold text-[#003366]">
+                                  {isAm ? "ቀበሌ:" : "Kebele:"}
+                                </span>{" "}
                                 {addressDetails.kebeleName}
                               </p>
                             )}
                             {addressDetails.houseNumber && (
                               <p className="text-sm text-slate-700">
-                                <span className="font-bold text-[#003366]">{isAm ? "የቤት ቁጥር:" : "House Number:"}</span>{" "}
+                                <span className="font-bold text-[#003366]">
+                                  {isAm ? "የቤት ቁጥር:" : "House Number:"}
+                                </span>{" "}
                                 {addressDetails.houseNumber}
                               </p>
                             )}
@@ -2495,7 +3637,9 @@ export function AgenciesManagement({
                           </div>
                         ) : (
                           <p className="mt-2 text-sm text-slate-500 italic">
-                            {isAm ? "ምንም የአድራሻ ዝርዝር አልተገኘም" : "No address details found"}
+                            {isAm
+                              ? "ምንም የአድራሻ ዝርዝር አልተገኘም"
+                              : "No address details found"}
                           </p>
                         )}
                       </div>
@@ -2506,11 +3650,16 @@ export function AgenciesManagement({
                       {isAm ? "የስራ ሁኔታ" : "Employment"}
                     </p>
                     <p className="mt-2 text-sm text-slate-700">
-                      <span className="font-bold text-[#003366]">{isAm ? "ሁኔታ:" : "Status:"}</span>{" "}
-                      {selectedEmployee.employmentStatus || (isAm ? "ያልታወቀ" : "Unknown")}
+                      <span className="font-bold text-[#003366]">
+                        {isAm ? "ሁኔታ:" : "Status:"}
+                      </span>{" "}
+                      {selectedEmployee.employmentStatus ||
+                        (isAm ? "ያልታወቀ" : "Unknown")}
                     </p>
                     <p className="mt-1 text-sm text-slate-700">
-                      <span className="font-bold text-[#003366]">{isAm ? "የተጀመረበት:" : "Started:"}</span>{" "}
+                      <span className="font-bold text-[#003366]">
+                        {isAm ? "የተጀመረበት:" : "Started:"}
+                      </span>{" "}
                       {selectedEmployee.employmentStartDate ?? "—"}
                     </p>
                   </div>
@@ -2523,13 +3672,18 @@ export function AgenciesManagement({
                         {isAm ? "የሰራተኛ ሰነዶች" : "Personnel Documents"}
                       </h3>
                       <p className="text-xs text-slate-500 mt-1">
-                        {isAm ? "ለዚህ ሰራተኛ የተሰቀሉ የስራ ሰነዶች።" : "Employment documents uploaded for this employee."}
+                        {isAm
+                          ? "ለዚህ ሰራተኛ የተሰቀሉ የስራ ሰነዶች።"
+                          : "Employment documents uploaded for this employee."}
                       </p>
                     </div>
                     <span className="text-xs uppercase tracking-[0.22em] text-slate-500">
-                      {selectedEmployee.documents?.length ?? 0} {isAm ? "ሰነድ" : "document"}
+                      {selectedEmployee.documents?.length ?? 0}{" "}
+                      {isAm ? "ሰነድ" : "document"}
                       {(selectedEmployee.documents?.length ?? 0) !== 1
-                        ? (isAm ? "ዎች" : "s")
+                        ? isAm
+                          ? "ዎች"
+                          : "s"
                         : ""}
                     </span>
                   </div>
@@ -2547,7 +3701,13 @@ export function AgenciesManagement({
                             <span
                               className={`inline-flex items-center justify-center rounded-full px-2 py-1 text-xs font-semibold ${getDocumentBadgeStyle(doc.isVerified)}`}
                             >
-                              {doc.isVerified ? (isAm ? "የተረጋገጠ" : "Verified") : (isAm ? "በመጠባበቅ ላይ" : "Pending")}
+                              {doc.isVerified
+                                ? isAm
+                                  ? "የተረጋገጠ"
+                                  : "Verified"
+                                : isAm
+                                  ? "በመጠባበቅ ላይ"
+                                  : "Pending"}
                             </span>
                           </div>
                           <div className="flex flex-col gap-2">
@@ -2576,8 +3736,12 @@ export function AgenciesManagement({
                                   }`}
                                 >
                                   {documentActionLoading[doc.id]
-                                    ? (isAm ? "በማዘመን ላይ..." : "Updating...")
-                                    : (isAm ? "ያልተረጋገጠ አድርግ" : "Mark Unverified")}
+                                    ? isAm
+                                      ? "በማዘመን ላይ..."
+                                      : "Updating..."
+                                    : isAm
+                                      ? "ያልተረጋገጠ አድርግ"
+                                      : "Mark Unverified"}
                                 </button>
                               ) : (
                                 <button
@@ -2593,8 +3757,12 @@ export function AgenciesManagement({
                                   }`}
                                 >
                                   {documentActionLoading[doc.id]
-                                    ? (isAm ? "በማዘመን ላይ..." : "Updating...")
-                                    : (isAm ? "የተረጋገጠ አድርግ" : "Mark Verified")}
+                                    ? isAm
+                                      ? "በማዘመን ላይ..."
+                                      : "Updating..."
+                                    : isAm
+                                      ? "የተረጋገጠ አድርግ"
+                                      : "Mark Verified"}
                                 </button>
                               )}
                             </div>
@@ -2639,7 +3807,11 @@ export function AgenciesManagement({
             >
               <div className="flex items-center gap-2 text-[#003366] font-bold">
                 <AlertTriangle className="text-[#003366]" size={20} />
-                <span>{isAm ? "የተመዘገቡ የስነምግባር ጥሰት ሪፖርቶች" : "Logged Incident Misconduct Case Reports"}</span>
+                <span>
+                  {isAm
+                    ? "የተመዘገቡ የስነምግባር ጥሰት ሪፖርቶች"
+                    : "Logged Incident Misconduct Case Reports"}
+                </span>
               </div>
             </motion.div>
 
@@ -2688,7 +3860,9 @@ export function AgenciesManagement({
             <div className="flex items-center pl-7 justify-between gap-4 border-b border-slate-200 bg-slate-50">
               <div>
                 <h2 className="text-lg font-bold text-[#003366]">
-                  {isAm ? "የሰነድ ቅድመ እይታ ለ" : "Document Preview for"} {selectedDocName || (isAm ? "የሰራተኛ ሰነድ" : "Employee Document")}
+                  {isAm ? "የሰነድ ቅድመ እይታ ለ" : "Document Preview for"}{" "}
+                  {selectedDocName ||
+                    (isAm ? "የሰራተኛ ሰነድ" : "Employee Document")}
                 </h2>
               </div>
               <button
@@ -2712,7 +3886,9 @@ export function AgenciesManagement({
             </div>
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4">
               <p className="text-xs text-slate-500 order-2 sm:order-1">
-                {isAm ? "ቅድመ እይታ የአሳሽ መመልከቻን ይጠቀማል። ሙሉ ለማየት ወይም ለማውረድ ውጪ ይክፈቱ።" : "Preview uses the browser viewer. Open externally to download or inspect in full."}
+                {isAm
+                  ? "ቅድመ እይታ የአሳሽ መመልከቻን ይጠቀማል። ሙሉ ለማየት ወይም ለማውረድ ውጪ ይክፈቱ።"
+                  : "Preview uses the browser viewer. Open externally to download or inspect in full."}
               </p>
               <motion.button
                 whileHover={{ scale: 1.01 }}
@@ -2748,7 +3924,8 @@ export function AgenciesManagement({
               <div>
                 <h2 className="text-lg font-bold text-[#003366]">
                   {isAm ? "የውል ሰነድ ቅድመ እይታ ለ" : "Contract Document Preview for"}{" "}
-                  {selectedContractName || (isAm ? "የውል ሰነድ" : "Contract Document")}
+                  {selectedContractName ||
+                    (isAm ? "የውል ሰነድ" : "Contract Document")}
                 </h2>
               </div>
               <button
@@ -2780,7 +3957,9 @@ export function AgenciesManagement({
                       size={48}
                       className="mx-auto mb-3 text-slate-300"
                     />
-                    <p className="font-bold text-[#003366]">{isAm ? "የሰነድ ዩአርኤል አልተሰጠም" : "No document URL provided"}</p>
+                    <p className="font-bold text-[#003366]">
+                      {isAm ? "የሰነድ ዩአርኤል አልተሰጠም" : "No document URL provided"}
+                    </p>
                   </div>
                 </div>
               )}
@@ -2789,7 +3968,9 @@ export function AgenciesManagement({
             {/* Modal Footer */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4">
               <p className="text-xs text-slate-500 order-2 sm:order-1">
-                {isAm ? "ሙሉ ማያ ገጽ ለማየት ወይም ለማውረድ \"ውጪ ክፈት\" የሚለውን ይጫኑ።" : "Click \"Open External\" to view the document in full screen or download it."}
+                {isAm
+                  ? 'ሙሉ ማያ ገጽ ለማየት ወይም ለማውረድ "ውጪ ክፈት" የሚለውን ይጫኑ።'
+                  : 'Click "Open External" to view the document in full screen or download it.'}
               </p>
               <motion.button
                 whileHover={{ scale: 1.01 }}

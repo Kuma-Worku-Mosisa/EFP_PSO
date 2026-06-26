@@ -1,6 +1,14 @@
 import { TransfersRepository } from "./transfers.repository";
 import { NotificationService } from "../notification/notification.service";
+import { getUsersByRole } from "../user/user.service";
 import prisma from "../../lib/prisma";
+
+const SPECIAL_POSITION_APPROVAL_ROLES = ["admin", "super_admin"];
+const SPECIAL_POSITIONS = [
+  "Manager of Institution",
+  "Operation of Institution",
+  "Administrative of Institution",
+];
 
 export class TransfersService {
   private repository = new TransfersRepository();
@@ -135,10 +143,7 @@ export class TransfersService {
       },
       organization: {
         id: employee.organization?.id || 0,
-        name:
-          employee.organization?.nameEnglish ||
-          employee.organization?.nameAmharic ||
-          "Unknown",
+        name: employee.organization?.nameEnglish || "Unknown",
       },
       position: employee.position
         ? { id: employee.position.id, name: employee.position.name }
@@ -161,12 +166,17 @@ export class TransfersService {
     action: "RELEASE" | "FINALIZE_APPROVE" | "REJECT",
     actionedById: number,
     userOrganizationId: number,
+    roles: string[],
     rejectionReason?: string,
   ) {
     const request = await this.repository.findTransferRequestById(requestId);
     if (!request) {
       throw new Error("The transfer request file could not be found.");
     }
+
+    const normalizedRoles = (roles || []).map((role) =>
+      String(role).trim().toLowerCase(),
+    );
 
     if (request.status === "FULLY_APPROVED" || request.status === "REJECTED") {
       throw new Error(
@@ -180,6 +190,7 @@ export class TransfersService {
       include: {
         user: { select: { fullName: true, faydaId: true } },
         organization: { select: { nameEnglish: true, nameAmharic: true } },
+        position: { select: { id: true, name: true } },
       },
     });
 
@@ -273,12 +284,23 @@ export class TransfersService {
         );
       }
 
+      const transferPositionName =
+        request.position?.name || request.employee?.position?.name || "";
+      const normalizedTransferPosition = String(transferPositionName)
+        .trim()
+        .toLowerCase();
+      const isSpecialPosition = SPECIAL_POSITIONS.some(
+        (position) =>
+          position.trim().toLowerCase() === normalizedTransferPosition,
+      );
+
       const result = await this.repository.executeApprovalTransaction(
         request.id,
         request.employeeId,
         request.targetOrganizationId,
         actionedById,
         "SOURCE_RELEASED",
+        !isSpecialPosition,
       );
 
       // Notify destination organization HR managers of release
@@ -306,18 +328,122 @@ export class TransfersService {
         }
       }
 
+      if (isSpecialPosition) {
+        // Create a personnel change request record for admin approval if one does not already exist.
+        const existingPersonnelRequest =
+          await prisma.personnelChangeRequest.findFirst({
+            where: {
+              targetEmployeeId: request.employeeId,
+              sourceOrganizationId: request.sourceOrganizationId,
+              targetOrganizationId: request.targetOrganizationId,
+              requestType: "EXISTING_EMPLOYEE",
+              status: "PENDING",
+            },
+          });
+
+        if (!existingPersonnelRequest) {
+          const targetPositionId =
+            request.requestedPositionId ??
+            request.position?.id ??
+            request.employee?.position?.id;
+
+          if (typeof targetPositionId !== "number") {
+            throw new Error(
+              "Cannot create a personnel change request without a valid target position.",
+            );
+          }
+
+          await prisma.personnelChangeRequest.create({
+            data: {
+              requestType: "EXISTING_EMPLOYEE",
+              initiatedByUserId: actionedById,
+              targetEmployeeId: request.employeeId,
+              sourceOrganizationId: request.sourceOrganizationId,
+              targetOrganizationId: request.targetOrganizationId,
+              targetPositionId,
+              reason: request.reason,
+              status: "PENDING",
+            },
+          });
+        }
+
+        const normalizeStatus = (value?: string) =>
+          String(value || "")
+            .trim()
+            .toLowerCase();
+
+        const adminUsers = (await getUsersByRole("admin")).filter(
+          (user) => normalizeStatus(user.status) === "active",
+        );
+        const superAdminUsers = (await getUsersByRole("super_admin")).filter(
+          (user) => normalizeStatus(user.status) === "active",
+        );
+        const recipients = [...adminUsers, ...superAdminUsers];
+        const recipientsById = new Map<number, (typeof recipients)[0]>();
+
+        for (const recipient of recipients) {
+          if (!recipientsById.has(recipient.id)) {
+            recipientsById.set(recipient.id, recipient);
+          }
+        }
+
+        for (const admin of recipientsById.values()) {
+          if (admin.email) {
+            try {
+              await NotificationService.sendBilingualAlert(
+                admin.id,
+                "TRANSFER_REQUEST_RELEASED",
+                notificationContext,
+              );
+              console.log(
+                `[Transfer Service] Release notification sent to admin user: ${admin.email}`,
+              );
+            } catch (error) {
+              console.error(
+                `[Transfer Service] Failed to notify admin on release ${admin.email}:`,
+                error,
+              );
+            }
+          }
+        }
+      }
+
       return result;
     }
 
     if (action === "FINALIZE_APPROVE") {
-      if (request.targetOrganizationId !== userOrganizationId) {
-        throw new Error(
-          "Authorization failure. Only the destination organization may finalize this transfer.",
-        );
-      }
       if (request.status !== "SOURCE_RELEASED") {
         throw new Error(
           "Cannot fully approve a transfer that has not yet been released by the source organization.",
+        );
+      }
+
+      const transferPositionName =
+        request.position?.name || request.employee?.position?.name || "";
+      const normalizedTransferPosition = String(transferPositionName)
+        .trim()
+        .toLowerCase();
+      const isSpecialPosition = SPECIAL_POSITIONS.some(
+        (position) =>
+          position.trim().toLowerCase() === normalizedTransferPosition,
+      );
+
+      const isAdminApproval = normalizedRoles.some((role) =>
+        SPECIAL_POSITION_APPROVAL_ROLES.includes(role),
+      );
+
+      if (isSpecialPosition && !isAdminApproval) {
+        throw new Error(
+          "This transfer requires final approval by a user with the admin or super_admin role.",
+        );
+      }
+
+      if (
+        !isSpecialPosition &&
+        request.targetOrganizationId !== userOrganizationId
+      ) {
+        throw new Error(
+          "Authorization failure. Only the destination organization may finalize this transfer.",
         );
       }
 

@@ -163,6 +163,18 @@ export class TransfersRepository {
   async findTransferRequestById(requestId: number) {
     return prisma.transferRequest.findUnique({
       where: { id: requestId },
+      include: {
+        employee: {
+          include: {
+            position: {
+              select: { id: true, name: true },
+            },
+          },
+        },
+        position: {
+          select: { id: true, name: true },
+        },
+      },
     });
   }
 
@@ -193,6 +205,7 @@ export class TransfersRepository {
     targetOrganizationId: number,
     actionedById: number,
     nextStatus: "SOURCE_RELEASED" | "FULLY_APPROVED",
+    updateEmployeeOnSourceRelease = false,
   ) {
     // Reuses global connection instance for transaction grouping safely
     return prisma.$transaction(async (tx) => {
@@ -206,11 +219,15 @@ export class TransfersRepository {
       });
 
       let updatedEmployee = null;
-      if (nextStatus === "SOURCE_RELEASED" || nextStatus === "FULLY_APPROVED") {
+      if (
+        nextStatus === "FULLY_APPROVED" ||
+        (nextStatus === "SOURCE_RELEASED" && updateEmployeeOnSourceRelease)
+      ) {
         updatedEmployee = await tx.employee.update({
           where: { id: employeeId },
           data: {
             organizationId: targetOrganizationId,
+            employmentStatus: "ACTIVE",
           },
         });
       }

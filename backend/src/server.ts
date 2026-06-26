@@ -27,7 +27,9 @@ import efpPositionRoutes from "./modules/efpPosition/efpPosition.routes";
 import notificationRoutes from "./modules/notification/notification.routes";
 import { runNotificationCronWorker } from "./modules/notification/notification.worker";
 import organizationRoutes from "./modules/organization/organization.routes";
+import { runServiceContractExpiryWorker } from "./modules/organization/organization.worker";
 import employeeRoutes from "./modules/employee/employee.routes";
+import personnelChangeRoutes from "./modules/personnelChange/personnelChange.routes";
 import transferRoutes from "./modules/transfers/transfers.routes";
 import contactRoutes from "./modules/contact/contact.routes";
 import newsRoutes from "./modules/news/news.routes";
@@ -96,6 +98,7 @@ app.use("/api/payments", paymentRouter);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/organizations", organizationRoutes);
 app.use("/api/employees", employeeRoutes);
+app.use("/api/personnel-change-requests", personnelChangeRoutes);
 app.use("/api/transfers", transferRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
@@ -143,6 +146,8 @@ app.use(
 
 // 🚀 INITIALIZE BACKGROUND AUTOMATION: Start the daily midnight lookahead engine
 runNotificationCronWorker();
+// Start service contract expiry worker
+runServiceContractExpiryWorker();
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => {

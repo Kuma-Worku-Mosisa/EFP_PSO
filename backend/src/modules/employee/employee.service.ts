@@ -32,6 +32,7 @@ export type EmployeeRegistrationInput = {
   gender?: string | null;
   citizenship?: string | null;
   age?: number | null;
+  employmentStatus?: string | null;
   startedDate?: string | null; // ISO 8601 date format
   organizationId: number;
   kebeleId: number;
@@ -339,7 +340,8 @@ export const registerEmployee = async (
           employmentStartDate: input.startedDate
             ? new Date(input.startedDate)
             : null,
-          employmentStatus: "ACTIVE",
+          employmentStatus:
+            normalizeOptionalText(input.employmentStatus) || "ACTIVE",
         },
       });
 
@@ -377,9 +379,21 @@ export const registerEmployee = async (
         { key: "organizational_id", type: "Organizational Identification" },
       ];
 
+      const normalizeDocumentKey = (fieldName: string) => {
+        const aliases: Record<string, string> = {
+          work_exp: "experience",
+          passport_kebele: "kebele_or_passport",
+          org_id: "organizational_id",
+        };
+        return aliases[fieldName] || fieldName;
+      };
+
       const employeeDocs = Object.entries(input.uploadedFiles || {})
         .map(([fieldName, fileUrl]) => {
-          const mapping = documentTypes.find((doc) => doc.key === fieldName);
+          const normalizedKey = normalizeDocumentKey(fieldName);
+          const mapping = documentTypes.find(
+            (doc) => doc.key === normalizedKey,
+          );
           return mapping
             ? {
                 employeeId: employee.id,

@@ -193,21 +193,24 @@ export const getAllUsers = async () => {
  * Returns users that have the given role name (case-insensitive).
  */
 export const getUsersByRole = async (roleName: string) => {
-  const normalized = (roleName || "").trim().toLowerCase();
-  return await prisma.user.findMany({
-    where: {
-      user_roles: {
-        some: {
-          roles: {
-            role_name: {
-              equals: normalized,
-            },
-          },
-        },
-      },
-    },
+  const normalizedRole = (roleName || "").trim().toLowerCase();
+  const users = await prisma.user.findMany({
     select: userSelection,
     orderBy: { createdAt: "desc" },
+  });
+
+  return users.filter((user) => {
+    const status = String(user.status || "")
+      .trim()
+      .toLowerCase();
+    if (status !== "active") return false;
+
+    return (user.user_roles || []).some(
+      (userRole) =>
+        String(userRole.roles.role_name || "")
+          .trim()
+          .toLowerCase() === normalizedRole,
+    );
   });
 };
 
@@ -248,6 +251,10 @@ export const findUserByUniqueField = async (
     where: whereClause,
     select: {
       id: true,
+      username: true,
+      email: true,
+      phone: true,
+      faydaId: true,
     },
   });
 };

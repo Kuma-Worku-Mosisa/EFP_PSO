@@ -218,10 +218,17 @@ export const validateUserFieldHandler = async (req: Request, res: Response) => {
     value,
   );
 
+  const existingValue = existing
+    ? String((existing as any)[field] ?? "")
+    : null;
+  const exactMatch = existingValue !== null ? existingValue === value : false;
+
   return ApiResponse.success(res, "Validation completed", {
     field,
     exists: Boolean(existing),
     validFormat: true,
+    existingValue,
+    exactMatch,
   });
 };
 

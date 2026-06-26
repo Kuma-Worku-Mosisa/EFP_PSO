@@ -17,13 +17,17 @@ interface DocumentPreviewerProps {
   fileName?: string;
   /** Pass class names to control the height of the container */
   className?: string;
+  isVerified?: boolean;
+  onToggleVerified?: () => void;
 }
 
 export default function DocumentPreviewer({
   url,
-  fileType,           
+  fileType,
   fileName = "Document",
-  className = "h-[80vh] w-full", // Default to 80% of the viewport height
+  className = "h-[80vh] w-full",
+  isVerified,
+  onToggleVerified,
 }: DocumentPreviewerProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -33,7 +37,12 @@ export default function DocumentPreviewer({
     if (!inputUrl) return "";
 
     // If it's already an absolute URL (http/https/blob/data), return as-is
-    if (inputUrl.startsWith("http://") || inputUrl.startsWith("https://") || inputUrl.startsWith("blob:") || inputUrl.startsWith("data:")) {
+    if (
+      inputUrl.startsWith("http://") ||
+      inputUrl.startsWith("https://") ||
+      inputUrl.startsWith("blob:") ||
+      inputUrl.startsWith("data:")
+    ) {
       return inputUrl;
     }
 
@@ -51,7 +60,10 @@ export default function DocumentPreviewer({
   // Auto-detect file type if not explicitly provided
   const detectedType =
     fileType ||
-    (normalizedUrl.toLowerCase().includes(".pdf") || fileName.toLowerCase().includes(".pdf") ? "pdf" : "image");
+    (normalizedUrl.toLowerCase().includes(".pdf") ||
+    fileName.toLowerCase().includes(".pdf")
+      ? "pdf"
+      : "image");
 
   if (!normalizedUrl) {
     return (
@@ -146,6 +158,27 @@ export default function DocumentPreviewer({
                 setHasError(true);
               }}
             />
+          </div>
+        )}
+
+        {onToggleVerified && (
+          <div className="absolute bottom-4 right-4 flex items-center gap-2 rounded-full bg-white/95 border border-slate-300 px-3 py-2 shadow-lg backdrop-blur">
+            <span
+              className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                isVerified
+                  ? "bg-emerald-100 text-emerald-700"
+                  : "bg-amber-100 text-amber-700"
+              }`}
+            >
+              {isVerified ? "Verified" : "Unverified"}
+            </span>
+            <button
+              type="button"
+              onClick={onToggleVerified}
+              className="text-xs font-semibold text-slate-700 rounded-full border border-slate-200 px-2 py-1 transition duration-150 cursor-pointer hover:bg-slate-100 active:bg-slate-200 hover:border-slate-300 hover:text-slate-900"
+            >
+              {isVerified ? "Mark as Unverified" : "Mark as Verified"}
+            </button>
           </div>
         )}
       </div>
