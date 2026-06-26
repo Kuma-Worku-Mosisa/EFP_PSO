@@ -193,7 +193,7 @@ export default function EFPPositionManagement() {
         <button
           type="button"
           onClick={openCreateForm}
-          className="inline-flex items-center gap-2 rounded-2xl bg-secondary px-4 py-3 text-sm font-black uppercase text-white transition hover:bg-slate-800"
+          className="inline-flex items-center gap-2 rounded-2xl bg-primary px-4 py-3 text-sm font-black uppercase text-white transition hover:bg-dark-blue"
         >
           <Plus className="w-4 h-4" />
           {isAm ? "አዲስ ቦታ ፈጥር" : "Add EFP Position"}
@@ -278,15 +278,14 @@ export default function EFPPositionManagement() {
                           <button
                             type="button"
                             onClick={() => openEditForm(position)}
-                            className="inline-flex items-center gap-2 rounded-2xl border border-secondary/10 bg-secondary/5 px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-secondary transition hover:bg-secondary/10"
-                          >
-                            <Edit3 className="h-3.5 w-3.5" />
-                            {isAm ? "አስተካክል" : "Edit"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => confirmDelete(position)}
-                            className="inline-flex items-center gap-2 rounded-2xl border border-rose-100 bg-rose-50 px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-rose-600 transition hover:bg-rose-100"
+                            className="inline-flex items-center gap-2 rounded-2xl bg-accent px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-white font-black transition hover:bg-[#B8961F] shadow-sm"
+                        >
+                          <Edit3 className="h-3.5 w-3.5" />
+                          {isAm ? "አስተካክል" : "Edit"}
+                        </button>
+                        <button
+                          onClick={() => confirmDelete(position)}
+                          className="inline-flex items-center gap-2 rounded-2xl bg-red-600 px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-white font-black transition hover:bg-red-700 shadow-sm"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                             {isAm ? "አስወግድ" : "Delete"}
@@ -330,29 +329,22 @@ export default function EFPPositionManagement() {
           <div className="w-full max-w-2xl rounded-[32px] bg-white p-8 shadow-2xl">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-black text-primary">
-                  {isEditing
-                    ? isAm
-                      ? "የቦታ መረጃ አስተካክል"
-                      : "Edit EFP Position"
-                    : isAm
-                      ? "አዲስ ፌዴራል ፖሊስ ቦታ"
-                      : "Create EFP Position"}
-                </h2>
-                <p className="mt-2 text-sm text-gray-500">
-                  {isAm
-                    ? "የእንግሊዝኛና የአማርኛ ስሞችን ያስገቡ።"
-                    : "Fill in the English and Amharic names for the position."}
-                </p>
+                  <h2 className="text-2xl font-black text-primary">
+                    {isEditing
+                      ? isAm
+                        ? "የቦታ መረጃ አስተካክል"
+                        : "Edit EFP Position"
+                      : isAm
+                        ? "አዲስ ፌዴራል ፖሊስ ቦታ"
+                        : "Create EFP Position"}
+                  </h2>
+                  <p className="mt-2 text-sm text-gray-500">
+                    {isAm
+                      ? "የእንግሊዝኛና የአማርኛ ስሞችን ያስገቡ።"
+                      : "Fill in the English and Amharic names for the position."}
+                  </p>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsFormOpen(false)}
-                className="rounded-3xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
-              >
-                {isAm ? "ዝጋ" : "Close"}
-              </button>
-            </div>
 
             <form className="mt-8 space-y-6" onSubmit={handleSave}>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -398,7 +390,7 @@ export default function EFPPositionManagement() {
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="inline-flex items-center justify-center rounded-3xl bg-secondary px-5 py-3 text-sm font-black uppercase tracking-[0.18em] text-white transition hover:bg-slate-800 disabled:opacity-70"
+                  className="inline-flex items-center justify-center rounded-3xl bg-primary px-5 py-3 text-sm font-black uppercase tracking-[0.18em] text-white transition hover:bg-dark-blue disabled:opacity-70"
                 >
                   {isSaving ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

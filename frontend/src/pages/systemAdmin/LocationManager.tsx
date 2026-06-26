@@ -14,6 +14,7 @@ interface NodeItem {
 
 export default function LocationManager() {
   const { language } = useLanguage();
+  const isAm = language === "am";
   // Cascading Layer States
   const [regions, setRegions] = useState<NodeItem[]>([]);
   const [zones, setZones] = useState<NodeItem[]>([]);
@@ -116,7 +117,7 @@ export default function LocationManager() {
             ? stripHtml(data.errors)
             : null;
         setErrorLog(
-          detailedError || data.message || `Request failed (${res.status})`,
+          detailedError || data.message || (isAm ? `ጥያቄ አልተሳካም (${res.status})` : `Request failed (${res.status})`),
         );
         return data;
       }
@@ -133,8 +134,8 @@ export default function LocationManager() {
       if (data && typeof data === "object") return data;
       return { success: true, data };
     } catch (err: any) {
-      setErrorLog(err?.message || "Network error");
-      return { success: false, message: err?.message || "Network error" };
+      setErrorLog(err?.message || (isAm ? "የአውታረ መረብ ስህተት" : "Network error"));
+      return { success: false, message: err?.message || (isAm ? "የአውታረ መረብ ስህተት" : "Network error") };
     }
   };
 
@@ -255,7 +256,7 @@ export default function LocationManager() {
     else {
       setAddModalLoading(false);
       setToastType("error");
-      setToastMessage("Missing parent for this tier");
+      setToastMessage(isAm ? "ለዚህ ደረጃ ወላጅ የለም" : "Missing parent for this tier");
       setToastOpen(true);
       return;
     }
@@ -269,7 +270,7 @@ export default function LocationManager() {
     if (!payload.nameEnglish && !payload.nameAmharic) {
       setAddModalLoading(false);
       setToastType("error");
-      setToastMessage("Please provide at least one name (English or Amharic)");
+      setToastMessage(isAm ? "እባክዎ ቢያንስ አንድ ስም ያስገቡ (እንግሊዝኛ ወይም አማርኛ)" : "Please provide at least one name (English or Amharic)");
       setToastOpen(true);
       return;
     }
@@ -287,11 +288,11 @@ export default function LocationManager() {
       if (addModalTier === "k" && addModalParentId)
         fetchKebeles(addModalParentId);
       setToastType("success");
-      setToastMessage("Created successfully");
+      setToastMessage(isAm ? "በተሳካ ሁኔታ ተፈጥሯል" : "Created successfully");
       setToastOpen(true);
     } else {
       setToastType("error");
-      setToastMessage(result.message || "Create failed");
+      setToastMessage(result.message || (isAm ? "መፍጠር አልተሳካም" : "Create failed"));
       setToastOpen(true);
     }
   };
@@ -314,7 +315,7 @@ export default function LocationManager() {
     if (!payload.nameEnglish && !payload.nameAmharic) {
       setEditModalLoading(false);
       setToastType("error");
-      setToastMessage("Please provide at least one name (English or Amharic)");
+      setToastMessage(isAm ? "እባክዎ ቢያንስ አንድ ስም ያስገቡ (እንግሊዝኛ ወይም አማርኛ)" : "Please provide at least one name (English or Amharic)");
       setToastOpen(true);
       return;
     }
@@ -329,11 +330,11 @@ export default function LocationManager() {
       if (editModalTier === "w" && selZone) fetchWoredas(selZone.id);
       if (editModalTier === "k" && selWoreda) fetchKebeles(selWoreda.id);
       setToastType("success");
-      setToastMessage("Updated successfully");
+      setToastMessage(isAm ? "በተሳካ ሁኔታ ተዘምኗል" : "Updated successfully");
       setToastOpen(true);
     } else {
       setToastType("error");
-      setToastMessage(result.message || "Update failed");
+      setToastMessage(result.message || (isAm ? "ማዘመን አልተሳካም" : "Update failed"));
       setToastOpen(true);
     }
   };
@@ -350,11 +351,11 @@ export default function LocationManager() {
     if (result.success) {
       if (refresh) refresh();
       setToastType("success");
-      setToastMessage("Deleted successfully");
+      setToastMessage(isAm ? "በተሳካ ሁኔታ ተሰርዟል" : "Deleted successfully");
       setToastOpen(true);
     } else {
       setToastType("error");
-      setToastMessage(result.message || "Delete failed");
+      setToastMessage(result.message || (isAm ? "መሰረዝ አልተሳካም" : "Delete failed"));
       setToastOpen(true);
     }
   };
@@ -376,12 +377,11 @@ export default function LocationManager() {
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto min-h-screen flex flex-col space-y-6">
       <div className="flex flex-col gap-2 sm:gap-3">
-        <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
-          Geographic Address Matrix
-        </h1>
+<h1 className="text-2xl sm:text-3xl font-black text-[#003366] tracking-tight">
+  {isAm ? "የጂኦግራፊክ አድራሻ ማትሪክስ" : "Geographic Address Matrix"}
+</h1>
         <p className="text-sm sm:text-base text-gray-600">
-          Search, filter, and manage cascading administrative regional settings
-          dynamically.
+          {isAm ? "የአስተዳደር ክልላዊ ቅንብሮችን ይፈልጉ፣ ያጣሩ እና ያስተዳድሩ።" : "Search, filter, and manage cascading administrative regional settings dynamically."}
         </p>
       </div>
 
@@ -395,8 +395,8 @@ export default function LocationManager() {
         isOpen={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         onConfirm={performPendingDelete}
-        title="Confirm Deletion"
-        message="Are you absolutely certain you want to remove this entity?"
+        title={isAm ? "ሰርዝ ያረጋግጡ" : "Confirm Deletion"}
+        message={isAm ? "ይህን አካል ማስወገድዎን እርግጠኛ ነዎት?" : "Are you absolutely certain you want to remove this entity?"}
         type="delete"
         isLoading={false}
       />
@@ -409,7 +409,7 @@ export default function LocationManager() {
           />
           <div className="relative bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-bold text-[#003366] mb-3">
-              Edit{" "}
+              {isAm ? "አስተካክል " : "Edit "}
               {editModalTier === "r"
                 ? "Region"
                 : editModalTier === "z"
@@ -423,13 +423,13 @@ export default function LocationManager() {
                 value={editModalEnglishValue}
                 onChange={(e) => setEditModalEnglishValue(e.target.value)}
                 className="w-full p-2 border rounded mb-2"
-                placeholder="Name (English)"
+                placeholder={isAm ? "ስም (እንግሊዝኛ)" : "Name (English)"}
               />
               <input
                 value={editModalAmharicValue}
                 onChange={(e) => setEditModalAmharicValue(e.target.value)}
                 className="w-full p-2 border rounded"
-                placeholder="ስም (Amharic)"
+                placeholder={isAm ? "ስም (አማርኛ)" : "Name (Amharic)"}
               />
             </div>
             <div className="flex justify-end gap-3">
@@ -437,14 +437,14 @@ export default function LocationManager() {
                 onClick={() => setEditModalOpen(false)}
                 className="px-4 py-2 rounded bg-gray-100"
               >
-                Cancel
+                {isAm ? "ሰርዝ" : "Cancel"}
               </button>
               <button
                 onClick={saveEditModal}
                 disabled={editModalLoading}
                 className="px-4 py-2 rounded bg-[#003366] text-[#FFD700] disabled:opacity-60"
               >
-                {editModalLoading ? "Saving..." : "Save"}
+                {editModalLoading ? (isAm ? "በማስቀመጥ ላይ..." : "Saving...") : (isAm ? "አስቀምጥ" : "Save")}
               </button>
             </div>
           </div>
@@ -459,7 +459,7 @@ export default function LocationManager() {
           />
           <div className="relative bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-bold text-[#003366] mb-3">
-              Add{" "}
+              {isAm ? "ጨምር " : "Add "}
               {addModalTier === "r"
                 ? "Region"
                 : addModalTier === "z"
@@ -470,7 +470,7 @@ export default function LocationManager() {
             </h3>
             {addModalTier !== "r" && (
               <div className="text-sm text-gray-500 mb-2">
-                Parent:{" "}
+                {isAm ? "ወላጅ:" : "Parent:"}{" "}
                 {addModalTier === "z"
                   ? getDisplayName(
                       regions.find((rt) => rt.id === addModalParentId),
@@ -492,13 +492,13 @@ export default function LocationManager() {
                 value={addModalEnglishValue}
                 onChange={(e) => setAddModalEnglishValue(e.target.value)}
                 className="w-full p-2 border rounded"
-                placeholder={`Enter English name`}
+                placeholder={isAm ? "የእንግሊዝኛ ስም ያስገቡ" : "Enter English name"}
               />
               <input
                 value={addModalAmharicValue}
                 onChange={(e) => setAddModalAmharicValue(e.target.value)}
                 className="w-full p-2 border rounded"
-                placeholder={`Enter Amharic name (optional)`}
+                placeholder={isAm ? "የአማርኛ ስም ያስገቡ (አማራጭ)" : "Enter Amharic name (optional)"}
               />
             </div>
 
@@ -507,14 +507,14 @@ export default function LocationManager() {
                 onClick={() => setAddModalOpen(false)}
                 className="px-4 py-2 rounded bg-gray-100"
               >
-                Cancel
+                {isAm ? "ሰርዝ" : "Cancel"}
               </button>
               <button
                 onClick={saveAddModal}
                 disabled={addModalLoading}
                 className="px-4 py-2 rounded bg-[#003366] text-[#FFD700] disabled:opacity-60"
               >
-                {addModalLoading ? "Creating..." : "Create"}
+                {addModalLoading ? (isAm ? "በመፍጠር ላይ..." : "Creating...") : (isAm ? "ፍጠር" : "Create")}
               </button>
             </div>
           </div>
@@ -534,12 +534,12 @@ export default function LocationManager() {
         <div className="w-full lg:w-72 border bg-white rounded-xl shadow-sm flex flex-col h-[520px] sm:h-[620px] flex-shrink-0">
           <div className="p-4 border-b bg-gray-50 rounded-t-xl space-y-2">
             <h2 className="font-bold text-gray-800 text-sm uppercase tracking-wider">
-              1. Regions
+              {isAm ? "1. ክልሎች" : "1. Regions"}
             </h2>
             <div className="relative">
               <input
                 type="text"
-                placeholder="🔍 Filter regions..."
+                placeholder={isAm ? "🔍 ክልሎችን ያጣሩ..." : "🔍 Filter regions..."}
                 className="w-full text-xs p-2 pl-7 border rounded-lg bg-white shadow-inner focus:ring-1 focus:ring-[#003366]"
                 value={queryRegion}
                 onChange={(e) => setQueryRegion(e.target.value)}
@@ -549,9 +549,9 @@ export default function LocationManager() {
               <button
                 onClick={() => openAddModal("r")}
                 className="bg-[#003366] text-[#FFD700] px-3 py-1 rounded-lg text-sm font-bold hover:bg-[#002244] flex items-center justify-center"
-                title="Add region"
+                title={isAm ? "ክልል ጨምር" : "Add region"}
               >
-                Add Region
+                {isAm ? "ክልል ጨምር" : "Add Region"}
               </button>
             </div>
           </div>
@@ -559,7 +559,7 @@ export default function LocationManager() {
           <ul className="overflow-y-auto flex-1 p-2 space-y-1">
             {filteredRegions.length === 0 && regions.length > 0 && (
               <div className="text-center text-xs text-gray-400 p-4 italic">
-                No matched regions found
+                {isAm ? "ተዛማጅ ክልሎች አልተገኙም" : "No matched regions found"}
               </div>
             )}
             {filteredRegions.map((r) => (
@@ -605,7 +605,7 @@ export default function LocationManager() {
                         ? "text-[#FFD700]"
                         : "text-black hover:text-[#003366]"
                     }`}
-                    title="Edit region"
+                    title={isAm ? "ክልል አስተካክል" : "Edit region"}
                   >
                     <Edit className="w-4 h-4" />
                   </button>
@@ -622,7 +622,7 @@ export default function LocationManager() {
                         ? "text-[#FFD700]"
                         : "text-black hover:text-red-600"
                     }`}
-                    title="Delete region"
+                    title={isAm ? "ክልል ሰርዝ" : "Delete region"}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -638,11 +638,11 @@ export default function LocationManager() {
             <>
               <div className="p-4 border-b bg-gray-50 rounded-t-xl space-y-2">
                 <h2 className="font-bold text-gray-800 text-sm uppercase tracking-wider truncate">
-                  2. Zones ({selRegion.name})
+                  {isAm ? "2. ዞኖች (" : "2. Zones ("}{selRegion.name})
                 </h2>
                 <input
                   type="text"
-                  placeholder="🔍 Filter zones..."
+                  placeholder={isAm ? "🔍 ዞኖችን ያጣሩ..." : "🔍 Filter zones..."}
                   className="w-full text-xs p-2 border rounded-lg bg-white shadow-inner focus:ring-1 focus:ring-[#003366]"
                   value={queryZone}
                   onChange={(e) => setQueryZone(e.target.value)}
@@ -651,9 +651,9 @@ export default function LocationManager() {
                   <button
                     onClick={() => openAddModal("z", selRegion?.id ?? null)}
                     className="bg-[#003366] text-[#FFD700] px-3 py-1 rounded-lg text-sm hover:bg-[#002244] flex items-center justify-center"
-                    title="Add zone"
+                    title={isAm ? "ዞን ጨምር" : "Add zone"}
                   >
-                    Add Zone
+                    {isAm ? "ዞን ጨምር" : "Add Zone"}
                   </button>
                 </div>
               </div>
@@ -661,7 +661,7 @@ export default function LocationManager() {
               <ul className="overflow-y-auto flex-1 p-2 space-y-1">
                 {filteredZones.length === 0 && zones.length > 0 && (
                   <div className="text-center text-xs text-gray-400 p-4 italic">
-                    No matched zones found
+                    {isAm ? "ተዛማጅ ዞኖች አልተገኙም" : "No matched zones found"}
                   </div>
                 )}
                 {filteredZones.map((z) => (
@@ -707,7 +707,7 @@ export default function LocationManager() {
                             ? "text-[#FFD700]"
                             : "text-black hover:text-[#003366]"
                         }`}
-                        title="Edit zone"
+                        title={isAm ? "ዞን አስተካክል" : "Edit zone"}
                       >
                         <Edit className="w-4 h-4" />
                       </button>
@@ -723,7 +723,7 @@ export default function LocationManager() {
                             ? "text-[#FFD700]"
                             : "text-black hover:text-red-600"
                         }`}
-                        title="Delete zone"
+                        title={isAm ? "ዞን ሰርዝ" : "Delete zone"}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -734,7 +734,7 @@ export default function LocationManager() {
             </>
           ) : (
             <div className="m-auto text-gray-300 text-xs text-center p-4">
-              Select a parent Region to display internal structural Zones.
+              {isAm ? "የውስጥ ዞኖችን ለማሳየት የወላጅ ክልል ይምረጡ።" : "Select a parent Region to display internal structural Zones."}
             </div>
           )}
         </div>
@@ -745,11 +745,11 @@ export default function LocationManager() {
             <>
               <div className="p-4 border-b bg-gray-50 rounded-t-xl space-y-2">
                 <h2 className="font-bold text-gray-800 text-sm uppercase tracking-wider truncate">
-                  3. Woredas ({selZone.name})
+                  {isAm ? "3. ወረዳዎች (" : "3. Woredas ("}{selZone.name})
                 </h2>
                 <input
                   type="text"
-                  placeholder="🔍 Filter woredas..."
+                  placeholder={isAm ? "🔍 ወረዳዎችን ያጣሩ..." : "🔍 Filter woredas..."}
                   className="w-full text-xs p-2 border rounded-lg bg-white shadow-inner focus:ring-1 focus:ring-blue-500"
                   value={queryWoreda}
                   onChange={(e) => setQueryWoreda(e.target.value)}
@@ -758,16 +758,16 @@ export default function LocationManager() {
                   <button
                     onClick={() => openAddModal("w", selZone?.id ?? null)}
                     className="bg-[#003366] text-[#FFD700] px-3 py-1 rounded-lg text-sm hover:bg-[#002244] flex items-center justify-center"
-                    title="Add woreda"
+                    title={isAm ? "ወረዳ ጨምር" : "Add woreda"}
                   >
-                    Add Woreda
+                    {isAm ? "ወረዳ ጨምር" : "Add Woreda"}
                   </button>
                 </div>
               </div>
               <ul className="overflow-y-auto flex-1 p-2 space-y-1">
                 {filteredWoredas.length === 0 && woredas.length > 0 && (
                   <div className="text-center text-xs text-gray-400 p-4 italic">
-                    No matched woredas found
+                    {isAm ? "ተዛማጅ ወረዳዎች አልተገኙም" : "No matched woredas found"}
                   </div>
                 )}
                 {filteredWoredas.map((w) => (
@@ -809,7 +809,7 @@ export default function LocationManager() {
                             ? "text-[#FFD700]"
                             : "text-black hover:text-[#003366]"
                         }`}
-                        title="Edit woreda"
+                        title={isAm ? "ወረዳ አስተካክል" : "Edit woreda"}
                       >
                         <Edit className="w-4 h-4" />
                       </button>
@@ -825,7 +825,7 @@ export default function LocationManager() {
                             ? "text-[#FFD700]"
                             : "text-black hover:text-red-600"
                         }`}
-                        title="Delete woreda"
+                        title={isAm ? "ወረዳ ሰርዝ" : "Delete woreda"}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -836,7 +836,7 @@ export default function LocationManager() {
             </>
           ) : (
             <div className="m-auto text-gray-300 text-xs text-center p-4">
-              Select an active Zone parameter configuration tree.
+              {isAm ? "የዞን ውቅረት ይምረጡ።" : "Select an active Zone parameter configuration tree."}
             </div>
           )}
         </div>
@@ -847,11 +847,11 @@ export default function LocationManager() {
             <>
               <div className="p-4 border-b bg-gray-50 rounded-t-xl space-y-2">
                 <h2 className="font-bold text-gray-800 text-sm uppercase tracking-wider truncate">
-                  4. Kebeles ({selWoreda.name})
+                  {isAm ? "4. ቀበሌዎች (" : "4. Kebeles ("}{selWoreda.name})
                 </h2>
                 <input
                   type="text"
-                  placeholder="🔍 Filter kebeles..."
+                  placeholder={isAm ? "🔍 ቀበሌዎችን ያጣሩ..." : "🔍 Filter kebeles..."}
                   className="w-full text-xs p-2 border rounded-lg bg-white shadow-inner focus:ring-1 focus:ring-blue-500"
                   value={queryKebele}
                   onChange={(e) => setQueryKebele(e.target.value)}
@@ -860,16 +860,16 @@ export default function LocationManager() {
                   <button
                     onClick={() => openAddModal("k", selWoreda?.id ?? null)}
                     className="bg-[#003366] text-[#FFD700] px-3 py-1 rounded-lg text-sm hover:bg-[#002244] flex items-center justify-center"
-                    title="Add kebele"
+                    title={isAm ? "ቀበሌ ጨምር" : "Add kebele"}
                   >
-                    Add Kebele
+                    {isAm ? "ቀበሌ ጨምር" : "Add Kebele"}
                   </button>
                 </div>
               </div>
               <ul className="overflow-y-auto flex-1 p-2 space-y-1">
                 {filteredKebeles.length === 0 && kebeles.length > 0 && (
                   <div className="text-center text-xs text-gray-400 p-4 italic">
-                    No matched kebeles found
+                    {isAm ? "ተዛማጅ ቀበሌዎች አልተገኙም" : "No matched kebeles found"}
                   </div>
                 )}
                 {filteredKebeles.map((k) => (
@@ -909,7 +909,7 @@ export default function LocationManager() {
                             ? "text-[#FFD700]"
                             : "text-black hover:text-[#003366]"
                         }`}
-                        title="Edit kebele"
+                        title={isAm ? "ቀበሌ አስተካክል" : "Edit kebele"}
                       >
                         <Edit className="w-4 h-4" />
                       </button>
@@ -924,7 +924,7 @@ export default function LocationManager() {
                             ? "text-[#FFD700]"
                             : "text-black hover:text-red-600"
                         }`}
-                        title="Delete kebele"
+                        title={isAm ? "ቀበሌ ሰርዝ" : "Delete kebele"}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -935,7 +935,7 @@ export default function LocationManager() {
             </>
           ) : (
             <div className="m-auto text-gray-300 text-xs text-center p-4">
-              Select an internal operational Woreda partition.
+              {isAm ? "የውስጥ ወረዳ ክፍል ይምረጡ።" : "Select an internal operational Woreda partition."}
             </div>
           )}
         </div>

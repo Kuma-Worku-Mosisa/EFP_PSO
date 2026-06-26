@@ -10,6 +10,7 @@ import {
   X,
   Image as ImageIcon,
   Calendar,
+  Search,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { apiRequest } from "../lib/api";
@@ -17,11 +18,14 @@ import { apiRequest } from "../lib/api";
 interface NewsItem {
   id: number;
   title: string;
+  titleAm?: string;
   category: string;
   date: string;
   publishedAt?: string;
   summary?: string;
+  summaryAm?: string;
   content: string;
+  contentAm?: string;
   status: "published" | "draft";
   imageUrl?: string;
 }
@@ -37,9 +41,12 @@ export const ManageNews = () => {
     Partial<NewsItem & { imageFile?: File }>
   >({
     title: "",
+    titleAm: "",
     category: "Official",
     summary: "",
+    summaryAm: "",
     content: "",
+    contentAm: "",
     status: "published",
     date: new Date().toISOString().split("T")[0],
     imageUrl: "",
@@ -47,12 +54,17 @@ export const ManageNews = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState("all");
 
   // Expose simple UI indicators for form status
 
-  const normalizeNewsItem = (item: NewsItem) => ({
+  const normalizeNewsItem = (item: NewsItem, amharic?: { titleAm?: string; summaryAm?: string; contentAm?: string }) => ({
     ...item,
     imageUrl: item.imageUrl || undefined,
+    titleAm: amharic?.titleAm || item.titleAm || undefined,
+    summaryAm: amharic?.summaryAm || item.summaryAm || undefined,
+    contentAm: amharic?.contentAm || item.contentAm || undefined,
     date:
       item.date ||
       (item.publishedAt
@@ -68,7 +80,7 @@ export const ManageNews = () => {
       setNews(result.data.map((item) => normalizeNewsItem(item as NewsItem)));
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to load news items.",
+        err instanceof Error ? err.message : isAm ? "ዜናዎችን መጫን አልተቻለም።" : "Failed to load news items.",
       );
     } finally {
       setLoading(false);
@@ -78,6 +90,25 @@ export const ManageNews = () => {
   useEffect(() => {
     fetchNews();
   }, [language]);
+
+  const NEWS_CATEGORIES = ["all", "Official", "Alert", "Press Release"] as const;
+
+  const filteredNews = news.filter((item) => {
+    const matchesCategory =
+      activeCategory === "all" || item.category === activeCategory;
+    const title = (item.title ?? "").toLowerCase();
+    const titleAm = (item.titleAm ?? "").toLowerCase();
+    const content = (item.content ?? "").toLowerCase();
+    const contentAm = (item.contentAm ?? "").toLowerCase();
+    const q = searchQuery.toLowerCase();
+    return (
+      matchesCategory &&
+      (title.includes(q) ||
+        titleAm.includes(q) ||
+        content.includes(q) ||
+        contentAm.includes(q))
+    );
+  });
 
   const t = {
     title: isAm ? "ዜና እና ማስታወቂያዎች አስተዳደር" : "News & Announcements Management",
@@ -96,9 +127,14 @@ export const ManageNews = () => {
   };
 
   const handleSave = async () => {
-    if (!formData.title?.trim() || !formData.content?.trim()) {
+    if (
+      !formData.title?.trim() ||
+      !formData.titleAm?.trim() ||
+      !formData.content?.trim() ||
+      !formData.contentAm?.trim()
+    ) {
       setError(
-        isAm ? "እባክዎ ርዕስ እና ዝርዝር ይሙሉ." : "Title and content are required.",
+        isAm ? "እባክዎ ሁለቱንም የእንግሊዝኛ እና የአማርኛ ርዕስ እና ዝርዝር ይሙሉ።" : "Both English and Amharic title and content are required.",
       );
       return;
     }
@@ -114,9 +150,12 @@ export const ManageNews = () => {
         const fd = new FormData();
         fd.append("image", formData.imageFile);
         fd.append("title", String(formData.title || ""));
+        if (formData.titleAm) fd.append("titleAm", String(formData.titleAm));
         fd.append("category", String(formData.category || "General"));
         if (formData.summary) fd.append("summary", String(formData.summary));
+        if (formData.summaryAm) fd.append("summaryAm", String(formData.summaryAm));
         fd.append("content", String(formData.content || ""));
+        if (formData.contentAm) fd.append("contentAm", String(formData.contentAm));
         fd.append("status", String(formData.status || "published"));
         if (formData.date) fd.append("publishedAt", String(formData.date));
 
@@ -132,7 +171,11 @@ export const ManageNews = () => {
             setNews((prev) =>
               prev.map((item) =>
                 item.id === editingItem.id
-                  ? normalizeNewsItem(response!.data)
+                  ? normalizeNewsItem(response!.data, {
+                      titleAm: formData.titleAm,
+                      summaryAm: formData.summaryAm,
+                      contentAm: formData.contentAm,
+                    })
                   : item,
               ),
             );
@@ -143,15 +186,22 @@ export const ManageNews = () => {
             body: fd,
           });
           if (response) {
-            setNews((prev) => [normalizeNewsItem(response!.data), ...prev]);
+            setNews((prev) => [normalizeNewsItem(response!.data, {
+              titleAm: formData.titleAm,
+              summaryAm: formData.summaryAm,
+              contentAm: formData.contentAm,
+            }), ...prev]);
           }
         }
       } else {
         const payload = {
           title: formData.title,
+          titleAm: formData.titleAm,
           category: formData.category || "General",
           summary: formData.summary,
+          summaryAm: formData.summaryAm,
           content: formData.content,
+          contentAm: formData.contentAm,
           imageUrl: formData.imageUrl,
           status: formData.status,
           publishedAt: formData.date,
@@ -169,7 +219,11 @@ export const ManageNews = () => {
             setNews((prev) =>
               prev.map((item) =>
                 item.id === editingItem.id
-                  ? normalizeNewsItem(response!.data)
+                  ? normalizeNewsItem(response!.data, {
+                      titleAm: formData.titleAm,
+                      summaryAm: formData.summaryAm,
+                      contentAm: formData.contentAm,
+                    })
                   : item,
               ),
             );
@@ -180,7 +234,11 @@ export const ManageNews = () => {
             body: JSON.stringify(payload),
           });
           if (response) {
-            setNews((prev) => [normalizeNewsItem(response!.data), ...prev]);
+            setNews((prev) => [normalizeNewsItem(response!.data, {
+              titleAm: formData.titleAm,
+              summaryAm: formData.summaryAm,
+              contentAm: formData.contentAm,
+            }), ...prev]);
           }
         }
       }
@@ -189,9 +247,12 @@ export const ManageNews = () => {
       setEditingItem(null);
       setFormData({
         title: "",
+        titleAm: "",
         category: "Official",
         summary: "",
+        summaryAm: "",
         content: "",
+        contentAm: "",
         status: "published",
         date: new Date().toISOString().split("T")[0],
         imageUrl: "",
@@ -199,7 +260,7 @@ export const ManageNews = () => {
       });
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to save news item.",
+        err instanceof Error ? err.message : isAm ? "ዜናውን ማስቀመጥ አልተቻለም።" : "Failed to save news item.",
       );
     } finally {
       setLoading(false);
@@ -211,6 +272,9 @@ export const ManageNews = () => {
     setFormData({
       ...item,
       summary: item.summary || "",
+      summaryAm: item.summaryAm || "",
+      contentAm: item.contentAm || "",
+      titleAm: item.titleAm || "",
       date:
         item.date ||
         (item.publishedAt
@@ -240,7 +304,7 @@ export const ManageNews = () => {
       setNews((prev) => prev.filter((item) => item.id !== id));
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to delete news item.",
+        err instanceof Error ? err.message : isAm ? "ዜናውን መሰረዝ አልተቻለም።" : "Failed to delete news item.",
       );
     } finally {
       setLoading(false);
@@ -270,8 +334,10 @@ export const ManageNews = () => {
             setEditingItem(null);
             setFormData({
               title: "",
+              titleAm: "",
               category: "Official",
               content: "",
+              contentAm: "",
               status: "published",
               date: new Date().toISOString().split("T")[0],
               imageUrl: "",
@@ -279,7 +345,7 @@ export const ManageNews = () => {
             setIsAdding(true);
           }}
           disabled={loading}
-          className={`gold-gradient text-primary px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center space-x-2 shadow-xl shadow-secondary/20 hover:scale-105 active:scale-95 transition-all ${
+          className={`bg-[#003366] text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center space-x-2 shadow-xl shadow-primary/20 hover:bg-[#002244] active:scale-95 transition-all ${
             loading ? "opacity-60 cursor-not-allowed" : ""
           }`}
         >
@@ -288,24 +354,68 @@ export const ManageNews = () => {
         </button>
       </div>
 
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
+        <div className="relative flex-1 max-w-xl">
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={isAm ? "ዜና ፈልግ..." : "Search news..."}
+            className="w-full pl-16 pr-8 py-5 bg-white rounded-[30px] border border-gray-100 shadow-sm focus:border-secondary focus:ring-4 focus:ring-secondary/5 outline-none font-bold text-sm text-primary transition-all"
+          />
+        </div>
+        <div className="flex items-center space-x-3 overflow-x-auto pb-2 lg:pb-0 custom-scrollbar">
+          {NEWS_CATEGORIES.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`px-6 py-4 rounded-[20px] transition-all font-black uppercase tracking-widest text-[9px] whitespace-nowrap border-2 ${
+                cat === activeCategory
+                  ? "gold-gradient text-primary border-secondary shadow-lg shadow-secondary/20 scale-105"
+                  : "bg-white text-gray-400 border-transparent hover:border-gray-100 hover:text-primary hover:bg-gray-50"
+              }`}
+            >
+              {cat === "all"
+                ? isAm
+                  ? "ሁሉም"
+                  : "All"
+                : cat === "Official"
+                  ? isAm
+                    ? "ይፋዊ"
+                    : "Official"
+                  : cat === "Alert"
+                    ? isAm
+                      ? "ማስጠንቀቂያ"
+                      : "Alert"
+                    : cat === "Press Release"
+                      ? isAm
+                        ? "መግለጫ"
+                        : "Press Release"
+                      : cat}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-8 space-y-6">
           <AnimatePresence mode="popLayout">
-            {news.map((item) => (
+            {filteredNews.map((item) => (
               <motion.div
                 key={item.id}
                 layout
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9, x: -20 }}
-                className="bg-white p-6 rounded-[30px] border border-gray-100 shadow-sm flex flex-col md:flex-row gap-6 group hover:shadow-2xl hover:border-secondary/20 transition-all duration-500"
+                className="bg-white p-6 rounded-[30px] border border-gray-100 shadow-sm flex flex-col md:flex-row gap-4 group hover:shadow-2xl hover:border-secondary/20 transition-all duration-500"
               >
-                <div className="w-full md:w-56 h-40 bg-gray-50 rounded-[20px] flex flex-col items-center justify-center text-gray-300 group-hover:bg-secondary/5 transition-colors relative overflow-hidden border border-dashed border-gray-200">
+                <div className="w-full md:w-60 h-44 bg-gray-50 rounded-[20px] flex flex-col items-center justify-center text-gray-300 group-hover:bg-secondary/5 transition-colors relative overflow-hidden border border-dashed border-gray-200 shrink-0">
                   {item.imageUrl ? (
                     <img
                       src={item.imageUrl}
                       alt={item.title}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                   ) : (
                     <>
@@ -331,11 +441,16 @@ export const ManageNews = () => {
                     </div>
                   </div>
                   <h3 className="text-2xl font-black text-primary tracking-tight group-hover:text-secondary transition-colors line-clamp-1">
-                    {item.title}
+                    {isAm && item.titleAm ? item.titleAm : item.title}
                   </h3>
                   <p className="text-gray-500 text-sm line-clamp-2 leading-relaxed font-medium">
-                    {item.content}
+                    {isAm && item.contentAm ? item.contentAm : item.content}
                   </p>
+                  {item.summary && item.summaryAm && (
+                    <p className="text-xs text-gray-400 font-medium italic line-clamp-2">
+                      {isAm ? item.summaryAm : item.summary}
+                    </p>
+                  )}
 
                   <div className="flex items-center space-x-3 pt-2">
                     <div
@@ -436,46 +551,72 @@ export const ManageNews = () => {
                 {/* Image Upload Area */}
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">
-                    Announcement Image
+                    {isAm ? "ምስል" : "Announcement Image"}
                   </label>
-                  <div
-                    onClick={() =>
-                      document.getElementById("news-image-upload")?.click()
-                    }
-                    className="w-full h-48 bg-gray-50 rounded-[30px] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center group hover:bg-secondary/5 hover:border-secondary/40 transition-all cursor-pointer relative overflow-hidden"
-                  >
-                    {formData.imageUrl ? (
-                      <img
-                        src={formData.imageUrl}
-                        alt="Preview"
-                        className="w-full h-full object-cover rounded-[28px]"
+                  <div className="space-y-4">
+                    <div
+                      onClick={() =>
+                        !formData.imageUrl && document.getElementById("news-image-upload")?.click()
+                      }
+                      className="w-full h-96 bg-gray-50 rounded-[30px] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center group hover:bg-secondary/5 hover:border-secondary/40 transition-all cursor-pointer relative overflow-hidden"
+                    >
+                      {formData.imageUrl ? (
+                        <img
+                          src={formData.imageUrl}
+                          alt="Preview"
+                          className="w-full h-full object-cover rounded-[28px]"
+                        />
+                      ) : (
+                        <>
+                          <ImageIcon className="w-12 h-12 text-gray-300 group-hover:text-secondary group-hover:scale-110 transition-all" />
+                          <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-2">
+                            {t.uploadImg}
+                          </p>
+                        </>
+                      )}
+                      <input
+                        id="news-image-upload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const previewUrl = URL.createObjectURL(file);
+                            setFormData({
+                              ...formData,
+                              imageUrl: previewUrl,
+                              imageFile: file,
+                            });
+                          }
+                        }}
                       />
-                    ) : (
-                      <>
-                        <ImageIcon className="w-12 h-12 text-gray-300 group-hover:text-secondary group-hover:scale-110 transition-all" />
-                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-2">
-                          {t.uploadImg}
-                        </p>
-                      </>
+                    </div>
+                    {formData.imageUrl && (
+                      <div className="flex items-center justify-center gap-4">
+                        <button
+                          type="button"
+                          onClick={() => document.getElementById("news-image-upload")?.click()}
+                          className="px-6 py-3 bg-white text-[#003366] border-2 border-[#003366] rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg hover:scale-105 transition-all"
+                        >
+                          {isAm ? "ምስል ቀይር" : "Change Image"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData({
+                              ...formData,
+                              imageUrl: "",
+                              imageFile: undefined,
+                            });
+                          }}
+                          className="px-6 py-3 bg-red-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg hover:bg-red-600 hover:scale-105 transition-all flex items-center gap-2"
+                        >
+                          <X className="w-4 h-4" />
+                          {isAm ? "አስወግድ" : "Remove"}
+                        </button>
+                      </div>
                     )}
-                    <input
-                      id="news-image-upload"
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          // preview using object URL and keep file for upload
-                          const previewUrl = URL.createObjectURL(file);
-                          setFormData({
-                            ...formData,
-                            imageUrl: previewUrl,
-                            imageFile: file,
-                          });
-                        }
-                      }}
-                    />
                   </div>
                 </div>
 
@@ -483,7 +624,7 @@ export const ManageNews = () => {
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">
-                    {isAm ? "ርዕስ" : "Title"}
+                    {isAm ? "ርዕስ (እንግሊዝኛ)" : "Title (English)"}
                   </label>
                   <input
                     type="text"
@@ -493,7 +634,24 @@ export const ManageNews = () => {
                     }
                     className="w-full px-8 py-5 bg-gray-50 rounded-[24px] border-2 border-transparent focus:border-secondary focus:bg-white outline-none font-bold text-primary transition-all shadow-inner"
                     placeholder={
-                      isAm ? "ርዕስ ያስገቡ..." : "Enter announcement title..."
+                      isAm ? "ርዕስ ያስገቡ (እንግሊዝኛ)" : "Enter announcement title..."
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">
+                    {isAm ? "ርዕስ (አማርኛ)" : "Title (Amharic)"}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.titleAm || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, titleAm: e.target.value })
+                    }
+                    className="w-full px-8 py-5 bg-gray-50 rounded-[24px] border-2 border-dashed border-gray-200 focus:border-secondary focus:bg-white outline-none font-bold text-primary transition-all shadow-inner"
+                    placeholder={
+                      isAm ? "ርዕስ ያስገቡ (አማርኛ)" : "Enter announcement title (Amharic)..."
                     }
                   />
                 </div>
@@ -554,38 +712,74 @@ export const ManageNews = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">
-                    {isAm ? "ማጠቃለያ" : "Summary"}
-                  </label>
-                  <textarea
-                    value={formData.summary}
-                    onChange={(e) =>
-                      setFormData({ ...formData, summary: e.target.value })
-                    }
-                    className="w-full px-8 py-5 bg-gray-50 rounded-[30px] border-2 border-transparent focus:border-secondary focus:bg-white outline-none font-medium text-primary transition-all h-28 resize-none leading-relaxed"
-                    placeholder={
-                      isAm ? "እንደገና አጠቃለያ ያስገቡ..." : "Enter a brief summary..."
-                    }
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">
+                      {isAm ? "ማጠቃለያ (እንግሊዝኛ)" : "Summary (English)"}
+                    </label>
+                    <textarea
+                      value={formData.summary}
+                      onChange={(e) =>
+                        setFormData({ ...formData, summary: e.target.value })
+                      }
+                      className="w-full px-8 py-5 bg-gray-50 rounded-[30px] border-2 border-transparent focus:border-secondary focus:bg-white outline-none font-medium text-primary transition-all h-28 resize-none leading-relaxed"
+                      placeholder={
+                        isAm ? "ማጠቃለያ ያስገቡ (እንግሊዝኛ)" : "Enter a brief summary..."
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">
+                      {isAm ? "ማጠቃለያ (አማርኛ)" : "Summary (Amharic)"}
+                    </label>
+                    <textarea
+                      value={formData.summaryAm || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, summaryAm: e.target.value })
+                      }
+                      className="w-full px-8 py-5 bg-gray-50 rounded-[30px] border-2 border-dashed border-gray-200 focus:border-secondary focus:bg-white outline-none font-medium text-primary transition-all h-28 resize-none leading-relaxed"
+                      placeholder={
+                        isAm ? "ማጠቃለያ ያስገቡ (አማርኛ)" : "Enter a brief summary (Amharic)..."
+                      }
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">
-                    {t.content}
-                  </label>
-                  <textarea
-                    value={formData.content}
-                    onChange={(e) =>
-                      setFormData({ ...formData, content: e.target.value })
-                    }
-                    className="w-full px-8 py-5 bg-gray-50 rounded-[30px] border-2 border-transparent focus:border-secondary focus:bg-white outline-none font-medium text-primary transition-all h-40 resize-none leading-relaxed"
-                    placeholder={
-                      isAm
-                        ? "ዝርዝር መግለጫ ይጥቀሱ..."
-                        : "Enter full announcement details..."
-                    }
-                  ></textarea>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">
+                      {isAm ? "ዝርዝር (እንግሊዝኛ)" : "Content (English)"}
+                    </label>
+                    <textarea
+                      value={formData.content}
+                      onChange={(e) =>
+                        setFormData({ ...formData, content: e.target.value })
+                      }
+                      className="w-full px-8 py-5 bg-gray-50 rounded-[30px] border-2 border-transparent focus:border-secondary focus:bg-white outline-none font-medium text-primary transition-all h-40 resize-none leading-relaxed"
+                      placeholder={
+                        isAm
+                          ? "ዝርዝር መግለጫ ይጥቀሱ (እንግሊዝኛ)..."
+                          : "Enter full announcement details..."
+                      }
+                    ></textarea>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">
+                      {isAm ? "ዝርዝር (አማርኛ)" : "Content (Amharic)"}
+                    </label>
+                    <textarea
+                      value={formData.contentAm || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, contentAm: e.target.value })
+                      }
+                      className="w-full px-8 py-5 bg-gray-50 rounded-[30px] border-2 border-dashed border-gray-200 focus:border-secondary focus:bg-white outline-none font-medium text-primary transition-all h-40 resize-none leading-relaxed"
+                      placeholder={
+                        isAm
+                          ? "ዝርዝር መግለጫ ይጥቀሱ (አማርኛ)..."
+                          : "Enter full announcement details (Amharic)..."
+                      }
+                    ></textarea>
+                  </div>
                 </div>
               </div>
 

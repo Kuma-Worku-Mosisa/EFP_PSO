@@ -95,8 +95,40 @@ export const Navbar = () => {
             </Link>
           </div>
 
-          <div className="md:hidden flex items-center">
-            <button onClick={() => setIsOpen(!isOpen)} className="text-primary">
+          <div className="md:hidden flex items-center space-x-2">
+            <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-0.5">
+              <button
+                onClick={() => setLanguage('am')}
+                className={cn(
+                  "px-2 py-1 rounded-md text-[10px] font-black transition-all",
+                  language === 'am' ? "bg-primary text-white shadow-sm" : "text-gray-500"
+                )}
+              >
+                አማ
+              </button>
+              <button
+                onClick={() => setLanguage('en')}
+                className={cn(
+                  "px-2 py-1 rounded-md text-[10px] font-black transition-all",
+                  language === 'en' ? "bg-primary text-white shadow-sm" : "text-gray-500"
+                )}
+              >
+                EN
+              </button>
+            </div>
+            <Link
+              to="/login"
+              className="text-primary font-bold text-xs hover:text-accent transition-colors"
+            >
+              {t.nav.login}
+            </Link>
+            <Link
+              to="/register"
+              className="bg-primary text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-primary/90 transition-all shadow-md"
+            >
+              {t.nav.signUp}
+            </Link>
+            <button onClick={() => setIsOpen(!isOpen)} className="text-primary ml-1">
               {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
@@ -122,16 +154,6 @@ export const Navbar = () => {
                   {link.name}
                 </Link>
               ))}
-              <div className="pt-4 flex items-center justify-between">
-                <div className="flex space-x-2">
-                  <button onClick={() => setLanguage('am')} className={cn("px-4 py-2 rounded-md text-sm font-bold", language === 'am' ? "bg-primary text-white" : "bg-gray-100")}>አማርኛ</button>
-                  <button onClick={() => setLanguage('en')} className={cn("px-4 py-2 rounded-md text-sm font-bold", language === 'en' ? "bg-primary text-white" : "bg-gray-100")}>English</button>
-                </div>
-                <div className="flex flex-col space-y-2 w-full">
-                  <Link to="/login" onClick={() => setIsOpen(false)} className="bg-gray-100 text-primary px-6 py-2 rounded-md font-bold text-center">{t.nav.login}</Link>
-                  <Link to="/register" onClick={() => setIsOpen(false)} className="bg-primary text-white px-6 py-2 rounded-md font-bold text-center">{t.nav.signUp}</Link>
-                </div>
-              </div>
             </div>
           </motion.div>
         )}

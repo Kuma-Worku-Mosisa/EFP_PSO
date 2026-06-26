@@ -5,8 +5,11 @@ import AdminAddressApprovalCard, {
 import { MapPin } from "lucide-react";
 import { apiRequest } from "../../lib/api";
 import { AutoDismissToast, ToastType } from "../../components/AutoDismissToast";
+import { useLanguage } from "../../context/LanguageContext";
 
 export const AdminAddressApproval = () => {
+  const { language } = useLanguage();
+  const isAm = language === "am";
   const [requests, setRequests] = useState<AddressChangeRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [toastOpen, setToastOpen] = useState(false);
@@ -37,7 +40,7 @@ export const AdminAddressApproval = () => {
         "error",
         err instanceof Error
           ? err.message
-          : "Failed to fetch address change requests",
+          : isAm ? "የአድራሻ ለውጥ ጥያቄዎችን ማምጣት አልተቻለም" : "Failed to fetch address change requests",
       );
       setRequests([]);
     } finally {
@@ -62,7 +65,9 @@ export const AdminAddressApproval = () => {
       // Show success toast
       showToast(
         "success",
-        `Address change request ${action.toLowerCase()} successfully`,
+        isAm
+          ? `የአድራሻ ለውጥ ጥያቄ ${action === "APPROVED" ? "ጸድቋል" : "ውድቅ ሆኗል"}`
+          : `Address change request ${action.toLowerCase()} successfully`,
       );
 
       // Refresh the list so the UI shows the actual status returned by server
@@ -72,7 +77,9 @@ export const AdminAddressApproval = () => {
         "error",
         err instanceof Error
           ? err.message
-          : `Failed to ${action.toLowerCase()} request`,
+          : isAm
+            ? `ጥያቄውን ${action === "APPROVED" ? "ማረጋገጥ" : "ውድቅ ማድረግ"} አልተቻለም`
+            : `Failed to ${action.toLowerCase()} request`,
       );
     }
   };
@@ -92,16 +99,16 @@ export const AdminAddressApproval = () => {
             <MapPin className="w-6 h-6 text-blue-600" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-primary uppercase tracking-tight">
-              Address Change Approvals
+            <h2 className="text-2xl font-black text-[#003366] uppercase tracking-tight">
+              {isAm ? "የአድራሻ ለውጥ ማረጋገጫዎች" : "Address Change Approvals"}
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              Review and approve organization address change requests
+              {isAm ? "የድርጅት አድራሻ ለውጥ ጥያቄዎችን ይገምግሙ እና ያረጋግጡ" : "Review and approve organization address change requests"}
             </p>
           </div>
         </div>
         <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
-          {requests.filter((r) => r.status === "PENDING").length} Pending
+          {requests.filter((r) => r.status === "PENDING").length} {isAm ? "በመጠባበቅ ላይ" : "Pending"}
         </span>
       </div>
 
@@ -113,7 +120,7 @@ export const AdminAddressApproval = () => {
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
           <MapPin className="w-16 h-16 text-gray-200 mx-auto mb-4" />
           <p className="text-gray-500 font-medium">
-            No pending address change requests
+            {isAm ? "ምንም የአድራሻ ለውጥ ጥያቄ የለም" : "No pending address change requests"}
           </p>
         </div>
       ) : (
