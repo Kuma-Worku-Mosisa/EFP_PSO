@@ -42,6 +42,8 @@ export const FAQ = () => {
           id: r.id,
           q: r.questionText,
           a: r.answerText,
+          qAm: r.questionTextAm || undefined,
+          aAm: r.answerTextAm || undefined,
           cat: (r.categoryType || "general").toLowerCase(),
           isPublished: Boolean(r.isPublished),
           hitCount: r.hitCount ?? 0,
@@ -217,7 +219,7 @@ export const FAQ = () => {
                         <h4
                           className={`text-xl font-black tracking-tight transition-colors ${isOpen ? "text-primary" : "text-gray-600"}`}
                         >
-                          {faq.q}
+                          {isAm && faq.qAm ? faq.qAm : faq.q}
                         </h4>
                       </div>
                     </div>
@@ -256,7 +258,7 @@ export const FAQ = () => {
                         <div className="px-10 pb-10">
                           <div className="pl-[88px]">
                             <div className="p-8 bg-gray-50/50 rounded-[30px] border border-gray-100/50 text-lg text-gray-500 leading-relaxed font-medium">
-                              {faq.a}
+                              {isAm && faq.aAm ? faq.aAm : faq.a}
                             </div>
                           </div>
                         </div>

@@ -1,6 +1,6 @@
 //filepath: frontend/src/pages/systemAdmin/audit-logs.tsx
 import React, { useState, useEffect } from "react";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, ArrowLeftCircle, ArrowRightCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE, resolveBackendAssetUrl } from "../../lib/api";
 import { useLanguage } from "../../context/LanguageContext";
@@ -156,6 +156,97 @@ export default function AuditLogViewer() {
     } catch (e) {
       return jsonString; // Fallback if it's just a raw string
     }
+  };
+
+  // Render state as key-value pairs, optionally diff-highlighted
+  const renderStateFields = (
+    raw: string | null,
+    compareRaw?: string | null,
+    highlightDiff?: boolean,
+  ) => {
+    const obj = parseJSON(raw);
+    const compareObj = highlightDiff && compareRaw ? parseJSON(compareRaw) : null;
+
+    if (!obj || typeof obj !== "object") {
+      return (
+        <div className="p-6 rounded-xl border border-dashed border-[#003366]/20 text-xs text-gray-500 italic text-center font-medium">
+          {raw
+            ? String(raw)
+            : isAm
+              ? "ምንም ውሂብ የለም"
+              : "No data"}
+        </div>
+      );
+    }
+
+    const entries = Object.entries(obj as Record<string, unknown>);
+
+    if (entries.length === 0) {
+      return (
+        <div className="p-6 rounded-xl border border-dashed border-[#003366]/20 text-xs text-gray-500 italic text-center font-medium">
+          {isAm ? "ባዶ ውሂብ" : "Empty data"}
+        </div>
+      );
+    }
+
+    const rowBg = highlightDiff
+      ? "bg-green-50 hover:bg-green-100"
+      : "bg-red-50 hover:bg-red-100";
+
+    return (
+      <div className="rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="bg-[#003366] text-white">
+              <th className="px-4 py-3 font-bold uppercase tracking-wider text-left w-1/3">
+                {isAm ? "የውሂብ መስክ" : "Field"}
+              </th>
+              <th className="px-4 py-3 font-bold uppercase tracking-wider text-left">
+                {highlightDiff
+                  ? isAm
+                    ? "አዲስ እሴት"
+                    : "New Value"
+                  : isAm
+                    ? "እሴት"
+                    : "Value"}
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {entries.map(([key, value]) => {
+              const displayValue =
+                value !== null && value !== undefined
+                  ? String(value)
+                  : "—";
+              const isChanged =
+                highlightDiff &&
+                compareObj &&
+                typeof compareObj === "object" &&
+                JSON.stringify((compareObj as Record<string, unknown>)[key]) !==
+                  JSON.stringify(value);
+
+              return (
+                <tr
+                  key={key}
+                  className={
+                    isChanged
+                      ? "bg-amber-100 border-l-4 border-l-amber-500 shadow-inner"
+                      : rowBg
+                  }
+                >
+                  <td className="px-4 py-3 font-bold text-gray-700 whitespace-nowrap">
+                    {key}
+                  </td>
+                  <td className="px-4 py-3 text-gray-900 break-words font-medium">
+                    {displayValue}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
   };
 
   // Utility for Badge Colors
@@ -358,26 +449,30 @@ export default function AuditLogViewer() {
                     <td colSpan={5} className="p-0">
                       <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-gray-100">
                         <div>
-                          <h4 className="text-xs font-bold text-[#003366] uppercase tracking-wider mb-2">
+                          <h4 className="text-xs font-bold text-[#003366] uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <ArrowLeftCircle className="w-4 h-4 text-red-500" />
                             {isAm ? "የቀድሞ ሁኔታ" : "Previous State"}
                           </h4>
                           {log.oldValue ? (
-                            <pre className="bg-white p-3 rounded-xl border border-gray-200 text-xs text-red-700 overflow-x-auto shadow-sm font-mono">
-                              {JSON.stringify(parseJSON(log.oldValue), null, 2)}
-                            </pre>
+                            renderStateFields(log.oldValue)
                           ) : (
-                            <div className="bg-gray-100 p-3 rounded-xl border text-xs text-gray-400 italic text-center">
+                            <div className="bg-[#003366]/5 p-6 rounded-xl border border-dashed border-[#003366]/20 text-xs text-gray-500 italic text-center font-medium">
                               {isAm ? "ምንም የቀድሞ ውሂብ የለም" : "No previous data (New Creation)"}
                             </div>
                           )}
                         </div>
                         <div>
-                          <h4 className="text-xs font-bold text-[#003366] uppercase tracking-wider mb-2">
+                          <h4 className="text-xs font-bold text-[#003366] uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <ArrowRightCircle className="w-4 h-4 text-green-500" />
                             {isAm ? "አዲስ ሁኔታ" : "New State"}
                           </h4>
-                          <pre className="bg-white p-3 rounded-xl border border-green-200 text-xs text-green-800 overflow-x-auto shadow-sm font-mono">
-                            {JSON.stringify(parseJSON(log.newValue), null, 2)}
-                          </pre>
+                          {log.newValue ? (
+                            renderStateFields(log.newValue, log.oldValue, true)
+                          ) : (
+                            <div className="bg-[#003366]/5 p-6 rounded-xl border border-dashed border-[#003366]/20 text-xs text-gray-500 italic text-center font-medium">
+                              {isAm ? "ምንም ውሂብ የለም" : "No data"}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -395,10 +490,10 @@ export default function AuditLogViewer() {
             <div className="bg-primary text-white px-5 py-4 flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold tracking-widest uppercase text-white/80">
-                  Actor Details
+                  {isAm ? "የተጠቃሚ ዝርዝር" : "Actor Details"}
                 </p>
                 <p className="text-sm font-semibold mt-0.5">
-                  User ID #{selectedActorId}
+                  {isAm ? "የተጠቃሚ መለያ #" : "User ID #"}{selectedActorId}
                 </p>
               </div>
               <button
@@ -415,7 +510,7 @@ export default function AuditLogViewer() {
               {actorLoading && (
                 <div className="flex items-center justify-center py-10 text-gray-500 gap-2">
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  <span className="text-sm">Loading actor profile...</span>
+                  <span className="text-sm">{isAm ? "የተጠቃሚ መረጃ በመጫን ላይ..." : "Loading actor profile..."}</span>
                 </div>
               )}
 
@@ -458,7 +553,7 @@ export default function AuditLogViewer() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                        Email
+                        {isAm ? "ኢሜይል" : "Email"}
                       </p>
                       <p className="text-sm mt-1 text-gray-800">
                         {actorDetails.email || "—"}
@@ -466,7 +561,7 @@ export default function AuditLogViewer() {
                     </div>
                     <div>
                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                        Phone
+                        {isAm ? "ስልክ" : "Phone"}
                       </p>
                       <p className="text-sm mt-1 text-gray-800">
                         {actorDetails.phone || "—"}
@@ -474,7 +569,7 @@ export default function AuditLogViewer() {
                     </div>
                     <div>
                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                        Fayda ID
+                        {isAm ? "የፋይዳ መለያ" : "Fayda ID"}
                       </p>
                       <p className="text-sm mt-1 text-gray-800 font-mono">
                         {actorDetails.faydaId || "—"}
@@ -482,18 +577,18 @@ export default function AuditLogViewer() {
                     </div>
                     <div>
                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                        Role
+                        {isAm ? "ሚና" : "Role"}
                       </p>
                       <p className="text-sm mt-1 text-gray-800 capitalize">
                         {(
                           actorDetails.user_roles?.[0]?.roles?.role_name ||
-                          "Unassigned"
+                          (isAm ? "አልተመደበም" : "Unassigned")
                         ).replace(/_/g, " ")}
                       </p>
                     </div>
                     <div>
                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                        Status
+                        {isAm ? "ሁኔታ" : "Status"}
                       </p>
                       <span
                         className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
@@ -509,7 +604,7 @@ export default function AuditLogViewer() {
                     </div>
                     <div>
                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                        Account Created
+                        {isAm ? "መለያ የተፈጠረበት" : "Account Created"}
                       </p>
                       <p className="text-sm mt-1 text-gray-800">
                         {actorDetails.createdAt
@@ -528,7 +623,7 @@ export default function AuditLogViewer() {
                 onClick={closeActorModal}
                 className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-primary hover:opacity-90 transition-colors"
               >
-                Close
+                {isAm ? "ዝጋ" : "Close"}
               </button>
             </div>
           </div>

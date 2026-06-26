@@ -109,7 +109,7 @@ export const getFaqById = async (
  */
 export const createFaq = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { categoryType, questionText, answerText, isPublished } = req.body;
+    const { categoryType, questionText, answerText, questionTextAm, answerTextAm, isPublished } = req.body;
     const currentUserId = (req as any).user?.id || null;
 
     if (!categoryType || !questionText || !answerText) {
@@ -125,6 +125,8 @@ export const createFaq = async (req: Request, res: Response): Promise<void> => {
         categoryType,
         questionText,
         answerText,
+        questionTextAm,
+        answerTextAm,
         isPublished: isPublished ?? true,
         createdByUserId: currentUserId,
       },
@@ -153,7 +155,7 @@ export const updateFaq = async (req: Request, res: Response): Promise<void> => {
       ? req.params.id[0]
       : req.params.id;
     const faqId = parseInt(idParam ?? "", 10);
-    const { categoryType, questionText, answerText, isPublished } = req.body;
+    const { categoryType, questionText, answerText, questionTextAm, answerTextAm, isPublished } = req.body;
 
     if (isNaN(faqId)) {
       res
@@ -168,6 +170,8 @@ export const updateFaq = async (req: Request, res: Response): Promise<void> => {
         categoryType,
         questionText,
         answerText,
+        questionTextAm,
+        answerTextAm,
         isPublished,
         updatedAt: new Date(),
       },

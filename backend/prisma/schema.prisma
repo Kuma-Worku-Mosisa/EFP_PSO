@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "sqlserver"
+   url      = env("DATABASE_URL")
 }
 
 // Note: SQL Server connector does not support Prisma enums.
@@ -182,9 +183,12 @@ model Notification {
 model NewsArticle {
   id              Int      @id @default(autoincrement()) @map("news_id")
   title           String   @db.NVarChar(255)
+  titleAm         String?  @map("title_am") @db.NVarChar(255)
   category        String   @default("General") @db.NVarChar(100)
   summary         String?  @db.NVarChar(Max)
+  summaryAm       String?  @map("summary_am") @db.NVarChar(Max)
   content         String   @db.NVarChar(Max)
+  contentAm       String?  @map("content_am") @db.NVarChar(Max)
   imageUrl        String?  @map("image_url") @db.VarChar(Max)
   status          String   @default("published") @db.VarChar(50)
   publishedAt     DateTime @default(now()) @map("published_at")
@@ -706,7 +710,9 @@ model Faq {
   id              Int      @id @default(autoincrement()) @map("faq_id")
   categoryType    String   @map("category_type") @db.NVarChar(100)
   questionText    String   @map("question_text") @db.NVarChar(Max)
+  questionTextAm  String?  @map("question_text_am") @db.NVarChar(Max)
   answerText      String   @map("answer_text") @db.NVarChar(Max)
+  answerTextAm    String?  @map("answer_text_am") @db.NVarChar(Max)
   isPublished     Boolean  @default(true) @map("is_published")
   hitCount        Int      @default(0) @map("hit_count")
   createdByUserId Int?     @map("created_by_user_id")

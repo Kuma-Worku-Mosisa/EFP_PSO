@@ -44,10 +44,10 @@ const Overview: React.FC = () => {
   const [filterType, setFilterType] = useState("all");
 
   const stats = [
-    { icon: Building2, label: isAm ? "ድርጅቶች" : "Organizations", value: "156", change: "+12%", accent: "blue" },
+    { icon: MapPin, label: isAm ? "አድራሻዎች" : "Total Address", value: "12,847", change: "+6%", accent: "blue" },
     { icon: Users, label: isAm ? "ተጠቃሚዎች" : "Users", value: "1,284", change: "+8%", accent: "gold" },
-    { icon: Shield, label: isAm ? "ንቁ ውሎች" : "Active Contracts", value: "342", change: "+5%", accent: "green" },
-    { icon: Globe, label: isAm ? "ክልሎች" : "Regions", value: "12", change: "—", accent: "amber" },
+    { icon: Newspaper, label: isAm ? "ዜና እና ማስታወቂያዎች" : "News & Announcements", value: "47", change: "+3", accent: "green" },
+    { icon: BookOpen, label: isAm ? "FAQ" : "FAQ", value: "23", change: "+2", accent: "amber" },
   ];
 
   const accentMap: Record<string, { bg: string; iconBg: string; value: string }> = {
@@ -57,19 +57,20 @@ const Overview: React.FC = () => {
     amber: { bg: "bg-orange-50", iconBg: "bg-orange-100 text-orange-600", value: "text-orange-700" },
   };
 
-  const orgStatusData = [
-    { name: isAm ? "ንቁ" : "Active", value: 98 },
-    { name: isAm ? "ታግዶ" : "Suspended", value: 23 },
-    { name: isAm ? "በመጠባበቅ ላይ" : "Pending", value: 35 },
+  const faqCategoryData = [
+    { name: isAm ? "አጠቃላይ" : "General", value: 8 },
+    { name: isAm ? "ፍቃድ" : "Licensing", value: 6 },
+    { name: isAm ? "ቴክኒክ" : "Technical", value: 5 },
+    { name: isAm ? "ክፍያ" : "Payment", value: 4 },
   ];
 
   const monthlyData = [
-    { month: isAm ? "ጥር" : "Jan", organizations: 8, users: 45 },
-    { month: isAm ? "የካ" : "Feb", organizations: 12, users: 62 },
-    { month: isAm ? "መጋ" : "Mar", organizations: 15, users: 78 },
-    { month: isAm ? "ሚያ" : "Apr", organizations: 10, users: 55 },
-    { month: isAm ? "ግን" : "May", organizations: 18, users: 90 },
-    { month: isAm ? "ሰኔ" : "Jun", organizations: 14, users: 72 },
+    { month: isAm ? "ጥር" : "Jan", news: 8 },
+    { month: isAm ? "የካ" : "Feb", news: 12 },
+    { month: isAm ? "መጋ" : "Mar", news: 15 },
+    { month: isAm ? "ሚያ" : "Apr", news: 10 },
+    { month: isAm ? "ግን" : "May", news: 18 },
+    { month: isAm ? "ሰኔ" : "Jun", news: 14 },
   ];
 
   const allActivities = [
@@ -182,8 +183,8 @@ const Overview: React.FC = () => {
               <Activity className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-[#003366]">{isAm ? "ወርሃዊ አዝማሚያ" : "Monthly Trends"}</h3>
-              <p className="text-[10px] text-gray-400 mt-0.5">{isAm ? "ድርጅቶች እና ተጠቃሚዎች" : "Organizations & Users"}</p>
+              <h3 className="text-sm font-bold text-[#003366]">{isAm ? "ወርሃዊ ዜና" : "Monthly News"}</h3>
+              <p className="text-[10px] text-gray-400 mt-0.5">{isAm ? "በወር የታተሙ ዜናዎች" : "News published per month"}</p>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={260}>
@@ -204,8 +205,7 @@ const Overview: React.FC = () => {
                 iconType="circle"
                 iconSize={8}
               />
-              <Bar dataKey="organizations" name={isAm ? "ድርጅቶች" : "Organizations"} fill="#003366" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="users" name={isAm ? "ተጠቃሚዎች" : "Users"} fill="#C5A022" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="news" name={isAm ? "ዜና" : "News"} fill="#003366" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </motion.div>
@@ -222,14 +222,14 @@ const Overview: React.FC = () => {
               <Building2 className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-[#003366]">{isAm ? "የድርጅት ሁኔታ" : "Organization Status"}</h3>
-              <p className="text-[10px] text-gray-400 mt-0.5">{isAm ? "አጠቃላይ ስርጭት" : "Overall distribution"}</p>
+              <h3 className="text-sm font-bold text-[#003366]">{isAm ? "FAQ በምድብ" : "FAQ by Category"}</h3>
+              <p className="text-[10px] text-gray-400 mt-0.5">{isAm ? "የFAQ ምድብ ስርጭት" : "FAQ category distribution"}</p>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
               <Pie
-                data={orgStatusData}
+                data={faqCategoryData}
                 cx="50%"
                 cy="50%"
                 innerRadius={60}
@@ -240,7 +240,7 @@ const Overview: React.FC = () => {
                 animationDuration={1200}
                 label={({ name, percent }) => `${name ?? "—"} ${((percent ?? 0) * 100).toFixed(0)}%`}
               >
-                {orgStatusData.map((_, index) => (
+                {faqCategoryData.map((_, index) => (
                   <Cell key={index} fill={PIE_COLORS[index]} stroke="none" />
                 ))}
               </Pie>
@@ -255,7 +255,7 @@ const Overview: React.FC = () => {
             </PieChart>
           </ResponsiveContainer>
           <div className="flex justify-center gap-6 mt-2">
-            {orgStatusData.map((item, idx) => (
+            {faqCategoryData.map((item, idx) => (
               <div key={item.name} className="flex items-center gap-2 text-sm">
                 <span className="w-3 h-3 rounded-full" style={{ backgroundColor: PIE_COLORS[idx] }} />
                 <span className="text-gray-600">{item.name}: <strong>{item.value}</strong></span>

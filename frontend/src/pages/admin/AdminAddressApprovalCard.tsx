@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { CheckCircle, XCircle, ArrowRight } from "lucide-react";
 import { ToastType } from "../../components/AutoDismissToast";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface AddressDetails {
   regionName: string;
@@ -38,12 +39,14 @@ export default function AdminAddressApprovalCard({
   onProcessRequest,
   onShowToast,
 }: AdminAddressApprovalCardProps) {
+  const { language } = useLanguage();
+  const isAm = language === "am";
   const [feedback, setFeedback] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleAction = async (action: "APPROVED" | "REJECTED") => {
     if (action === "REJECTED" && !feedback.trim()) {
-      onShowToast?.("error", "Feedback is required to reject a request.");
+      onShowToast?.("error", isAm ? "እምቢ ለማለት አስተያየት ያስፈልጋል።" : "Feedback is required to reject a request.");
       return;
     }
 
@@ -62,10 +65,10 @@ export default function AdminAddressApprovalCard({
       <div className="bg-gray-50 px-6 py-4 border-b flex justify-between items-center">
         <div>
           <h3 className="font-semibold text-gray-800">
-            Address Change Request
+            {isAm ? "የአድራሻ ለውጥ ጥያቄ" : "Address Change Request"}
           </h3>
           <p className="text-sm text-gray-500">
-            {request.organizationName} • Submitted{" "}
+            {request.organizationName} • {isAm ? "የቀረበ" : "Submitted"}{" "}
             {new Date(request.createdAt).toLocaleDateString()}
           </p>
         </div>
@@ -87,23 +90,23 @@ export default function AdminAddressApprovalCard({
         <div className="grid gap-4 mb-6 lg:grid-cols-[1fr_20px_1fr]">
           <div className="bg-red-50 p-4 rounded-lg border border-red-100">
             <h4 className="text-xs font-bold text-red-800 uppercase tracking-wider mb-4">
-              Current Address
+              {isAm ? "አሁን ያለው አድራሻ" : "Current Address"}
             </h4>
             <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-x-4 gap-y-3 text-sm text-gray-700">
-              <span className="font-semibold text-gray-600">Region:</span>
-              <span>{request.currentAddress.regionName || "N/A"}</span>
-              <span className="font-semibold text-gray-600">Subcity/Zone:</span>
-              <span>{request.currentAddress.zoneName || "N/A"}</span>
-              <span className="font-semibold text-gray-600">Woreda:</span>
-              <span>{request.currentAddress.woredaName || "N/A"}</span>
-              <span className="font-semibold text-gray-600">Kebele:</span>
-              <span>{request.currentAddress.kebeleName || "N/A"}</span>
+              <span className="font-semibold text-gray-600">{isAm ? "ክልል:" : "Region:"}</span>
+              <span>{request.currentAddress.regionName || (isAm ? "የለም" : "N/A")}</span>
+              <span className="font-semibold text-gray-600">{isAm ? "ክፍለ ከተማ/ዞን:" : "Subcity/Zone:"}</span>
+              <span>{request.currentAddress.zoneName || (isAm ? "የለም" : "N/A")}</span>
+              <span className="font-semibold text-gray-600">{isAm ? "ወረዳ:" : "Woreda:"}</span>
+              <span>{request.currentAddress.woredaName || (isAm ? "የለም" : "N/A")}</span>
+              <span className="font-semibold text-gray-600">{isAm ? "ቀበሌ:" : "Kebele:"}</span>
+              <span>{request.currentAddress.kebeleName || (isAm ? "የለም" : "N/A")}</span>
               <span className="font-semibold text-gray-600">
-                Special Location:
+                {isAm ? "ልዩ ቦታ:" : "Special Location:"}
               </span>
-              <span>{request.currentAddress.specialLocation || "N/A"}</span>
-              <span className="font-semibold text-gray-600">House Number:</span>
-              <span>{request.currentAddress.houseNumber || "N/A"}</span>
+              <span>{request.currentAddress.specialLocation || (isAm ? "የለም" : "N/A")}</span>
+              <span className="font-semibold text-gray-600">{isAm ? "የቤት ቁጥር:" : "House Number:"}</span>
+              <span>{request.currentAddress.houseNumber || (isAm ? "የለም" : "N/A")}</span>
             </div>
           </div>
 
@@ -114,30 +117,30 @@ export default function AdminAddressApprovalCard({
 
           <div className="bg-green-50 p-4 rounded-lg border border-green-100">
             <h4 className="text-xs font-bold text-green-800 uppercase tracking-wider mb-4">
-              Requested Address
+              {isAm ? "የተጠየቀው አድራሻ" : "Requested Address"}
             </h4>
             <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-x-4 gap-y-3 text-sm text-gray-700">
-              <span className="font-semibold text-gray-600">Region:</span>
-              <span>{request.requestedAddress.regionName || "N/A"}</span>
-              <span className="font-semibold text-gray-600">Subcity/Zone:</span>
-              <span>{request.requestedAddress.zoneName || "N/A"}</span>
-              <span className="font-semibold text-gray-600">Woreda:</span>
-              <span>{request.requestedAddress.woredaName || "N/A"}</span>
-              <span className="font-semibold text-gray-600">Kebele:</span>
-              <span>{request.requestedAddress.kebeleName || "N/A"}</span>
+              <span className="font-semibold text-gray-600">{isAm ? "ክልል:" : "Region:"}</span>
+              <span>{request.requestedAddress.regionName || (isAm ? "የለም" : "N/A")}</span>
+              <span className="font-semibold text-gray-600">{isAm ? "ክፍለ ከተማ/ዞን:" : "Subcity/Zone:"}</span>
+              <span>{request.requestedAddress.zoneName || (isAm ? "የለም" : "N/A")}</span>
+              <span className="font-semibold text-gray-600">{isAm ? "ወረዳ:" : "Woreda:"}</span>
+              <span>{request.requestedAddress.woredaName || (isAm ? "የለም" : "N/A")}</span>
+              <span className="font-semibold text-gray-600">{isAm ? "ቀበሌ:" : "Kebele:"}</span>
+              <span>{request.requestedAddress.kebeleName || (isAm ? "የለም" : "N/A")}</span>
               <span className="font-semibold text-gray-600">
-                Special Location:
+                {isAm ? "ልዩ ቦታ:" : "Special Location:"}
               </span>
-              <span>{request.requestedAddress.specialLocation || "N/A"}</span>
-              <span className="font-semibold text-gray-600">House Number:</span>
-              <span>{request.requestedAddress.houseNumber || "N/A"}</span>
+              <span>{request.requestedAddress.specialLocation || (isAm ? "የለም" : "N/A")}</span>
+              <span className="font-semibold text-gray-600">{isAm ? "የቤት ቁጥር:" : "House Number:"}</span>
+              <span>{request.requestedAddress.houseNumber || (isAm ? "የለም" : "N/A")}</span>
             </div>
           </div>
         </div>
 
         <div className="mb-6">
           <h4 className="text-sm font-semibold text-gray-800 mb-1">
-            Reason for Change:
+            {isAm ? "የለውጥ ምክንያት:" : "Reason for Change:"}
           </h4>
           <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100">
             {request.reason}
@@ -147,7 +150,7 @@ export default function AdminAddressApprovalCard({
         {/* Action Area */}
         <div className="space-y-4 pt-4 border-t">
           <textarea
-            placeholder="Add admin feedback (required for rejection)..."
+            placeholder={isAm ? "የአስተዳዳሪ አስተያየት ያስገቡ (እምቢ ለማለት ያስፈልጋል)..." : "Add admin feedback (required for rejection)..."}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm resize-none"
             rows={2}
             value={feedback}
@@ -162,7 +165,7 @@ export default function AdminAddressApprovalCard({
               className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition disabled:opacity-50"
             >
               <XCircle size={18} className="text-red-500" />
-              Reject
+              {isAm ? "እምቢ በል" : "Reject"}
             </button>
             <button
               onClick={() => handleAction("APPROVED")}
@@ -170,7 +173,7 @@ export default function AdminAddressApprovalCard({
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition disabled:opacity-50"
             >
               <CheckCircle size={18} />
-              Approve Change
+              {isAm ? "ለውጡን ያረጋግጡ" : "Approve Change"}
             </button>
           </div>
         </div>

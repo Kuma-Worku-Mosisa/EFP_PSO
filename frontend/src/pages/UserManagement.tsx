@@ -847,7 +847,7 @@ export const UserManagement = () => {
                         >
                           <Eye className="w-4 h-4" />
                           <span className="hidden md:inline ml-2 text-sm text-gray-600">
-                            View
+                            {isAm ? "ይመልከቱ" : "View"}
                           </span>
                         </button>
                         <button
@@ -1022,7 +1022,7 @@ export const UserManagement = () => {
                             }
                             className="px-3 py-1 text-xs bg-primary/10 text-primary rounded-lg"
                           >
-                            Preview
+                            {isAm ? "ቅድመ እይታ" : "Preview"}
                           </button>
                         </div>
                       ) : (
@@ -1291,7 +1291,7 @@ export const UserManagement = () => {
                       <div className="space-y-4">
                         <div>
                           <p className="text-xs text-gray-400 uppercase tracking-widest">
-                            Full Name
+                            {isAm ? "ሙሉ ስም" : "Full Name"}
                           </p>
                           <p className="text-sm font-bold text-primary mt-1">
                             {editingUser?.fullName || "-"}
@@ -1300,7 +1300,7 @@ export const UserManagement = () => {
 
                         <div>
                           <p className="text-xs text-gray-400 uppercase tracking-widest">
-                            Username
+                            {isAm ? "የተጠቃሚ ስም" : "Username"}
                           </p>
                           <p className="text-sm mt-1">
                             {editingUser?.username || "-"}
@@ -1309,7 +1309,7 @@ export const UserManagement = () => {
 
                         <div>
                           <p className="text-xs text-gray-400 uppercase tracking-widest">
-                            Email
+                            {isAm ? "ኢሜል" : "Email"}
                           </p>
                           <p className="text-sm mt-1">
                             {editingUser?.email || "-"}
@@ -1318,7 +1318,7 @@ export const UserManagement = () => {
 
                         <div>
                           <p className="text-xs text-gray-400 uppercase tracking-widest">
-                            Phone
+                            {isAm ? "ስልክ" : "Phone"}
                           </p>
                           <p className="text-sm mt-1">
                             {editingUser?.phone || "-"}
@@ -1329,7 +1329,7 @@ export const UserManagement = () => {
                       <div className="space-y-4">
                         <div>
                           <p className="text-xs text-gray-400 uppercase tracking-widest">
-                            Fayda ID
+                            {isAm ? "የፋይዳ መታወቂያ" : "Fayda ID"}
                           </p>
                           <p className="text-sm mt-1">
                             {editingUser?.faydaId || "-"}
@@ -1338,19 +1338,19 @@ export const UserManagement = () => {
 
                         <div>
                           <p className="text-xs text-gray-400 uppercase tracking-widest">
-                            Role
+                            {isAm ? "ሚና" : "Role"}
                           </p>
                           <p className="text-sm mt-1 capitalize">
                             {(
                               editingUser?.user_roles?.[0]?.roles?.role_name ||
-                              "Unassigned"
+                              (isAm ? "አልተመደበም" : "Unassigned")
                             ).replace("_", " ")}
                           </p>
                         </div>
 
                         <div>
                           <p className="text-xs text-gray-400 uppercase tracking-widest">
-                            Status
+                            {isAm ? "ሁኔታ" : "Status"}
                           </p>
                           <p className="text-sm mt-1">
                             {editingUser?.status || "-"}
@@ -1359,7 +1359,7 @@ export const UserManagement = () => {
 
                         <div>
                           <p className="text-xs text-gray-400 uppercase tracking-widest">
-                            Created
+                            {isAm ? "የተፈጠረበት" : "Created"}
                           </p>
                           <p className="text-sm mt-1">
                             {editingUser?.createdAt
@@ -1381,7 +1381,7 @@ export const UserManagement = () => {
                       }}
                       className="w-full py-4 bg-white border border-gray-200 text-gray-600 rounded-2xl font-bold hover:bg-gray-50 transition-all"
                     >
-                      Close
+                      {isAm ? "ዝጋ" : "Close"}
                     </button>
                   </div>
                 </div>

@@ -21,6 +21,8 @@ type FaqRow = {
   id: number;
   q: string;
   a: string;
+  qAm?: string;
+  aAm?: string;
   cat: string;
   isPublished: boolean;
   hitCount: number;
@@ -31,6 +33,8 @@ type FaqApiRow = {
   categoryType: string;
   questionText: string;
   answerText: string;
+  questionTextAm?: string;
+  answerTextAm?: string;
   isPublished: boolean;
   hitCount?: number;
 };
@@ -49,6 +53,8 @@ const mapFaqFromApi = (faq: FaqApiRow): FaqRow => ({
   id: faq.id,
   q: faq.questionText,
   a: faq.answerText,
+  qAm: faq.questionTextAm || undefined,
+  aAm: faq.answerTextAm || undefined,
   cat: normalizeCategory(faq.categoryType || "general"),
   isPublished: Boolean(faq.isPublished),
   hitCount: faq.hitCount ?? 0,
@@ -57,12 +63,16 @@ const mapFaqFromApi = (faq: FaqApiRow): FaqRow => ({
 const toFaqPayload = (faq: {
   q: string;
   a: string;
+  qAm?: string;
+  aAm?: string;
   cat: string;
   isPublished: boolean;
 }) => ({
   categoryType: faq.cat,
   questionText: faq.q,
   answerText: faq.a,
+  questionTextAm: faq.qAm || null,
+  answerTextAm: faq.aAm || null,
   isPublished: faq.isPublished,
 });
 
@@ -78,6 +88,8 @@ export const ManageFAQ = () => {
   const [formData, setFormData] = useState({
     q: "",
     a: "",
+    qAm: "",
+    aAm: "",
     cat: "general",
     isPublished: true,
   });
@@ -125,9 +137,14 @@ export const ManageFAQ = () => {
       activeCategory === "all" || faq.cat === activeCategory;
     const question = String(faq.q ?? "").toLowerCase();
     const answer = String(faq.a ?? "").toLowerCase();
+    const questionAm = String(faq.qAm ?? "").toLowerCase();
+    const answerAm = String(faq.aAm ?? "").toLowerCase();
+    const query = searchQuery.toLowerCase();
     const matchesSearch =
-      question.includes(searchQuery.toLowerCase()) ||
-      answer.includes(searchQuery.toLowerCase());
+      question.includes(query) ||
+      answer.includes(query) ||
+      questionAm.includes(query) ||
+      answerAm.includes(query);
     return matchesCategory && matchesSearch;
   });
 
@@ -177,10 +194,10 @@ export const ManageFAQ = () => {
   };
 
   const handleSave = async () => {
-    if (!formData.q.trim() || !formData.a.trim()) {
+    if (!formData.q.trim() || !formData.a.trim() || !formData.qAm.trim() || !formData.aAm.trim()) {
       showToast(
         "error",
-        isAm ? "ጥያቄና መልስ መሙላት ያስፈልጋል" : "Question and answer are required",
+        isAm ? "እንግሊዝኛ እና አማርኛ ጥያቄና መልስ መሙላት ያስፈልጋል" : "Both English and Amharic question & answer are required",
       );
       return;
     }
@@ -212,7 +229,7 @@ export const ManageFAQ = () => {
 
       setIsAdding(false);
       setEditingFaq(null);
-      setFormData({ q: "", a: "", cat: "general", isPublished: true });
+      setFormData({ q: "", a: "", qAm: "", aAm: "", cat: "general", isPublished: true });
       showToast(
         "success",
         isAm ? "FAQ በተሳካ ሁኔታ ተቀምጧል" : "FAQ saved successfully",
@@ -234,6 +251,8 @@ export const ManageFAQ = () => {
     setFormData({
       q: faq.q,
       a: faq.a,
+      qAm: faq.qAm || "",
+      aAm: faq.aAm || "",
       cat: faq.cat,
       isPublished: faq.isPublished,
     });
@@ -275,10 +294,10 @@ export const ManageFAQ = () => {
         <button
           onClick={() => {
             setEditingFaq(null);
-            setFormData({ q: "", a: "", cat: "general", isPublished: true });
+            setFormData({ q: "", a: "", qAm: "", aAm: "", cat: "general", isPublished: true });
             setIsAdding(true);
           }}
-          className="gold-gradient text-primary px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center space-x-2 shadow-xl shadow-secondary/20 hover:scale-105 active:scale-95 transition-all"
+          className="bg-[#003366] text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center space-x-2 shadow-xl shadow-primary/20 hover:bg-[#002244] active:scale-95 transition-all"
         >
           <Plus className="w-4 h-4" />
           <span>{labels.addBtn}</span>
@@ -400,10 +419,10 @@ export const ManageFAQ = () => {
                   </div>
                   <div>
                     <h4 className="text-xl font-black text-primary tracking-tight mb-3 group-hover:text-secondary transition-colors">
-                      {faq.q}
+                      {isAm && faq.qAm ? faq.qAm : faq.q}
                     </h4>
                     <p className="text-gray-500 text-sm font-medium leading-relaxed bg-white/50 p-4 rounded-2xl border border-gray-50 italic">
-                      {faq.a}
+                      {isAm && faq.aAm ? faq.aAm : faq.a}
                     </p>
                   </div>
                 </div>
@@ -425,27 +444,75 @@ export const ManageFAQ = () => {
         )}
       </div>
 
-      <div className="bg-primary rounded-[40px] p-10 border border-white/10 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-secondary/5 rounded-full blur-[80px] -mr-32 -mt-32 group-hover:scale-150 transition-transform duration-1000" />
-        <div className="flex items-center space-x-6 relative z-10">
-          <div className="w-16 h-16 bg-white/10 rounded-3xl flex items-center justify-center text-secondary shadow-lg border border-white/20">
-            <Save className="w-8 h-8" />
-          </div>
-          <div>
-            <p className="text-2xl font-black text-white tracking-tight leading-none mb-1">
-              {labels.unsaved}
-            </p>
-            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
-              {labels.saveDesc}
-            </p>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-gradient-to-br from-[#003366] to-[#001F3F] rounded-[40px] p-8 text-white relative overflow-hidden group md:col-span-2">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-secondary/10 rounded-full blur-[80px] -mr-24 -mt-24 group-hover:scale-150 transition-transform duration-1000" />
+          <div className="relative z-10 space-y-4">
+            <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-secondary shadow-lg border border-white/20">
+              <HelpCircle className="w-7 h-7" />
+            </div>
+            <div>
+              <p className="text-3xl font-black tracking-tight">{faqs.length}</p>
+              <p className="text-sm font-bold text-white/60 uppercase tracking-widest">
+                {isAm ? "ጠቅላላ ጥያቄዎች" : "Total FAQs"}
+              </p>
+            </div>
+            <div className="flex items-center space-x-6 text-sm">
+              <div>
+                <span className="text-secondary font-black">{faqs.filter(f => f.isPublished).length}</span>
+                <span className="text-white/40 ml-1.5">{isAm ? "የታተሙ" : "Published"}</span>
+              </div>
+              <div>
+                <span className="text-white font-black">{faqs.filter(f => !f.isPublished).length}</span>
+                <span className="text-white/40 ml-1.5">{isAm ? "ረቂቅ" : "Draft"}</span>
+              </div>
+              <div>
+                <span className="text-secondary font-black">{faqs.reduce((s, f) => s + f.hitCount, 0)}</span>
+                <span className="text-white/40 ml-1.5">{isAm ? "እይታዎች" : "Views"}</span>
+              </div>
+            </div>
           </div>
         </div>
-        <button
-          onClick={handleGlobalSave}
-          className="gold-gradient text-primary px-16 py-6 rounded-[24px] font-black text-sm uppercase tracking-widest shadow-2xl shadow-secondary/20 hover:scale-105 active:scale-95 transition-all relative z-10"
-        >
-          {labels.saveAll}
-        </button>
+
+        <div className="bg-white rounded-[40px] p-8 border border-gray-100 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/5 rounded-full blur-[60px] -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-1000" />
+          <div className="relative z-10 space-y-4">
+            <div className="w-14 h-14 bg-secondary/10 rounded-2xl flex items-center justify-center text-secondary shadow-sm">
+              <Eye className="w-7 h-7" />
+            </div>
+            <p className="text-3xl font-black text-primary tracking-tight">{faqs.reduce((s, f) => s + f.hitCount, 0)}</p>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              {isAm ? "ጠቅላላ እይታዎች" : "Total Views"}
+            </p>
+          </div>
+          <div className="mt-6 h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-secondary rounded-full transition-all duration-500"
+              style={{ width: `${Math.min(100, (faqs.reduce((s, f) => s + f.hitCount, 0) / 500) * 100)}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-secondary to-amber-600 rounded-[40px] p-8 text-white relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-[60px] -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-1000" />
+          <div className="relative z-10 space-y-4">
+            <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center shadow-lg border border-white/20">
+              <Save className="w-7 h-7" />
+            </div>
+            <p className="text-lg font-black tracking-tight leading-tight">
+              {isAm ? "ሁሉንም ለውጦች ያስቀምጡ" : "Save All Changes"}
+            </p>
+            <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest leading-relaxed">
+              {isAm ? "የተደረጉ ለውጦችን ለማስቀመጥ አስቀምጥ የሚለውን ይጫኑ" : "Click to persist any changes made above"}
+            </p>
+            <button
+              onClick={handleGlobalSave}
+              className="bg-white text-primary px-8 py-4 rounded-[20px] font-black text-xs uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all w-full"
+            >
+              {isAm ? "አስቀምጥ" : "Save All"}
+            </button>
+          </div>
+        </div>
       </div>
 
       <AutoDismissToast
@@ -509,7 +576,7 @@ export const ManageFAQ = () => {
               <div className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">
-                    {labels.question}
+                    {labels.question} (English)
                   </label>
                   <input
                     type="text"
@@ -521,6 +588,20 @@ export const ManageFAQ = () => {
                     placeholder={
                       isAm ? "ጥያቄውን እዚህ ያስገቡ..." : "Enter question..."
                     }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">
+                    {labels.question} (Amharic)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.qAm}
+                    onChange={(e) =>
+                      setFormData({ ...formData, qAm: e.target.value })
+                    }
+                    className="w-full px-6 py-4 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 focus:border-secondary focus:bg-white outline-none font-bold text-sm text-primary transition-all shadow-inner"
+                    placeholder="ጥያቄውን በአማርኛ ያስገቡ..."
                   />
                 </div>
                 <div className="space-y-2">
@@ -568,7 +649,7 @@ export const ManageFAQ = () => {
                 </label>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">
-                    {labels.answer}
+                    {labels.answer} (English)
                   </label>
                   <textarea
                     value={formData.a}
@@ -577,6 +658,19 @@ export const ManageFAQ = () => {
                     }
                     className="w-full px-6 py-4 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-secondary focus:bg-white outline-none font-medium text-xs text-primary transition-all h-32 resize-none leading-relaxed"
                     placeholder={isAm ? "መልሱን እዚህ ይጻፉ..." : "Enter answer..."}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">
+                    {labels.answer} (Amharic)
+                  </label>
+                  <textarea
+                    value={formData.aAm}
+                    onChange={(e) =>
+                      setFormData({ ...formData, aAm: e.target.value })
+                    }
+                    className="w-full px-6 py-4 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 focus:border-secondary focus:bg-white outline-none font-medium text-xs text-primary transition-all h-32 resize-none leading-relaxed"
+                    placeholder="መልሱን በአማርኛ ይጻፉ..."
                   />
                 </div>
               </div>

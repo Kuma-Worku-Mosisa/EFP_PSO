@@ -94,9 +94,12 @@ export const createNews = async (
   try {
     const {
       title,
+      titleAm,
       category,
       summary,
+      summaryAm,
       content,
+      contentAm,
       imageUrl: bodyImageUrl,
       status,
       publishedAt,
@@ -108,17 +111,20 @@ export const createNews = async (
       : bodyImageUrl;
     const creatorId = (req.user?.id as number) ?? null;
 
-    if (!title || !content) {
-      ApiResponse.error(res, "Title and content are required.", 400);
+    if (!title || !titleAm || !content || !contentAm) {
+      ApiResponse.error(res, "Both English and Amharic title and content are required.", 400);
       return;
     }
 
     const newNews = await prisma.newsArticle.create({
       data: {
         title,
+        titleAm,
         category: category || "General",
         summary: summary || content.slice(0, 320),
+        summaryAm: summaryAm || contentAm.slice(0, 320),
         content,
+        contentAm,
         imageUrl: computedImageUrl || null,
         status: status || "published",
         publishedAt: publishedAt ? new Date(publishedAt) : new Date(),
@@ -150,9 +156,12 @@ export const updateNews = async (
 
     const {
       title,
+      titleAm,
       category,
       summary,
+      summaryAm,
       content,
+      contentAm,
       imageUrl: bodyImageUrl,
       status,
       publishedAt,
@@ -174,9 +183,12 @@ export const updateNews = async (
       where: { id: newsId },
       data: {
         title: title ?? existing.title,
+        titleAm: titleAm ?? existing.titleAm,
         category: category ?? existing.category,
         summary: summary ?? existing.summary,
+        summaryAm: summaryAm ?? existing.summaryAm,
         content: content ?? existing.content,
+        contentAm: contentAm ?? existing.contentAm,
         imageUrl: computedImageUrl ?? existing.imageUrl,
         status: status ?? existing.status,
         publishedAt: publishedAt ? new Date(publishedAt) : existing.publishedAt,

@@ -21,9 +21,12 @@ import { apiRequest, API_BASE } from "../lib/api";
 type PublicNewsItem = {
   id: number;
   title: string;
+  titleAm?: string;
   category: string;
   summary?: string;
+  summaryAm?: string;
   content: string;
+  contentAm?: string;
   imageUrl?: string;
   publishedAt: string;
   status: string;
@@ -66,8 +69,10 @@ export const Home = () => {
       }
       return {
         id: item.id,
-        title: item.title,
-        desc: item.summary || item.content.slice(0, 120),
+        title: isAm && item.titleAm ? item.titleAm : item.title,
+        desc: isAm
+          ? item.summaryAm || item.contentAm || item.summary || item.content.slice(0, 120)
+          : item.summary || item.content.slice(0, 120),
         date: new Date(item.publishedAt).toLocaleDateString(
           isAm ? "am-ET" : "en-US",
           {
@@ -391,9 +396,19 @@ export const Home = () => {
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
                 className="relative bg-white w-full max-w-4xl rounded-[40px] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
               >
-                <div className="h-48 sm:h-64 relative bg-gray-50 flex items-center justify-center">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/[0.05] to-transparent" />
-                  <Newspaper className="w-24 h-24 text-primary/10" />
+                <div className="h-[48rem] sm:h-[56rem] relative bg-gray-900 flex items-center justify-center overflow-hidden">
+                  {selectedNews.image ? (
+                    <img
+                      src={selectedNews.image}
+                      alt={selectedNews.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/[0.05] to-transparent" />
+                  )}
+                  {!selectedNews.image && (
+                    <Newspaper className="w-24 h-24 text-primary/10" />
+                  )}
                   <button
                     onClick={() => setSelectedNews(null)}
                     className="absolute top-6 right-6 p-3 bg-white/80 backdrop-blur-md border border-gray-100 rounded-2xl text-primary hover:bg-primary hover:text-white transition-all z-10"
