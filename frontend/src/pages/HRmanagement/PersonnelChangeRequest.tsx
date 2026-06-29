@@ -42,18 +42,6 @@ export default function PersonnelChangeRequest() {
   const [historyFilter, setHistoryFilter] = useState("ALL");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [employeeType, setEmployeeType] = useState<"new" | "existing" | null>(
-    null,
-  );
-  const [existingFan, setExistingFan] = useState("");
-  const [existingLookupDone, setExistingLookupDone] = useState(false);
-  const [existingEmployeeData, setExistingEmployeeData] = useState<{
-    fullName: string;
-    faydaId: string;
-    organization: string;
-    position: string;
-    currentRole: string;
-  } | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,18 +51,6 @@ export default function PersonnelChangeRequest() {
       setSubmitted(true);
       setTimeout(() => setSubmitted(false), 3000);
     }, 1500);
-  };
-
-  const handleExistingLookup = () => {
-    if (!existingFan.trim()) return;
-    setExistingLookupDone(true);
-    setExistingEmployeeData({
-      fullName: "Existing User",
-      faydaId: existingFan.trim().toUpperCase(),
-      organization: "Central Personnel Database",
-      position: "Registered Employee",
-      currentRole: "Current position from central registry",
-    });
   };
 
   const historyData: HistoryRecord[] = [
@@ -192,163 +168,7 @@ export default function PersonnelChangeRequest() {
       {/* TAB 1: INITIATE */}
       {activeTab === "initiate" && (
         <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-            {[
-              {
-                key: "new",
-                title: t("New Employee", "አዲስ ሰራተኛ"),
-                description: t(
-                  "Create a new personnel request when the employee is not yet recorded in the central database.",
-                  "ሰራተኛው ከመዋቅሩ ውስጥ ካልተመዘገበ አዲስ ጥያቄ ይፍጠሩ።",
-                ),
-              },
-              {
-                key: "existing",
-                title: t("Existing Employee", "የነበረ ሰራተኛ"),
-                description: t(
-                  "Lookup the employee by FAN from the centralized database and attach the existing record.",
-                  "ከማእከላዊ መረጃ ጋብዣ በተጠቃሚ ቁጥር FAN ይፈልጉ።",
-                ),
-              },
-            ].map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                onClick={() => {
-                  setEmployeeType(item.key as "new" | "existing");
-                  setExistingLookupDone(false);
-                  setExistingEmployeeData(null);
-                }}
-                className={`rounded-3xl border p-6 text-left transition-all shadow-sm hover:shadow-lg ${
-                  employeeType === item.key
-                    ? "border-[#003366] bg-[#003366]/10"
-                    : "border-gray-200 bg-white"
-                }`}
-              >
-                <span className="text-xs uppercase tracking-[0.3em] text-gray-500">
-                  {item.key === "new" ? t("New", "አዲስ") : t("Existing", "ነበረ")}
-                </span>
-                <h3 className="mt-3 text-lg font-bold text-[#003366]">
-                  {item.title}
-                </h3>
-                <p className="mt-2 text-sm text-gray-600">{item.description}</p>
-              </button>
-            ))}
-          </div>
-
-          {employeeType === null ? (
-            <div className="rounded-3xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center text-sm text-gray-500">
-              {t(
-                "Choose how you want to submit the personnel change request.",
-                "የሰራተኛ ለውጥ ጥያቄ እንዴት እንደሚሰጥ ይምረጡ።",
-              )}
-            </div>
-          ) : employeeType === "existing" ? (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-6"
-            >
-              <div className="space-y-3">
-                <p className="text-sm font-bold text-[#003366]">
-                  {t(
-                    "Lookup existing employee with FAN",
-                    "በFAN የነበረውን ሰራተኛ ይፈልጉ",
-                  )}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {t(
-                    "Use the centralized database FAN number to load the registered employee record and avoid duplicate entries.",
-                    "በማእከላዊ የመረጃ ጎታ FAN ቁጥር ይጠቀሙ እና የቀና ዝርዝር መረጃ ያግኙ።",
-                  )}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <input
-                  type="text"
-                  value={existingFan}
-                  onChange={(e) => setExistingFan(e.target.value)}
-                  placeholder={t("Enter FAN number...", "FAN ቁጥር ያስገቡ...")}
-                  className="col-span-2 rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={handleExistingLookup}
-                  className="rounded-2xl bg-[#003366] text-white px-5 py-3 text-sm font-bold hover:bg-[#00264d] transition-all"
-                >
-                  {t("Lookup", "ፈልግ")}
-                </button>
-              </div>
-
-              {existingLookupDone ? (
-                existingEmployeeData ? (
-                  <div className="rounded-3xl border border-gray-200 bg-gray-50 p-5">
-                    <div className="mb-4 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-[#003366]/10 flex items-center justify-center text-[#003366]">
-                        <UserCheck className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-[#003366]">
-                          {t("Employee record loaded", "የሰራተኛ መዝገብ ተጫኗል")}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {t(
-                            "Review the employee details before submitting the request.",
-                            "እባክዎ ከጥያቄ ማስገባት በፊት ዝርዝሩን ይመልከቱ.",
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
-                      <div className="space-y-2">
-                        <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
-                          {t("Full Name", "ሙሉ ስም")}
-                        </p>
-                        <p className="font-semibold">
-                          {existingEmployeeData.fullName}
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
-                          {t("FAN Number", "FAN ቁጥር")}
-                        </p>
-                        <p className="font-semibold">
-                          {existingEmployeeData.faydaId}
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
-                          {t("Organization", "ድርጅት")}
-                        </p>
-                        <p className="font-semibold">
-                          {existingEmployeeData.organization}
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
-                          {t("Position", "ሹመት")}
-                        </p>
-                        <p className="font-semibold">
-                          {existingEmployeeData.position}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="rounded-3xl border border-gray-200 bg-yellow-50 p-5 text-sm text-amber-800">
-                    {t(
-                      "No employee record was found for this FAN. Please verify the number and try again.",
-                      "ለዚህ የFAN ቁጥር የሰራተኛ መዝገብ አልተገኘም። እባክዎን ቁጥሩን ያረጋግጡ እና እንደገና ይሞክሩ.",
-                    )}
-                  </div>
-                )
-              ) : null}
-            </motion.div>
-          ) : (
-            <PersonnelDetailsForm />
-          )}
+          <PersonnelDetailsForm />
 
           <motion.form onSubmit={handleSubmit} className="relative">
             {submitting && (

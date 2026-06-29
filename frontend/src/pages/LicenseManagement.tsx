@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import {
   Search,
-  Filter,
   FileText,
   Send,
   Edit,
@@ -27,6 +26,7 @@ import { apiRequest, resolveBackendAssetUrl } from "../lib/api";
 import { Link, useLocation } from "react-router-dom";
 import { AutoDismissToast, ToastType } from "../components/AutoDismissToast";
 import { ConfirmDialog } from "../components/ConfirmDialog";
+import { LoadingSpinner } from "../components/LoadingSpinner";
 
 type LicenseRow = {
   id: number;
@@ -49,6 +49,7 @@ export const LicenseManagement = () => {
   const location = useLocation();
   const isAm = language === "am";
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [selectedLic, setSelectedLic] = useState<any>(null);
   const [actionType, setActionType] = useState<
     | "none"
@@ -300,6 +301,7 @@ export const LicenseManagement = () => {
       expired: isAm ? "ጊዜው ያለፈበት" : "Expired",
       pending: isAm ? "በመጠባበቅ ላይ" : "Pending Approval",
       suspended: isAm ? "የታገደ" : "Suspended",
+      revoked: isAm ? "የተሰረዘ" : "Revoked",
     },
     actions: {
       edit: isAm ? "አስተካክል" : "Edit",
@@ -467,10 +469,18 @@ export const LicenseManagement = () => {
   };
 
   const filteredLicenses = licenses.filter(
-    (lic) =>
-      lic.agency.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lic.ownership.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lic.licenseNo.toLowerCase().includes(searchQuery.toLowerCase()),
+    (lic) => {
+      const matchesSearch =
+        lic.agency.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lic.ownership.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lic.licenseNo.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesStatus =
+        statusFilter === "all" ||
+        normalizeCertificationStatus(lic.status) === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    },
   );
 
   // Group certificates by organization so one organization can show multiple yearly certificates.
@@ -486,39 +496,58 @@ export const LicenseManagement = () => {
 
   return (
     <div className="space-y-8 pb-20">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <h3 className="text-2xl font-bold text-primary">{t.title}</h3>
-        <div className="flex flex-wrap gap-4">
-          <button
-            onClick={() => openEditor()}
-            className="flex items-center space-x-2 px-6 py-4 bg-gradient-to-br from-secondary to-secondary/80 text-primary rounded-[20px] text-sm font-black shadow-[0_10px_30px_-10px_rgba(var(--safe-secondary-rgb),0.5)] hover:scale-105 hover:shadow-secondary/40 transition-all border border-secondary/20 active:scale-95 group"
-          >
-            <div className="p-1 bg-white/20 rounded-lg group-hover:rotate-90 transition-transform duration-500">
-              <Plus className="w-5 h-5" />
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <h3 className="text-2xl font-bold text-primary shrink-0">{t.title}</h3>
+          <div className="flex flex-wrap items-center gap-4">
+            <button
+              onClick={() => openEditor()}
+              className="flex items-center space-x-2 px-6 py-4 bg-[#003366] text-white rounded-[20px] text-sm font-black shadow-lg shadow-[#003366]/30 hover:bg-[#002244] active:scale-95 transition-all group"
+            >
+              <div className="p-1 bg-white/20 rounded-lg group-hover:rotate-90 transition-transform duration-500">
+                <Plus className="w-5 h-5" />
+              </div>
+              <span>{t.create}</span>
+            </button>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder={t.search}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary w-64 shadow-sm"
+              />
             </div>
-            <span>{t.create}</span>
-          </button>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder={t.search}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary w-64 shadow-sm"
-            />
           </div>
-          <button className="flex items-center space-x-2 px-6 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 shadow-sm transition-all">
-            <Filter className="w-4 h-4" />
-            <span>{t.filter}</span>
-          </button>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {[
+            { key: "all", label: isAm ? "ሁሉም" : "All" },
+            { key: "active", label: t.status.active },
+            { key: "suspended", label: t.status.suspended },
+            { key: "expired", label: t.status.expired },
+            { key: "revoked", label: t.status.revoked },
+          ].map((opt) => (
+            <button
+              key={opt.key}
+              onClick={() => setStatusFilter(opt.key)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
+                statusFilter === opt.key
+                  ? "bg-[#003366] text-white shadow-md"
+                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
       </div>
 
       <div className="bg-white rounded-[40px] shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-gray-50 text-gray-400 text-[10px] uppercase tracking-[0.2em] font-black">
+            <thead className="bg-gradient-to-r from-[#003366] to-[#001F3F] text-white text-[10px] uppercase tracking-[0.2em] font-black">
               <tr>
                 <th className="px-8 py-6">{t.table.agency}</th>
                 <th className="px-8 py-6">{t.table.ownership}</th>
@@ -562,11 +591,11 @@ export const LicenseManagement = () => {
                 )}
               {loadingLicenses && (
                 <tr>
-                  <td
-                    colSpan={7}
-                    className="px-8 py-16 text-center text-sm text-gray-500"
-                  >
-                    Loading certifications...
+                  <td colSpan={7} className="px-8 py-16 text-center">
+                    <LoadingSpinner
+                      size="md"
+                      text="Loading certifications..."
+                    />
                   </td>
                 </tr>
               )}
@@ -638,7 +667,17 @@ export const LicenseManagement = () => {
                                 );
                                 return (
                                   <span
-                                    className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${statusKey === "active" ? "bg-green-100 text-green-700" : statusKey === "pending approval" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}
+                                    className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                      statusKey === "active"
+                                        ? "bg-green-100 text-green-700"
+                                        : statusKey === "pending approval"
+                                          ? "bg-amber-100 text-amber-700"
+                                          : statusKey === "suspended"
+                                            ? "bg-purple-100 text-purple-700"
+                                            : statusKey === "revoked"
+                                              ? "bg-gray-200 text-gray-700"
+                                              : "bg-red-100 text-red-700"
+                                    }`}
                                   >
                                     {selected.status === "Active"
                                       ? t.status.active
@@ -646,7 +685,11 @@ export const LicenseManagement = () => {
                                         ? t.status.pending
                                         : statusKey === "expired"
                                           ? t.status.expired
-                                          : selected.status}
+                                          : statusKey === "suspended"
+                                            ? t.status.suspended
+                                            : statusKey === "revoked"
+                                              ? t.status.revoked
+                                              : selected.status}
                                   </span>
                                 );
                               })()}
@@ -714,7 +757,17 @@ export const LicenseManagement = () => {
                             );
                             return (
                               <span
-                                className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${statusKey === "active" ? "bg-green-100 text-green-700" : statusKey === "pending approval" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}
+                                className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                  statusKey === "active"
+                                    ? "bg-green-100 text-green-700"
+                                    : statusKey === "pending approval"
+                                      ? "bg-amber-100 text-amber-700"
+                                      : statusKey === "suspended"
+                                        ? "bg-purple-100 text-purple-700"
+                                        : statusKey === "revoked"
+                                          ? "bg-gray-200 text-gray-700"
+                                          : "bg-red-100 text-red-700"
+                                }`}
                               >
                                 {statusKey === "active"
                                   ? t.status.active
@@ -722,7 +775,11 @@ export const LicenseManagement = () => {
                                     ? t.status.pending
                                     : statusKey === "expired"
                                       ? t.status.expired
-                                      : lic.status}
+                                      : statusKey === "suspended"
+                                        ? t.status.suspended
+                                        : statusKey === "revoked"
+                                          ? t.status.revoked
+                                          : lic.status}
                               </span>
                             );
                           })()}

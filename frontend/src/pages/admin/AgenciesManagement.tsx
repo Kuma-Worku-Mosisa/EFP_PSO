@@ -245,11 +245,7 @@ const defaultOrg = (): OrganizationMock => ({
   ],
   educationStats: emptyEducationStats(),
   trainingDetails: [],
-  serviceContracts: [
-    { id: 1, serviceUserName: "Addis Security PLC", contractUrl: "/contracts/001.pdf", assignedPersonnelCount: 15, addressText: "Bole, Addis Ababa", status: "Active", createdAt: "2023-06-01", updatedAt: "2024-06-01" },
-    { id: 2, serviceUserName: "Ethio Guard Solutions", contractUrl: "/contracts/002.pdf", assignedPersonnelCount: 8, addressText: "Kazanchis, Addis Ababa", status: "Active", createdAt: "2023-09-15", updatedAt: "2024-09-15" },
-    { id: 3, serviceUserName: "Tena Security Services", contractUrl: "/contracts/003.pdf", assignedPersonnelCount: 22, addressText: "Megenagna, Addis Ababa", status: "Expiring Soon", createdAt: "2022-01-10", updatedAt: "2024-01-10" },
-  ],
+  serviceContracts: [],
   branches: [],
   dmsDocuments: [],
 });

@@ -8,6 +8,7 @@ import { useParams, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { apiRequest, resolveBackendAssetUrl } from "../lib/api";
 import { AutoDismissToast, ToastType } from "../components/AutoDismissToast";
+import { LoadingSpinner } from "../components/LoadingSpinner";
 
 // Helper to convert OKLCH/OKLAB strings to safe sRGB colors for html2canvas
 const convertOklchStringToRgb = (str: string): string => {
@@ -746,7 +747,13 @@ export const LicenseViewer = () => {
   };
 
   if (loadingCert) {
-    return <div className="p-8 text-center">Loading certificate...</div>;
+    return (
+      <LoadingSpinner
+        size="lg"
+        text="Loading certificate..."
+        fullPage
+      />
+    );
   }
 
   if (loadError) {

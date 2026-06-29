@@ -26,6 +26,7 @@ import {
 import { cn } from "../lib/utils";
 import { RenewalReviewContent } from "../components/ApplicationsReview/RenewalReviewContent";
 import { ConfirmDialog } from "../components/ConfirmDialog";
+import { LoadingSpinner } from "../components/LoadingSpinner";
 
 const FILE_ORIGIN = import.meta.env.DEV ? "http://localhost:5000" : "";
 
@@ -653,6 +654,7 @@ export const ApplicationsReview = () => {
   };
 
   const [applications, setApplications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [toast, setToast] = React.useState<{
     isOpen: boolean;
     type: ToastType;
@@ -666,6 +668,7 @@ export const ApplicationsReview = () => {
     setToast({ isOpen: true, type, message });
 
   const fetchApplications = React.useCallback(async () => {
+    setLoading(true);
     try {
       const res = await apiRequest("/applications");
       // assume backend returns { data: Application[] }
@@ -674,6 +677,8 @@ export const ApplicationsReview = () => {
     } catch (err: any) {
       console.error("Failed to fetch applications", err);
       showToast("error", "Failed to load applications.");
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -3273,6 +3278,25 @@ export const ApplicationsReview = () => {
   void activeActionMenuId;
   void handleListActionChange;
 
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <AutoDismissToast
+          isOpen={toast.isOpen}
+          type={toast.type}
+          message={toast.message}
+          onClose={() => setToast((s) => ({ ...s, isOpen: false }))}
+          durationMs={5000}
+        />
+        <LoadingSpinner
+          size="lg"
+          text={isAm ? "ማመልከቻዎችን በመጫን ላይ..." : "Loading applications..."}
+          fullPage
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <AutoDismissToast
@@ -3335,7 +3359,7 @@ export const ApplicationsReview = () => {
       <div className="bg-white rounded-[40px] shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider font-bold">
+            <thead className="bg-gradient-to-r from-[#003366] to-[#001F3F] text-white text-xs uppercase tracking-wider font-bold">
               <tr>
                 <th className="px-8 py-6">{t.table.appId}</th>
                 <th className="px-8 py-6">{t.table.applicant}</th>

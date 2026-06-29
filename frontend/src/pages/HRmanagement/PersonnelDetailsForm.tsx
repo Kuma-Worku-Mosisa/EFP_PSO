@@ -441,6 +441,9 @@ export default function PersonnelDetailsForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (firstName.trim().length < 3 || middleName.trim().length < 3 || lastName.trim().length < 3) {
+      return;
+    }
     setSubmitting(true);
     setTimeout(() => {
       setSubmitting(false);
@@ -513,8 +516,9 @@ export default function PersonnelDetailsForm() {
               <input
                 type="text"
                 value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
+                onChange={(e) => setFirstName(e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
                 required
+                minLength={3}
                 placeholder={t("First name...", "ስም...")}
                 className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
               />
@@ -527,8 +531,9 @@ export default function PersonnelDetailsForm() {
               <input
                 type="text"
                 value={middleName}
-                onChange={(e) => setMiddleName(e.target.value)}
+                onChange={(e) => setMiddleName(e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
                 required
+                minLength={3}
                 placeholder={t("Middle name...", "የአባት ስም...")}
                 className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
               />
@@ -541,8 +546,9 @@ export default function PersonnelDetailsForm() {
               <input
                 type="text"
                 value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
+                onChange={(e) => setLastName(e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
                 required
+                minLength={3}
                 placeholder={t("Last name...", "የአያት ስም...")}
                 className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
               />
@@ -599,7 +605,7 @@ export default function PersonnelDetailsForm() {
               <input
                 type="text"
                 value={faydaId}
-                onChange={(e) => setFaydaId(e.target.value)}
+                onChange={(e) => setFaydaId(e.target.value.replace(/\D/g, ''))}
                 required
                 placeholder="FAN-XXXXX"
                 className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
@@ -627,7 +633,7 @@ export default function PersonnelDetailsForm() {
               <input
                 type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
                 required
                 placeholder="+251..."
                 className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
