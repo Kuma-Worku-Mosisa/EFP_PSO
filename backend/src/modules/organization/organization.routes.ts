@@ -8,6 +8,8 @@ import {
   updateOrganizationHandler,
   deleteOrganizationDocumentHandler,
   replaceOrganizationDocumentHandler,
+  createOrganizationServiceContractHandler,
+  updateOrganizationServiceContractHandler,
 } from "./organization.controller";
 import { processAddressChangeRequestHandler } from "./address-request.controller";
 
@@ -46,6 +48,21 @@ router.get("/:id/details", getOrganizationDetailsHandler);
 
 // Update organization status / registered date
 router.patch("/:id", updateOrganizationHandler);
+
+// Create service contract for an organization
+router.post(
+  "/:id/service-contracts",
+  authenticate,
+  authorize(["org_hr_manager", "admin", "system_admin", "super_admin"]),
+  createOrganizationServiceContractHandler,
+);
+
+router.patch(
+  "/:id/service-contracts/:contractId",
+  authenticate,
+  authorize(["org_hr_manager", "admin", "system_admin", "super_admin"]),
+  updateOrganizationServiceContractHandler,
+);
 
 // Delete organization document
 router.delete("/documents/:docId", deleteOrganizationDocumentHandler);

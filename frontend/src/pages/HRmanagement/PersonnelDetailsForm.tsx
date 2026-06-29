@@ -17,9 +17,13 @@ import {
   Trash2,
   ChevronDown,
   Info,
+  Send,
+  Loader2,
+  X,
 } from "lucide-react";
 import { LoadingSpinner } from "../../components/LoadingSpinner";
 import { apiRequest } from "../../lib/api";
+import { uploadOrganizationDocuments } from "../../lib/fileUploadHelper";
 
 interface LocationOption {
   id: number;
@@ -80,7 +84,7 @@ const documentTypes = [
     required: true,
   },
   {
-    key: "work_exp",
+    key: "experience",
     labelEn: "Work Experience",
     labelAm: "የስራ ልምድ",
     required: false,
@@ -104,13 +108,13 @@ const documentTypes = [
     required: true,
   },
   {
-    key: "passport_kebele",
+    key: "kebele_or_passport",
     labelEn: "Renewed Kebele ID/Passport",
     labelAm: "የታደሰ የቀበሌ መታወቂያ/ፓስፖርት",
     required: true,
   },
   {
-    key: "org_id",
+    key: "organizational_id",
     labelEn: "Organization Identification",
     labelAm: "የድርጅት መታወቂያ",
     required: true,
@@ -130,8 +134,12 @@ export default function PersonnelDetailsForm() {
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [username, setUsername] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [gender, setGender] = useState("");
   const [citizenship] = useState("ETHIOPIAN");
+  const [age, setAge] = useState("");
   const [faydaId, setFaydaId] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -160,7 +168,176 @@ export default function PersonnelDetailsForm() {
   const [educationOptions, setEducationOptions] = useState<
     Array<{ value: string; labelEn: string; labelAm: string }>
   >([]);
+  const [organizationId, setOrganizationId] = useState<number | null>(null);
+  const [organizationName, setOrganizationName] = useState<string>("");
+  const [organizationLoadError, setOrganizationLoadError] = useState<
+    string | null
+  >(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Validation UI state
+  const [usernameValid, setUsernameValid] = useState<
+    "idle" | "loading" | "valid" | "invalid"
+  >("idle");
+  const [faydaValid, setFaydaValid] = useState<
+    "idle" | "loading" | "valid" | "invalid"
+  >("idle");
+  const [emailValid, setEmailValid] = useState<
+    "idle" | "loading" | "valid" | "invalid"
+  >("idle");
+  const [phoneValid, setPhoneValid] = useState<
+    "idle" | "loading" | "valid" | "invalid"
+  >("idle");
+
+  // Store exact-match info returned from backend to provide precise feedback
+  const [usernameExactMatch, setUsernameExactMatch] = useState<boolean | null>(
+    null,
+  );
+  const [usernameExistingValue, setUsernameExistingValue] = useState<
+    string | null
+  >(null);
+  const [faydaExactMatch, setFaydaExactMatch] = useState<boolean | null>(null);
+  const [faydaExistingValue, setFaydaExistingValue] = useState<string | null>(
+    null,
+  );
+  const [emailExactMatch, setEmailExactMatch] = useState<boolean | null>(null);
+  const [emailExistingValue, setEmailExistingValue] = useState<string | null>(
+    null,
+  );
+  const [phoneExactMatch, setPhoneExactMatch] = useState<boolean | null>(null);
+  const [phoneExistingValue, setPhoneExistingValue] = useState<string | null>(
+    null,
+  );
+
+  // Lock state: when a value is available (not existing) we lock input to prevent edits
+  const [usernameLocked, setUsernameLocked] = useState(false);
+  const [faydaLocked, setFaydaLocked] = useState(false);
+  const [emailLocked, setEmailLocked] = useState(false);
+  const [phoneLocked, setPhoneLocked] = useState(false);
+
+  const validateUsername = async () => {
+    setUsernameValid("loading");
+    try {
+      const val = username.trim();
+      if (!val) throw new Error("empty");
+      const res = await apiRequest(
+        `/users/validate?field=username&value=${encodeURIComponent(val)}`,
+      );
+      const payload = (res && (res as any).data) || res;
+      const exists = Boolean(payload?.exists);
+      const exactMatch =
+        typeof payload?.exactMatch === "boolean" ? payload.exactMatch : null;
+      const existingValue = payload?.existingValue ?? null;
+
+      setUsernameExactMatch(exactMatch);
+      setUsernameExistingValue(existingValue);
+
+      if (exists) {
+        // already exists in system -> mark invalid and allow editing
+        setUsernameValid("invalid");
+        setUsernameLocked(false);
+      } else {
+        // not exists -> available -> lock the input
+        setUsernameValid("valid");
+        setUsernameLocked(true);
+      }
+    } catch (err) {
+      setUsernameValid("invalid");
+      setUsernameLocked(false);
+    }
+  };
+
+  const validateFayda = async () => {
+    setFaydaValid("loading");
+    try {
+      const val = faydaId.trim();
+      if (!val) throw new Error("empty");
+      const res = await apiRequest(
+        `/users/validate?field=faydaId&value=${encodeURIComponent(val)}`,
+      );
+      const payload = (res && (res as any).data) || res;
+      const exists = Boolean(payload?.exists);
+      const exactMatch =
+        typeof payload?.exactMatch === "boolean" ? payload.exactMatch : null;
+      const existingValue = payload?.existingValue ?? null;
+
+      setFaydaExactMatch(exactMatch);
+      setFaydaExistingValue(existingValue);
+
+      if (exists) {
+        setFaydaValid("invalid");
+        setFaydaLocked(false);
+      } else {
+        setFaydaValid("valid");
+        setFaydaLocked(true);
+      }
+    } catch (err) {
+      setFaydaValid("invalid");
+      setFaydaLocked(false);
+    }
+  };
+
+  const validateEmail = async () => {
+    setEmailValid("loading");
+    try {
+      const val = email.trim();
+      const re = /\S+@\S+\.\S+/;
+      if (!re.test(val)) throw new Error("format");
+      const res = await apiRequest(
+        `/users/validate?field=email&value=${encodeURIComponent(val)}`,
+      );
+      const payload = (res && (res as any).data) || res;
+      const exists = Boolean(payload?.exists);
+      const exactMatch =
+        typeof payload?.exactMatch === "boolean" ? payload.exactMatch : null;
+      const existingValue = payload?.existingValue ?? null;
+
+      setEmailExactMatch(exactMatch);
+      setEmailExistingValue(existingValue);
+
+      if (exists) {
+        setEmailValid("invalid");
+        setEmailLocked(false);
+      } else {
+        setEmailValid("valid");
+        setEmailLocked(true);
+      }
+    } catch (err) {
+      setEmailValid("invalid");
+      setEmailLocked(false);
+    }
+  };
+
+  const validatePhone = async () => {
+    setPhoneValid("loading");
+    try {
+      const val = phone.trim();
+      const re = /^\+?\d{7,15}$/;
+      if (!re.test(val)) throw new Error("format");
+      const res = await apiRequest(
+        `/users/validate?field=phone&value=${encodeURIComponent(val)}`,
+      );
+      const payload = (res && (res as any).data) || res;
+      const exists = Boolean(payload?.exists);
+      const exactMatch =
+        typeof payload?.exactMatch === "boolean" ? payload.exactMatch : null;
+      const existingValue = payload?.existingValue ?? null;
+
+      setPhoneExactMatch(exactMatch);
+      setPhoneExistingValue(existingValue);
+
+      if (exists) {
+        setPhoneValid("invalid");
+        setPhoneLocked(false);
+      } else {
+        setPhoneValid("valid");
+        setPhoneLocked(true);
+      }
+    } catch (err) {
+      setPhoneValid("invalid");
+      setPhoneLocked(false);
+    }
+  };
 
   const selectedPosition = positionOptions.find(
     (pos) => String(pos.id) === position,
@@ -168,6 +345,41 @@ export default function PersonnelDetailsForm() {
   const availableEducationOptions = educationOptions;
 
   useEffect(() => {
+    const fetchOrganization = async () => {
+      try {
+        const response = await apiRequest<{ success: boolean; data?: any }>(
+          "/employees/my-organization",
+        );
+        const payload = response.data || response;
+        const orgId =
+          payload?.organizationId || payload?.id || payload?.organization?.id;
+        if (!payload || !orgId) {
+          throw new Error(
+            isAm ? "የድርጅት መረጃ አይገኝም" : "Organization information not available",
+          );
+        }
+        setOrganizationId(Number(orgId));
+        setOrganizationName(
+          payload.nameEnglish ||
+            payload.nameAmharic ||
+            payload.name ||
+            payload.organization?.nameEnglish ||
+            payload.organization?.nameAmharic ||
+            "organization",
+        );
+      } catch (error: any) {
+        console.error("Failed to load organization info", error);
+        setOrganizationLoadError(
+          error?.message ||
+            (isAm
+              ? "ለምዝገባ ድርጅትዎን መለየት አልተቻለም።"
+              : "Unable to determine your organization for registration."),
+        );
+      }
+    };
+
+    fetchOrganization();
+
     const loadPositionOptions = async () => {
       setPositionLoading(true);
       try {
@@ -439,17 +651,165 @@ export default function PersonnelDetailsForm() {
     e.target.value = "";
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const getCombinedName = () =>
+    [firstName, middleName, lastName].filter(Boolean).join(" ");
+
+  const getUploadRoleForPosition = (positionId: string) => {
+    const selected = positionOptions.find((p) => String(p.id) === positionId);
+    const title = String(selected?.name || "").toLowerCase();
+    if (title.includes("manager")) return "manager";
+    if (title.includes("administrator") || title.includes("admin"))
+      return "administrator";
+    if (title.includes("operation")) return "operations";
+    if (title.includes("security") || title.includes("guard"))
+      return "security_guard";
+    return "organization";
+  };
+
+  const buildUploadFilesPayload = () => {
+    const uploadRole = getUploadRoleForPosition(position);
+    return Object.entries(files).reduce<Record<string, File>>(
+      (payload, [docKey, file]) => {
+        if (file) payload[`${uploadRole}_${docKey}`] = file;
+        return payload;
+      },
+      {},
+    );
+  };
+
+  const normalizeUploadedFilesKeys = (
+    uploadedFiles: Record<string, string>,
+  ) => {
+    const uploadRole = getUploadRoleForPosition(position);
+    const result: Record<string, string> = {};
+    for (const [fieldName, url] of Object.entries(uploadedFiles)) {
+      if (!fieldName) continue;
+      if (fieldName.startsWith(`${uploadRole}_`)) {
+        const withoutPrefix = fieldName.slice(uploadRole.length + 1);
+        result[withoutPrefix] = url;
+        result[fieldName] = url;
+        continue;
+      }
+      const segments = fieldName.split("_");
+      const key = segments.slice(1).join("_");
+      result[key] = url;
+    }
+    return result;
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (firstName.trim().length < 3 || middleName.trim().length < 3 || lastName.trim().length < 3) {
       return;
     }
+    const form = e.currentTarget;
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
     setSubmitting(true);
-    setTimeout(() => {
+
+    try {
+      if (!organizationId || !organizationName) {
+        throw new Error(
+          isAm
+            ? "ያለ ድርጅት መረጃ ሰራተኛ መመዝገብ አይቻልም"
+            : "Cannot register employee without organization context",
+        );
+      }
+
+      if (!newPassword || !confirmPassword) {
+        throw new Error(
+          isAm
+            ? "እባክዎ የይለፍ ቃልና ማረጋገጫ ያስገቡ"
+            : "Please enter both password and confirm password.",
+        );
+      }
+
+      if (newPassword !== confirmPassword) {
+        throw new Error(
+          isAm
+            ? "የይለፍ ቃል እና ማረጋገጫ የማይዛመዱ ናቸው"
+            : "Password and confirm password do not match",
+        );
+      }
+
+      // Upload files first
+      const filesToUpload = buildUploadFilesPayload();
+      let uploadedFilesMap: Record<string, string> = {};
+
+      if (Object.keys(filesToUpload).length > 0) {
+        const uploadResult = await uploadOrganizationDocuments(
+          organizationName,
+          filesToUpload,
+          {
+            employeeFullName: getCombinedName(),
+            employeePositionName:
+              positionOptions.find((p) => String(p.id) === position)?.name ||
+              "",
+          },
+        );
+
+        if (!uploadResult.success || !uploadResult.data?.uploadedFiles) {
+          throw new Error(
+            uploadResult.error || uploadResult.message || "Upload failed",
+          );
+        }
+
+        uploadedFilesMap = normalizeUploadedFilesKeys(
+          uploadResult.data.uploadedFiles,
+        );
+      }
+
+      // Build payload for personnel-change endpoint
+      const payload: any = {
+        requestType: "NEW_EMPLOYEE",
+        username:
+          username ||
+          faydaId ||
+          (email ? email.split("@")[0] : phone || "user"),
+        password: newPassword,
+        confirmPassword: confirmPassword,
+        fullName: getCombinedName(),
+        email,
+        phone,
+        faydaId,
+        organizationId,
+        positionId: position ? Number(position) : null,
+        educationLevel,
+        workExpYears: workExpYears ? Number(workExpYears) : null,
+        TotalExpYears: totalExpYears ? Number(totalExpYears) : null,
+        gender,
+        citizenship,
+        age: age ? Number(age) : null,
+        startedDate: null,
+        kebeleId: kebele ? Number(kebele) : null,
+        houseNo,
+        specialLocation,
+        reason: reason || "New employee registration",
+        uploadedFiles: uploadedFilesMap,
+      };
+
+      const res = await apiRequest("/personnel-change-requests", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      if (res?.success) {
+        setSubmitted(true);
+        setTimeout(() => setSubmitted(false), 3000);
+      } else {
+        throw new Error(
+          res?.message || "Failed to submit personnel change request",
+        );
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(err?.message || "Submission error");
+    } finally {
       setSubmitting(false);
-      setSubmitted(true);
-      setTimeout(() => setSubmitted(false), 3000);
-    }, 1500);
+    }
   };
 
   return (
@@ -554,7 +914,93 @@ export default function PersonnelDetailsForm() {
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
+                {t("Username", "የተጠቃሚ ስም")}{" "}
+                <span className="text-orange-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                disabled={usernameLocked}
+                required
+                placeholder={t("Username...", "የተጠቃሚ ስም...")}
+                className={`w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all ${usernameLocked ? "bg-gray-50 text-gray-500 cursor-not-allowed" : ""}`}
+              />
+              <div className="mt-2 flex items-center justify-end gap-2">
+                {usernameValid === "loading" && (
+                  <Loader2 className="w-4 h-4 text-[#003366] animate-spin" />
+                )}
+                {usernameValid === "valid" && (
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                )}
+                {usernameValid === "invalid" && (
+                  <X className="w-4 h-4 text-rose-600" />
+                )}
+                <button
+                  type="button"
+                  onClick={validateUsername}
+                  className="ml-2 bg-[#003366] text-white px-3 py-1.5 rounded-full text-sm font-semibold hover:bg-[#00264d] transition-all"
+                >
+                  {t("Validate", "ያረጋግጡ")}
+                </button>
+              </div>
+              <p className="mt-1 text-xs">
+                {usernameValid === "valid" && (
+                  <span className="text-green-600">
+                    {t("Available — locked", "እንደ ይዘት የለም — ተዘግቷል")}
+                  </span>
+                )}
+                {usernameValid === "invalid" && (
+                  <span className="text-rose-600">
+                    {t("Already exists — please change", "ቀድሞ አለ — እባክዎ ይቀይሩ")}
+                    {usernameExactMatch === false && usernameExistingValue && (
+                      <span className="block text-[11px] text-rose-500">
+                        {t("Existing value:", "ያለው:")} {usernameExistingValue}
+                      </span>
+                    )}
+                  </span>
+                )}
+                {usernameValid === "loading" && (
+                  <span className="text-gray-500">
+                    {t("Checking...", "እየሰራ ነው...")}
+                  </span>
+                )}
+              </p>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
+                {t("New Password", "አዲስ የይለፍ ቃል")}{" "}
+                <span className="text-orange-500">*</span>
+              </label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+                placeholder={t("New password...", "አዲስ የይለፍ ቃል...")}
+                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
+                {t("Confirm Password", "የይለፍ ቃል ማረጋገጫ")}{" "}
+                <span className="text-orange-500">*</span>
+              </label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                placeholder={t("Confirm password...", "የይለፍ ቃል ያረጋግጡ...")}
+                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
                 {t("Gender", "ጾታ")} <span className="text-orange-500">*</span>
@@ -569,6 +1015,19 @@ export default function PersonnelDetailsForm() {
                 <option value="Male">{t("Male", "ወንድ")}</option>
                 <option value="Female">{t("Female", "ሴት")}</option>
               </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
+                {t("Age", "እድሜ")}
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={age}
+                onChange={(e) => setAge(e.target.value)}
+                placeholder={t("Age", "እድሜ")}
+                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
+              />
             </div>
             <div>
               <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
@@ -606,10 +1065,54 @@ export default function PersonnelDetailsForm() {
                 type="text"
                 value={faydaId}
                 onChange={(e) => setFaydaId(e.target.value.replace(/\D/g, ''))}
+                disabled={faydaLocked}
                 required
                 placeholder="FAN-XXXXX"
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
+                className={`w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all ${faydaLocked ? "bg-gray-50 text-gray-500 cursor-not-allowed" : ""}`}
               />
+              <div className="mt-2 flex items-center justify-end gap-2">
+                {faydaValid === "loading" && (
+                  <Loader2 className="w-4 h-4 text-[#003366] animate-spin" />
+                )}
+                {faydaValid === "valid" && (
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                )}
+                {faydaValid === "invalid" && (
+                  <X className="w-4 h-4 text-rose-600" />
+                )}
+                <button
+                  type="button"
+                  onClick={validateFayda}
+                  className="ml-2 bg-[#003366] text-white px-3 py-1.5 rounded-full text-sm font-semibold hover:bg-[#00264d] transition-all"
+                >
+                  {t("Validate", "ያረጋግጡ")}
+                </button>
+              </div>
+              <p className="mt-1 text-xs">
+                {faydaValid === "valid" && (
+                  <span className="text-green-600">
+                    {t("Fayda not found — locked", "ፋይዳ አልተገኘም — ተዘግቷል")}
+                  </span>
+                )}
+                {faydaValid === "invalid" && (
+                  <span className="text-rose-600">
+                    {t(
+                      "Fayda exists — please provide a different one",
+                      "ፋይዳ አለ — እባክዎ በሌላ ይሙሉ",
+                    )}
+                    {faydaExactMatch === false && faydaExistingValue && (
+                      <span className="block text-[11px] text-rose-500">
+                        {t("Existing value:", "ያለው:")} {faydaExistingValue}
+                      </span>
+                    )}
+                  </span>
+                )}
+                {faydaValid === "loading" && (
+                  <span className="text-gray-500">
+                    {t("Checking...", "እየሰራ ነው...")}
+                  </span>
+                )}
+              </p>
             </div>
             <div>
               <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
@@ -620,10 +1123,54 @@ export default function PersonnelDetailsForm() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={emailLocked}
                 required
                 placeholder="email@example.com"
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
+                className={`w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all ${emailLocked ? "bg-gray-50 text-gray-500 cursor-not-allowed" : ""}`}
               />
+              <div className="mt-2 flex items-center justify-end gap-2">
+                {emailValid === "loading" && (
+                  <Loader2 className="w-4 h-4 text-[#003366] animate-spin" />
+                )}
+                {emailValid === "valid" && (
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                )}
+                {emailValid === "invalid" && (
+                  <X className="w-4 h-4 text-rose-600" />
+                )}
+                <button
+                  type="button"
+                  onClick={validateEmail}
+                  className="ml-2 bg-[#003366] text-white px-3 py-1.5 rounded-full text-sm font-semibold hover:bg-[#00264d] transition-all"
+                >
+                  {t("Validate", "ያረጋግጡ")}
+                </button>
+              </div>
+              <p className="mt-1 text-xs">
+                {emailValid === "valid" && (
+                  <span className="text-green-600">
+                    {t("Email not found — locked", "ኢሜይል አልተገኘም — ተዘግቷል")}
+                  </span>
+                )}
+                {emailValid === "invalid" && (
+                  <span className="text-rose-600">
+                    {t(
+                      "Email exists — please use another",
+                      "ኢሜይል አለ — እባክዎ ሌላ ይጠቀሙ",
+                    )}
+                    {emailExactMatch === false && emailExistingValue && (
+                      <span className="block text-[11px] text-rose-500">
+                        {t("Existing value:", "ያለው:")} {emailExistingValue}
+                      </span>
+                    )}
+                  </span>
+                )}
+                {emailValid === "loading" && (
+                  <span className="text-gray-500">
+                    {t("Checking...", "እየሰራ ነው...")}
+                  </span>
+                )}
+              </p>
             </div>
             <div>
               <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
@@ -634,10 +1181,54 @@ export default function PersonnelDetailsForm() {
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                disabled={phoneLocked}
                 required
                 placeholder="+251..."
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
+                className={`w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all ${phoneLocked ? "bg-gray-50 text-gray-500 cursor-not-allowed" : ""}`}
               />
+              <div className="mt-2 flex items-center justify-end gap-2">
+                {phoneValid === "loading" && (
+                  <Loader2 className="w-4 h-4 text-[#003366] animate-spin" />
+                )}
+                {phoneValid === "valid" && (
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                )}
+                {phoneValid === "invalid" && (
+                  <X className="w-4 h-4 text-rose-600" />
+                )}
+                <button
+                  type="button"
+                  onClick={validatePhone}
+                  className="ml-2 bg-[#003366] text-white px-3 py-1.5 rounded-full text-sm font-semibold hover:bg-[#00264d] transition-all"
+                >
+                  {t("Validate", "ያረጋግጡ")}
+                </button>
+              </div>
+              <p className="mt-1 text-xs">
+                {phoneValid === "valid" && (
+                  <span className="text-green-600">
+                    {t("Phone not found — locked", "ስልክ አልተገኘም — ተዘግቷል")}
+                  </span>
+                )}
+                {phoneValid === "invalid" && (
+                  <span className="text-rose-600">
+                    {t(
+                      "Phone exists — please use another",
+                      "ስልክ አለ — እባክዎ ሌላ ይጠቀሙ",
+                    )}
+                    {phoneExactMatch === false && phoneExistingValue && (
+                      <span className="block text-[11px] text-rose-500">
+                        {t("Existing value:", "ያለው:")} {phoneExistingValue}
+                      </span>
+                    )}
+                  </span>
+                )}
+                {phoneValid === "loading" && (
+                  <span className="text-gray-500">
+                    {t("Checking...", "እየሰራ ነው...")}
+                  </span>
+                )}
+              </p>
             </div>
           </div>
         </div>

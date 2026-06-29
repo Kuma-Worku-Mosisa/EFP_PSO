@@ -167,6 +167,7 @@ export class TransfersController {
 
       const actionedById = req.user?.id || 2;
       const userOrganizationId = req.user?.organizationId || 2;
+      const roles = Array.isArray(req.user?.roles) ? req.user.roles : [];
 
       const validActions = ["RELEASE", "FINALIZE_APPROVE", "REJECT"];
       if (!validActions.includes(action)) {
@@ -182,6 +183,7 @@ export class TransfersController {
         action,
         Number(actionedById),
         Number(userOrganizationId),
+        roles,
         rejectionReason,
       );
 

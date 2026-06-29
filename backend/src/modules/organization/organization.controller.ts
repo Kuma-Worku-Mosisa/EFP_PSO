@@ -4,8 +4,15 @@ import fs from "fs";
 import path from "path";
 import prisma from "../../lib/prisma";
 import { ApiResponse } from "../../utils/apiResponse";
-import { deleteDocumentFile } from "../../utils/documentOrganizer";
-import { buildPrefixedFilename, fileFilter } from "../../middleware/fileUpload";
+import {
+  deleteDocumentFile,
+  getDocumentUrl,
+} from "../../utils/documentOrganizer";
+import {
+  buildPrefixedFilename,
+  fileFilter,
+  resolveOrganizationFolderName,
+} from "../../middleware/fileUpload";
 import { NotificationService } from "../notification/notification.service";
 
 /**
@@ -302,6 +309,7 @@ export const getOrganizationDetailsHandler = async (
         assignedPersonnelCount: true,
         status: true,
         createdAt: true,
+        terminatedAt: true,
         updatedAt: true,
         address: {
           select: {
@@ -537,8 +545,29 @@ export const getOrganizationDetailsHandler = async (
         assignedPersonnelCount: sc.assignedPersonnelCount,
         status: sc.status ?? "Unknown",
         addressText: formatNestedAddress(sc.address),
+        region:
+          sc.address?.kebele?.woreda?.zone?.region?.nameEnglish ||
+          sc.address?.kebele?.woreda?.zone?.region?.nameAmharic ||
+          "",
+        zone:
+          sc.address?.kebele?.woreda?.zone?.nameEnglish ||
+          sc.address?.kebele?.woreda?.zone?.nameAmharic ||
+          "",
+        woreda:
+          sc.address?.kebele?.woreda?.nameEnglish ||
+          sc.address?.kebele?.woreda?.nameAmharic ||
+          "",
+        kebele:
+          sc.address?.kebele?.nameEnglish ||
+          sc.address?.kebele?.nameAmharic ||
+          "",
+        houseNumber: sc.address?.houseNumber ?? "",
+        specialLocation: sc.address?.specialLocation ?? "",
         createdAt: sc.createdAt.toISOString().split("T")[0],
         updatedAt: sc.updatedAt.toISOString().split("T")[0],
+        terminatedAt: sc.terminatedAt
+          ? sc.terminatedAt.toISOString().split("T")[0]
+          : "",
       })),
       branches: branches.map((branch) => ({
         id: branch.id,
@@ -593,6 +622,556 @@ export const getOrganizationDetailsHandler = async (
 /**
  * Update organization status and/or registered date (createdAt)
  */
+const resolveServiceContractUploadDir = (organizationName: string) => {
+  const orgFolder = resolveOrganizationFolderName(organizationName);
+  return path.join(
+    process.cwd(),
+    "uploads",
+    "organization",
+    orgFolder,
+    "service_contracts",
+  );
+};
+
+const buildServiceContractStorage = (organizationName: string) =>
+  multer.diskStorage({
+    destination: (req, file, cb) => {
+      const uploadDir = resolveServiceContractUploadDir(organizationName);
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+      cb(null, buildPrefixedFilename("service_contract", file.originalname));
+    },
+  });
+
+const resolveKebeleId = async (payload: Record<string, unknown>) => {
+  const maybeId = Number(
+    payload.kebeleId ?? payload.kebele_id ?? payload.kebele ?? 0,
+  );
+  if (Number.isFinite(maybeId) && maybeId > 0) {
+    return maybeId;
+  }
+
+  const kebeleName = String(
+    payload.kebeleName ?? payload.kebele_name ?? payload.kebele ?? "",
+  ).trim();
+  if (!kebeleName) {
+    return null;
+  }
+
+  const whereClause: any = {
+    OR: [{ nameEnglish: kebeleName }, { nameAmharic: kebeleName }],
+  };
+
+  const woredaId = Number(
+    payload.woredaId ?? payload.woreda_id ?? payload.woreda ?? 0,
+  );
+  const woredaName = String(
+    payload.woredaName ?? payload.woreda_name ?? "",
+  ).trim();
+  if (Number.isFinite(woredaId) && woredaId > 0) {
+    whereClause.woreda = { id: woredaId };
+  } else if (woredaName) {
+    whereClause.woreda = {
+      OR: [{ nameEnglish: woredaName }, { nameAmharic: woredaName }],
+    };
+  }
+
+  const kebele = await prisma.kebele.findFirst({
+    where: whereClause,
+    select: { id: true },
+  });
+
+  return kebele?.id ?? null;
+};
+
+export const updateOrganizationServiceContractHandler = async (
+  req: Request,
+  res: Response,
+) => {
+  const organizationId = Number(req.params.id);
+  const contractId = Number(req.params.contractId);
+
+  if (!Number.isFinite(organizationId) || organizationId <= 0) {
+    return ApiResponse.error(res, "Invalid organization id", 400);
+  }
+
+  if (!Number.isFinite(contractId) || contractId <= 0) {
+    return ApiResponse.error(res, "Invalid service contract id", 400);
+  }
+
+  const existingContract = await prisma.serviceContract.findFirst({
+    where: { id: contractId, organizationId },
+    select: {
+      id: true,
+      addressId: true,
+      serviceUserName: true,
+      contractUrl: true,
+      assignedPersonnelCount: true,
+      status: true,
+      createdAt: true,
+      terminatedAt: true,
+    },
+  });
+
+  if (!existingContract) {
+    return ApiResponse.error(res, "Service contract not found", 404);
+  }
+
+  const organization = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: {
+      id: true,
+      nameEnglish: true,
+      nameAmharic: true,
+    },
+  });
+
+  if (!organization) {
+    return ApiResponse.error(res, "Organization not found", 404);
+  }
+
+  const upload = multer({
+    storage: buildServiceContractStorage(
+      organization.nameEnglish || organization.nameAmharic || "organization",
+    ),
+    fileFilter,
+    limits: { fileSize: 10 * 1024 * 1024 },
+  }).single("contractDoc");
+
+  upload(req, res, async (uploadError) => {
+    if (uploadError) {
+      console.error("Service contract update upload failed:", uploadError);
+      return ApiResponse.error(
+        res,
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Failed to upload contract document.",
+        400,
+        uploadError instanceof Error
+          ? uploadError.message
+          : String(uploadError),
+      );
+    }
+
+    const file = req.file;
+    const {
+      serviceUserName,
+      status,
+      contractStartDate,
+      terminatedAt,
+      assignedPersonnelCount,
+      houseNumber,
+      specialLocation,
+    } = req.body as Record<string, string>;
+
+    const errors: string[] = [];
+    const nextServiceUserName = serviceUserName?.trim() || "";
+    if (serviceUserName !== undefined && !nextServiceUserName) {
+      errors.push("Client name is required.");
+    }
+
+    const assignedPersonnel = Number(
+      assignedPersonnelCount ?? existingContract.assignedPersonnelCount,
+    );
+    if (!Number.isFinite(assignedPersonnel) || assignedPersonnel <= 0) {
+      errors.push("Assigned guards must be greater than 0.");
+    }
+
+    const contractStart = contractStartDate
+      ? new Date(contractStartDate)
+      : existingContract.createdAt;
+    if (
+      contractStartDate &&
+      (!contractStart || Number.isNaN(contractStart.getTime()))
+    ) {
+      errors.push("Contract start date must be valid.");
+    }
+
+    const contractTermination = terminatedAt
+      ? new Date(terminatedAt)
+      : (existingContract.terminatedAt ?? null);
+    if (
+      terminatedAt &&
+      (!contractTermination || Number.isNaN(contractTermination.getTime()))
+    ) {
+      errors.push("Contract termination date must be valid when provided.");
+    }
+
+    if (errors.length > 0) {
+      return ApiResponse.error(res, errors.join(" "), 400, { errors });
+    }
+
+    try {
+      const updateData: Record<string, unknown> = {};
+
+      if (nextServiceUserName) {
+        updateData.serviceUserName = nextServiceUserName;
+      }
+      if (typeof assignedPersonnelCount !== "undefined") {
+        updateData.assignedPersonnelCount = assignedPersonnel;
+      }
+      if (contractStartDate) {
+        updateData.createdAt = contractStart;
+      }
+      if (typeof terminatedAt !== "undefined") {
+        updateData.terminatedAt = contractTermination ?? null;
+      }
+
+      const normalizedStatus =
+        typeof status === "string" && status.trim()
+          ? status.trim()
+          : existingContract.status || "Active";
+      const now = new Date();
+      updateData.status =
+        contractTermination && contractTermination < now
+          ? "Expired"
+          : normalizedStatus;
+
+      if (file) {
+        const relativePath = path
+          .relative(process.cwd(), file.path)
+          .replace(/\\/g, "/");
+        updateData.contractUrl = getDocumentUrl(relativePath);
+      }
+
+      const addressUpdateData: Record<string, unknown> = {};
+      if (typeof houseNumber === "string" && houseNumber.trim()) {
+        addressUpdateData.houseNumber = houseNumber.trim();
+      }
+      if (typeof specialLocation === "string") {
+        addressUpdateData.specialLocation = specialLocation.trim() || undefined;
+      }
+      const kebeleId = await resolveKebeleId(req.body);
+      if (kebeleId) {
+        addressUpdateData.kebeleId = kebeleId;
+      }
+
+      if (Object.keys(addressUpdateData).length > 0) {
+        await prisma.address.update({
+          where: { id: existingContract.addressId },
+          data: addressUpdateData,
+        });
+      }
+
+      const updatedContract = await prisma.serviceContract.update({
+        where: { id: contractId },
+        data: updateData,
+        select: {
+          id: true,
+          serviceUserName: true,
+          contractUrl: true,
+          assignedPersonnelCount: true,
+          status: true,
+          createdAt: true,
+          terminatedAt: true,
+          updatedAt: true,
+          address: {
+            select: {
+              houseNumber: true,
+              specialLocation: true,
+              kebele: {
+                select: {
+                  nameEnglish: true,
+                  nameAmharic: true,
+                  woreda: {
+                    select: {
+                      nameEnglish: true,
+                      nameAmharic: true,
+                      zone: {
+                        select: {
+                          nameEnglish: true,
+                          nameAmharic: true,
+                          region: {
+                            select: {
+                              nameEnglish: true,
+                              nameAmharic: true,
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const addressParts = [
+        updatedContract.address.specialLocation,
+        updatedContract.address.houseNumber
+          ? `House ${updatedContract.address.houseNumber}`
+          : undefined,
+        updatedContract.address.kebele?.nameEnglish ||
+          updatedContract.address.kebele?.nameAmharic,
+        updatedContract.address.kebele?.woreda?.nameEnglish ||
+          updatedContract.address.kebele?.woreda?.nameAmharic,
+        updatedContract.address.kebele?.woreda?.zone?.nameEnglish ||
+          updatedContract.address.kebele?.woreda?.zone?.nameAmharic,
+        updatedContract.address.kebele?.woreda?.zone?.region?.nameEnglish ||
+          updatedContract.address.kebele?.woreda?.zone?.region?.nameAmharic,
+      ]
+        .filter(Boolean)
+        .join(", ");
+
+      return ApiResponse.success(
+        res,
+        "Service contract updated successfully.",
+        {
+          id: updatedContract.id,
+          serviceUserName: updatedContract.serviceUserName,
+          contractUrl: updatedContract.contractUrl,
+          assignedPersonnelCount: updatedContract.assignedPersonnelCount,
+          status: updatedContract.status,
+          createdAt: updatedContract.createdAt.toISOString().split("T")[0],
+          updatedAt: updatedContract.updatedAt.toISOString().split("T")[0],
+          terminatedAt: updatedContract.terminatedAt
+            ? updatedContract.terminatedAt.toISOString().split("T")[0]
+            : "",
+          addressText: addressParts,
+        },
+      );
+    } catch (error: any) {
+      console.error("Update Service Contract Error:", error?.message ?? error);
+      return ApiResponse.error(
+        res,
+        "Failed to update service contract",
+        500,
+        error?.message ?? String(error),
+      );
+    }
+  });
+};
+
+export const createOrganizationServiceContractHandler = async (
+  req: Request,
+  res: Response,
+) => {
+  const organizationId = Number(req.params.id);
+  if (!Number.isFinite(organizationId) || organizationId <= 0) {
+    return ApiResponse.error(res, "Invalid organization id", 400);
+  }
+
+  const organization = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: {
+      id: true,
+      nameEnglish: true,
+      nameAmharic: true,
+    },
+  });
+
+  if (!organization) {
+    return ApiResponse.error(res, "Organization not found", 404);
+  }
+
+  const upload = multer({
+    storage: buildServiceContractStorage(
+      organization.nameEnglish || organization.nameAmharic || "organization",
+    ),
+    fileFilter,
+    limits: { fileSize: 10 * 1024 * 1024 },
+  }).single("contractDoc");
+
+  upload(req, res, async (uploadError) => {
+    if (uploadError) {
+      console.error("Service contract upload failed:", uploadError);
+      return ApiResponse.error(
+        res,
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Failed to upload contract document.",
+        400,
+        uploadError instanceof Error
+          ? uploadError.message
+          : String(uploadError),
+      );
+    }
+
+    const file = req.file;
+    if (!file) {
+      return ApiResponse.error(res, "Contract document is required", 400);
+    }
+
+    const {
+      serviceUserName,
+      status,
+      contractStartDate,
+      terminatedAt,
+      assignedPersonnelCount,
+      houseNumber,
+      specialLocation,
+    } = req.body as Record<string, string>;
+
+    const errors: string[] = [];
+    if (!serviceUserName || !serviceUserName.trim()) {
+      errors.push("Client name is required.");
+    }
+    if (!houseNumber || !houseNumber.trim()) {
+      errors.push("House number is required.");
+    }
+
+    const assignedPersonnel = Number(assignedPersonnelCount ?? 0);
+    if (!Number.isFinite(assignedPersonnel) || assignedPersonnel <= 0) {
+      errors.push("Assigned guards must be greater than 0.");
+    }
+
+    const contractStart = contractStartDate
+      ? new Date(contractStartDate)
+      : null;
+    if (
+      !contractStartDate ||
+      !contractStart ||
+      Number.isNaN(contractStart.getTime())
+    ) {
+      errors.push("Contract start date is required and must be valid.");
+    }
+
+    const contractTermination = terminatedAt ? new Date(terminatedAt) : null;
+    if (
+      terminatedAt &&
+      (!contractTermination || Number.isNaN(contractTermination.getTime()))
+    ) {
+      errors.push("Contract termination date must be valid when provided.");
+    }
+
+    const kebeleId = await resolveKebeleId(req.body);
+    if (!kebeleId) {
+      errors.push(
+        "A valid kebele selection is required for the contract address.",
+      );
+    }
+
+    if (errors.length > 0) {
+      return ApiResponse.error(res, errors.join(" "), 400, { errors });
+    }
+
+    try {
+      const address = await prisma.address.create({
+        data: {
+          kebeleId,
+          houseNumber: houseNumber.trim() || undefined,
+          specialLocation: specialLocation?.trim() || undefined,
+        },
+      });
+
+      const relativePath = path
+        .relative(process.cwd(), file.path)
+        .replace(/\\/g, "/");
+      const contractUrl = getDocumentUrl(relativePath);
+
+      // Determine status: if terminatedAt is provided and in the past, mark Expired
+      const now = new Date();
+      const incomingStatus = status?.trim() || "Active";
+      const finalStatus =
+        contractTermination && contractTermination < now
+          ? "Expired"
+          : incomingStatus;
+
+      const serviceContract = await prisma.serviceContract.create({
+        data: {
+          organizationId,
+          serviceUserName: serviceUserName.trim(),
+          contractUrl,
+          addressId: address.id,
+          assignedPersonnelCount: assignedPersonnel,
+          status: finalStatus,
+          createdAt: contractStart ?? undefined,
+          terminatedAt: contractTermination ?? undefined,
+        },
+        select: {
+          id: true,
+          serviceUserName: true,
+          contractUrl: true,
+          assignedPersonnelCount: true,
+          status: true,
+          createdAt: true,
+          terminatedAt: true,
+          updatedAt: true,
+          address: {
+            select: {
+              houseNumber: true,
+              specialLocation: true,
+              kebele: {
+                select: {
+                  nameEnglish: true,
+                  nameAmharic: true,
+                  woreda: {
+                    select: {
+                      nameEnglish: true,
+                      nameAmharic: true,
+                      zone: {
+                        select: {
+                          nameEnglish: true,
+                          nameAmharic: true,
+                          region: {
+                            select: {
+                              nameEnglish: true,
+                              nameAmharic: true,
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const addressParts = [
+        serviceContract.address.specialLocation,
+        serviceContract.address.houseNumber
+          ? `House ${serviceContract.address.houseNumber}`
+          : undefined,
+        serviceContract.address.kebele?.nameEnglish ||
+          serviceContract.address.kebele?.nameAmharic,
+        serviceContract.address.kebele?.woreda?.nameEnglish ||
+          serviceContract.address.kebele?.woreda?.nameAmharic,
+        serviceContract.address.kebele?.woreda?.zone?.nameEnglish ||
+          serviceContract.address.kebele?.woreda?.zone?.nameAmharic,
+        serviceContract.address.kebele?.woreda?.zone?.region?.nameEnglish ||
+          serviceContract.address.kebele?.woreda?.zone?.region?.nameAmharic,
+      ]
+        .filter(Boolean)
+        .join(", ");
+
+      return ApiResponse.success(
+        res,
+        "Service contract created successfully.",
+        {
+          id: serviceContract.id,
+          serviceUserName: serviceContract.serviceUserName,
+          contractUrl: serviceContract.contractUrl,
+          assignedPersonnelCount: serviceContract.assignedPersonnelCount,
+          status: serviceContract.status,
+          createdAt: serviceContract.createdAt.toISOString().split("T")[0],
+          updatedAt: serviceContract.updatedAt.toISOString().split("T")[0],
+          terminatedAt: serviceContract.terminatedAt
+            ? serviceContract.terminatedAt.toISOString().split("T")[0]
+            : "",
+          addressText: addressParts,
+        },
+      );
+    } catch (error: any) {
+      console.error("Create Service Contract Error:", error?.message ?? error);
+      return ApiResponse.error(
+        res,
+        "Failed to create service contract",
+        500,
+        error?.message ?? String(error),
+      );
+    }
+  });
+};
+
 export const updateOrganizationHandler = async (
   req: Request,
   res: Response,

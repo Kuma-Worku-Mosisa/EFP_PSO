@@ -102,23 +102,24 @@ model User {
   user_roles user_roles[]
 
   // Add these back-relation fields:
-  initiatedTransfers   TransferRequest[]            @relation("TransferInitiator")
-  actionedTransfers    TransferRequest[]            @relation("TransferActioner")
-  official             Official?
-  applications         Application[] // Fixes the missing opposite relation error
-  formalRequests       FormalRequest[]
-  auditLogs            AuditLog[]                   @relation("UserAuditLogs")
-  employee             Employee?
-  inspections          Inspection[]                 @relation("LeadInspector")
-  incidentReports      IncidentReport[]             @relation("IncidentReporter")
-  issuedPenalties      IncidentPenalty[]            @relation("PenaltyIssuer")
-  historyLogs          ApplicationTrackingHistory[]
-  inspectionCommittees InspectionCommittee[]
-  createdFaqs          Faq[]                        @relation("FaqCreator")
-  notifications        Notification[]
-  certifications       Certification[]              @relation("CertificationStampedBy")
-  receivedContacts     Contact[]
-  newsArticles         NewsArticle[]
+  initiatedTransfers         TransferRequest[]            @relation("TransferInitiator")
+  actionedTransfers          TransferRequest[]            @relation("TransferActioner")
+  official                   Official?
+  applications               Application[] // Fixes the missing opposite relation error
+  formalRequests             FormalRequest[]
+  auditLogs                  AuditLog[]                   @relation("UserAuditLogs")
+  employee                   Employee?
+  inspections                Inspection[]                 @relation("LeadInspector")
+  incidentReports            IncidentReport[]             @relation("IncidentReporter")
+  issuedPenalties            IncidentPenalty[]            @relation("PenaltyIssuer")
+  historyLogs                ApplicationTrackingHistory[]
+  inspectionCommittees       InspectionCommittee[]
+  createdFaqs                Faq[]                        @relation("FaqCreator")
+  notifications              Notification[]
+  certifications             Certification[]              @relation("CertificationStampedBy")
+  receivedContacts           Contact[]
+  newsArticles               NewsArticle[]
+  initiatedPersonnelRequests PersonnelChangeRequest[]     @relation("HRManagerInitiator")
 
   @@map("users")
 }
@@ -298,10 +299,10 @@ model ServiceContract {
 
   // Lifecycle & Status Management
   // Recommended values: "Active", "Expired", "Terminated", "Pending_Renewal"
-  status    String   @default("Active") @map("contract_status") @db.VarChar(50)
-  // Metadata & Audit Trail
-  createdAt DateTime @default(now()) @map("created_at") @db.DateTime
-  updatedAt DateTime @default(now()) @map("updated_at") @db.DateTime
+  status       String    @default("Active") @map("contract_status") @db.VarChar(50)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.DateTime
+  terminatedAt DateTime? @map("Terminated_at") @db.DateTime
+  updatedAt    DateTime  @default(now()) @map("updated_at") @db.DateTime
 
   // Explicit NoAction rules keep SQL Server happy by avoiding loop collisions
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Contracts_Organizations")
@@ -381,10 +382,43 @@ model Employee {
   adminApplications      Application[] @relation("AdminHeadRole")
 
   // ADDED: Required back-relations for Incident and Manager Change modules
-  incidentReports  IncidentReport[]
-  transferRequests TransferRequest[]
+  incidentReports           IncidentReport[]
+  transferRequests          TransferRequest[]
+  targetedPersonnelRequests PersonnelChangeRequest[] @relation("TargetEmployeeRecord")
 
   @@map("employees")
+}
+
+model PersonnelChangeRequest {
+  id Int @id @default(autoincrement()) @map("person_change_request_id")
+
+  // Discriminator field: "NEW_EMPLOYEE" or "EXISTING_EMPLOYEE"
+  requestType String @map("request_type") @db.VarChar(40)
+
+  // Who is creating the request (The logged-in HR Manager)
+  initiatedByUserId Int  @map("initiated_by_user_id")
+  initiator         User @relation("HRManagerInitiator", fields: [initiatedByUserId], references: [id], onUpdate: NoAction)
+
+  // Target Employee: The target employee being changed (Always points to the core table)
+  targetEmployeeId Int      @map("target_employee_id")
+  targetEmployee   Employee @relation("TargetEmployeeRecord", fields: [targetEmployeeId], references: [id], onDelete: Cascade)
+
+  // Track original deployment source vs requested deployment destination
+  sourceOrganizationId Int @map("source_organization_id")
+  targetOrganizationId Int @map("target_organization_id")
+
+  // Justification & Review Notes
+  reason        String  @map("change_reason") @db.NVarChar(Max) // The HR Manager's justification for the request
+  adminFeedback String? @map("admin_feedback") @db.NVarChar(Max) // Explains why an admin rejected or commented on the request
+
+  targetPositionId Int @map("target_position_id")
+
+  // Status tracking metadata
+  status    String   @default("PENDING") @db.VarChar(30) // PENDING, APPROVED, REJECTED
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("personnel_change_requests")
 }
 
 model TransferRequest {
