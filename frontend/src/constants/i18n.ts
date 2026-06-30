@@ -510,9 +510,17 @@ export const translations = {
         viewReport: "View Report",
       },
       reportTypes: {
+        weekly: {
+          name: "Weekly Performance",
+          desc: "Weekly activity summary and key metrics.",
+        },
         monthly: {
           name: "Monthly Performance",
           desc: "Statistical overview of agency activities.",
+        },
+        yearly: {
+          name: "Yearly Performance",
+          desc: "Annual performance review and trend analysis.",
         },
         personnel: {
           name: "Personnel Documents",
@@ -521,10 +529,6 @@ export const translations = {
         payroll: {
           name: "Payroll & Benefits",
           desc: "Wages, insurance, and social security compliance.",
-        },
-        incidents: {
-          name: "Crime & Incidents",
-          desc: "Reported crimes or disciplinary actions by staff.",
         },
         training: {
           name: "Training Certs",
@@ -1038,9 +1042,17 @@ export const translations = {
         viewReport: "ሪፖርቱን ተመልከት",
       },
       reportTypes: {
+        weekly: {
+          name: "ሳምንታዊ አፈጻጸም",
+          desc: "ሳምንታዊ የእንቅስቃሴ ማጠቃለያ እና ቁልፍ መለኪያዎች።",
+        },
         monthly: {
           name: "የወርሃዊ አፈጻጸም",
           desc: "የኤጀንሲው እንቅስቃሴዎች ስታቲስቲካዊ አጠቃላይ እይታ።",
+        },
+        yearly: {
+          name: "ዓመታዊ አፈጻጸም",
+          desc: "ዓመታዊ የአፈጻጸም ግምገማ እና የአዝማሚያ ትንተና።",
         },
         personnel: {
           name: "የሰራተኞች ሰነዶች",
@@ -1050,13 +1062,9 @@ export const translations = {
           name: "የደመወዝ እና ጥቅማጥቅሞች",
           desc: "ደመወዝ፣ ዋስትና እና የማህበራዊ ዋስትና ተገዢነት።",
         },
-        incidents: {
-          name: "ወንጀል እና ክስተቶች",
-          desc: "በሰራተኞች የተፈጸሙ ወንጀሎች ወይም የዲሲፕሊን እርምጃዎች።",
-        },
         training: {
           name: "የስልጠና ምስክር ወረቀቶች",
-          desc: "የሁሉም የደህንነት ሰራተኞች የስልጠና ሁኔታ።",
+          desc: "የሁሉም የደህንነት ሰራተኞች የምስክር ወረቀት ሁኔታ።",
         },
       },
       success: "የHRMS ሪፖርቱ በተሳካ ሁኔታ ወርዷል!",

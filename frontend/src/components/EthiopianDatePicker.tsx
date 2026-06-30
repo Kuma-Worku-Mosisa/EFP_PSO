@@ -85,14 +85,13 @@ export default function EthiopianDatePicker({
   placeholder = "Select date...",
   useEthiopian,
 }: EthiopianDatePickerProps) {
+  const currentEthYear = new Date().getFullYear() - 8;
   const [showPicker, setShowPicker] = useState(false);
-  const [ethYear, setEthYear] = useState(2010);
+  const [ethYear, setEthYear] = useState(currentEthYear);
   const [ethMonth, setEthMonth] = useState(1);
   const [ethDay, setEthDay] = useState(1);
   const [textInput, setTextInput] = useState("");
   const wrapperRef = useRef<HTMLDivElement>(null);
-
-  const currentEthYear = new Date().getFullYear() - 8;
 
   useEffect(() => {
     if (useEthiopian && value) {
@@ -155,7 +154,7 @@ export default function EthiopianDatePicker({
   }
 
   const yearOptions: number[] = [];
-  for (let i = 1900; i <= currentEthYear; i++) {
+  for (let i = currentEthYear; i <= currentEthYear + 5; i++) {
     yearOptions.push(i);
   }
 
