@@ -48,6 +48,24 @@ type InspectionRow = {
   } | null;
 };
 
+type DashboardSummary = {
+  assignedTasks: number;
+  pendingReview: number;
+  inReview: number;
+  completed: number;
+  committeeAssignments: number;
+  pendingCommitteeSignatures: number;
+};
+
+const DEFAULT_SUMMARY: DashboardSummary = {
+  assignedTasks: 0,
+  pendingReview: 0,
+  inReview: 0,
+  completed: 0,
+  committeeAssignments: 0,
+  pendingCommitteeSignatures: 0,
+};
+
 const formatDate = (value?: string) => {
   if (!value) return "-";
   const date = new Date(value);
@@ -61,10 +79,12 @@ const formatDate = (value?: string) => {
 
 const getStatusColor = (status?: string | null) => {
   const s = String(status || "").toLowerCase();
-  if (s.includes("approv") || s.includes("field_reviewed")) return "bg-emerald-100 text-emerald-700 border-emerald-200";
+  if (s.includes("approv") || s.includes("field_reviewed"))
+    return "bg-emerald-100 text-emerald-700 border-emerald-200";
   if (s.includes("reject")) return "bg-red-100 text-red-700 border-red-200";
   if (s.includes("review")) return "bg-blue-100 text-blue-700 border-blue-200";
-  if (s.includes("sched")) return "bg-amber-100 text-amber-700 border-amber-200";
+  if (s.includes("sched"))
+    return "bg-amber-100 text-amber-700 border-amber-200";
   return "bg-gray-100 text-gray-600 border-gray-200";
 };
 
@@ -146,44 +166,34 @@ const StatCard = ({
 const Overview = ({
   inspections,
   isAm,
+  summary,
 }: {
   inspections: InspectionRow[];
   isAm: boolean;
+  summary: DashboardSummary;
 }) => {
-  const pending = inspections.filter((i) =>
-    String(i.status || "").toLowerCase().includes("sched"),
-  ).length;
-  const inReview = inspections.filter((i) =>
-    String(i.status || "").toLowerCase().includes("review"),
-  ).length;
-  const completed = inspections.filter((i) =>
-    ["field_reviewed", "approved", "rejected"].includes(
-      String(i.status || "").toLowerCase(),
-    ),
-  ).length;
-
   const stats = [
     {
       label: isAm ? "የተመደቡ ተግባራት" : "Assigned Tasks",
-      value: inspections.length,
+      value: summary.assignedTasks,
       icon: <ClipboardCheck className="w-5 h-5" />,
       accent: "blue" as const,
     },
     {
       label: isAm ? "በመጠባበቅ ላይ" : "Pending Review",
-      value: pending,
+      value: summary.pendingReview,
       icon: <Clock className="w-5 h-5" />,
       accent: "amber" as const,
     },
     {
       label: isAm ? "በግምገማ ላይ" : "In Review",
-      value: inReview,
+      value: summary.inReview,
       icon: <Activity className="w-5 h-5" />,
       accent: "gold" as const,
     },
     {
       label: isAm ? "የተጠናቀቁ" : "Completed",
-      value: completed,
+      value: summary.completed,
       icon: <CheckCircle2 className="w-5 h-5" />,
       accent: "green" as const,
     },
@@ -249,7 +259,9 @@ const Overview = ({
               {isAm ? "የቅርብ ጊዜ ምርመራዎች" : "Recent Inspections"}
             </h3>
             <p className="text-sm text-gray-500 mt-0.5">
-              {isAm ? "የቅርብ ጊዜ የምርመራ ዝርዝሮች" : "Latest assigned inspection records"}
+              {isAm
+                ? "የቅርብ ጊዜ የምርመራ ዝርዝሮች"
+                : "Latest assigned inspection records"}
             </p>
           </div>
           <div className="p-2 rounded-xl bg-[#003366]/5">
@@ -442,18 +454,17 @@ const Reports = ({
   inspections,
   user,
   isAm,
+  summary,
 }: {
   inspections: InspectionRow[];
   user: any;
   isAm: boolean;
+  summary: DashboardSummary;
 }) => {
   const completed = inspections.filter((i) =>
     ["field_reviewed", "approved", "rejected"].includes(
       String(i.status || "").toLowerCase(),
     ),
-  );
-  const pending = inspections.filter((i) =>
-    String(i.status || "").toLowerCase().includes("sched"),
   );
 
   return (
@@ -509,19 +520,19 @@ const Reports = ({
         {[
           {
             label: isAm ? "ጠቅላላ ምርመራዎች" : "Total Inspections",
-            value: inspections.length,
+            value: summary.assignedTasks,
             color: "text-[#003366]",
             bg: "bg-[#003366]/5",
           },
           {
             label: isAm ? "የተጠናቀቁ" : "Completed",
-            value: completed.length,
+            value: summary.completed,
             color: "text-emerald-700",
             bg: "bg-emerald-50",
           },
           {
             label: isAm ? "በመጠባበቅ ላይ" : "Pending",
-            value: pending.length,
+            value: summary.pendingReview,
             color: "text-amber-700",
             bg: "bg-amber-50",
           },
@@ -601,26 +612,51 @@ export const FieldReviewerDashboard: React.FC = () => {
   const { user } = useAuth();
   const isAm = language === "am";
   const [inspections, setInspections] = useState<InspectionRow[]>([]);
+  const [summary, setSummary] = useState<DashboardSummary>(DEFAULT_SUMMARY);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
     const load = async () => {
       try {
-        const response = await apiRequest("/inspections");
-        const data = (response as any)?.data ?? response;
+        const [inspectionsResponse, summaryResponse] = await Promise.all([
+          apiRequest("/inspections"),
+          apiRequest("/inspections/summary"),
+        ]);
+        const inspectionsData =
+          (inspectionsResponse as any)?.data ?? inspectionsResponse;
+        const summaryData = (summaryResponse as any)?.data ?? summaryResponse;
+
         if (!active) return;
-        setInspections(Array.isArray(data) ? data : []);
+
+        setInspections(Array.isArray(inspectionsData) ? inspectionsData : []);
+        setSummary({
+          assignedTasks: Number(
+            summaryData?.assignedTasks ??
+              summaryData?.totalAssigned ??
+              (Array.isArray(inspectionsData) ? inspectionsData.length : 0),
+          ),
+          pendingReview: Number(summaryData?.pendingReview ?? 0),
+          inReview: Number(summaryData?.inReview ?? 0),
+          completed: Number(summaryData?.completed ?? 0),
+          committeeAssignments: Number(summaryData?.committeeAssignments ?? 0),
+          pendingCommitteeSignatures: Number(
+            summaryData?.pendingCommitteeSignatures ?? 0,
+          ),
+        });
       } catch (error) {
         if (!active) return;
         console.error("Failed to load field reviewer inspections", error);
         setInspections([]);
+        setSummary(DEFAULT_SUMMARY);
       } finally {
         if (active) setLoading(false);
       }
     };
     load();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, []);
 
   const sidebarItems = useMemo(
@@ -656,7 +692,11 @@ export const FieldReviewerDashboard: React.FC = () => {
             loading ? (
               <LoadingSkeleton />
             ) : (
-              <Overview inspections={inspections} isAm={isAm} />
+              <Overview
+                inspections={inspections}
+                isAm={isAm}
+                summary={summary}
+              />
             )
           }
         />
@@ -681,7 +721,12 @@ export const FieldReviewerDashboard: React.FC = () => {
             loading ? (
               <LoadingSkeleton />
             ) : (
-              <Reports inspections={inspections} user={user} isAm={isAm} />
+              <Reports
+                inspections={inspections}
+                user={user}
+                isAm={isAm}
+                summary={summary}
+              />
             )
           }
         />

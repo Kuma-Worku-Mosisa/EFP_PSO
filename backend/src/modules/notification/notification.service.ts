@@ -459,8 +459,8 @@ export class NotificationService {
       console.log(
         `[Notification Service] Starting admin notification for: ${organizationName}`,
       );
-      // Get all admin users (admin, system_admin, super_admin)
-      const adminRoles = ["admin", "system_admin", "super_admin"];
+      // Get all active admin users (admin, super_admin)
+      const adminRoles = ["admin", "super_admin"];
       const adminUsers = [];
 
       for (const role of adminRoles) {

@@ -33,7 +33,9 @@ export const authenticate = (
     );
 
     const payload = decoded as any;
-    const rawRoles = payload.roles;
+    const rawRoles = payload.roles ?? payload.role;
+    const organizationId =
+      payload.organizationId ?? payload.orgId ?? payload.organization?.id;
 
     // Normalize string tokens or pre-formatted arrays cleanly into a standard string array
     const roles: string[] = Array.isArray(rawRoles)
@@ -50,12 +52,20 @@ export const authenticate = (
       ...payload,
       id: payload.id ?? payload.userId,
       userId: payload.userId ?? payload.id,
+      organizationId,
       roles,
     };
 
     return next();
-  } catch (error) {
-    return ApiResponse.error(res, "Invalid or expired token.", 403);
+  } catch (error: any) {
+    const message =
+      error.name === "TokenExpiredError"
+        ? "Token has expired. Please log in again."
+        : error.name === "JsonWebTokenError"
+          ? "Invalid token: signature mismatch or malformed token."
+          : "Invalid or expired token.";
+
+    return ApiResponse.error(res, message, 403);
   }
 };
 

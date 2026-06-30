@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import AgenciesManagement from "./AgenciesManagement";
 import type { ComponentType } from "react";
 import { apiRequest, ApiError } from "../../lib/api";
+import { LoadingSpinner } from "../../components/LoadingSpinner";
 
 interface Organization {
   id: number; // Int @id
@@ -307,8 +308,8 @@ export default function OrganizationDashboard() {
   return (
     <div className="space-y-6">
       {loading && (
-        <div className="p-3 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-700 rounded">
-          Loading organizations...
+        <div className="min-h-[60vh] flex items-center justify-center rounded-3xl border border-gray-100 bg-white p-8 shadow-sm">
+          <LoadingSpinner fullPage text="Loading organizations..." />
         </div>
       )}
       {error && (

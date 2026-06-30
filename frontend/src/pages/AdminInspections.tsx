@@ -18,6 +18,8 @@ import {
   Edit,
 } from "lucide-react";
 import { motion } from "motion/react";
+import { LoadingSpinner } from "../components/LoadingSpinner";
+import { AutoDismissToast } from "../components/AutoDismissToast";
 import UpdateInspectionModal from "../components/UpdateInspectionModal";
 
 import { useLanguage } from "../context/LanguageContext";
@@ -437,7 +439,6 @@ const InspectionDetailsContent = ({
                   {isAm ? "ቅድመ እይታ" : "Preview"}
                   <ArrowRight className="h-4 w-4" />
                 </button>
-        
               </div>
             </div>
 
@@ -534,8 +535,11 @@ export const AdminInspections = () => {
   >(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [updateModalOpen, setUpdateModalOpen] = useState(false);
+  const [toastOpen, setToastOpen] = useState(false);
+  const [toastType, setToastType] = useState<"success" | "error">("success");
+  const [toastMessage, setToastMessage] = useState("");
 
-  const loadInspections = async () => {
+  const loadInspections = async (showToast = false) => {
     setLoading(true);
     try {
       const response = await apiRequest("/inspections");
@@ -543,9 +547,21 @@ export const AdminInspections = () => {
       const rows = Array.isArray(data) ? data : [];
       setInspections(rows);
       setSelectedInspectionId((current) => current ?? rows[0]?.id ?? null);
+      if (showToast) {
+        setToastType("success");
+        setToastMessage(
+          isAm ? "ምርመራዎች ተጫኑ።" : "Inspections loaded successfully.",
+        );
+        setToastOpen(true);
+      }
     } catch (error) {
       console.error("Failed to load admin inspections", error);
       setInspections([]);
+      setToastType("error");
+      setToastMessage(
+        isAm ? "ምርመራዎችን ለማግኘት አልቻለም።" : "Failed to load inspections.",
+      );
+      setToastOpen(true);
     } finally {
       setLoading(false);
     }
@@ -626,7 +642,7 @@ export const AdminInspections = () => {
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={() => void loadInspections()}
+                onClick={() => void loadInspections(true)}
                 className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-[#003366]/25 hover:text-[#003366]"
               >
                 <RefreshCw className="h-4 w-4" />
@@ -694,18 +710,15 @@ export const AdminInspections = () => {
             </div>
 
             <div className="mt-4 space-y-3">
-              {loading && (
-                <div className="space-y-3 py-6">
-                  {[0, 1, 2, 3].map((index) => (
-                    <div
-                      key={index}
-                      className="h-24 animate-pulse rounded-3xl bg-slate-100"
-                    />
-                  ))}
+              {loading ? (
+                <div className="py-12">
+                  <LoadingSpinner
+                    fullPage
+                    size="lg"
+                    text={isAm ? "በመጫን ላይ..." : "Loading inspections..."}
+                  />
                 </div>
-              )}
-
-              {!loading && inspections.length === 0 && (
+              ) : inspections.length === 0 ? (
                 <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-6 py-16 text-center">
                   <AlertCircle className="h-11 w-11 text-slate-300" />
                   <h3 className="mt-4 text-lg font-black text-slate-900">
@@ -717,13 +730,13 @@ export const AdminInspections = () => {
                       : "Go to Applications Review to assign a new inspection."}
                   </p>
                   <Link
-                    to="/admin/applications"
+                    to="/super-admin/applications"
                     className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-[#003366] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#003366]/20 transition hover:bg-[#0f4c81]"
                   >
                     {isAm ? "ማመልከቻዎችን ክፈት" : "Open Applications"}
                   </Link>
                 </div>
-              )}
+              ) : null}
 
               {!loading &&
                 inspections.map((inspection, index) => {
@@ -905,7 +918,9 @@ export const AdminInspections = () => {
                       `/field-reviewer/inspections/${selectedInspection.id}`,
                     )
                   }
-                  onOpenApplications={() => navigate("/admin/applications")}
+                  onOpenApplications={() =>
+                    navigate("/super-admin/applications")
+                  }
                 />
               </div>
             </motion.div>
@@ -923,10 +938,16 @@ export const AdminInspections = () => {
             onClose={() => setUpdateModalOpen(false)}
             onUpdated={() => {
               setUpdateModalOpen(false);
-              void loadInspections();
+              void loadInspections(true);
             }}
           />
         )}
+        <AutoDismissToast
+          isOpen={toastOpen}
+          type={toastType}
+          message={toastMessage}
+          onClose={() => setToastOpen(false)}
+        />
       </div>
     </main>
   );

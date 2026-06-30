@@ -19,39 +19,242 @@ import { apiRequest, API_BASE } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { AutoDismissToast } from "./AutoDismissToast";
+import { LoadingSpinner } from "./LoadingSpinner";
 
 const transliterateAmharic = (input: string): string => {
   const map: Record<string, string> = {
-    ሀ: "ha", ሁ: "hu", ሂ: "hi", ሃ: "ha", ሄ: "he", ህ: "h", ሆ: "ho",
-    ለ: "la", ሉ: "lu", ሊ: "li", ላ: "la", ሌ: "le", ል: "l", ሎ: "lo", ሏ: "la",
-    መ: "ma", ሙ: "mu", ሚ: "mi", ማ: "ma", ሜ: "me", ም: "m", ሞ: "mo", ሟ: "ma",
-    ረ: "ra", ሩ: "ru", ሪ: "ri", ራ: "ra", ሬ: "re", ር: "r", ሮ: "ro", ሯ: "ra",
-    ሰ: "sa", ሱ: "su", ሲ: "si", ሳ: "sa", ሴ: "se", ስ: "s", ሶ: "so", ሷ: "sa",
-    ሸ: "sha", ሹ: "shu", ሺ: "shi", ሻ: "sha", ሼ: "she", ሽ: "sh", ሾ: "sho", ሿ: "sha",
-    ቀ: "qa", ቁ: "qu", ቂ: "qi", ቃ: "qa", ቄ: "qe", ቅ: "q", ቆ: "qo", ቇ: "qa",
-    በ: "ba", ቡ: "bu", ቢ: "bi", ባ: "ba", ቤ: "be", ብ: "b", ቦ: "bo", ቧ: "ba",
-    ተ: "ta", ቱ: "tu", ቲ: "ti", ታ: "ta", ቴ: "te", ት: "t", ቶ: "to", ቷ: "ta",
-    ቸ: "cha", ቹ: "chu", ቺ: "chi", ቻ: "cha", ቼ: "che", ች: "ch", ቾ: "cho", ቿ: "cha",
-    ኀ: "ha", ኁ: "hu", ኂ: "hi", ኃ: "ha", ኄ: "he", ኅ: "h", ኆ: "ho", ኇ: "ha",
-    ነ: "na", ኑ: "nu", ኒ: "ni", ና: "na", ኔ: "ne", ን: "n", ኖ: "no", ኗ: "na",
-    አ: "a", ኡ: "u", ኢ: "i", ኣ: "a", ኤ: "e", እ: "e", ኦ: "o", ኧ: "a",
-    ከ: "ka", ኩ: "ku", ኪ: "ki", ካ: "ka", ኬ: "ke", ክ: "k", ኮ: "ko", ኯ: "ka",
-    ወ: "wa", ዉ: "wu", ዊ: "wi", ዋ: "wa", ዌ: "we", ው: "w", ዎ: "wo", ዏ: "wa",
-    ዐ: "a", ዑ: "u", ዒ: "i", ዓ: "a", ዔ: "e", ዕ: "e", ዖ: "o",
-    ዘ: "za", ዙ: "zu", ዚ: "zi", ዛ: "za", ዜ: "ze", ዝ: "z", ዞ: "zo", ዟ: "za",
-    ዠ: "zha", ዡ: "zhu", ዢ: "zhi", ዣ: "zha", ዤ: "zhe", ዥ: "zh", ዦ: "zho", ዧ: "zha",
-    የ: "ya", ዩ: "yu", ዪ: "yi", ያ: "ya", ዬ: "ye", ይ: "y", ዮ: "yo", ዯ: "ya",
-    ደ: "da", ዱ: "du", ዲ: "di", ዳ: "da", ዴ: "de", ድ: "d", ዶ: "do", ዷ: "da",
-    ጀ: "ja", ጁ: "ju", ጂ: "ji", ጃ: "ja", ጄ: "je", ጅ: "j", ጆ: "jo", ጇ: "ja",
-    ገ: "ga", ጉ: "gu", ጊ: "gi", ጋ: "ga", ጌ: "ge", ግ: "g", ጎ: "go", ጏ: "ga",
-    ጠ: "ta", ጡ: "tu", ጢ: "ti", ጣ: "ta", ጤ: "te", ጥ: "t", ጦ: "to", ጧ: "ta",
-    ጨ: "cha", ጩ: "chu", ጪ: "chi", ጫ: "cha", ጬ: "che", ጭ: "ch", ጮ: "cho", ጯ: "cha",
-    ጰ: "pa", ጱ: "pu", ጲ: "pi", ጳ: "pa", ጴ: "pe", ጵ: "p", ጶ: "po", ጷ: "pa",
-    ጸ: "tsa", ጹ: "tsu", ጺ: "tsi", ጻ: "tsa", ጼ: "tse", ጽ: "ts", ጾ: "tso", ጿ: "tsa",
-    ፀ: "tsa", ፁ: "tsu", ፂ: "tsi", ፃ: "tsa", ፄ: "tse", ፅ: "ts", ፆ: "tso",
-    ፈ: "fa", ፉ: "fu", ፊ: "fi", ፋ: "fa", ፌ: "fe", ፍ: "f", ፎ: "fo", ፏ: "fa",
-    ፐ: "pa", ፑ: "pu", ፒ: "pi", ፓ: "pa", ፔ: "pe", ፕ: "p", ፖ: "po", ፗ: "pa",
-    " ": " ", ".": ".", ",": ",",
+    ሀ: "ha",
+    ሁ: "hu",
+    ሂ: "hi",
+    ሃ: "ha",
+    ሄ: "he",
+    ህ: "h",
+    ሆ: "ho",
+    ለ: "la",
+    ሉ: "lu",
+    ሊ: "li",
+    ላ: "la",
+    ሌ: "le",
+    ል: "l",
+    ሎ: "lo",
+    ሏ: "la",
+    መ: "ma",
+    ሙ: "mu",
+    ሚ: "mi",
+    ማ: "ma",
+    ሜ: "me",
+    ም: "m",
+    ሞ: "mo",
+    ሟ: "ma",
+    ረ: "ra",
+    ሩ: "ru",
+    ሪ: "ri",
+    ራ: "ra",
+    ሬ: "re",
+    ር: "r",
+    ሮ: "ro",
+    ሯ: "ra",
+    ሰ: "sa",
+    ሱ: "su",
+    ሲ: "si",
+    ሳ: "sa",
+    ሴ: "se",
+    ስ: "s",
+    ሶ: "so",
+    ሷ: "sa",
+    ሸ: "sha",
+    ሹ: "shu",
+    ሺ: "shi",
+    ሻ: "sha",
+    ሼ: "she",
+    ሽ: "sh",
+    ሾ: "sho",
+    ሿ: "sha",
+    ቀ: "qa",
+    ቁ: "qu",
+    ቂ: "qi",
+    ቃ: "qa",
+    ቄ: "qe",
+    ቅ: "q",
+    ቆ: "qo",
+    ቇ: "qa",
+    በ: "ba",
+    ቡ: "bu",
+    ቢ: "bi",
+    ባ: "ba",
+    ቤ: "be",
+    ብ: "b",
+    ቦ: "bo",
+    ቧ: "ba",
+    ተ: "ta",
+    ቱ: "tu",
+    ቲ: "ti",
+    ታ: "ta",
+    ቴ: "te",
+    ት: "t",
+    ቶ: "to",
+    ቷ: "ta",
+    ቸ: "cha",
+    ቹ: "chu",
+    ቺ: "chi",
+    ቻ: "cha",
+    ቼ: "che",
+    ች: "ch",
+    ቾ: "cho",
+    ቿ: "cha",
+    ኀ: "ha",
+    ኁ: "hu",
+    ኂ: "hi",
+    ኃ: "ha",
+    ኄ: "he",
+    ኅ: "h",
+    ኆ: "ho",
+    ኇ: "ha",
+    ነ: "na",
+    ኑ: "nu",
+    ኒ: "ni",
+    ና: "na",
+    ኔ: "ne",
+    ን: "n",
+    ኖ: "no",
+    ኗ: "na",
+    አ: "a",
+    ኡ: "u",
+    ኢ: "i",
+    ኣ: "a",
+    ኤ: "e",
+    እ: "e",
+    ኦ: "o",
+    ኧ: "a",
+    ከ: "ka",
+    ኩ: "ku",
+    ኪ: "ki",
+    ካ: "ka",
+    ኬ: "ke",
+    ክ: "k",
+    ኮ: "ko",
+    ኯ: "ka",
+    ወ: "wa",
+    ዉ: "wu",
+    ዊ: "wi",
+    ዋ: "wa",
+    ዌ: "we",
+    ው: "w",
+    ዎ: "wo",
+    ዏ: "wa",
+    ዐ: "a",
+    ዑ: "u",
+    ዒ: "i",
+    ዓ: "a",
+    ዔ: "e",
+    ዕ: "e",
+    ዖ: "o",
+    ዘ: "za",
+    ዙ: "zu",
+    ዚ: "zi",
+    ዛ: "za",
+    ዜ: "ze",
+    ዝ: "z",
+    ዞ: "zo",
+    ዟ: "za",
+    ዠ: "zha",
+    ዡ: "zhu",
+    ዢ: "zhi",
+    ዣ: "zha",
+    ዤ: "zhe",
+    ዥ: "zh",
+    ዦ: "zho",
+    ዧ: "zha",
+    የ: "ya",
+    ዩ: "yu",
+    ዪ: "yi",
+    ያ: "ya",
+    ዬ: "ye",
+    ይ: "y",
+    ዮ: "yo",
+    ዯ: "ya",
+    ደ: "da",
+    ዱ: "du",
+    ዲ: "di",
+    ዳ: "da",
+    ዴ: "de",
+    ድ: "d",
+    ዶ: "do",
+    ዷ: "da",
+    ጀ: "ja",
+    ጁ: "ju",
+    ጂ: "ji",
+    ጃ: "ja",
+    ጄ: "je",
+    ጅ: "j",
+    ጆ: "jo",
+    ጇ: "ja",
+    ገ: "ga",
+    ጉ: "gu",
+    ጊ: "gi",
+    ጋ: "ga",
+    ጌ: "ge",
+    ግ: "g",
+    ጎ: "go",
+    ጏ: "ga",
+    ጠ: "ta",
+    ጡ: "tu",
+    ጢ: "ti",
+    ጣ: "ta",
+    ጤ: "te",
+    ጥ: "t",
+    ጦ: "to",
+    ጧ: "ta",
+    ጨ: "cha",
+    ጩ: "chu",
+    ጪ: "chi",
+    ጫ: "cha",
+    ጬ: "che",
+    ጭ: "ch",
+    ጮ: "cho",
+    ጯ: "cha",
+    ጰ: "pa",
+    ጱ: "pu",
+    ጲ: "pi",
+    ጳ: "pa",
+    ጴ: "pe",
+    ጵ: "p",
+    ጶ: "po",
+    ጷ: "pa",
+    ጸ: "tsa",
+    ጹ: "tsu",
+    ጺ: "tsi",
+    ጻ: "tsa",
+    ጼ: "tse",
+    ጽ: "ts",
+    ጾ: "tso",
+    ጿ: "tsa",
+    ፀ: "tsa",
+    ፁ: "tsu",
+    ፂ: "tsi",
+    ፃ: "tsa",
+    ፄ: "tse",
+    ፅ: "ts",
+    ፆ: "tso",
+    ፈ: "fa",
+    ፉ: "fu",
+    ፊ: "fi",
+    ፋ: "fa",
+    ፌ: "fe",
+    ፍ: "f",
+    ፎ: "fo",
+    ፏ: "fa",
+    ፐ: "pa",
+    ፑ: "pu",
+    ፒ: "pi",
+    ፓ: "pa",
+    ፔ: "pe",
+    ፕ: "p",
+    ፖ: "po",
+    ፗ: "pa",
+    " ": " ",
+    ".": ".",
+    ",": ",",
   };
   let result = "";
   for (const char of input) {
@@ -97,7 +300,9 @@ const timeAgo = (dateStr: string, isAm: boolean): string => {
   if (days < 30) return isAm ? `${days} ቀን በፊት` : `${days}d ago`;
   const months = Math.floor(days / 30);
   if (months < 12) return isAm ? `${months} ወር በፊት` : `${months}mo ago`;
-  return isAm ? `${Math.floor(months / 12)} ዓመት በፊት` : `${Math.floor(months / 12)}y ago`;
+  return isAm
+    ? `${Math.floor(months / 12)} ዓመት በፊት`
+    : `${Math.floor(months / 12)}y ago`;
 };
 
 interface Request {
@@ -128,7 +333,7 @@ const mapRequestsToUsers = (requests: any[]): UserData[] => {
         id: userId,
         fullName: user.fullName || user.username || `User ${userId}`,
         username: user.username,
-        faydaId : user.faydaId,
+        faydaId: user.faydaId,
         formalRequests: [],
       });
     }
@@ -144,7 +349,8 @@ const mapRequestsToUsers = (requests: any[]): UserData[] => {
   // Sort requests within each user by newest first, then sort users by their most recent request
   for (const user of usersMap.values()) {
     user.formalRequests.sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
   }
   return Array.from(usersMap.values()).sort((a, b) => {
@@ -166,7 +372,9 @@ const FormalRequestManager = ({
     title: isAm ? "ማመልከቻ ደብዳቤ አያያዝ" : "Formal Request Management",
     loading: isAm ? "ማመልከቻ ደብዳቤዎችን በመጫን ላይ..." : "Loading formal requests...",
     noRequests: isAm ? "ምንም ማመልከቻ ደብዳቤ አልተገኘም።" : "No formal requests found.",
-    noFilterMatch: isAm ? "ከፍለጋ ወይም ማጣሪያ ጋር የሚዛመድ ተጠቃሚ የለም።" : "No users match your search or filter.",
+    noFilterMatch: isAm
+      ? "ከፍለጋ ወይም ማጣሪያ ጋር የሚዛመድ ተጠቃሚ የለም።"
+      : "No users match your search or filter.",
     searchPlaceholder: isAm ? "በተጠቃሚ ስም ይፈልጉ..." : "Search by user name...",
     allStatuses: isAm ? "ሁሉም ሁኔታዎች" : "All Statuses",
     pending: isAm ? "በመጠባበቅ ላይ" : "Pending",
@@ -176,7 +384,9 @@ const FormalRequestManager = ({
     faydaNo: isAm ? "ፋይዳ መለያ" : "Fayda Number",
     year: isAm ? "ዓመት" : "Year",
     requestLetter: isAm ? "ማመልከቻ ደብዳቤ #" : "Request Letter #",
-    noRequestsForUser: isAm ? "ለዚህ ተጠቃሚ ምንም ማመልከቻ ደብዳቤ አልተገኘም።" : "No requests found for this user.",
+    noRequestsForUser: isAm
+      ? "ለዚህ ተጠቃሚ ምንም ማመልከቻ ደብዳቤ አልተገኘም።"
+      : "No requests found for this user.",
     newLabel: isAm ? "አዲስ" : "new",
   };
   const [users, setUsers] = React.useState<UserData[]>(initialUsers);
@@ -279,9 +489,9 @@ const FormalRequestManager = ({
       </div>
 
       {loading && (
-        <p className="text-center text-xs text-gray-400 font-bold uppercase py-4">
-          {t.loading}
-        </p>
+        <div className="py-12">
+          <LoadingSpinner fullPage size="lg" text={t.loading} />
+        </div>
       )}
 
       {!loading && errorMessage && (
@@ -296,11 +506,14 @@ const FormalRequestManager = ({
         </p>
       )}
 
-      {!loading && !errorMessage && users.length > 0 && filteredUsers.length === 0 && (
-        <p className="text-center text-xs text-gray-400 font-bold uppercase py-4">
-          {t.noFilterMatch}
-        </p>
-      )}
+      {!loading &&
+        !errorMessage &&
+        users.length > 0 &&
+        filteredUsers.length === 0 && (
+          <p className="text-center text-xs text-gray-400 font-bold uppercase py-4">
+            {t.noFilterMatch}
+          </p>
+        )}
 
       {!loading && !errorMessage && users.length > 0 && (
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
@@ -385,7 +598,8 @@ const UserRequestDropdown = ({
         confirmApproveTitle: "ጥያቄውን ያጽድቁ?",
         confirmRejectTitle: "ጥያቄውን ውድቅ ያድርጉ?",
         confirmApproveMsg: "ይህ ጥያቄውን እንደ ተፈቀደ ምልክት ያደርገዋል እና ለተጠቃሚው ያሳውቃል።",
-        confirmRejectMsg: "ይህ ጥያቄውን እንደ ተቀባይነት የሌለው ምልክት ያደርገዋል እና ለተጠቃሚው ያሳውቃል።",
+        confirmRejectMsg:
+          "ይህ ጥያቄውን እንደ ተቀባይነት የሌለው ምልክት ያደርገዋል እና ለተጠቃሚው ያሳውቃል።",
         toastApproved: "ማመልከቻ ደብዳቤ ጸድቋል።",
         toastRejected: "ማመልከቻ ደብዳቤ ውድቅ ተደርጓል።",
         pending: "በመጠባበቅ ላይ",
@@ -423,8 +637,10 @@ const UserRequestDropdown = ({
         viewFullscreen: "View Fullscreen",
         confirmApproveTitle: "Approve request?",
         confirmRejectTitle: "Reject request?",
-        confirmApproveMsg: "This will mark the request as approved and notify the user.",
-        confirmRejectMsg: "This will mark the request as rejected and notify the user.",
+        confirmApproveMsg:
+          "This will mark the request as approved and notify the user.",
+        confirmRejectMsg:
+          "This will mark the request as rejected and notify the user.",
         toastApproved: "Formal request approved.",
         toastRejected: "Formal request rejected.",
         pending: "Pending",
@@ -548,9 +764,7 @@ const UserRequestDropdown = ({
       setActiveRequest({ ...activeRequest, status: statusSelection });
       setToastType("success");
       setToastMessage(
-        statusSelection === "APPROVED"
-          ? dt.toastApproved
-          : dt.toastRejected,
+        statusSelection === "APPROVED" ? dt.toastApproved : dt.toastRejected,
       );
       setToastOpen(true);
       setIsViewerOpen(false);
@@ -579,13 +793,14 @@ const UserRequestDropdown = ({
   const handleDownload = (url: string) => {
     const resolvedUrl = resolveFileUrl(url);
     const fileName = getDownloadFileName(url);
-    
+
     // For PDFs and other files, fetch and create blob for reliable download
     fetch(resolvedUrl, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
       .then((response) => {
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        if (!response.ok)
+          throw new Error(`HTTP error! status: ${response.status}`);
         return response.blob();
       })
       .then((blob) => {

@@ -32,48 +32,59 @@ import { mapLocalizedLocationRows } from "../lib/locationLabels";
 
 import { apiRequest } from "../lib/api";
 import { uploadOrganizationDocuments } from "../lib/fileUploadHelper";
+import { LoadingSpinner } from "../components/LoadingSpinner";
 
 // 1. Define a reusable schema for Personnel (Manager, Ops, Admin)
-const personnelSchema = z.object({
-  fullName: z.string().min(3, "Full name is required"),
-  gender: z.string().min(1, "Gender is required"),
-  citizenship: z.string().min(2, "Citizenship is required"),
-  email: z.string().email("Invalid email address"),
-  phone: z.string().min(10, "Invalid phone number"),
-  faydaId: z.string().min(1, "Fayda ID is required"),
-  otp: z.string().optional(),
-  positionId: z.preprocess(
-    (val) =>
-      val === "" || val === null || val === undefined ? undefined : Number(val),
-    z.number().optional(),
-  ),
-  educationLevel: z.string().optional(),
-  workExpYears: z.preprocess(
-    (val) =>
-      val === "" || val === null || val === undefined ? undefined : Number(val),
-    z.number().optional(),
-  ),
-  TotalExpYears: z.preprocess(
-    (val) =>
-      val === "" || val === null || val === undefined ? undefined : Number(val),
-    z.number().optional(),
-  ),
-  region: z.string().min(1, "Region is required"),
-  zone: z.string().min(1, "Zone is required"),
-  woreda: z.string().min(1, "Woreda is required"),
-  kebele: z.string().min(1, "Kebele is required"),
-  houseNo: z.string().min(1, "House number is required"),
-  specialLocation: z.string().optional(),
-}).refine(
-  (val) => {
-    if (val.workExpYears === undefined || val.TotalExpYears === undefined) return true;
-    return val.TotalExpYears >= val.workExpYears;
-  },
-  {
-    path: ["TotalExpYears"],
-    message: "Total experience years must be equal to or greater than work experience years",
-  },
-);
+const personnelSchema = z
+  .object({
+    fullName: z.string().min(3, "Full name is required"),
+    gender: z.string().min(1, "Gender is required"),
+    citizenship: z.string().min(2, "Citizenship is required"),
+    email: z.string().email("Invalid email address"),
+    phone: z.string().min(10, "Invalid phone number"),
+    faydaId: z.string().min(1, "Fayda ID is required"),
+    otp: z.string().optional(),
+    positionId: z.preprocess(
+      (val) =>
+        val === "" || val === null || val === undefined
+          ? undefined
+          : Number(val),
+      z.number().optional(),
+    ),
+    educationLevel: z.string().optional(),
+    workExpYears: z.preprocess(
+      (val) =>
+        val === "" || val === null || val === undefined
+          ? undefined
+          : Number(val),
+      z.number().optional(),
+    ),
+    TotalExpYears: z.preprocess(
+      (val) =>
+        val === "" || val === null || val === undefined
+          ? undefined
+          : Number(val),
+      z.number().optional(),
+    ),
+    region: z.string().min(1, "Region is required"),
+    zone: z.string().min(1, "Zone is required"),
+    woreda: z.string().min(1, "Woreda is required"),
+    kebele: z.string().min(1, "Kebele is required"),
+    houseNo: z.string().min(1, "House number is required"),
+    specialLocation: z.string().optional(),
+  })
+  .refine(
+    (val) => {
+      if (val.workExpYears === undefined || val.TotalExpYears === undefined)
+        return true;
+      return val.TotalExpYears >= val.workExpYears;
+    },
+    {
+      path: ["TotalExpYears"],
+      message:
+        "Total experience years must be equal to or greater than work experience years",
+    },
+  );
 
 const branchAddressSchema = z.object({
   region: z.string().optional(),
@@ -362,26 +373,30 @@ const FormInput = ({
   const [showInfo, setShowInfo] = React.useState(false);
   const fiOpt = language === "am" ? "አማራጭ" : "Optional";
   const isFilled = value && value.length > 0;
-  const autoPlaceholder = placeholder || (language === "am"
-    ? type === "email"
-      ? "ስም@ኢሜል.ኮም"
-      : type === "number"
-        ? "ቁጥር ያስገቡ"
-        : type === "tel"
-          ? "ስልክ ቁጥር ያስገቡ"
-          : `ያስገቡ ${label.toLowerCase()}`
-    : type === "email"
-      ? "name@example.com"
-      : type === "number"
-        ? "Enter a number"
-        : type === "tel"
-          ? "Enter phone number"
-          : `Enter ${label.toLowerCase()}`);
+  const autoPlaceholder =
+    placeholder ||
+    (language === "am"
+      ? type === "email"
+        ? "ስም@ኢሜል.ኮም"
+        : type === "number"
+          ? "ቁጥር ያስገቡ"
+          : type === "tel"
+            ? "ስልክ ቁጥር ያስገቡ"
+            : `ያስገቡ ${label.toLowerCase()}`
+      : type === "email"
+        ? "name@example.com"
+        : type === "number"
+          ? "Enter a number"
+          : type === "tel"
+            ? "Enter phone number"
+            : `Enter ${label.toLowerCase()}`);
 
   return (
     <div className="space-y-2.5 relative group">
       <div className="flex justify-between items-center px-1">
-        <label className={`${language === "am" ? "text-sm" : "text-[11px]"} font-black text-primary uppercase tracking-widest flex items-center space-x-1.5`}>
+        <label
+          className={`${language === "am" ? "text-sm" : "text-[11px]"} font-black text-primary uppercase tracking-widest flex items-center space-x-1.5`}
+        >
           <span>{label}</span>
           <span
             className={cn(
@@ -571,7 +586,9 @@ const SearchableLocationSelect = ({
 
   return (
     <div ref={containerRef} className="space-y-2 text-left relative">
-      <label className={`${language === "am" ? "text-sm" : "text-[11px]"} font-black text-primary uppercase tracking-widest`}>
+      <label
+        className={`${language === "am" ? "text-sm" : "text-[11px]"} font-black text-primary uppercase tracking-widest`}
+      >
         {label}
       </label>
       <button
@@ -814,7 +831,9 @@ const FormSelect = ({
   return (
     <div className="space-y-2.5 relative group">
       <div className="flex justify-between items-center px-1">
-        <label className={`${language === "am" ? "text-sm" : "text-[11px]"} font-black text-primary uppercase tracking-widest flex items-center space-x-1.5`}>
+        <label
+          className={`${language === "am" ? "text-sm" : "text-[11px]"} font-black text-primary uppercase tracking-widest flex items-center space-x-1.5`}
+        >
           <span>{label}</span>
           <span
             className={cn(
@@ -1009,14 +1028,14 @@ const FileUpload = ({
         </div>
       )}
 
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          className="hidden"
-          disabled={isDisabled}
-          accept={type === "photo" ? "image/*" : ".pdf"}
-        />
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+        disabled={isDisabled}
+        accept={type === "photo" ? "image/*" : ".pdf"}
+      />
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
@@ -1346,7 +1365,15 @@ function BranchAddressRow({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormInput
-          label={isAm ? (isRequired ? "የቤት ቁጥር" : "የቤት ቁጥር (አማራጭ)") : (isRequired ? "House No." : "House No. (Optional)")}
+          label={
+            isAm
+              ? isRequired
+                ? "የቤት ቁጥር"
+                : "የቤት ቁጥር (አማራጭ)"
+              : isRequired
+                ? "House No."
+                : "House No. (Optional)"
+          }
           name={`branchAddresses.${index}.houseNumber`}
           register={register}
           value={watch(`branchAddresses.${index}.houseNumber`) || ""}
@@ -1447,8 +1474,7 @@ const PersonnelSection = ({
       required: true,
       infoText:
         "Upload a photo of your National ID or Digital Fayda ID front and back as a PDF",
-      infoTextAm:
-        "የብሔራዊ መታወቂያዎን ወይም የዲጂታል ፋይዳ መታወቂያዎን ፊት እና ጀርባ እንደ ፒዲኤፍ ያስገቡ",
+      infoTextAm: "የብሔራዊ መታወቂያዎን ወይም የዲጂታል ፋይዳ መታወቂያዎን ፊት እና ጀርባ እንደ ፒዲኤፍ ያስገቡ",
     },
     { label: curT.kebeleIdDoc, key: "passport_or_kabele_doc", required: true },
     { label: curT.orgIdDoc, key: "organization_Id_doc", required: true },
@@ -1544,7 +1570,9 @@ const PersonnelSection = ({
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2.5">
-            <label className={`${isAm ? "text-sm" : "text-[11px]"} font-black text-primary uppercase tracking-widest px-1 flex items-center space-x-1.5`}>
+            <label
+              className={`${isAm ? "text-sm" : "text-[11px]"} font-black text-primary uppercase tracking-widest px-1 flex items-center space-x-1.5`}
+            >
               <span>{curT.gender}</span>
               <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
                 *
@@ -1585,7 +1613,9 @@ const PersonnelSection = ({
       {/* Identity & Contact Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border-t border-gray-50 pt-6">
         <div className="md:col-span-1 space-y-2.5">
-          <label className={`${isAm ? "text-sm" : "text-[11px]"} font-black text-primary uppercase tracking-widest px-1`}>
+          <label
+            className={`${isAm ? "text-sm" : "text-[11px]"} font-black text-primary uppercase tracking-widest px-1`}
+          >
             {curT.faydaId || "Fayda ID & OTP"}
           </label>
           <div className="flex gap-2">
@@ -3255,7 +3285,10 @@ export const NewApplication = () => {
                     disabled={formLocked}
                     isOpenedForEdit={openedFields.includes("agencyName")}
                     onChange={(e) => {
-                      e.target.value = e.target.value.replace(/[^a-zA-Z0-9\s\-\.\,\'\(\)\/\&]/g, "");
+                      e.target.value = e.target.value.replace(
+                        /[^a-zA-Z0-9\s\-\.\,\'\(\)\/\&]/g,
+                        "",
+                      );
                     }}
                   />
                   <FormInput
@@ -3267,7 +3300,10 @@ export const NewApplication = () => {
                     disabled={formLocked}
                     isOpenedForEdit={openedFields.includes("agencyNameAmharic")}
                     onChange={(e) => {
-                     e.target.value = e.target.value.replace(/[^\u1200-\u137F\s\-\.\,\'\(\)\/\&]/g, "");
+                      e.target.value = e.target.value.replace(
+                        /[^\u1200-\u137F\s\-\.\,\'\(\)\/\&]/g,
+                        "",
+                      );
                     }}
                   />
                 </div>
@@ -3367,7 +3403,9 @@ export const NewApplication = () => {
                 </div>
                 <div className="space-y-2.5">
                   <div className="flex justify-between items-center px-1">
-                    <label className={`${isAm ? "text-sm" : "text-[11px]"} font-black text-primary uppercase tracking-widest`}>
+                    <label
+                      className={`${isAm ? "text-sm" : "text-[11px]"} font-black text-primary uppercase tracking-widest`}
+                    >
                       {curT.agencyphone}
                     </label>
                   </div>
@@ -3461,14 +3499,21 @@ export const NewApplication = () => {
                     key: "renewed_trade_license",
                   },
                   { label: curT.docLaborSkill, key: "labor_and_skill_bureau" },
-                  { label: curT.docTaxpayerClearance, key: "taxpayer_clearance" },
+                  {
+                    label: curT.docTaxpayerClearance,
+                    key: "taxpayer_clearance",
+                  },
                   { label: curT.docOrgStructure, key: "org_structure" },
                   {
                     label: curT.docArticlesInc,
                     key: "articles_of_incorporation",
                   },
                   { label: curT.docInternalRegs, key: "internal_regulations" },
-                  { label: curT.docTechList, key: "tech_list_used", required: false },
+                  {
+                    label: curT.docTechList,
+                    key: "tech_list_used",
+                    required: false,
+                  },
                   { label: curT.docCapital, key: "capital" },
                   { label: curT.docInsurance, key: "insurance" },
                 ].map((doc) => (
@@ -3503,7 +3548,9 @@ export const NewApplication = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className={`${isAm ? "text-sm" : "text-xs"} font-black text-primary flex items-center space-x-1.5`}>
+                  <label
+                    className={`${isAm ? "text-sm" : "text-xs"} font-black text-primary flex items-center space-x-1.5`}
+                  >
                     <span>{curT.capitalAmount}</span>
                     <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
                       *
@@ -3533,7 +3580,9 @@ export const NewApplication = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className={`${isAm ? "text-sm" : "text-xs"} font-black text-primary flex items-center space-x-1.5`}>
+                  <label
+                    className={`${isAm ? "text-sm" : "text-xs"} font-black text-primary flex items-center space-x-1.5`}
+                  >
                     <span>{curT.offices}</span>
                     <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
                       *
@@ -3564,7 +3613,9 @@ export const NewApplication = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className={`${isAm ? "text-sm" : "text-xs"} font-black text-primary flex items-center space-x-1.5`}>
+                  <label
+                    className={`${isAm ? "text-sm" : "text-xs"} font-black text-primary flex items-center space-x-1.5`}
+                  >
                     <span>{curT.storeHouse}</span>
                     <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
                       *
@@ -3582,7 +3633,9 @@ export const NewApplication = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className={`${isAm ? "text-sm" : "text-xs"} font-black text-primary flex items-center space-x-1.5`}>
+                  <label
+                    className={`${isAm ? "text-sm" : "text-xs"} font-black text-primary flex items-center space-x-1.5`}
+                  >
                     <span>{curT.computers}</span>
                     <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
                       *
@@ -3613,7 +3666,9 @@ export const NewApplication = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className={`${isAm ? "text-sm" : "text-xs"} font-black text-primary flex items-center space-x-1.5`}>
+                  <label
+                    className={`${isAm ? "text-sm" : "text-xs"} font-black text-primary flex items-center space-x-1.5`}
+                  >
                     <span>{curT.vehicles}</span>
                     <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
                       *
@@ -3630,7 +3685,9 @@ export const NewApplication = () => {
                     onInput={(e) => {
                       const el = e.target as HTMLInputElement;
                       const val = parseInt(el.value, 10);
-                      if (el.value !== "" && (isNaN(val) || val < 0)) { el.value = ""; }
+                      if (el.value !== "" && (isNaN(val) || val < 0)) {
+                        el.value = "";
+                      }
                     }}
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
                   />
@@ -3650,7 +3707,10 @@ export const NewApplication = () => {
                   onDelete={() => handleDelete("vehicle_rent")}
                   onView={handleView}
                   isOpenedForEdit={openedFields.includes("vehicle_rent")}
-                  disabled={!watch("vehiclesCount") || Number(watch("vehiclesCount")) === 0}
+                  disabled={
+                    !watch("vehiclesCount") ||
+                    Number(watch("vehiclesCount")) === 0
+                  }
                   infoText="If rented, upload a document showing 1 year paid vehicle rent deal. If owned, upload the vehicle libre (ownership certificate)."
                   infoTextAm="ተሽከርካሪ የተከራየ ከሆነ የ1 አመት የኪራይ ውል ሰነድ ይስቀሉ። የራስ ከሆነ የተሽከርካሪ ሊብሬ (የባለቤትነት ሰርተፍኬት) ይስቀሉ።"
                   required={false}
@@ -3853,7 +3913,8 @@ export const NewApplication = () => {
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700 flex items-center space-x-1.5">
                     <span>
-                      {curT.trainingMaleUntrained} ({isAm ? "አማራጭ" : "Optional"})
+                      {curT.trainingMaleUntrained} ({isAm ? "አማራጭ" : "Optional"}
+                      )
                     </span>
                     <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-amber-700 bg-amber-50">
                       {isAm ? "አማራጭ" : "Optional"}
@@ -3881,7 +3942,8 @@ export const NewApplication = () => {
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700 flex items-center space-x-1.5">
                     <span>
-                      {curT.trainingFemaleUntrained} ({isAm ? "አማራጭ" : "Optional"})
+                      {curT.trainingFemaleUntrained} (
+                      {isAm ? "አማራጭ" : "Optional"})
                     </span>
                     <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-amber-700 bg-amber-50">
                       {isAm ? "አማራጭ" : "Optional"}
@@ -4660,7 +4722,9 @@ export const NewApplication = () => {
                 </div>
                 <div className="space-y-2">
                   <h5 className="text-xl font-black text-primary uppercase tracking-tight">
-                    {isAm ? "ለመጨረሻ ማቅረቢያ ዝግጁ ነዎት?" : "Ready for Final Submission?"}
+                    {isAm
+                      ? "ለመጨረሻ ማቅረቢያ ዝግጁ ነዎት?"
+                      : "Ready for Final Submission?"}
                   </h5>
                   <p className="text-xs text-gray-500 max-w-lg mx-auto">
                     {isAm
@@ -4689,8 +4753,17 @@ export const NewApplication = () => {
               disabled={isSubmitting}
               className="blue-gradient flex w-full items-center justify-center space-x-2 rounded-2xl px-8 py-4 font-bold text-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-2xl sm:w-auto sm:px-10"
             >
-              <span>{isSubmitting ? curT.processing : curT.submit}</span>
-              {!isSubmitting && <ArrowRight className="w-5 h-5" />}
+              {isSubmitting ? (
+                <>
+                  <LoadingSpinner size="sm" />
+                  <span>{curT.processing}</span>
+                </>
+              ) : (
+                <>
+                  <span>{curT.submit}</span>
+                  <ArrowRight className="w-5 h-5" />
+                </>
+              )}
             </button>
           ) : (
             <button

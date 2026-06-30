@@ -273,29 +273,26 @@ export const getOrganizationDetailsHandler = async (
       },
     });
 
-    // Fetch incidents with penalties
+    // Fetch organization incident reports
     const incidents = await prisma.incidentReport.findMany({
       where: { organizationId: id },
       select: {
         id: true,
-        crimeCategory: true,
-        incidentDate: true,
-        locationOfIncident: true,
-        incidentDescription: true,
-        reportedAt: true,
-        isReportedWithin24h: true,
-        localPoliceStation: true,
-        localPoliceRefNumber: true,
-        federalPoliceStatus: true,
-        penalties: {
-          select: {
-            id: true,
-            penaltyType: true,
-            amount: true,
-            description: true,
-            issuedDate: true,
-          },
-        },
+        fileNumber: true,
+        reportDate: true,
+        serviceReceiverName: true,
+        crimeType: true,
+        crimeInCapitalAmount: true,
+        incidentStartTimestamp: true,
+        crimeCount: true,
+        damageDescription: true,
+        actionStatus: true,
+        reporterName: true,
+        reporterTitle: true,
+        reporterJobResp: true,
+        reporterSignatureUrl: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
 
@@ -483,22 +480,21 @@ export const getOrganizationDetailsHandler = async (
       })),
       incidents: incidents.map((inc) => ({
         id: inc.id,
-        crimeCategory: inc.crimeCategory,
-        incidentDate: inc.incidentDate.toISOString(),
-        locationOfIncident: inc.locationOfIncident,
-        incidentDescription: inc.incidentDescription,
-        reportedAt: inc.reportedAt.toISOString(),
-        isReportedWithin24h: inc.isReportedWithin24h,
-        localPoliceStation: inc.localPoliceStation ?? "",
-        localPoliceRefNumber: inc.localPoliceRefNumber ?? "",
-        federalPoliceStatus: inc.federalPoliceStatus ?? "Pending Review",
-        penalties: inc.penalties.map((p) => ({
-          id: p.id,
-          penaltyType: p.penaltyType ?? "",
-          amount: p.amount?.toString() ?? "0",
-          description: p.description ?? "",
-          issuedDate: p.issuedDate.toISOString().split("T")[0],
-        })),
+        fileNumber: inc.fileNumber,
+        reportDate: inc.reportDate.toISOString(),
+        serviceReceiverName: inc.serviceReceiverName,
+        crimeType: inc.crimeType,
+        crimeInCapitalAmount: inc.crimeInCapitalAmount?.toNumber?.() ?? null,
+        incidentStartTimestamp: inc.incidentStartTimestamp.toISOString(),
+        crimeCount: inc.crimeCount,
+        damageDescription: inc.damageDescription,
+        actionStatus: inc.actionStatus,
+        reporterName: inc.reporterName,
+        reporterTitle: inc.reporterTitle,
+        reporterJobResp: inc.reporterJobResp,
+        reporterSignatureUrl: inc.reporterSignatureUrl,
+        createdAt: inc.createdAt.toISOString(),
+        updatedAt: inc.updatedAt.toISOString(),
       })),
       educationStats: educationStats
         ? {

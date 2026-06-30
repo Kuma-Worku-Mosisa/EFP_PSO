@@ -10,7 +10,10 @@ const isAdmin = (req: Request) => {
   const roles = (req.user?.roles || []).map((role) =>
     String(role).toLowerCase(),
   );
-  return roles.some((role) => role === "admin" || role === "system_admin");
+  return roles.some(
+    (role) =>
+      role === "admin" || role === "super_admin" || role === "system_admin",
+  );
 };
 
 const createSignatureUploadMiddleware = () => {
@@ -110,6 +113,28 @@ export async function listInspections(req: Request, res: Response) {
   }
 }
 
+export async function getInspectionSummary(req: Request, res: Response) {
+  try {
+    const summary = await InspectionService.getReviewerSummary(
+      req.user?.roles || [],
+      Number(req.user?.userId ?? req.user?.id),
+    );
+
+    return ApiResponse.success(res, "Inspection summary fetched", summary);
+  } catch (error: any) {
+    console.error(
+      "[ERROR] getInspectionSummary failed:",
+      error?.message || error,
+    );
+    return ApiResponse.error(
+      res,
+      "Failed to fetch inspection summary.",
+      500,
+      error?.message,
+    );
+  }
+}
+
 export async function createInspection(req: Request, res: Response) {
   try {
     if (!isAdmin(req)) {
@@ -172,7 +197,8 @@ export async function getInspection(req: Request, res: Response) {
     );
     const userId = Number(req.user?.userId ?? req.user?.id);
     const hasAdminAccess = roles.some(
-      (role) => role === "admin" || role === "system_admin",
+      (role) =>
+        role === "admin" || role === "super_admin" || role === "system_admin",
     );
     const isAssignedReviewer = inspection.leadInspectorId === userId;
     const isCommitteeMember = inspection.committeeMembers?.some(

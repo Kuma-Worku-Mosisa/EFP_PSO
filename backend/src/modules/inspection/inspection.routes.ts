@@ -4,6 +4,7 @@ import {
   createInspection,
   finalizeInspection,
   getInspection,
+  getInspectionSummary,
   listInspections,
   updateInspection,
   confirmFinalReport,
@@ -18,28 +19,35 @@ const router = Router();
 router.get(
   "/",
   authenticate,
-  authorize(["FIELD_REVIEWER", "admin", "system_admin"]),
+  authorize(["FIELD_REVIEWER", "admin", "super_admin"]),
   listInspections,
 );
 
 router.post(
   "/",
   authenticate,
-  authorize(["admin", "system_admin"]),
+  authorize(["admin", "super_admin"]),
   createInspection,
+);
+
+router.get(
+  "/summary",
+  authenticate,
+  authorize(["FIELD_REVIEWER", "admin", "super_admin"]),
+  getInspectionSummary,
 );
 
 router.get(
   "/:id",
   authenticate,
-  authorize(["FIELD_REVIEWER", "admin", "system_admin"]),
+  authorize(["FIELD_REVIEWER", "admin", "super_admin"]),
   getInspection,
 );
 
 router.patch(
   "/:id",
   authenticate,
-  authorize(["admin", "system_admin"]),
+  authorize(["admin", "super_admin"]),
   updateInspection,
 );
 
@@ -53,35 +61,35 @@ router.patch(
 router.post(
   "/:id/finalize",
   authenticate,
-  authorize(["admin", "system_admin"]),
+  authorize(["admin", "super_admin"]),
   finalizeInspection,
 );
 
 router.post(
   "/:id/final-report",
   authenticate,
-  authorize(["FIELD_REVIEWER", "admin", "system_admin"]),
+  authorize(["FIELD_REVIEWER", "admin", "super_admin"]),
   confirmFinalReport,
 );
 
 router.post(
   "/:id/committee/:committeeId/signature",
   authenticate,
-  authorize(["FIELD_REVIEWER", "admin", "system_admin"]),
+  authorize(["FIELD_REVIEWER", "admin", "super_admin"]),
   uploadCommitteeSignature,
 );
 
 router.delete(
   "/:id/committee/:committeeId/signature",
   authenticate,
-  authorize(["FIELD_REVIEWER", "admin", "system_admin"]),
+  authorize(["FIELD_REVIEWER", "admin", "super_admin"]),
   deleteCommitteeSignature,
 );
 
 router.post(
   "/:id/lead-signature",
   authenticate,
-  authorize(["FIELD_REVIEWER", "admin", "system_admin"]),
+  authorize(["FIELD_REVIEWER", "admin", "super_admin"]),
   uploadLeadSignature,
 );
 

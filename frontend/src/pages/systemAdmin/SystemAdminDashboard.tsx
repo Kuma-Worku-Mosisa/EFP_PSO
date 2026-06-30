@@ -1,5 +1,6 @@
 // filepath: frontend/src/pages/systemAdmin/SystemAdminDashboard.tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 import { Routes, Route, Link } from "react-router-dom";
 import { DashboardLayout } from "../../components/DashboardLayout";
 import {
@@ -15,17 +16,26 @@ import {
   Shield,
   Building2,
   Activity,
-  ChevronRight,
-  Clock,
   CheckCircle2,
   AlertTriangle,
   UserPlus,
   FileText,
   Globe,
-  Search,
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { motion } from "motion/react";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
 import AuditLogViewer from "./audit-logs";
 import LocationManager from "./LocationManager";
 import { ManageNews } from "../ManageNews";
@@ -35,7 +45,14 @@ import { UserManagement } from "../UserManagement";
 import EFPPositionManagement from "../admin/EFPPositionManagement";
 import { useLanguage } from "../../context/LanguageContext";
 
-const PIE_COLORS = ["#003366", "#C5A022", "#0055A4", "#3399FF", "#FFD700", "#99DDFF"];
+const PIE_COLORS = [
+  "#003366",
+  "#C5A022",
+  "#0055A4",
+  "#3399FF",
+  "#FFD700",
+  "#99DDFF",
+];
 
 const Overview: React.FC = () => {
   const { language } = useLanguage();
@@ -43,42 +60,148 @@ const Overview: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("all");
 
+  const [counts, setCounts] = useState<{
+    totalAddresses?: number;
+    totalUsers?: number;
+    totalNews?: number;
+    totalFaqs?: number;
+  }>({});
+  const [monthlyData, setMonthlyData] = useState<
+    { month: string; news: number }[]
+  >([]);
+  const [faqCategoryData, setFaqCategoryData] = useState<
+    { name: string; value: number }[]
+  >([]);
+
+  const { token } = useAuth();
+
+  useEffect(() => {
+    if (!token) return; // skip fetching until authenticated
+    let mounted = true;
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    };
+
+    fetch("/api/dashboard/system", { headers })
+      .then((res) => res.json())
+      .then((json) => {
+        if (!mounted) return;
+        if (json && json.success && json.data) setCounts(json.data);
+      })
+      .catch((err) =>
+        console.error("Failed to fetch system dashboard counts:", err),
+      );
+    return () => {
+      mounted = false;
+    };
+  }, [token]);
+
   const stats = [
-    { icon: MapPin, label: isAm ? "አድራሻዎች" : "Total Address", value: "12,847", change: "+6%", accent: "blue" },
-    { icon: Users, label: isAm ? "ተጠቃሚዎች" : "Users", value: "1,284", change: "+8%", accent: "gold" },
-    { icon: Newspaper, label: isAm ? "ዜና እና ማስታወቂያዎች" : "News & Announcements", value: "47", change: "+3", accent: "green" },
-    { icon: BookOpen, label: isAm ? "FAQ" : "FAQ", value: "23", change: "+2", accent: "amber" },
+    {
+      icon: MapPin,
+      label: isAm ? "አድራሻዎች" : "Total Address",
+      value: (counts.totalAddresses ?? 0).toLocaleString(),
+      change: "+6%",
+      accent: "blue",
+    },
+    {
+      icon: Users,
+      label: isAm ? "ተጠቃሚዎች" : "Users",
+      value: (counts.totalUsers ?? 0).toLocaleString(),
+      change: "+8%",
+      accent: "gold",
+    },
+    {
+      icon: Newspaper,
+      label: isAm ? "ዜና እና ማስታወቂያዎች" : "News & Announcements",
+      value: (counts.totalNews ?? 0).toLocaleString(),
+      change: "+3",
+      accent: "green",
+    },
+    {
+      icon: BookOpen,
+      label: isAm ? "FAQ" : "FAQ",
+      value: (counts.totalFaqs ?? 0).toLocaleString(),
+      change: "+2",
+      accent: "amber",
+    },
   ];
 
-  const accentMap: Record<string, { bg: string; iconBg: string; value: string }> = {
-    blue: { bg: "bg-blue-50", iconBg: "bg-blue-100 text-[#003366]", value: "text-[#003366]" },
-    gold: { bg: "bg-amber-50", iconBg: "bg-amber-100 text-[#C5A022]", value: "text-[#C5A022]" },
-    green: { bg: "bg-emerald-50", iconBg: "bg-emerald-100 text-emerald-600", value: "text-emerald-700" },
-    amber: { bg: "bg-orange-50", iconBg: "bg-orange-100 text-orange-600", value: "text-orange-700" },
+  const accentMap: Record<
+    string,
+    { bg: string; iconBg: string; value: string }
+  > = {
+    blue: {
+      bg: "bg-blue-50",
+      iconBg: "bg-blue-100 text-[#003366]",
+      value: "text-[#003366]",
+    },
+    gold: {
+      bg: "bg-amber-50",
+      iconBg: "bg-amber-100 text-[#C5A022]",
+      value: "text-[#C5A022]",
+    },
+    green: {
+      bg: "bg-emerald-50",
+      iconBg: "bg-emerald-100 text-emerald-600",
+      value: "text-emerald-700",
+    },
+    amber: {
+      bg: "bg-orange-50",
+      iconBg: "bg-orange-100 text-orange-600",
+      value: "text-orange-700",
+    },
   };
 
-  const faqCategoryData = [
-    { name: isAm ? "አጠቃላይ" : "General", value: 8 },
-    { name: isAm ? "ፍቃድ" : "Licensing", value: 6 },
-    { name: isAm ? "ቴክኒክ" : "Technical", value: 5 },
-    { name: isAm ? "ክፍያ" : "Payment", value: 4 },
-  ];
-
-  const monthlyData = [
-    { month: isAm ? "ጥር" : "Jan", news: 8 },
-    { month: isAm ? "የካ" : "Feb", news: 12 },
-    { month: isAm ? "መጋ" : "Mar", news: 15 },
-    { month: isAm ? "ሚያ" : "Apr", news: 10 },
-    { month: isAm ? "ግን" : "May", news: 18 },
-    { month: isAm ? "ሰኔ" : "Jun", news: 14 },
-  ];
+  // Populate charts when counts response contains data
+  useEffect(() => {
+    if (!counts) return;
+    // backend returns monthlyNews: [{ month: 'Jan', news: 5 }, ...]
+    if ((counts as any).monthlyNews) {
+      setMonthlyData((counts as any).monthlyNews);
+    }
+    if ((counts as any).faqByCategory) {
+      setFaqCategoryData((counts as any).faqByCategory);
+    }
+  }, [counts]);
 
   const allActivities = [
-    { icon: UserPlus, action: isAm ? "አዲስ ተጠቃሚ ተመዝግቧል" : "New user registered", user: "Abebe Kebede", time: isAm ? "2 ደቂቃ በፊት" : "2 min ago", status: "active" },
-    { icon: Building2, action: isAm ? "ድርጅት ተዘምኗል" : "Organization updated", user: "ABC Security PLC", time: isAm ? "15 ደቂቃ በፊት" : "15 min ago", status: "active" },
-    { icon: FileText, action: isAm ? "አዲስ ውል ተፈርሟል" : "New contract signed", user: "Ethio Guard Solutions", time: isAm ? "1 ሰዓት በፊት" : "1 hour ago", status: "active" },
-    { icon: AlertTriangle, action: isAm ? "የውል ማስጠንቀቂያ" : "Contract expiry alert", user: "Tena Security", time: isAm ? "3 ሰዓት በፊት" : "3 hours ago", status: "inactive" },
-    { icon: CheckCircle2, action: isAm ? "ማረጋገጫ ተሰጥቷል" : "Approval granted", user: "Addis Shield PLC", time: isAm ? "5 ሰዓት በፊት" : "5 hours ago", status: "active" },
+    {
+      icon: UserPlus,
+      action: isAm ? "አዲስ ተጠቃሚ ተመዝግቧል" : "New user registered",
+      user: "Abebe Kebede",
+      time: isAm ? "2 ደቂቃ በፊት" : "2 min ago",
+      status: "active",
+    },
+    {
+      icon: Building2,
+      action: isAm ? "ድርጅት ተዘምኗል" : "Organization updated",
+      user: "ABC Security PLC",
+      time: isAm ? "15 ደቂቃ በፊት" : "15 min ago",
+      status: "active",
+    },
+    {
+      icon: FileText,
+      action: isAm ? "አዲስ ውል ተፈርሟል" : "New contract signed",
+      user: "Ethio Guard Solutions",
+      time: isAm ? "1 ሰዓት በፊት" : "1 hour ago",
+      status: "active",
+    },
+    {
+      icon: AlertTriangle,
+      action: isAm ? "የውል ማስጠንቀቂያ" : "Contract expiry alert",
+      user: "Tena Security",
+      time: isAm ? "3 ሰዓት በፊት" : "3 hours ago",
+      status: "inactive",
+    },
+    {
+      icon: CheckCircle2,
+      action: isAm ? "ማረጋገጫ ተሰጥቷል" : "Approval granted",
+      user: "Addis Shield PLC",
+      time: isAm ? "5 ሰዓት በፊት" : "5 hours ago",
+      status: "active",
+    },
   ];
 
   const filteredActivities = allActivities.filter((item) => {
@@ -105,8 +228,8 @@ const Overview: React.FC = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1, transition: { staggerChildren: 0.08 } }}
-      className="space-y-8">
-
+      className="space-y-8"
+    >
       {/* Welcome Header */}
       <motion.div
         initial={{ opacity: 0, y: -12 }}
@@ -130,7 +253,9 @@ const Overview: React.FC = () => {
                 {isAm ? "እንኳን ደህና መጡ" : "Welcome Back"}
               </h1>
               <p className="mt-2 text-sm text-white/70 max-w-2xl">
-                {isAm ? "የስርዓት አጠቃላይ ሁኔታ ይቆጣጠሩ እና ይከልሱ" : "Monitor and review overall system status"}
+                {isAm
+                  ? "የስርዓት አጠቃላይ ሁኔታ ይቆጣጠሩ እና ይከልሱ"
+                  : "Monitor and review overall system status"}
               </p>
             </div>
           </div>
@@ -150,17 +275,33 @@ const Overview: React.FC = () => {
               key={i}
               initial={{ y: 24, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: i * 0.08, type: "spring", stiffness: 120, damping: 14 }}
-              whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(0,51,102,0.12)" }}
+              transition={{
+                delay: i * 0.08,
+                type: "spring",
+                stiffness: 120,
+                damping: 14,
+              }}
+              whileHover={{
+                y: -4,
+                boxShadow: "0 20px 40px rgba(0,51,102,0.12)",
+              }}
               className={`relative overflow-hidden rounded-3xl border border-gray-100 ${accent.bg} p-6 shadow-sm hover:shadow-xl transition-all duration-300`}
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-gray-500">{s.label}</p>
-                  <p className={`mt-4 text-4xl font-black ${accent.value}`}>{s.value}</p>
-                  <span className="inline-block mt-3 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">{s.change}</span>
+                  <p className="text-xs font-bold uppercase tracking-widest text-gray-500">
+                    {s.label}
+                  </p>
+                  <p className={`mt-4 text-4xl font-black ${accent.value}`}>
+                    {s.value}
+                  </p>
+                  <span className="inline-block mt-3 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                    {s.change}
+                  </span>
                 </div>
-                <div className={`w-11 h-11 rounded-xl ${accent.iconBg} flex items-center justify-center shadow-lg`}>
+                <div
+                  className={`w-11 h-11 rounded-xl ${accent.iconBg} flex items-center justify-center shadow-lg`}
+                >
                   <s.icon className="w-5 h-5" />
                 </div>
               </div>
@@ -175,7 +316,12 @@ const Overview: React.FC = () => {
         <motion.div
           initial={{ y: 24, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2, type: "spring", stiffness: 120, damping: 14 }}
+          transition={{
+            delay: 0.2,
+            type: "spring",
+            stiffness: 120,
+            damping: 14,
+          }}
           className="rounded-3xl bg-white border border-gray-100 p-6 shadow-sm hover:shadow-lg transition-all duration-300"
         >
           <div className="flex items-center gap-3 mb-6">
@@ -183,15 +329,36 @@ const Overview: React.FC = () => {
               <Activity className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-[#003366]">{isAm ? "ወርሃዊ ዜና" : "Monthly News"}</h3>
-              <p className="text-[10px] text-gray-400 mt-0.5">{isAm ? "በወር የታተሙ ዜናዎች" : "News published per month"}</p>
+              <h3 className="text-sm font-bold text-[#003366]">
+                {isAm ? "ወርሃዊ ዜና" : "Monthly News"}
+              </h3>
+              <p className="text-[10px] text-gray-400 mt-0.5">
+                {isAm ? "በወር የታተሙ ዜናዎች" : "News published per month"}
+              </p>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={monthlyData} barGap={4} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
+            <BarChart
+              data={monthlyData}
+              barGap={4}
+              margin={{ top: 5, right: 5, left: -15, bottom: 0 }}
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="#f0f0f0"
+                vertical={false}
+              />
+              <XAxis
+                dataKey="month"
+                tick={{ fontSize: 11, fill: "#9CA3AF" }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fontSize: 11, fill: "#9CA3AF" }}
+                axisLine={false}
+                tickLine={false}
+              />
               <Tooltip
                 contentStyle={{
                   borderRadius: 12,
@@ -205,7 +372,12 @@ const Overview: React.FC = () => {
                 iconType="circle"
                 iconSize={8}
               />
-              <Bar dataKey="news" name={isAm ? "ዜና" : "News"} fill="#003366" radius={[4, 4, 0, 0]} />
+              <Bar
+                dataKey="news"
+                name={isAm ? "ዜና" : "News"}
+                fill="#003366"
+                radius={[4, 4, 0, 0]}
+              />
             </BarChart>
           </ResponsiveContainer>
         </motion.div>
@@ -214,7 +386,12 @@ const Overview: React.FC = () => {
         <motion.div
           initial={{ y: 24, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3, type: "spring", stiffness: 120, damping: 14 }}
+          transition={{
+            delay: 0.3,
+            type: "spring",
+            stiffness: 120,
+            damping: 14,
+          }}
           className="rounded-3xl bg-white border border-gray-100 p-6 shadow-sm hover:shadow-lg transition-all duration-300"
         >
           <div className="flex items-center gap-3 mb-6">
@@ -222,8 +399,12 @@ const Overview: React.FC = () => {
               <Building2 className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-[#003366]">{isAm ? "FAQ በምድብ" : "FAQ by Category"}</h3>
-              <p className="text-[10px] text-gray-400 mt-0.5">{isAm ? "የFAQ ምድብ ስርጭት" : "FAQ category distribution"}</p>
+              <h3 className="text-sm font-bold text-[#003366]">
+                {isAm ? "FAQ በምድብ" : "FAQ by Category"}
+              </h3>
+              <p className="text-[10px] text-gray-400 mt-0.5">
+                {isAm ? "የFAQ ምድብ ስርጭት" : "FAQ category distribution"}
+              </p>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={260}>
@@ -238,7 +419,9 @@ const Overview: React.FC = () => {
                 dataKey="value"
                 animationBegin={300}
                 animationDuration={1200}
-                label={({ name, percent }) => `${name ?? "—"} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                label={({ name, percent }) =>
+                  `${name ?? "—"} ${((percent ?? 0) * 100).toFixed(0)}%`
+                }
               >
                 {faqCategoryData.map((_, index) => (
                   <Cell key={index} fill={PIE_COLORS[index]} stroke="none" />
@@ -257,119 +440,18 @@ const Overview: React.FC = () => {
           <div className="flex justify-center gap-6 mt-2">
             {faqCategoryData.map((item, idx) => (
               <div key={item.name} className="flex items-center gap-2 text-sm">
-                <span className="w-3 h-3 rounded-full" style={{ backgroundColor: PIE_COLORS[idx] }} />
-                <span className="text-gray-600">{item.name}: <strong>{item.value}</strong></span>
+                <span
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: PIE_COLORS[idx] }}
+                />
+                <span className="text-gray-600">
+                  {item.name}: <strong>{item.value}</strong>
+                </span>
               </div>
             ))}
           </div>
         </motion.div>
       </div>
-
-      {/* Recent Activity */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.4 }}
-        className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden"
-      >
-        <div className="relative overflow-hidden bg-gradient-to-r from-[#003366] to-[#001F3F] p-6">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#FFD700] via-[#C5A022] to-[#FFD700]" />
-          <div className="absolute -top-12 -right-12 w-36 h-36 rounded-full bg-[#FFD700]/5" />
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 relative z-10">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#FFD700]/20 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-[#FFD700]" />
-              </div>
-              <div>
-                <h3 className="font-bold text-white">
-                  {isAm ? "የቅርብ ጊዜ እንቅስቃሴ" : "Recent Activity"}
-                </h3>
-                <p className="text-[10px] text-white/50 font-medium">
-                  {isAm ? "የስርዓት እንቅስቃሴ ታሪክ" : "System activity history"}
-                </p>
-              </div>
-            </div>
-            <Link
-              to="/system-admin/audit-logs"
-              className="text-[10px] uppercase tracking-wider font-bold text-[#FFD700] hover:text-white transition-colors flex items-center gap-1"
-            >
-              {isAm ? "ሁሉንም ይመልከቱ" : "View All"} <ChevronRight className="w-3 h-3" />
-            </Link>
-          </div>
-        </div>
-        <div className="p-5">
-          <div className="flex flex-col sm:flex-row gap-3 mb-5">
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={isAm ? "ፈልግ..." : "Search activities..."}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] transition-all"
-              />
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              {[
-                { key: "all", label: isAm ? "ሁሉም" : "All" },
-                { key: "active", label: isAm ? "ንቁ" : "Active" },
-                { key: "inactive", label: isAm ? "ተወስኗል" : "Inactive" },
-                { key: "suspended", label: isAm ? "ታግዶ" : "Suspended" },
-              ].map((f) => (
-                <button
-                  key={f.key}
-                  onClick={() => setFilterType(f.key)}
-                  className={`px-3.5 py-2 rounded-xl text-[11px] font-bold tracking-wide transition-all ${
-                    filterType === f.key
-                      ? "bg-[#003366] text-white shadow-md"
-                      : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="space-y-2.5">
-            <AnimatePresence>
-              {filteredActivities.length > 0 ? (
-                filteredActivities.map((a, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: i * 0.05 }}
-                    className="group flex items-start gap-4 p-4 rounded-2xl bg-gray-50/50 border border-gray-100 hover:border-[#FFD700]/30 hover:bg-gradient-to-r hover:from-[#FFD700]/5 hover:to-transparent transition-all duration-300"
-                  >
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#003366] to-[#001F3F] flex items-center justify-center shrink-0 mt-0.5">
-                      <a.icon className="w-4 h-4 text-[#FFD700]" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-bold text-gray-900">{a.action}</p>
-                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${badgeColor[a.status]} tracking-wide uppercase`}>
-                          {badgeLabel[a.status]}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-0.5">{a.user}</p>
-                    </div>
-                    <span className="text-[10px] font-medium text-gray-400 whitespace-nowrap shrink-0 mt-1 bg-gray-100 px-2 py-1 rounded-full group-hover:bg-[#FFD700]/10 group-hover:text-[#C5A022] transition-all">
-                      {a.time}
-                    </span>
-                  </motion.div>
-                ))
-              ) : (
-                <div className="text-center py-12">
-                  <Search className="w-8 h-8 text-gray-300 mx-auto mb-3" />
-                  <p className="text-sm text-gray-400 font-medium">
-                    {isAm ? "ምንም የሚገኝ ነገር የለም" : "No activities found"}
-                  </p>
-                </div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-      </motion.div>
     </motion.div>
   );
 };

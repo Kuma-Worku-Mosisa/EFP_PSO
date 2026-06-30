@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { AutoDismissToast, ToastType } from "../components/AutoDismissToast";
+import LoadingSpinner from "../components/LoadingSpinner";
 import { apiRequest, API_BASE } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -146,6 +147,7 @@ export const FormalLetter = () => {
     string | null
   >(null);
   const [loading, setLoading] = React.useState(false);
+  const [submitting, setSubmitting] = React.useState(false);
   const [toast, setToast] = React.useState<{
     isOpen: boolean;
     type: ToastType;
@@ -347,7 +349,7 @@ export const FormalLetter = () => {
       return;
     }
 
-    setLoading(true);
+    setSubmitting(true);
 
     try {
       const formData = new FormData();
@@ -387,7 +389,7 @@ export const FormalLetter = () => {
       console.error("Formal request submit failed:", error);
       showToast("error", error?.message || "Failed to submit formal request.");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -400,6 +402,12 @@ export const FormalLetter = () => {
         onClose={() => setToast((prev) => ({ ...prev, isOpen: false }))}
         durationMs={5000}
       />
+      {loading && (
+        <LoadingSpinner
+          overlay
+          text={language === "am" ? "መጫን..." : "Loading..."}
+        />
+      )}
       <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 space-y-6">
         <div className="flex items-center space-x-4">
           <div className="p-3 bg-primary/10 rounded-2xl">
@@ -524,14 +532,26 @@ export const FormalLetter = () => {
 
             <button
               type="submit"
-              disabled={!file || (isLocked && !openedForEdit) || loading}
+              disabled={
+                !file || (isLocked && !openedForEdit) || loading || submitting
+              }
               className={cn(
                 "w-full blue-gradient text-white font-bold py-4 rounded-2xl hover:shadow-xl transition-all",
-                (!file || (isLocked && !openedForEdit) || loading) &&
+                (!file ||
+                  (isLocked && !openedForEdit) ||
+                  loading ||
+                  submitting) &&
                   "opacity-50 cursor-not-allowed",
               )}
             >
-              {loading ? "Submitting..." : curT.submit}
+              {submitting ? (
+                <div className="flex items-center justify-center gap-2">
+                  <LoadingSpinner size="sm" />
+                  <span>{language === "am" ? "በመላክ..." : "Submitting..."}</span>
+                </div>
+              ) : (
+                curT.submit
+              )}
             </button>
           </form>
         )}

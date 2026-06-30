@@ -16,7 +16,9 @@ type ReviewPayload = {
 export class InspectionService {
   static async listInspections(userRoles: string[], userId: number) {
     const isAdmin = userRoles.some((role) =>
-      ["admin", "system_admin"].includes(String(role).toLowerCase()),
+      ["admin", "system_admin", "super_admin"].includes(
+        String(role).toLowerCase(),
+      ),
     );
 
     return prisma.inspection.findMany({
@@ -79,6 +81,111 @@ export class InspectionService {
         },
       },
     });
+  }
+
+  static async getReviewerSummary(userRoles: string[], userId: number) {
+    const isAdmin = userRoles.some((role) =>
+      ["admin", "system_admin", "super_admin"].includes(
+        String(role).toLowerCase(),
+      ),
+    );
+
+    try {
+      const inspections = await prisma.inspection.findMany({
+        where: isAdmin
+          ? undefined
+          : {
+              OR: [
+                { leadInspectorId: userId },
+                { committeeMembers: { some: { userId } } },
+              ],
+            },
+        select: {
+          id: true,
+          status: true,
+          committeeMembers: {
+            select: {
+              userId: true,
+              signatureUrl: true,
+              signedAt: true,
+            },
+          },
+        },
+      });
+
+      const assignedTasks = inspections.length;
+      const pendingReview = inspections.filter((inspection) =>
+        this.isPendingReviewStatus(inspection.status),
+      ).length;
+      const inReview = inspections.filter((inspection) =>
+        this.isInReviewStatus(inspection.status),
+      ).length;
+      const completed = inspections.filter((inspection) =>
+        this.isCompletedStatus(inspection.status),
+      ).length;
+      const committeeAssignments = await prisma.inspectionCommittee.count({
+        where: { userId },
+      });
+      const pendingCommitteeSignatures = inspections.filter((inspection) => {
+        const committeeMembership = inspection.committeeMembers.filter(
+          (member) => Number(member.userId) === userId,
+        );
+
+        return (
+          committeeMembership.length > 0 &&
+          committeeMembership.some((member) => !member.signatureUrl)
+        );
+      }).length;
+
+      return {
+        assignedTasks,
+        pendingReview,
+        inReview,
+        completed,
+        committeeAssignments,
+        pendingCommitteeSignatures,
+      };
+    } catch (error) {
+      console.error("[ERROR] getReviewerSummary failed:", error);
+      return {
+        assignedTasks: 0,
+        pendingReview: 0,
+        inReview: 0,
+        completed: 0,
+        committeeAssignments: 0,
+        pendingCommitteeSignatures: 0,
+      };
+    }
+  }
+
+  private static isPendingReviewStatus(status?: string | null) {
+    const normalized = String(status || "").toLowerCase();
+    return (
+      normalized.includes("sched") ||
+      normalized.includes("pending") ||
+      normalized.includes("assigned")
+    );
+  }
+
+  private static isInReviewStatus(status?: string | null) {
+    const normalized = String(status || "").toLowerCase();
+    return (
+      normalized.includes("review") ||
+      normalized.includes("submit") ||
+      normalized.includes("progress") ||
+      normalized.includes("in_review")
+    );
+  }
+
+  private static isCompletedStatus(status?: string | null) {
+    const normalized = String(status || "").toLowerCase();
+    return (
+      normalized.includes("field_reviewed") ||
+      normalized.includes("approve") ||
+      normalized.includes("reject") ||
+      normalized.includes("completed") ||
+      normalized.includes("final")
+    );
   }
 
   static async getInspectionById(id: number) {

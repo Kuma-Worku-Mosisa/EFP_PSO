@@ -542,7 +542,10 @@ const Overview = () => {
           <h3 className="text-lg font-bold text-primary">
             {isAm ? "የማመልከቻዎች አዝማሚያ" : "Applications Trend"}
           </h3>
-          <div className="w-full" style={{ height: "300px", minWidth: 0 }}>
+          <div
+            className="w-full"
+            style={{ height: "300px", minWidth: 0, minHeight: 0 }}
+          >
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -562,7 +565,10 @@ const Overview = () => {
           <h3 className="text-lg font-bold text-primary">
             {isAm ? "የፈቃድ ስርጭት" : "License Distribution"}
           </h3>
-          <div className="w-full" style={{ height: "300px", minWidth: 0 }}>
+          <div
+            className="relative w-full"
+            style={{ height: "300px", minWidth: 0, minHeight: 0 }}
+          >
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -584,6 +590,35 @@ const Overview = () => {
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div className="relative flex flex-col items-center text-center">
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 h-12 w-px bg-gray-200/80"></span>
+                <div className="absolute top-12 left-1/2 -translate-x-1/2 text-gray-400 text-xs">
+                  ↘
+                </div>
+                <div className="relative z-10 rounded-full bg-white/95 px-3 py-1 shadow-sm border border-gray-200 text-sm font-semibold text-gray-700">
+                  {isAm ? "ድምር" : "Total"}
+                  <div className="text-lg font-black text-primary">
+                    {pieData.reduce((sum, item) => sum + item.value, 0)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-4 gap-3 text-sm">
+            {pieData.map((item, index) => (
+              <div
+                key={item.name}
+                className="flex flex-col items-center gap-2 rounded-2xl bg-gray-50 p-3"
+              >
+                <span
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                />
+                <p className="font-semibold text-gray-700">{item.name}</p>
+                <p className="text-xs text-gray-500">{item.value}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -685,7 +720,7 @@ const Overview = () => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    key={`app-${app.organizationId ?? idx}-${app.name}`}
+                    key={`app-${idx}-${app.organizationId ?? "na"}-${app.name}`}
                     className="hover:bg-gray-50/50 transition-colors"
                   >
                     <td className="px-8 py-4 font-bold text-primary text-sm">
@@ -889,7 +924,10 @@ export const AdminDashboard = () => {
         <Route path="applications" element={<ApplicationsReview />} />
         <Route path="inspections" element={<AdminInspections />} />
         <Route path="address-approvals" element={<AdminAddressApproval />} />
-        <Route path="personnel-change-approvals" element={<PersonnelChangeApprovals />} />
+        <Route
+          path="personnel-change-approvals"
+          element={<PersonnelChangeApprovals />}
+        />
         <Route path="licenses" element={<LicenseManagement />} />
         <Route path="licenses/:certificateId?" element={<LicenseViewer />} />
         <Route path="gps" element={<GPSTracking />} />

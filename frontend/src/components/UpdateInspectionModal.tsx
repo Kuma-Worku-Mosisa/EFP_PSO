@@ -16,6 +16,13 @@ const toDateTimeLocalValue = (date: Date) => {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
 
+const toDateTimeLocalString = (value?: string | null) => {
+  if (!value) return "";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return toDateTimeLocalValue(parsed);
+};
+
 const isFieldReviewer = (user: any) => {
   const roles = user?.user_roles;
   if (!Array.isArray(roles)) return false;
@@ -58,16 +65,19 @@ export default function UpdateInspectionModal({
     initialCommitteeIds ? initialCommitteeIds.map(String) : [],
   );
   const [scheduledAt, setScheduledAt] = useState<string>(
-    initialScheduledAt ?? "",
+    initialScheduledAt ? toDateTimeLocalString(initialScheduledAt) : "",
   );
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
+  const [inspectionLoading, setInspectionLoading] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
     setLeadId(initialLeadId ?? null);
     setCommitteeIds(initialCommitteeIds ? initialCommitteeIds.map(String) : []);
-    setScheduledAt(initialScheduledAt ?? "");
+    setScheduledAt(
+      initialScheduledAt ? toDateTimeLocalString(initialScheduledAt) : "",
+    );
 
     let mounted = true;
     const load = async () => {
@@ -112,6 +122,38 @@ export default function UpdateInspectionModal({
       mounted = false;
     };
   }, [isOpen, initialLeadId, initialCommitteeIds, initialScheduledAt]);
+
+  useEffect(() => {
+    if (!isOpen || !inspectionId) return;
+
+    let mounted = true;
+    const fetchInspection = async () => {
+      setInspectionLoading(true);
+      try {
+        const response = await apiRequest(`/inspections/${inspectionId}`);
+        const data = response?.data || response || null;
+        if (!mounted || !data) return;
+        setLeadId(data.leadInspector?.id ?? initialLeadId ?? null);
+        setCommitteeIds(
+          (data.committeeMembers || initialCommitteeIds || [])
+            .map((m: any) => String(m.userId ?? m.id))
+            .filter(Boolean),
+        );
+        setScheduledAt(
+          toDateTimeLocalString(data.scheduledDate ?? data.scheduled_at),
+        );
+      } catch (error) {
+        console.warn("Failed to fetch inspection details", error);
+      } finally {
+        if (mounted) setInspectionLoading(false);
+      }
+    };
+
+    fetchInspection();
+    return () => {
+      mounted = false;
+    };
+  }, [isOpen, inspectionId, initialCommitteeIds, initialLeadId]);
 
   const toggleCommittee = (id: string | number) => {
     if (leadId !== null && String(id) === String(leadId)) {

@@ -225,4 +225,83 @@ export class DashboardService {
       ),
     };
   }
+
+  static async getSystemDashboardSummary() {
+    try {
+      // Return quick counts for system-wide dashboard plus charts data
+      const [addressCount, userCount, newsCount, faqCount] = await Promise.all([
+        prisma.address.count(),
+        prisma.user.count(),
+        prisma.newsArticle.count(),
+        prisma.faq.count(),
+      ]);
+
+      // Monthly news: last 6 months (including current)
+      const now = new Date();
+      const months: { key: string; label: string; start: Date }[] = [];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        const label = d.toLocaleString("en-US", { month: "short" });
+        months.push({ key, label, start: d });
+      }
+
+      const earliest = months[0].start;
+
+      const recentNews = await prisma.newsArticle.findMany({
+        where: { publishedAt: { gte: earliest } },
+        select: { publishedAt: true },
+      });
+
+      const monthCounts: Record<string, number> = {};
+      months.forEach((m) => (monthCounts[m.key] = 0));
+
+      recentNews.forEach((n) => {
+        if (!n.publishedAt) return;
+        const k = `${n.publishedAt.getFullYear()}-${String(
+          n.publishedAt.getMonth() + 1,
+        ).padStart(2, "0")}`;
+        if (monthCounts[k] !== undefined) monthCounts[k] += 1;
+      });
+
+      const monthlyNews = months.map((m) => ({
+        month: m.label,
+        news: monthCounts[m.key] || 0,
+      }));
+
+      // FAQ by category
+      const faqs = await prisma.faq.findMany({
+        select: { categoryType: true },
+      });
+      const faqMap: Record<string, number> = {};
+      faqs.forEach((f) => {
+        const key = (f.categoryType || "General").toString();
+        faqMap[key] = (faqMap[key] || 0) + 1;
+      });
+      const faqByCategory = Object.keys(faqMap).map((k) => ({
+        name: k,
+        value: faqMap[k],
+      }));
+
+      return {
+        totalAddresses: addressCount,
+        totalUsers: userCount,
+        totalNews: newsCount,
+        totalFaqs: faqCount,
+        monthlyNews,
+        faqByCategory,
+      };
+    } catch (err) {
+      console.error("System dashboard error:", err?.message || err);
+      // Return safe defaults so the dashboard can still render when DB is unreachable
+      return {
+        totalAddresses: 0,
+        totalUsers: 0,
+        totalNews: 0,
+        totalFaqs: 0,
+        monthlyNews: [],
+        faqByCategory: [],
+      };
+    }
+  }
 }

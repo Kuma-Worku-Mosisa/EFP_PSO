@@ -298,10 +298,8 @@ export const Profile = () => {
                   <input
                     type="email"
                     value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                    className="w-full pl-11 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-medium"
+                    readOnly
+                    className="w-full pl-11 pr-4 py-4 bg-gray-100 border border-gray-200 rounded-2xl outline-none transition-all font-medium cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -319,10 +317,8 @@ export const Profile = () => {
                 <input
                   type="text"
                   value={formData.phone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, phone: e.target.value })
-                  }
-                  className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-medium"
+                  readOnly
+                  className="w-full px-5 py-4 bg-gray-100 border border-gray-200 rounded-2xl outline-none transition-all font-medium cursor-not-allowed"
                 />
               </div>
             </div>

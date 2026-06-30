@@ -1,6 +1,5 @@
 // file: frontend/src/components/notification-dropdown.tsx
 "use client";
-
 import { useState, useEffect, useCallback } from "react";
 import {
   Bell,
@@ -166,15 +165,10 @@ export default function NotificationDropdown({
     let title = item.alertTitle;
     let message = item.alertMessage;
 
-    const findBilingualSplit = (text: string) => {
-      const amharicMatch = text.match(/[\u1200-\u137F]/);
-      if (!amharicMatch || amharicMatch.index === undefined) return null;
-      const splitIndex = text.lastIndexOf("\n\n", amharicMatch.index);
-      if (splitIndex === -1) return null;
-      return {
-        en: text.slice(0, splitIndex).trim(),
-        am: text.slice(splitIndex + 2).trim(),
-      };
+    // Find index of first Amharic character (if any)
+    const firstAmharicIndex = (text: string) => {
+      const m = text.match(/[\u1200-\u137F]/);
+      return m && m.index !== undefined ? m.index : -1;
     };
 
     try {
@@ -189,19 +183,25 @@ export default function NotificationDropdown({
           title = currentLang === "en" ? splitTitles[0] : splitTitles[1];
         }
 
-        const bilingualParts = findBilingualSplit(item.alertMessage);
-        if (bilingualParts) {
-          message =
-            currentLang === "en" ? bilingualParts.en : bilingualParts.am;
-        } else if (item.alertMessage.includes("\n\n")) {
-          const splitBlocks = item.alertMessage.split("\n\n");
-          if (splitBlocks.length >= 2) {
+        const amIndex = firstAmharicIndex(item.alertMessage);
+
+        if (amIndex === -1) {
+          // No Amharic detected — use whole message for current language
+          message = item.alertMessage;
+        } else {
+          // If Amharic exists, assume text before index is English and after is Amharic
+          const enPart = item.alertMessage.slice(0, amIndex).trim();
+          const amPart = item.alertMessage.slice(amIndex).trim();
+
+          // Prefer explicit split markers if present, otherwise use heuristic split
+          if (currentLang === "en") {
             message =
-              currentLang === "en"
-                ? splitBlocks[0]
-                : splitBlocks
-                    .slice(Math.floor(splitBlocks.length / 2))
-                    .join("\n\n");
+              enPart || item.alertMessage.split("\n\n")[0] || item.alertMessage;
+          } else {
+            message =
+              amPart ||
+              item.alertMessage.split("\n\n").slice(-1)[0] ||
+              item.alertMessage;
           }
         }
       }

@@ -1,5 +1,5 @@
-import React from "react";
-import { Routes, Route } from "react-router-dom";
+//filepath: frontend/src/pages/SuperAdminDashboard.tsx
+import { Routes, Route, useNavigate, useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "../components/DashboardLayout";
 import {
   LayoutDashboard,
@@ -10,6 +10,7 @@ import {
   Database,
   Building2,
   FileCheck,
+  FileText,
   Map,
   ShieldCheck,
   BarChart3,
@@ -41,18 +42,50 @@ import { AdminSettings } from "./AdminSettings";
 import { AdminReports } from "./AdminReports";
 import { Profile } from "./Profile";
 import { ApplicationsReview } from "./ApplicationsReview";
+import PositionManagement from "./PositionManagement";
 import { LicenseManagement } from "./LicenseManagement";
 import { LicenseViewer } from "./LicenseViewer";
 import { GPSTracking } from "./GPSTracking";
 import { HRMSReports } from "./HRMSReports";
 import { BackupRecovery } from "./BackupRecovery";
 import { PermissionsManagement } from "./PermissionsManagement";
+import { AdminInspections } from "./AdminInspections";
+import { AdminAddressApproval } from "./admin/AdminAddressApproval";
+import { PersonnelChangeApprovals } from "./admin/PersonnelChangeApprovals";
+import AgenciesManagement from "./admin/AgenciesManagement";
+import FormalRequestManager from "../components/FormalRequestManager";
 
 import { ManageNews } from "./ManageNews";
 import { ManagePublicContent } from "./ManagePublicContent";
 import { ManageFAQ } from "./ManageFAQ";
 import { Communications } from "./Communications";
 import { Notifications } from "./Notifications";
+
+const SuperAdminAgenciesManagement = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const organizationId = searchParams.get("organizationId");
+
+  if (!organizationId) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center rounded-3xl border border-gray-100 bg-white p-8 shadow-sm">
+        <p className="text-lg font-semibold text-gray-700 mb-3">
+          Select an organization to view agency details.
+        </p>
+        <p className="text-sm text-gray-500">
+          Use the query parameter `organizationId` to open this page.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <AgenciesManagement
+      organizationId={organizationId}
+      onBack={() => navigate("/super-admin/dashboard")}
+    />
+  );
+};
 
 const SuperOverview = () => {
   const { language } = useLanguage();
@@ -310,17 +343,60 @@ export const SuperAdminDashboard = () => {
       path: "/super-admin/dashboard",
     },
 
+    // Admin Shortcut Section
+    { label: "Admin Shortcuts", isHeader: true },
+    {
+      icon: <FileText className="w-5 h-5" />,
+      label: "Formal Requests",
+      path: "/super-admin/dashboard/formal-requests",
+    },
+    {
+      icon: <FileCheck className="w-5 h-5" />,
+      label: "Applications Review",
+      path: "/super-admin/applications",
+    },
+    {
+      icon: <ShieldCheck className="w-5 h-5" />,
+      label: "Manage Inspections",
+      path: "/super-admin/dashboard/inspections",
+    },
+    {
+      icon: <Activity className="w-5 h-5" />,
+      label: "Address Change Approvals",
+      path: "/super-admin/dashboard/address-approvals",
+    },
+    {
+      icon: <Users className="w-5 h-5" />,
+      label: "Personnel Change Approvals",
+      path: "/super-admin/personnel-change-approvals",
+    },
+    {
+      icon: <FileCheck className="w-5 h-5" />,
+      label: "License Management",
+      path: "/admin/licenses",
+    },
+    {
+      icon: <Map className="w-5 h-5" />,
+      label: "GPS Tracking",
+      path: "/admin/gps",
+    },
+    {
+      icon: <BarChart3 className="w-5 h-5" />,
+      label: "Reports",
+      path: "/admin/reports",
+    },
+    {
+      icon: <Users className="w-5 h-5" />,
+      label: "Position Management",
+      path: "/super-admin/positions",
+    },
+
     // Admin Monitor Section
     { label: "Admin Monitoring", isHeader: true },
     {
       icon: <Building2 className="w-5 h-5" />,
       label: "Agencies (Admin)",
       path: "/super-admin/dashboard/admin-agencies",
-    },
-    {
-      icon: <FileCheck className="w-5 h-5" />,
-      label: "Applications (Admin)",
-      path: "/super-admin/dashboard/admin-apps",
     },
     {
       icon: <ShieldCheck className="w-5 h-5" />,
@@ -396,7 +472,19 @@ export const SuperAdminDashboard = () => {
         <Route path="profile" element={<Profile />} />
 
         {/* Admin Mirrored Routes ... */}
+        <Route
+          path="admin-agencies"
+          element={<SuperAdminAgenciesManagement />}
+        />
         <Route path="admin-apps" element={<ApplicationsReview />} />
+        <Route path="formal-requests" element={<FormalRequestManager />} />
+        <Route path="inspections" element={<AdminInspections />} />
+        <Route path="address-approvals" element={<AdminAddressApproval />} />
+        <Route
+          path="personnel-change-approvals"
+          element={<PersonnelChangeApprovals />}
+        />
+        <Route path="positions" element={<PositionManagement />} />
         <Route path="admin-licenses" element={<LicenseManagement />} />
         <Route
           path="admin-licenses/:certificateId?"

@@ -104,7 +104,6 @@ export async function queryAuditLogs(filters: {
   if (filters.entityName)
     where.entityName = {
       contains: String(filters.entityName),
-      mode: "insensitive",
     };
   if (filters.action) where.action = String(filters.action);
   if (filters.from || filters.to) {

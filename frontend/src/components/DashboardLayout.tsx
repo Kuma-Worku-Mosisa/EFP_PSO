@@ -373,7 +373,7 @@ export const DashboardLayout = ({
                         <Link
                           to={
                             isSuperAdmin
-                              ? "/super-admin/profile"
+                              ? "/super-admin/dashboard/profile"
                               : isLicensingAuthority
                                 ? "/licensing-authority/profile"
                                 : isFieldReviewer

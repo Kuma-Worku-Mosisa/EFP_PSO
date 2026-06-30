@@ -5,6 +5,7 @@ import AdminAddressApprovalCard, {
 import { MapPin } from "lucide-react";
 import { apiRequest } from "../../lib/api";
 import { AutoDismissToast, ToastType } from "../../components/AutoDismissToast";
+import { LoadingSpinner } from "../../components/LoadingSpinner";
 import { useLanguage } from "../../context/LanguageContext";
 
 export const AdminAddressApproval = () => {
@@ -40,7 +41,9 @@ export const AdminAddressApproval = () => {
         "error",
         err instanceof Error
           ? err.message
-          : isAm ? "የአድራሻ ለውጥ ጥያቄዎችን ማምጣት አልተቻለም" : "Failed to fetch address change requests",
+          : isAm
+            ? "የአድራሻ ለውጥ ጥያቄዎችን ማምጣት አልተቻለም"
+            : "Failed to fetch address change requests",
       );
       setRequests([]);
     } finally {
@@ -103,24 +106,32 @@ export const AdminAddressApproval = () => {
               {isAm ? "የአድራሻ ለውጥ ማረጋገጫዎች" : "Address Change Approvals"}
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              {isAm ? "የድርጅት አድራሻ ለውጥ ጥያቄዎችን ይገምግሙ እና ያረጋግጡ" : "Review and approve organization address change requests"}
+              {isAm
+                ? "የድርጅት አድራሻ ለውጥ ጥያቄዎችን ይገምግሙ እና ያረጋግጡ"
+                : "Review and approve organization address change requests"}
             </p>
           </div>
         </div>
         <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
-          {requests.filter((r) => r.status === "PENDING").length} {isAm ? "በመጠባበቅ ላይ" : "Pending"}
+          {requests.filter((r) => r.status === "PENDING").length}{" "}
+          {isAm ? "በመጠባበቅ ላይ" : "Pending"}
         </span>
       </div>
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <LoadingSpinner
+            size="lg"
+            text={isAm ? "በመጫን ላይ..." : "Loading address change requests..."}
+          />
         </div>
       ) : requests.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
           <MapPin className="w-16 h-16 text-gray-200 mx-auto mb-4" />
           <p className="text-gray-500 font-medium">
-            {isAm ? "ምንም የአድራሻ ለውጥ ጥያቄ የለም" : "No pending address change requests"}
+            {isAm
+              ? "ምንም የአድራሻ ለውጥ ጥያቄ የለም"
+              : "No pending address change requests"}
           </p>
         </div>
       ) : (

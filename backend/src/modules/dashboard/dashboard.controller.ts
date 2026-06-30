@@ -26,4 +26,24 @@ export class DashboardController {
       );
     }
   }
+
+  static async getSystemSummary(req: Request, res: Response) {
+    try {
+      // authorization already handled by `authenticate` middleware
+      const data = await DashboardService.getSystemDashboardSummary();
+      return ApiResponse.success(
+        res,
+        "System dashboard summary retrieved",
+        data,
+      );
+    } catch (error: any) {
+      console.error("System dashboard error:", error?.message || error);
+      return ApiResponse.error(
+        res,
+        error?.message || "Failed to retrieve system dashboard summary",
+        500,
+        error?.stack || null,
+      );
+    }
+  }
 }

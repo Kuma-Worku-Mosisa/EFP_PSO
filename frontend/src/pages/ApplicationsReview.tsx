@@ -26,6 +26,7 @@ import {
 import { cn } from "../lib/utils";
 import { RenewalReviewContent } from "../components/ApplicationsReview/RenewalReviewContent";
 import { ConfirmDialog } from "../components/ConfirmDialog";
+import { LoadingSpinner } from "../components/LoadingSpinner";
 
 const FILE_ORIGIN = import.meta.env.DEV ? "http://localhost:5000" : "";
 
@@ -650,9 +651,14 @@ export const ApplicationsReview = () => {
       view: isAm ? "ተመልከት" : "Review Details",
       pending: isAm ? "አቆይ" : "Set Pending",
     },
+    noApplications: isAm ? "ምንም ማመልከቻ አልተገኘም" : "No applications available.",
+    noResults: isAm
+      ? "የፈለጉት አፕሊኬሽን አልተገኘም"
+      : "No applications match your search or filter.",
   };
 
   const [applications, setApplications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [toast, setToast] = React.useState<{
     isOpen: boolean;
     type: ToastType;
@@ -666,6 +672,7 @@ export const ApplicationsReview = () => {
     setToast({ isOpen: true, type, message });
 
   const fetchApplications = React.useCallback(async () => {
+    setLoading(true);
     try {
       const res = await apiRequest("/applications");
       // assume backend returns { data: Application[] }
@@ -674,6 +681,8 @@ export const ApplicationsReview = () => {
     } catch (err: any) {
       console.error("Failed to fetch applications", err);
       showToast("error", "Failed to load applications.");
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -3333,93 +3342,131 @@ export const ApplicationsReview = () => {
       </div>
 
       <div className="bg-white rounded-[40px] shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider font-bold">
-              <tr>
-                <th className="px-8 py-6">{t.table.appId}</th>
-                <th className="px-8 py-6">{t.table.applicant}</th>
-                <th className="px-8 py-6">{t.table.agency}</th>
-                <th className="px-8 py-6">{t.table.type}</th>
-                <th className="px-8 py-6">{t.table.date}</th>
-                <th className="px-8 py-6">{t.table.status}</th>
-                <th className="px-8 py-6 text-right">{t.table.actions}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filteredApps.map((app) => (
-                <tr
-                  key={app.id}
-                  className="hover:bg-gray-50/50 transition-colors group"
-                >
-                  <td className="px-8 py-6">
-                    <span className="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
-                      {app.id}
-                    </span>
-                  </td>
-                  <td className="px-8 py-6 text-sm text-gray-700 font-semibold">
-                    {app.applicantFullName || app.user?.fullName || "-"}
-                  </td>
-                  <td className="px-8 py-6">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-primary/5 rounded-xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
-                        <Shield className="w-5 h-5" />
-                      </div>
-                      <span className="font-bold text-primary text-sm">
-                        {app.agency}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-6 text-sm text-gray-600 font-medium">
-                    {app.type}
-                  </td>
-                  <td className="px-8 py-6 text-sm text-gray-500">
-                    {app.date}
-                  </td>
-                  <td className="px-8 py-6 font-bold text-xs uppercase tracking-wider">
-                    <div className="flex items-center space-x-2">
-                      <div
-                        className={`w-2 h-2 rounded-full ${
-                          app.status === "Pending"
-                            ? "bg-amber-400"
-                            : app.status === "Suspended"
-                              ? "bg-red-500"
-                              : "bg-blue-400"
-                        }`}
-                      />
-                      <span className="text-gray-700">
-                        {app.status === "Pending"
-                          ? t.status.pending
-                          : app.status === "Reviewing"
-                            ? t.status.reviewing
-                            : app.status === "Suspended"
-                              ? t.status.suspended
-                              : app.status}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-6 text-right relative">
-                    <div className="flex items-center justify-end">
-                      <div className="relative">
-                        <button
-                          type="button"
-                          onClick={() => setActionPopup({ isOpen: true, app })}
-                          className="inline-flex items-center space-x-2 px-4 py-2 bg-white border border-gray-200 text-primary rounded-xl font-black text-xs hover:border-primary hover:shadow-sm transition-all"
-                          title="Choose action"
-                        >
-                          <span>Actions</span>
-                          <Clock className="w-4 h-4" />
-                        </button>
-
-                        {/* actions dropdown replaced by centered pop-up modal */}
-                      </div>
-                    </div>
-                  </td>
+        {loading ? (
+          <div className="py-16">
+            <LoadingSpinner
+              fullPage
+              size="lg"
+              text={isAm ? "በመጫን ላይ..." : "Loading applications..."}
+            />
+          </div>
+        ) : applications.length === 0 ? (
+          <div className="px-8 py-16 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+              <Shield className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-black text-slate-900">
+              {t.noApplications}
+            </h3>
+            <p className="mt-2 text-sm text-slate-500">
+              {isAm
+                ? "እባክዎ የማመልከቻ ዝርዝር ለማስገባት ጥሪ ይፈጽሙ።"
+                : "No application records were returned from the server."}
+            </p>
+          </div>
+        ) : filteredApps.length === 0 ? (
+          <div className="px-8 py-16 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+              <Shield className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-black text-slate-900">{t.noResults}</h3>
+            <p className="mt-2 text-sm text-slate-500">
+              {isAm
+                ? "እባክዎ በስም ወይም በቅድሚያ ገጽታ የፈለጉትን ያስተካክሉ።"
+                : "Try a different search term or filter to find matching applications."}
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider font-bold">
+                <tr>
+                  <th className="px-8 py-6">{t.table.appId}</th>
+                  <th className="px-8 py-6">{t.table.applicant}</th>
+                  <th className="px-8 py-6">{t.table.agency}</th>
+                  <th className="px-8 py-6">{t.table.type}</th>
+                  <th className="px-8 py-6">{t.table.date}</th>
+                  <th className="px-8 py-6">{t.table.status}</th>
+                  <th className="px-8 py-6 text-right">{t.table.actions}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filteredApps.map((app) => (
+                  <tr
+                    key={app.id}
+                    className="hover:bg-gray-50/50 transition-colors group"
+                  >
+                    <td className="px-8 py-6">
+                      <span className="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
+                        {app.id}
+                      </span>
+                    </td>
+                    <td className="px-8 py-6 text-sm text-gray-700 font-semibold">
+                      {app.applicantFullName || app.user?.fullName || "-"}
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-primary/5 rounded-xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
+                          <Shield className="w-5 h-5" />
+                        </div>
+                        <span className="font-bold text-primary text-sm">
+                          {app.agency}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6 text-sm text-gray-600 font-medium">
+                      {app.type}
+                    </td>
+                    <td className="px-8 py-6 text-sm text-gray-500">
+                      {app.date}
+                    </td>
+                    <td className="px-8 py-6 font-bold text-xs uppercase tracking-wider">
+                      <div className="flex items-center space-x-2">
+                        <div
+                          className={`w-2 h-2 rounded-full ${
+                            app.status === "Pending"
+                              ? "bg-amber-400"
+                              : app.status === "Suspended"
+                                ? "bg-red-500"
+                                : "bg-blue-400"
+                          }`}
+                        />
+                        <span className="text-gray-700">
+                          {app.status === "Pending"
+                            ? t.status.pending
+                            : app.status === "Reviewing"
+                              ? t.status.reviewing
+                              : app.status === "Suspended"
+                                ? t.status.suspended
+                                : app.status}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6 text-right relative">
+                      <div className="flex items-center justify-end">
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setActionPopup({ isOpen: true, app })
+                            }
+                            className="inline-flex items-center space-x-2 px-4 py-2 bg-white border border-gray-200 text-primary rounded-xl font-black text-xs hover:border-primary hover:shadow-sm transition-all"
+                            title="Choose action"
+                          >
+                            <span>Actions</span>
+                            <Clock className="w-4 h-4" />
+                          </button>
+
+                          {/* actions dropdown replaced by centered pop-up modal */}
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
         {/* REUSABLE DIALOG INSTANCE */}
         <ConfirmDialog
           isOpen={confirmState.isOpen}

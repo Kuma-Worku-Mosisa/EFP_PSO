@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "sqlserver"
-   url      = env("DATABASE_URL")
 }
 
 // Note: SQL Server connector does not support Prisma enums.
@@ -111,7 +110,6 @@ model User {
   employee                   Employee?
   inspections                Inspection[]                 @relation("LeadInspector")
   incidentReports            IncidentReport[]             @relation("IncidentReporter")
-  issuedPenalties            IncidentPenalty[]            @relation("PenaltyIssuer")
   historyLogs                ApplicationTrackingHistory[]
   inspectionCommittees       InspectionCommittee[]
   createdFaqs                Faq[]                        @relation("FaqCreator")
@@ -382,8 +380,8 @@ model Employee {
   adminApplications      Application[] @relation("AdminHeadRole")
 
   // ADDED: Required back-relations for Incident and Manager Change modules
-  incidentReports           IncidentReport[]
   transferRequests          TransferRequest[]
+  suspectedIncidents        IncidentSuspect[]
   targetedPersonnelRequests PersonnelChangeRequest[] @relation("TargetEmployeeRecord")
 
   @@map("employees")
@@ -692,48 +690,92 @@ model Certification {
 }
 
 // ==========================================
-// 7. INCIDENT REPORTING & PENALTIES
+// 7. INCIDENT REPORTING 
 // ==========================================
 
 model IncidentReport {
-  id                   Int      @id @default(autoincrement()) @map("report_id")
-  organizationId       Int?     @map("organization_id")
-  employeeId           Int?     @map("employee_id")
-  crimeCategory        String   @map("crime_category") @db.NVarChar(500)
-  incidentDate         DateTime @map("incident_date") @db.DateTime
-  locationOfIncident   String   @map("location_of_incident") @db.NVarChar(Max)
-  incidentDescription  String   @map("incident_description") @db.NVarChar(Max)
-  reportedAt           DateTime @default(now()) @map("reported_at") @db.DateTime
-  isReportedWithin24h  Boolean? @map("is_reported_within_24h")
-  localPoliceStation   String?  @map("local_police_station_name") @db.NVarChar(255)
-  localPoliceRefNumber String?  @map("local_police_reference_number") @db.VarChar(100)
-  reportDocumentUrl    String?  @map("report_document_url") @db.VarChar(Max)
-  federalPoliceStatus  String?  @default("Pending Review") @map("federal_police_status") @db.VarChar(50)
-  reportedByUserId     Int?     @map("reported_by_user_id")
+  id         Int      @id @default(autoincrement()) @map("incident_report_id")
+  fileNumber String   @unique @map("file_number") @db.VarChar(50)
+  reportDate DateTime @map("report_date") @db.Date
 
-  // Relations
-  organization Organization?     @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Incidents_Orgs")
-  employee     Employee?         @relation(fields: [employeeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Incidents_Emps")
-  reporter     User?             @relation("IncidentReporter", fields: [reportedByUserId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Incidents_Users")
-  penalties    IncidentPenalty[]
+  // The specific Organization (Private Security Agency) filling and submitting the report
+  // Added explicit onUpdate: NoAction to break cyclic address path cascades
+  organizationId Int          @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // 1. Service Receiver & Incident Core Metadata
+  serviceReceiverName    String   @map("service_receiver_name") @db.NVarChar(255) // Client organization/individual who received the stolen service
+  crimeType              String   @map("crime_type") @db.VarChar(100) // Type of criminal act committed
+  crimeInCapitalAmount   Decimal? @map("crime_in_capital_amount") @db.Decimal(18, 2) // Financial evaluation of the theft/crime in ETB
+  incidentStartTimestamp DateTime @map("incident_start_timestamp") // Combines From Time, Day, and Year
+  crimeCount             Int      @default(1) @map("crime_count")
+  damageDescription      String   @map("damage_description") @db.NVarChar(Max) // Specific description of loss/damage rewritten directly to main table
+
+  // 6, 7, 8. Personnel Headcounts Involved
+  securityPersonnelCount Int @default(0) @map("security_personnel_count")
+  customerPersonnelCount Int @default(0) @map("customer_personnel_count")
+  otherPartiesCount      Int @default(0) @map("other_parties_count")
+
+  // 9. Collusion & Status Metrics
+  hasCollusion     Boolean @default(false) @map("has_collusion")
+  collusionDetails String? @map("collusion_details") @db.NVarChar(Max) // Details if security, customer, or others acted in collusion
+  actionStatus     String  @map("action_status") @db.NVarChar(255) // Status of action taken
+  explanation      String? @map("explanation") @db.NVarChar(Max)
+
+  // Legal Disclaimer Checkbox tracking
+  acceptedLegalResponsibility Boolean @default(false) @map("accepted_legal_responsibility")
+
+  // --- REPORTING SYSTEM ACTORS & SIGNATURE TRACKING ---
+
+  // 1. Reporter: The Agency User (e.g., Organization HR Manager or Supervisor) who fills and submits the form
+  reporterName         String @map("reporter_name") @db.NVarChar(150)
+  reporterTitle        String @map("reporter_title") @db.NVarChar(100)
+  reporterJobResp      String @map("reporter_job_responsibility") @db.NVarChar(150)
+  reporterSignatureUrl String @map("reporter_signature_url") @db.VarChar(255)
+
+  // 2. Ethiopian Federal Police: The Officer/Professional receiving and auditing the submission
+  efpOfficerName         String?   @map("efp_officer_name") @db.NVarChar(150)
+  efpOfficerTitle        String?   @map("efp_officer_title") @db.NVarChar(100)
+  efpOfficerJobResp      String?   @map("efp_officer_job_responsibility") @db.NVarChar(150)
+  efpOfficerSignatureUrl String?   @map("efp_officer_signature_url") @db.VarChar(255)
+  efpSignDate            DateTime? @map("efp_sign_date") @db.Date
+
+  // 3. EFP Superior Feedback: Reviewing authority's directives
+  superiorName         String?   @map("superior_name") @db.NVarChar(150)
+  superiorTitle        String?   @map("superior_title") @db.NVarChar(100)
+  superiorJobResp      String?   @map("superior_job_responsibility") @db.NVarChar(150)
+  superiorFeedback     String?   @map("superior_feedback") @db.NVarChar(Max)
+  superiorSignatureUrl String?   @map("superior_signature_url") @db.VarChar(255)
+  superiorSignDate     DateTime? @map("superior_sign_date") @db.Date
+
+  // --- SYSTEM LINK RELATIONSHIPS ---
+
+  // FIXED: Explicitly named relation binding pointing to User.incidentReports
+  userId   Int?              @map("user_id")
+  user     User?             @relation("IncidentReporter", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  // One-to-Many Relationships to Child Tables
+  suspects IncidentSuspect[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("incident_reports")
 }
 
-model IncidentPenalty {
-  id             Int      @id @default(autoincrement()) @map("penalty_id")
-  reportId       Int      @map("report_id")
-  issuedByUserId Int?     @map("issued_by_user_id")
-  penaltyType    String?  @map("penalty_type") @db.NVarChar(500)
-  amount         Decimal? @db.Decimal(18, 2)
-  description    String?  @db.NVarChar(Max)
-  issuedDate     DateTime @default(now()) @map("issued_date")
+// 10. Normalized Persons Suspected of Theft Table (Remains linked cleanly)
+model IncidentSuspect {
+  id               Int            @id @default(autoincrement()) @map("suspect_id")
+  incidentReportId Int            @map("incident_report_id")
+  incidentReport   IncidentReport @relation(fields: [incidentReportId], references: [id], onDelete: Cascade)
 
-  // Relations
-  report IncidentReport @relation(fields: [reportId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Penalties_Reports")
-  issuer User?          @relation("PenaltyIssuer", fields: [issuedByUserId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Penalties_Users")
+  // New Relation: Link directly to the active guard/employee profile if internal
+  employeeId Int?      @map("employee_id")
+  employee   Employee? @relation(fields: [employeeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_IncidentSuspects_Employees")
 
-  @@map("incident_penalties")
+  suspectName      String  @map("suspect_name") @db.NVarChar(150)
+  relationToAgency String? @map("relation_to_agency") @db.NVarChar(100) // e.g., "Active Guard", "Fired Guard", "External Suspect"
+
+  @@map("incident_suspects")
 }
 
 // ==========================================

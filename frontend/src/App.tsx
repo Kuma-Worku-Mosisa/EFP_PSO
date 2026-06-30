@@ -1,5 +1,10 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { LanguageProvider } from "./context/LanguageContext";
 import { AuthProvider } from "./context/AuthContext";
 import { Layout } from "./components/Layout";
@@ -101,6 +106,52 @@ function App() {
             <Route
               path="/super-admin/dashboard/*"
               element={<SuperAdminDashboard />}
+            />
+            <Route
+              path="/super-admin/profile"
+              element={<Navigate replace to="/super-admin/dashboard/profile" />}
+            />
+            <Route
+              path="/super-admin/applications"
+              element={
+                <Navigate replace to="/super-admin/dashboard/admin-apps" />
+              }
+            />
+            <Route
+              path="/super-admin/formal-requests"
+              element={
+                <Navigate replace to="/super-admin/dashboard/formal-requests" />
+              }
+            />
+            <Route
+              path="/super-admin/inspections"
+              element={
+                <Navigate replace to="/super-admin/dashboard/inspections" />
+              }
+            />
+            <Route
+              path="/super-admin/address-approvals"
+              element={
+                <Navigate
+                  replace
+                  to="/super-admin/dashboard/address-approvals"
+                />
+              }
+            />
+            <Route
+              path="/super-admin/personnel-change-approvals"
+              element={
+                <Navigate
+                  replace
+                  to="/super-admin/dashboard/personnel-change-approvals"
+                />
+              }
+            />
+            <Route
+              path="/super-admin/positions"
+              element={
+                <Navigate replace to="/super-admin/dashboard/positions" />
+              }
             />
           </Routes>
         </Router>
