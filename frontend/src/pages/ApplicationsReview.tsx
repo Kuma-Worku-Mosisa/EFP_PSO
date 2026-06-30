@@ -3282,6 +3282,25 @@ export const ApplicationsReview = () => {
   void activeActionMenuId;
   void handleListActionChange;
 
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <AutoDismissToast
+          isOpen={toast.isOpen}
+          type={toast.type}
+          message={toast.message}
+          onClose={() => setToast((s) => ({ ...s, isOpen: false }))}
+          durationMs={5000}
+        />
+        <LoadingSpinner
+          size="lg"
+          text={isAm ? "ማመልከቻዎችን በመጫን ላይ..." : "Loading applications..."}
+          fullPage
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <AutoDismissToast
@@ -3379,7 +3398,7 @@ export const ApplicationsReview = () => {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
-              <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider font-bold">
+              <thead className="bg-gradient-to-r from-[#003366] to-[#001F3F] text-white text-xs uppercase tracking-wider font-bold">
                 <tr>
                   <th className="px-8 py-6">{t.table.appId}</th>
                   <th className="px-8 py-6">{t.table.applicant}</th>
@@ -3447,16 +3466,13 @@ export const ApplicationsReview = () => {
                         <div className="relative">
                           <button
                             type="button"
-                            onClick={() =>
-                              setActionPopup({ isOpen: true, app })
-                            }
+                            onClick={() => setActionPopup({ isOpen: true, app })}
                             className="inline-flex items-center space-x-2 px-4 py-2 bg-white border border-gray-200 text-primary rounded-xl font-black text-xs hover:border-primary hover:shadow-sm transition-all"
                             title="Choose action"
                           >
                             <span>Actions</span>
                             <Clock className="w-4 h-4" />
                           </button>
-
                           {/* actions dropdown replaced by centered pop-up modal */}
                         </div>
                       </div>
@@ -3467,15 +3483,12 @@ export const ApplicationsReview = () => {
             </table>
           </div>
         )}
-        {/* REUSABLE DIALOG INSTANCE */}
         <ConfirmDialog
           isOpen={confirmState.isOpen}
-          isLoading={isActionLoading}
-          type={confirmState.type}
-          onClose={() =>
-            setConfirmState((prev) => ({ ...prev, isOpen: false }))
-          }
+          onClose={() => setConfirmState((prev) => ({ ...prev, isOpen: false }))}
           onConfirm={handleExecuteAction}
+          type={confirmState.type}
+          isLoading={isActionLoading}
           title={
             confirmState.type === "approve"
               ? "Approve Application"

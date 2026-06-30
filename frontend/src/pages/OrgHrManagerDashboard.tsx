@@ -5,7 +5,6 @@ import {
   LayoutDashboard,
   Users,
   Briefcase,
-  ShieldCheck,
   MapPin,
   UserCheck,
   GraduationCap,
@@ -20,6 +19,8 @@ import {
   Move,
   UserCog,
   AlertCircle,
+  FileText,
+  ShieldAlert,
 } from "lucide-react";
 import {
   BarChart,
@@ -42,9 +43,9 @@ import EmployeeRegistration from "./HRmanagement/EmployeeRegistration";
 import EmployeeTransferManager from "./HRmanagement/EmployeeTransferManager";
 import AddressChangeRequestForm from "./HRmanagement/AddressChangeRequestForm";
 import PersonnelChangeRequest from "./HRmanagement/PersonnelChangeRequest";
+import CriminalReport from "./HRmanagement/CriminalReport";
+import InstitutionReports from "./HRmanagement/InstitutionReports";
 import { LoadingSpinner, SkeletonCard, SkeletonChart, SkeletonTable, SkeletonActivityList } from "../components/LoadingSpinner";
-import { Profile } from "./Profile";
-import { Notifications } from "./Notifications";
 
 const COLORS = ["#003366", "#FFD700", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"];
 
@@ -532,14 +533,14 @@ export const OrgHrManagerDashboard = () => {
       path: "/org-hr-manager/personnel-change-request",
     },
     {
-      icon: <ShieldCheck className="w-5 h-5" />,
-      label: isAm ? "መገለጫ" : "Profile",
-      path: "/org-hr-manager/profile",
+      icon: <FileText className="w-5 h-5" />,
+      label: isAm ? "ከተቋም ሪፖርቶች" : "Reports from the Institution",
+      path: "/org-hr-manager/institution-reports",
     },
     {
-      icon: <ShieldCheck className="w-5 h-5" />,
-      label: isAm ? "ማስታወቂያዎች" : "Notifications",
-      path: "/org-hr-manager/notifications",
+      icon: <ShieldAlert className="w-5 h-5" />,
+      label: isAm ? "የወንጀል ሪፖርት" : "Report of Criminal",
+      path: "/org-hr-manager/criminal-report",
     },
   ];
 
@@ -557,8 +558,8 @@ export const OrgHrManagerDashboard = () => {
         />
         <Route path="employee-transfer" element={<EmployeeTransferManager />} />
         <Route path="personnel-change-request" element={<PersonnelChangeRequest />} />
-        <Route path="profile" element={<Profile />} />
-        <Route path="notifications" element={<Notifications />} />
+        <Route path="institution-reports" element={<InstitutionReports />} />
+        <Route path="criminal-report" element={<CriminalReport />} />
         <Route
           path="employee-registration"
           element={<EmployeeRegistration />}

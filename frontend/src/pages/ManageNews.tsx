@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { apiRequest } from "../lib/api";
+import { LoadingSpinner } from "../components/LoadingSpinner";
 
 interface NewsItem {
   id: number;
@@ -311,7 +312,13 @@ export const ManageNews = () => {
     }
   };
 
-  return (
+  return loading && news.length === 0 ? (
+    <LoadingSpinner
+      size="lg"
+      text={isAm ? "ዜናዎችን በመጫን ላይ..." : "Loading news..."}
+      fullPage
+    />
+  ) : (
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
