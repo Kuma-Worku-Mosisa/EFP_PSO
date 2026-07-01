@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { X, Loader2, ArrowLeftCircle, ArrowRightCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { API_BASE, resolveBackendAssetUrl } from "../../lib/api";
+import { apiRequest, resolveBackendAssetUrl } from "../../lib/api";
 import { useLanguage } from "../../context/LanguageContext";
 
 interface ActorUser {
@@ -23,7 +23,7 @@ interface ActorUser {
 
 // System Admin Audit Log Viewer — protected: requires `system_admin` role
 export default function AuditLogViewer() {
-  const { user, token, isAuthenticated } = useAuth() as any;
+  const { user, isAuthenticated } = useAuth() as any;
   const { language } = useLanguage();
   const isAm = language === "am";
   const [logs, setLogs] = useState<any[]>([]);
@@ -72,23 +72,7 @@ export default function AuditLogViewer() {
     setActorDetails(null);
 
     try {
-      const response = await fetch(`${API_BASE}/users/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-      });
-      const payload = await response.json();
-
-      if (!response.ok) {
-        const message =
-          payload?.message ||
-          payload?.error ||
-          `Failed to load actor details (HTTP ${response.status})`;
-        setActorError(message);
-        return;
-      }
-
+      const payload = await apiRequest(`/users/${userId}`);
       setActorDetails(unwrapApiData<ActorUser>(payload));
     } catch (error) {
       console.error("Failed to fetch actor details", error);
@@ -115,16 +99,9 @@ export default function AuditLogViewer() {
         if (actionFilter) params.set("action", actionFilter);
         if (fromDate) params.set("from", fromDate);
 
-        const response = await fetch(
-          `http://localhost:5000/api/admin/audit-logs?${params.toString()}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              Accept: "application/json",
-            },
-          },
+        const data: any = await apiRequest(
+          `/admin/audit-logs?${params.toString()}`,
         );
-        const data = await response.json();
         if (data.success) {
           setLogs(data.data.items || []);
           setTotal(data.data.total || 0);
@@ -139,14 +116,7 @@ export default function AuditLogViewer() {
     };
 
     fetchLogs();
-  }, [
-    isAuthenticated,
-    isSystemAdmin,
-    token,
-    page,
-    pageSize,
-    refreshKey,
-  ]);
+  }, [isAuthenticated, isSystemAdmin, page, pageSize, refreshKey]);
 
   // Utility to safely parse the stringified JSON from your backend
   const parseJSON = (jsonString: string | null) => {
@@ -165,16 +135,13 @@ export default function AuditLogViewer() {
     highlightDiff?: boolean,
   ) => {
     const obj = parseJSON(raw);
-    const compareObj = highlightDiff && compareRaw ? parseJSON(compareRaw) : null;
+    const compareObj =
+      highlightDiff && compareRaw ? parseJSON(compareRaw) : null;
 
     if (!obj || typeof obj !== "object") {
       return (
         <div className="p-6 rounded-xl border border-dashed border-[#003366]/20 text-xs text-gray-500 italic text-center font-medium">
-          {raw
-            ? String(raw)
-            : isAm
-              ? "ምንም ውሂብ የለም"
-              : "No data"}
+          {raw ? String(raw) : isAm ? "ምንም ውሂብ የለም" : "No data"}
         </div>
       );
     }
@@ -215,9 +182,7 @@ export default function AuditLogViewer() {
           <tbody className="divide-y divide-gray-200">
             {entries.map(([key, value]) => {
               const displayValue =
-                value !== null && value !== undefined
-                  ? String(value)
-                  : "—";
+                value !== null && value !== undefined ? String(value) : "—";
               const isChanged =
                 highlightDiff &&
                 compareObj &&
@@ -296,12 +261,15 @@ export default function AuditLogViewer() {
   if (!isSystemAdmin) {
     return (
       <div className="max-w-3xl mx-auto p-6">
-        <h2 className="text-xl font-bold text-rose-600">{isAm ? "መዳረሻ ተከልክሏል" : "Access Denied"}</h2>
+        <h2 className="text-xl font-bold text-rose-600">
+          {isAm ? "መዳረሻ ተከልክሏል" : "Access Denied"}
+        </h2>
         <p className="text-sm text-gray-600 mt-2">
           {isAm
             ? "የስርዓት መዝገቦችን ለማየት ፈቃድ የለዎትም። ይህ ቦታ የsystem_admin ሚና ላላቸው ተጠቃሚዎች ብቻ ነው።"
             : "You do not have permission to view system audit logs. This area is restricted to users with the"}
-          <span className="font-mono"> system_admin</span> {isAm ? "ሚና" : "role"}.
+          <span className="font-mono"> system_admin</span>{" "}
+          {isAm ? "ሚና" : "role"}.
         </p>
       </div>
     );
@@ -311,9 +279,13 @@ export default function AuditLogViewer() {
     <div className="max-w-7xl mx-auto p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-[#003366]">{isAm ? "የስርዓት መዝገቦች" : "System Audit Logs"}</h1>
+        <h1 className="text-2xl font-bold text-[#003366]">
+          {isAm ? "የስርዓት መዝገቦች" : "System Audit Logs"}
+        </h1>
         <p className="text-sm text-gray-500 mt-1">
-          {isAm ? "የሁሉም አስተዳደራዊ እና የተጠቃሚ ድርጊቶች የማይሻር መዝገብ" : "Immutable record of all administrative and user actions."}
+          {isAm
+            ? "የሁሉም አስተዳደራዊ እና የተጠቃሚ ድርጊቶች የማይሻር መዝገብ"
+            : "Immutable record of all administrative and user actions."}
         </p>
       </div>
 
@@ -345,7 +317,11 @@ export default function AuditLogViewer() {
         <input
           id="fromDate"
           type="date"
-          title={isAm ? "በዚህ ቀን ወይም በኋላ ውጤቶችን አጣራ" : "Filter results on or after this date"}
+          title={
+            isAm
+              ? "በዚህ ቀን ወይም በኋላ ውጤቶችን አጣራ"
+              : "Filter results on or after this date"
+          }
           aria-label={isAm ? "ቀን ከ" : "Date from"}
           value={fromDate}
           onChange={(e) => setFromDate(e.target.value)}
@@ -370,7 +346,9 @@ export default function AuditLogViewer() {
           {isAm ? "አጣራ" : "Filter"}
         </button>
         <div className="ml-auto flex items-center gap-2">
-          <span className="text-sm text-gray-500 font-medium">{isAm ? "የገጽ መጠን" : "Page Size"}</span>
+          <span className="text-sm text-gray-500 font-medium">
+            {isAm ? "የገጽ መጠን" : "Page Size"}
+          </span>
           <select
             value={pageSize}
             onChange={(e) => {
@@ -380,7 +358,9 @@ export default function AuditLogViewer() {
             className="px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] transition-all"
           >
             {[10, 25, 50, 100].map((s) => (
-              <option key={s} value={s}>{s}</option>
+              <option key={s} value={s}>
+                {s}
+              </option>
             ))}
           </select>
         </div>
@@ -391,11 +371,21 @@ export default function AuditLogViewer() {
         <table className="w-full text-left text-sm">
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
-              <th className="px-6 py-4 font-bold text-[#003366] text-xs uppercase tracking-wider">{isAm ? "የተፈጠረበት ቀን" : "Timestamp"}</th>
-              <th className="px-6 py-4 font-bold text-[#003366] text-xs uppercase tracking-wider">{isAm ? "ድርጊት" : "Action"}</th>
-              <th className="px-6 py-4 font-bold text-[#003366] text-xs uppercase tracking-wider">{isAm ? "ዒላማ" : "Entity Target"}</th>
-              <th className="px-6 py-4 font-bold text-[#003366] text-xs uppercase tracking-wider">{isAm ? "ተጠቃሚ" : "Actor (User ID)"}</th>
-              <th className="px-6 py-4 font-bold text-[#003366] text-xs uppercase tracking-wider text-right">{isAm ? "ዝርዝር" : "Details"}</th>
+              <th className="px-6 py-4 font-bold text-[#003366] text-xs uppercase tracking-wider">
+                {isAm ? "የተፈጠረበት ቀን" : "Timestamp"}
+              </th>
+              <th className="px-6 py-4 font-bold text-[#003366] text-xs uppercase tracking-wider">
+                {isAm ? "ድርጊት" : "Action"}
+              </th>
+              <th className="px-6 py-4 font-bold text-[#003366] text-xs uppercase tracking-wider">
+                {isAm ? "ዒላማ" : "Entity Target"}
+              </th>
+              <th className="px-6 py-4 font-bold text-[#003366] text-xs uppercase tracking-wider">
+                {isAm ? "ተጠቃሚ" : "Actor (User ID)"}
+              </th>
+              <th className="px-6 py-4 font-bold text-[#003366] text-xs uppercase tracking-wider text-right">
+                {isAm ? "ዝርዝር" : "Details"}
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -428,17 +418,25 @@ export default function AuditLogViewer() {
                         </button>
                       </div>
                     ) : (
-                      <span className="text-gray-400 italic">System / Anonymous</span>
+                      <span className="text-gray-400 italic">
+                        System / Anonymous
+                      </span>
                     )}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button
-                      onClick={() => setExpandedRow(expandedRow === log.id ? null : log.id)}
+                      onClick={() =>
+                        setExpandedRow(expandedRow === log.id ? null : log.id)
+                      }
                       className="text-[#003366] hover:text-[#001F3F] font-semibold text-sm transition-colors"
                     >
                       {expandedRow === log.id
-                        ? isAm ? "ውሂብ ደብቅ" : "Hide Data"
-                        : isAm ? "ውሂብ ይመልከቱ" : "View Payload"}
+                        ? isAm
+                          ? "ውሂብ ደብቅ"
+                          : "Hide Data"
+                        : isAm
+                          ? "ውሂብ ይመልከቱ"
+                          : "View Payload"}
                     </button>
                   </td>
                 </tr>
@@ -457,7 +455,9 @@ export default function AuditLogViewer() {
                             renderStateFields(log.oldValue)
                           ) : (
                             <div className="bg-[#003366]/5 p-6 rounded-xl border border-dashed border-[#003366]/20 text-xs text-gray-500 italic text-center font-medium">
-                              {isAm ? "ምንም የቀድሞ ውሂብ የለም" : "No previous data (New Creation)"}
+                              {isAm
+                                ? "ምንም የቀድሞ ውሂብ የለም"
+                                : "No previous data (New Creation)"}
                             </div>
                           )}
                         </div>
@@ -493,7 +493,8 @@ export default function AuditLogViewer() {
                   {isAm ? "የተጠቃሚ ዝርዝር" : "Actor Details"}
                 </p>
                 <p className="text-sm font-semibold mt-0.5">
-                  {isAm ? "የተጠቃሚ መለያ #" : "User ID #"}{selectedActorId}
+                  {isAm ? "የተጠቃሚ መለያ #" : "User ID #"}
+                  {selectedActorId}
                 </p>
               </div>
               <button
@@ -510,7 +511,9 @@ export default function AuditLogViewer() {
               {actorLoading && (
                 <div className="flex items-center justify-center py-10 text-gray-500 gap-2">
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  <span className="text-sm">{isAm ? "የተጠቃሚ መረጃ በመጫን ላይ..." : "Loading actor profile..."}</span>
+                  <span className="text-sm">
+                    {isAm ? "የተጠቃሚ መረጃ በመጫን ላይ..." : "Loading actor profile..."}
+                  </span>
                 </div>
               )}
 
@@ -633,7 +636,8 @@ export default function AuditLogViewer() {
       {/* Pagination */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-gray-600">
-          {isAm ? "የሚታየው" : "Showing"} {total === 0 ? 0 : (page - 1) * pageSize + 1} -{" "}
+          {isAm ? "የሚታየው" : "Showing"}{" "}
+          {total === 0 ? 0 : (page - 1) * pageSize + 1} -{" "}
           {Math.min(total, page * pageSize)} {isAm ? "ከ" : "of"} {total}
         </div>
         <div className="flex items-center space-x-2">
@@ -676,7 +680,9 @@ export default function AuditLogViewer() {
                     {p}
                   </button>
                 ))}
-                {end < totalPages && <span className="px-2 text-sm text-gray-400">...</span>}
+                {end < totalPages && (
+                  <span className="px-2 text-sm text-gray-400">...</span>
+                )}
               </div>
             );
           })()}

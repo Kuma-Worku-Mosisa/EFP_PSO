@@ -4,6 +4,7 @@ import { Edit, Trash2 } from "lucide-react";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { AutoDismissToast } from "../../components/AutoDismissToast";
 import { useLanguage } from "../../context/LanguageContext";
+import { apiRequest } from "../../lib/api";
 
 interface NodeItem {
   id: number;
@@ -68,8 +69,6 @@ export default function LocationManager() {
   const [addModalAmharicValue, setAddModalAmharicValue] = useState("");
   const [addModalLoading, setAddModalLoading] = useState(false);
 
-  const API_ROOT = "http://localhost:5000/api/location";
-
   const getDisplayName = (obj?: any) =>
     language === "am"
       ? obj?.nameAmharic || obj?.name || obj?.nameEnglish || ""
@@ -89,53 +88,21 @@ export default function LocationManager() {
   ) => {
     setErrorLog(null);
     try {
-      const init: RequestInit = { method };
-      if (method !== "GET" && body !== undefined) {
-        init.headers = { "Content-Type": "application/json" } as any;
-        init.body = JSON.stringify(body);
-      }
+      const data: any = await apiRequest(`/location${endpoint}`, {
+        method,
+        ...(method !== "GET" && body !== undefined
+          ? { body: JSON.stringify(body) }
+          : {}),
+      });
 
-      const res = await fetch(`${API_ROOT}${endpoint}`, init);
-
-      // Honor 204 No Content early
-      if (res.status === 204) return { success: true, data: null };
-
-      const text = await res.text();
-      let data: any = null;
-      try {
-        data = text ? JSON.parse(text) : null;
-      } catch (e) {
-        // Non-JSON response: synthesize a response object
-        const message = text ? stripHtml(text).slice(0, 1000) : res.statusText;
-        data = { success: res.ok, data: null, message };
-      }
-
-      // If server returned an explicit failure structure, prefer the most specific message.
-      if (data && data.success === false) {
-        const detailedError =
-          typeof data.errors === "string" && data.errors.trim().length > 0
-            ? stripHtml(data.errors)
-            : null;
-        setErrorLog(
-          detailedError || data.message || (isAm ? `ጥያቄ አልተሳካም (${res.status})` : `Request failed (${res.status})`),
-        );
-        return data;
-      }
-
-      // Non-OK HTTP status without JSON error
-      if (!res.ok) {
-        const message =
-          (data && data.message) || res.statusText || `HTTP ${res.status}`;
-        setErrorLog(message);
-        return { success: false, message };
-      }
-
-      // Success: return parsed data (or wrap if server didn't include `success`)
       if (data && typeof data === "object") return data;
       return { success: true, data };
     } catch (err: any) {
       setErrorLog(err?.message || (isAm ? "የአውታረ መረብ ስህተት" : "Network error"));
-      return { success: false, message: err?.message || (isAm ? "የአውታረ መረብ ስህተት" : "Network error") };
+      return {
+        success: false,
+        message: err?.message || (isAm ? "የአውታረ መረብ ስህተት" : "Network error"),
+      };
     }
   };
 
@@ -256,7 +223,9 @@ export default function LocationManager() {
     else {
       setAddModalLoading(false);
       setToastType("error");
-      setToastMessage(isAm ? "ለዚህ ደረጃ ወላጅ የለም" : "Missing parent for this tier");
+      setToastMessage(
+        isAm ? "ለዚህ ደረጃ ወላጅ የለም" : "Missing parent for this tier",
+      );
       setToastOpen(true);
       return;
     }
@@ -270,7 +239,11 @@ export default function LocationManager() {
     if (!payload.nameEnglish && !payload.nameAmharic) {
       setAddModalLoading(false);
       setToastType("error");
-      setToastMessage(isAm ? "እባክዎ ቢያንስ አንድ ስም ያስገቡ (እንግሊዝኛ ወይም አማርኛ)" : "Please provide at least one name (English or Amharic)");
+      setToastMessage(
+        isAm
+          ? "እባክዎ ቢያንስ አንድ ስም ያስገቡ (እንግሊዝኛ ወይም አማርኛ)"
+          : "Please provide at least one name (English or Amharic)",
+      );
       setToastOpen(true);
       return;
     }
@@ -292,7 +265,9 @@ export default function LocationManager() {
       setToastOpen(true);
     } else {
       setToastType("error");
-      setToastMessage(result.message || (isAm ? "መፍጠር አልተሳካም" : "Create failed"));
+      setToastMessage(
+        result.message || (isAm ? "መፍጠር አልተሳካም" : "Create failed"),
+      );
       setToastOpen(true);
     }
   };
@@ -315,7 +290,11 @@ export default function LocationManager() {
     if (!payload.nameEnglish && !payload.nameAmharic) {
       setEditModalLoading(false);
       setToastType("error");
-      setToastMessage(isAm ? "እባክዎ ቢያንስ አንድ ስም ያስገቡ (እንግሊዝኛ ወይም አማርኛ)" : "Please provide at least one name (English or Amharic)");
+      setToastMessage(
+        isAm
+          ? "እባክዎ ቢያንስ አንድ ስም ያስገቡ (እንግሊዝኛ ወይም አማርኛ)"
+          : "Please provide at least one name (English or Amharic)",
+      );
       setToastOpen(true);
       return;
     }
@@ -334,7 +313,9 @@ export default function LocationManager() {
       setToastOpen(true);
     } else {
       setToastType("error");
-      setToastMessage(result.message || (isAm ? "ማዘመን አልተሳካም" : "Update failed"));
+      setToastMessage(
+        result.message || (isAm ? "ማዘመን አልተሳካም" : "Update failed"),
+      );
       setToastOpen(true);
     }
   };
@@ -355,7 +336,9 @@ export default function LocationManager() {
       setToastOpen(true);
     } else {
       setToastType("error");
-      setToastMessage(result.message || (isAm ? "መሰረዝ አልተሳካም" : "Delete failed"));
+      setToastMessage(
+        result.message || (isAm ? "መሰረዝ አልተሳካም" : "Delete failed"),
+      );
       setToastOpen(true);
     }
   };
@@ -377,11 +360,13 @@ export default function LocationManager() {
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto min-h-screen flex flex-col space-y-6">
       <div className="flex flex-col gap-2 sm:gap-3">
-<h1 className="text-2xl sm:text-3xl font-black text-[#003366] tracking-tight">
-  {isAm ? "የጂኦግራፊክ አድራሻ ማትሪክስ" : "Geographic Address Matrix"}
-</h1>
+        <h1 className="text-2xl sm:text-3xl font-black text-[#003366] tracking-tight">
+          {isAm ? "የጂኦግራፊክ አድራሻ ማትሪክስ" : "Geographic Address Matrix"}
+        </h1>
         <p className="text-sm sm:text-base text-gray-600">
-          {isAm ? "የአስተዳደር ክልላዊ ቅንብሮችን ይፈልጉ፣ ያጣሩ እና ያስተዳድሩ።" : "Search, filter, and manage cascading administrative regional settings dynamically."}
+          {isAm
+            ? "የአስተዳደር ክልላዊ ቅንብሮችን ይፈልጉ፣ ያጣሩ እና ያስተዳድሩ።"
+            : "Search, filter, and manage cascading administrative regional settings dynamically."}
         </p>
       </div>
 
@@ -396,7 +381,11 @@ export default function LocationManager() {
         onClose={() => setConfirmOpen(false)}
         onConfirm={performPendingDelete}
         title={isAm ? "ሰርዝ ያረጋግጡ" : "Confirm Deletion"}
-        message={isAm ? "ይህን አካል ማስወገድዎን እርግጠኛ ነዎት?" : "Are you absolutely certain you want to remove this entity?"}
+        message={
+          isAm
+            ? "ይህን አካል ማስወገድዎን እርግጠኛ ነዎት?"
+            : "Are you absolutely certain you want to remove this entity?"
+        }
         type="delete"
         isLoading={false}
       />
@@ -444,7 +433,13 @@ export default function LocationManager() {
                 disabled={editModalLoading}
                 className="px-4 py-2 rounded bg-[#003366] text-[#FFD700] disabled:opacity-60"
               >
-                {editModalLoading ? (isAm ? "በማስቀመጥ ላይ..." : "Saving...") : (isAm ? "አስቀምጥ" : "Save")}
+                {editModalLoading
+                  ? isAm
+                    ? "በማስቀመጥ ላይ..."
+                    : "Saving..."
+                  : isAm
+                    ? "አስቀምጥ"
+                    : "Save"}
               </button>
             </div>
           </div>
@@ -498,7 +493,11 @@ export default function LocationManager() {
                 value={addModalAmharicValue}
                 onChange={(e) => setAddModalAmharicValue(e.target.value)}
                 className="w-full p-2 border rounded"
-                placeholder={isAm ? "የአማርኛ ስም ያስገቡ (አማራጭ)" : "Enter Amharic name (optional)"}
+                placeholder={
+                  isAm
+                    ? "የአማርኛ ስም ያስገቡ (አማራጭ)"
+                    : "Enter Amharic name (optional)"
+                }
               />
             </div>
 
@@ -514,7 +513,13 @@ export default function LocationManager() {
                 disabled={addModalLoading}
                 className="px-4 py-2 rounded bg-[#003366] text-[#FFD700] disabled:opacity-60"
               >
-                {addModalLoading ? (isAm ? "በመፍጠር ላይ..." : "Creating...") : (isAm ? "ፍጠር" : "Create")}
+                {addModalLoading
+                  ? isAm
+                    ? "በመፍጠር ላይ..."
+                    : "Creating..."
+                  : isAm
+                    ? "ፍጠር"
+                    : "Create"}
               </button>
             </div>
           </div>
@@ -638,7 +643,8 @@ export default function LocationManager() {
             <>
               <div className="p-4 border-b bg-gray-50 rounded-t-xl space-y-2">
                 <h2 className="font-bold text-gray-800 text-sm uppercase tracking-wider truncate">
-                  {isAm ? "2. ዞኖች (" : "2. Zones ("}{selRegion.name})
+                  {isAm ? "2. ዞኖች (" : "2. Zones ("}
+                  {selRegion.name})
                 </h2>
                 <input
                   type="text"
@@ -734,7 +740,9 @@ export default function LocationManager() {
             </>
           ) : (
             <div className="m-auto text-gray-300 text-xs text-center p-4">
-              {isAm ? "የውስጥ ዞኖችን ለማሳየት የወላጅ ክልል ይምረጡ።" : "Select a parent Region to display internal structural Zones."}
+              {isAm
+                ? "የውስጥ ዞኖችን ለማሳየት የወላጅ ክልል ይምረጡ።"
+                : "Select a parent Region to display internal structural Zones."}
             </div>
           )}
         </div>
@@ -745,11 +753,14 @@ export default function LocationManager() {
             <>
               <div className="p-4 border-b bg-gray-50 rounded-t-xl space-y-2">
                 <h2 className="font-bold text-gray-800 text-sm uppercase tracking-wider truncate">
-                  {isAm ? "3. ወረዳዎች (" : "3. Woredas ("}{selZone.name})
+                  {isAm ? "3. ወረዳዎች (" : "3. Woredas ("}
+                  {selZone.name})
                 </h2>
                 <input
                   type="text"
-                  placeholder={isAm ? "🔍 ወረዳዎችን ያጣሩ..." : "🔍 Filter woredas..."}
+                  placeholder={
+                    isAm ? "🔍 ወረዳዎችን ያጣሩ..." : "🔍 Filter woredas..."
+                  }
                   className="w-full text-xs p-2 border rounded-lg bg-white shadow-inner focus:ring-1 focus:ring-blue-500"
                   value={queryWoreda}
                   onChange={(e) => setQueryWoreda(e.target.value)}
@@ -836,7 +847,9 @@ export default function LocationManager() {
             </>
           ) : (
             <div className="m-auto text-gray-300 text-xs text-center p-4">
-              {isAm ? "የዞን ውቅረት ይምረጡ።" : "Select an active Zone parameter configuration tree."}
+              {isAm
+                ? "የዞን ውቅረት ይምረጡ።"
+                : "Select an active Zone parameter configuration tree."}
             </div>
           )}
         </div>
@@ -847,11 +860,14 @@ export default function LocationManager() {
             <>
               <div className="p-4 border-b bg-gray-50 rounded-t-xl space-y-2">
                 <h2 className="font-bold text-gray-800 text-sm uppercase tracking-wider truncate">
-                  {isAm ? "4. ቀበሌዎች (" : "4. Kebeles ("}{selWoreda.name})
+                  {isAm ? "4. ቀበሌዎች (" : "4. Kebeles ("}
+                  {selWoreda.name})
                 </h2>
                 <input
                   type="text"
-                  placeholder={isAm ? "🔍 ቀበሌዎችን ያጣሩ..." : "🔍 Filter kebeles..."}
+                  placeholder={
+                    isAm ? "🔍 ቀበሌዎችን ያጣሩ..." : "🔍 Filter kebeles..."
+                  }
                   className="w-full text-xs p-2 border rounded-lg bg-white shadow-inner focus:ring-1 focus:ring-blue-500"
                   value={queryKebele}
                   onChange={(e) => setQueryKebele(e.target.value)}
@@ -935,7 +951,9 @@ export default function LocationManager() {
             </>
           ) : (
             <div className="m-auto text-gray-300 text-xs text-center p-4">
-              {isAm ? "የውስጥ ወረዳ ክፍል ይምረጡ።" : "Select an internal operational Woreda partition."}
+              {isAm
+                ? "የውስጥ ወረዳ ክፍል ይምረጡ።"
+                : "Select an internal operational Woreda partition."}
             </div>
           )}
         </div>

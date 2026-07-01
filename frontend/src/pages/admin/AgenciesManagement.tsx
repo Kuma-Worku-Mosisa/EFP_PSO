@@ -534,15 +534,13 @@ export function AgenciesManagement({
     woreda: useRef<HTMLDivElement>(null),
     kebele: useRef<HTMLDivElement>(null),
   };
-  const LOCATION_API = "http://localhost:5000/api/location";
   const getLocationName = (obj: any) =>
     isAm
       ? obj?.nameAmharic || obj?.nameEnglish || ""
       : obj?.nameEnglish || obj?.nameAmharic || "";
   const fetchContractRegions = async () => {
     try {
-      const res = await fetch(`${LOCATION_API}/regions`);
-      const data = await res.json();
+      const data: any = await apiRequest("/location/regions");
       const regions = data?.data || data || [];
       setContractRegions(regions);
       return regions;
@@ -553,8 +551,7 @@ export function AgenciesManagement({
   };
   const fetchContractZones = async (regionId: number) => {
     try {
-      const res = await fetch(`${LOCATION_API}/regions/${regionId}/zones`);
-      const data = await res.json();
+      const data: any = await apiRequest(`/location/regions/${regionId}/zones`);
       const zones = data?.data || data || [];
       setContractZones(zones);
       return zones;
@@ -565,8 +562,7 @@ export function AgenciesManagement({
   };
   const fetchContractWoredas = async (zoneId: number) => {
     try {
-      const res = await fetch(`${LOCATION_API}/zones/${zoneId}/woredas`);
-      const data = await res.json();
+      const data: any = await apiRequest(`/location/zones/${zoneId}/woredas`);
       const woredas = data?.data || data || [];
       setContractWoredas(woredas);
       return woredas;
@@ -577,8 +573,9 @@ export function AgenciesManagement({
   };
   const fetchContractKebeles = async (woredaId: number) => {
     try {
-      const res = await fetch(`${LOCATION_API}/woredas/${woredaId}/kebeles`);
-      const data = await res.json();
+      const data: any = await apiRequest(
+        `/location/woredas/${woredaId}/kebeles`,
+      );
       const kebeles = data?.data || data || [];
       setContractKebeles(kebeles);
       return kebeles;

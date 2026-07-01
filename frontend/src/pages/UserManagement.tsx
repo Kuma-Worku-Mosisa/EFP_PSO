@@ -1,5 +1,4 @@
-//filepath
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   UserPlus,
   Shield,
@@ -13,10 +12,10 @@ import {
   Search,
 } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
-import { useAuth } from "../context/AuthContext";
 import { motion, AnimatePresence } from "motion/react";
 import { AutoDismissToast, ToastType } from "../components/AutoDismissToast";
 import { ConfirmDialog } from "../components/ConfirmDialog";
+import { apiRequest, ApiError } from "../lib/api";
 
 // Dynamic Database System Roles matching Prisma schema verified responses
 interface SystemRole {
@@ -46,7 +45,6 @@ interface User {
 
 export const UserManagement = () => {
   const { language } = useLanguage();
-  const { token: authToken } = useAuth();
   const isAm = language === "am";
 
   const unwrapApiData = <T,>(payload: any): T => {
@@ -137,11 +135,6 @@ export const UserManagement = () => {
   const [isOtpVerified, setIsOtpVerified] = useState(false);
   const [otpCode, setOtpCode] = useState("");
 
-  const getAuthToken = () =>
-    authToken ??
-    localStorage.getItem("efp_token") ??
-    localStorage.getItem("token");
-
   const normalizeStatusFromApi = (raw?: string) => {
     if (!raw) return "Inactive";
     const up = String(raw).toUpperCase();
@@ -208,35 +201,16 @@ export const UserManagement = () => {
         setLoading(true);
         setError(null);
 
-        // 1. Fetch token and intercept unauthenticated state early
-        const token = getAuthToken();
-        if (!token) {
-          console.warn("Authorization missing from local browser context.");
-          setError(
-            isAm
-              ? "እባክዎ መጀመሪያ ይግቡ - መለያ አልተገኘም"
-              : "Authentication token missing. Please sign in again.",
-          );
-          setLoading(false);
-          return;
-        }
-
-        const headers: HeadersInit = {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        };
-
         // 2. Use Promise.allSettled to prevent one endpoint crash from taking down the whole page
         const [usersResult, rolesResult] = await Promise.allSettled([
-          fetch("http://localhost:5000/api/users", { headers }),
-          fetch("http://localhost:5000/api/users/roles", { headers }),
+          apiRequest("/users"),
+          apiRequest("/users/roles"),
         ]);
 
         // --- PROCESS ROLES PAYLOAD ---
-        if (rolesResult.status === "fulfilled" && rolesResult.value.ok) {
-          const rolesPayload = await rolesResult.value.json();
+        if (rolesResult.status === "fulfilled") {
           // Normalize both wrapped and raw API payloads into a single array shape.
-          const rolesData = unwrapApiData<SystemRole[]>(rolesPayload);
+          const rolesData = unwrapApiData<SystemRole[]>(rolesResult.value);
           const validRoles = Array.isArray(rolesData) ? rolesData : [];
 
           setSystemRoles(validRoles);
@@ -244,42 +218,40 @@ export const UserManagement = () => {
             setSelectedRoleId(validRoles[0].role_id);
           }
         } else {
-          const reason =
-            rolesResult.status === "rejected"
-              ? rolesResult.reason
-              : `HTTP ${rolesResult.value.status}`;
+          const reason = rolesResult.reason;
           console.error("Roles synchronization failure:", reason);
         }
 
         // --- PROCESS USERS PAYLOAD ---
-        if (usersResult.status === "fulfilled" && usersResult.value.ok) {
-          const usersPayload = await usersResult.value.json();
-          const usersData = unwrapApiData<any[]>(usersPayload);
+        if (usersResult.status === "fulfilled") {
+          const usersData = unwrapApiData<any[]>(usersResult.value);
           const normalized = Array.isArray(usersData)
             ? usersData.map(normalizeUser)
             : [];
           setUsers(normalized as User[]);
         } else {
           // Evaluate the distinct HTTP error signature if the user fetch step breaks down
-          if (usersResult.status === "fulfilled") {
-            const status = usersResult.value.status;
+          const userError = usersResult.reason;
+          if (userError instanceof ApiError) {
+            const status = userError.statusCode;
             if (status === 401) {
               throw new Error(
                 isAm
                   ? "ያልተፈቀደ መዳረሻ - ክፍለ ጊዜዎ አልፏል"
                   : "Session expired or invalid authentication token.",
               );
-            } else if (status === 404) {
+            }
+            if (status === 404) {
               throw new Error(
                 isAm
                   ? "የተጠቃሚዎች ዝርዝር አልተገኘም (404)"
                   : "Endpoint 'GET /api/users' not found on server.",
               );
-            } else {
-              throw new Error(
-                `Server returned error status context code: ${status}`,
-              );
             }
+            throw new Error(
+              userError.message ||
+                `Server returned error status code: ${status}`,
+            );
           } else {
             throw new Error(
               isAm
@@ -366,19 +338,9 @@ export const UserManagement = () => {
         : `Are you completely sure you want to delete the profile for ${user.fullName}? This cannot be undone.`,
       action: async () => {
         try {
-          const token = getAuthToken();
-          const res = await fetch(
-            `http://localhost:5000/api/users/${user.id}/revoke`,
-            {
-              method: "PATCH",
-              headers: {
-                "Content-Type": "application/json",
-                ...(token && { Authorization: `Bearer ${token}` }),
-              },
-            },
-          );
-
-          if (!res.ok) throw new Error("Revocation request failed");
+          await apiRequest(`/users/${user.id}/revoke`, {
+            method: "PATCH",
+          });
 
           setUsers(users.filter((u) => u.id !== user.id));
           triggerToast(
@@ -569,7 +531,6 @@ export const UserManagement = () => {
           const activeRoleObj = systemRoles.find((r) => r.role_id === roleId);
           const computedFullName =
             `${firstName} ${middleName} ${lastName}`.trim();
-          const token = getAuthToken();
 
           const payload = {
             username,
@@ -584,21 +545,14 @@ export const UserManagement = () => {
 
           // Route to exact target location mapping matching your controller logic
           const endpoint = editingUser
-            ? `http://localhost:5000/api/users/${editingUser.id}`
-            : `http://localhost:5000/api/users/register`;
+            ? `/users/${editingUser.id}`
+            : `/users/register`;
           const method = editingUser ? "PUT" : "POST";
 
-          const res = await fetch(endpoint, {
+          const result = await apiRequest(endpoint, {
             method,
-            headers: {
-              "Content-Type": "application/json",
-              ...(token && { Authorization: `Bearer ${token}` }),
-            },
             body: JSON.stringify(payload),
           });
-
-          const result = await res.json();
-          if (!res.ok) throw new Error(result.message || "Operation failed");
 
           if (editingUser) {
             setUsers((currentUsers) =>
@@ -631,7 +585,7 @@ export const UserManagement = () => {
                 : "User database parameters systematically updated.",
             );
           } else {
-            const freshUserRaw: any = result.data || result;
+            const freshUserRaw: any = (result as any).data || result;
             const freshUser = normalizeUser(freshUserRaw);
             setUsers((currentUsers) => [...currentUsers, freshUser]);
             triggerToast(
@@ -726,7 +680,9 @@ export const UserManagement = () => {
           <option value="Suspended">{t.status.suspended}</option>
         </select>
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500 whitespace-nowrap">{isAm ? "የገጽ መጠን" : "Page Size"}</span>
+          <span className="text-sm text-gray-500 whitespace-nowrap">
+            {isAm ? "የገጽ መጠን" : "Page Size"}
+          </span>
           <select
             value={pageSize}
             onChange={(e) => {
@@ -736,7 +692,9 @@ export const UserManagement = () => {
             className="px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
           >
             {[10, 25, 50, 100].map((s) => (
-              <option key={s} value={s}>{s}</option>
+              <option key={s} value={s}>
+                {s}
+              </option>
             ))}
           </select>
         </div>
@@ -753,211 +711,215 @@ export const UserManagement = () => {
         </div>
       ) : (
         <>
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
-                <tr>
-                  <th className="px-8 py-4 font-bold">{t.table.user}</th>
-                  <th className="px-8 py-4 font-bold">{t.table.role}</th>
-                  <th className="px-8 py-4 font-bold">{t.table.status}</th>
-                  <th className="px-8 py-4 font-bold">{t.table.lastLogin}</th>
-                  <th className="px-8 py-4 font-bold text-right">
-                    {t.table.actions}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {paginatedUsers.map((user) => (
-                  <tr
-                    key={user.id}
-                    className="hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="px-8 py-4">
-                      <div className="flex items-center space-x-3">
-                        {user.photoUrl ? (
-                          <img
-                            src={user.photoUrl}
-                            alt={user.fullName || user.username}
-                            role="button"
-                            onClick={() => openImagePreview(user.photoUrl)}
-                            className="w-10 h-10 rounded-full object-cover cursor-pointer"
-                            onError={(e) => {
-                              (
-                                e.currentTarget as HTMLImageElement
-                              ).style.display = "none";
-                            }}
-                          />
-                        ) : (
-                          <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-primary font-bold">
-                            {user.fullName?.charAt(0)}
-                          </div>
-                        )}
-                        <div>
-                          <p className="font-bold text-primary text-sm">
-                            {user.fullName}
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            @{user.username} • {user.email}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-4">
-                      <div className="flex items-center space-x-2">
-                        <Shield className="w-4 h-4 text-blue-500" />
-                        <span className="text-sm text-gray-600 font-medium capitalize">
-                          {(
-                            user.user_roles?.[0]?.roles?.role_name ||
-                            "Unassigned"
-                          ).replace("_", " ")}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-4">
-                      <span
-                        className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                          user.status === "Active"
-                            ? "bg-green-100 text-green-700"
-                            : user.status === "Suspended"
-                              ? "bg-amber-100 text-amber-700"
-                              : "bg-gray-100 text-gray-400"
-                        }`}
-                      >
-                        {user.status === "Active"
-                          ? t.status.active
-                          : user.status === "Suspended"
-                            ? t.status.suspended
-                            : t.status.inactive}
-                      </span>
-                    </td>
-                    <td className="px-8 py-4 text-sm text-gray-600">
-                      {new Date(user.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-8 py-4 text-right">
-                      <div className="flex justify-end space-x-2">
-                        <button
-                          onClick={() => handleEdit(user)}
-                          className="p-2 text-gray-400 hover:text-primary transition-colors"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleView(user)}
-                          className="p-2 text-gray-400 hover:text-primary transition-colors flex items-center"
-                        >
-                          <Eye className="w-4 h-4" />
-                          <span className="hidden md:inline ml-2 text-sm text-gray-600">
-                            {isAm ? "ይመልከቱ" : "View"}
-                          </span>
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(user)}
-                          className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
+                  <tr>
+                    <th className="px-8 py-4 font-bold">{t.table.user}</th>
+                    <th className="px-8 py-4 font-bold">{t.table.role}</th>
+                    <th className="px-8 py-4 font-bold">{t.table.status}</th>
+                    <th className="px-8 py-4 font-bold">{t.table.lastLogin}</th>
+                    <th className="px-8 py-4 font-bold text-right">
+                      {t.table.actions}
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Pagination */}
-        <div className="flex items-center justify-between mt-4">
-          <div className="text-sm text-gray-600">
-            {isAm ? "የሚታየው" : "Showing"} {totalFiltered === 0 ? 0 : (page - 1) * pageSize + 1} -{" "}
-            {Math.min(totalFiltered, page * pageSize)} {isAm ? "ከ" : "of"} {totalFiltered}
-          </div>
-          <div className="flex items-center space-x-2">
-            <button
-              disabled={page <= 1}
-              onClick={() => setPage(1)}
-              className="px-2 py-1 bg-white border rounded disabled:opacity-50 text-sm"
-            >
-              {isAm ? "መጀመሪያ" : "First"}
-            </button>
-            <button
-              disabled={page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="px-2 py-1 bg-white border rounded disabled:opacity-50 text-sm"
-            >
-              {isAm ? "ቀዳሚ" : "Prev"}
-            </button>
-            {(() => {
-              const windowSize = 5;
-              let start = Math.max(1, page - Math.floor(windowSize / 2));
-              let end = Math.min(totalPages, start + windowSize - 1);
-              if (end - start + 1 < windowSize)
-                start = Math.max(1, end - windowSize + 1);
-              const pages = [];
-              for (let p = start; p <= end; p++) pages.push(p);
-              return (
-                <div className="flex items-center space-x-1">
-                  {pages.map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => setPage(p)}
-                      className={`px-2 py-1 border rounded text-sm ${p === page ? "bg-primary text-white" : "bg-white"}`}
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {paginatedUsers.map((user) => (
+                    <tr
+                      key={user.id}
+                      className="hover:bg-gray-50 transition-colors"
                     >
-                      {p}
-                    </button>
+                      <td className="px-8 py-4">
+                        <div className="flex items-center space-x-3">
+                          {user.photoUrl ? (
+                            <img
+                              src={user.photoUrl}
+                              alt={user.fullName || user.username}
+                              role="button"
+                              onClick={() => openImagePreview(user.photoUrl)}
+                              className="w-10 h-10 rounded-full object-cover cursor-pointer"
+                              onError={(e) => {
+                                (
+                                  e.currentTarget as HTMLImageElement
+                                ).style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-primary font-bold">
+                              {user.fullName?.charAt(0)}
+                            </div>
+                          )}
+                          <div>
+                            <p className="font-bold text-primary text-sm">
+                              {user.fullName}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              @{user.username} • {user.email}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-8 py-4">
+                        <div className="flex items-center space-x-2">
+                          <Shield className="w-4 h-4 text-blue-500" />
+                          <span className="text-sm text-gray-600 font-medium capitalize">
+                            {(
+                              user.user_roles?.[0]?.roles?.role_name ||
+                              "Unassigned"
+                            ).replace("_", " ")}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-8 py-4">
+                        <span
+                          className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            user.status === "Active"
+                              ? "bg-green-100 text-green-700"
+                              : user.status === "Suspended"
+                                ? "bg-amber-100 text-amber-700"
+                                : "bg-gray-100 text-gray-400"
+                          }`}
+                        >
+                          {user.status === "Active"
+                            ? t.status.active
+                            : user.status === "Suspended"
+                              ? t.status.suspended
+                              : t.status.inactive}
+                        </span>
+                      </td>
+                      <td className="px-8 py-4 text-sm text-gray-600">
+                        {new Date(user.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-8 py-4 text-right">
+                        <div className="flex justify-end space-x-2">
+                          <button
+                            onClick={() => handleEdit(user)}
+                            className="p-2 text-gray-400 hover:text-primary transition-colors"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleView(user)}
+                            className="p-2 text-gray-400 hover:text-primary transition-colors flex items-center"
+                          >
+                            <Eye className="w-4 h-4" />
+                            <span className="hidden md:inline ml-2 text-sm text-gray-600">
+                              {isAm ? "ይመልከቱ" : "View"}
+                            </span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(user)}
+                            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
                   ))}
-                  {end < totalPages && <span className="px-2 text-sm">...</span>}
-                </div>
-              );
-            })()}
-            <button
-              disabled={page * pageSize >= totalFiltered}
-              onClick={() => setPage((p) => p + 1)}
-              className="px-2 py-1 bg-white border rounded disabled:opacity-50 text-sm"
-            >
-              {isAm ? "ቀጣይ" : "Next"}
-            </button>
-            <button
-              disabled={page * pageSize >= totalFiltered}
-              onClick={() => setPage(totalPages)}
-              className="px-2 py-1 bg-white border rounded disabled:opacity-50 text-sm"
-            >
-              {isAm ? "መጨረሻ" : "Last"}
-            </button>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Pagination */}
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-gray-600">
+              {isAm ? "የሚታየው" : "Showing"}{" "}
+              {totalFiltered === 0 ? 0 : (page - 1) * pageSize + 1} -{" "}
+              {Math.min(totalFiltered, page * pageSize)} {isAm ? "ከ" : "of"}{" "}
+              {totalFiltered}
+            </div>
             <div className="flex items-center space-x-2">
-              <input
-                type="number"
-                min={1}
-                max={totalPages}
-                placeholder={isAm ? "ሂድ" : "Go to"}
-                value={jumpPage}
-                onChange={(e) => setJumpPage(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
+              <button
+                disabled={page <= 1}
+                onClick={() => setPage(1)}
+                className="px-2 py-1 bg-white border rounded disabled:opacity-50 text-sm"
+              >
+                {isAm ? "መጀመሪያ" : "First"}
+              </button>
+              <button
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="px-2 py-1 bg-white border rounded disabled:opacity-50 text-sm"
+              >
+                {isAm ? "ቀዳሚ" : "Prev"}
+              </button>
+              {(() => {
+                const windowSize = 5;
+                let start = Math.max(1, page - Math.floor(windowSize / 2));
+                let end = Math.min(totalPages, start + windowSize - 1);
+                if (end - start + 1 < windowSize)
+                  start = Math.max(1, end - windowSize + 1);
+                const pages = [];
+                for (let p = start; p <= end; p++) pages.push(p);
+                return (
+                  <div className="flex items-center space-x-1">
+                    {pages.map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setPage(p)}
+                        className={`px-2 py-1 border rounded text-sm ${p === page ? "bg-primary text-white" : "bg-white"}`}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                    {end < totalPages && (
+                      <span className="px-2 text-sm">...</span>
+                    )}
+                  </div>
+                );
+              })()}
+              <button
+                disabled={page * pageSize >= totalFiltered}
+                onClick={() => setPage((p) => p + 1)}
+                className="px-2 py-1 bg-white border rounded disabled:opacity-50 text-sm"
+              >
+                {isAm ? "ቀጣይ" : "Next"}
+              </button>
+              <button
+                disabled={page * pageSize >= totalFiltered}
+                onClick={() => setPage(totalPages)}
+                className="px-2 py-1 bg-white border rounded disabled:opacity-50 text-sm"
+              >
+                {isAm ? "መጨረሻ" : "Last"}
+              </button>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="number"
+                  min={1}
+                  max={totalPages}
+                  placeholder={isAm ? "ሂድ" : "Go to"}
+                  value={jumpPage}
+                  onChange={(e) => setJumpPage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      const v = Number(jumpPage);
+                      if (!isNaN(v) && v >= 1 && v <= totalPages) {
+                        setPage(v);
+                        setJumpPage("");
+                      }
+                    }
+                  }}
+                  className="w-20 px-2 py-1 border rounded text-sm"
+                />
+                <button
+                  onClick={() => {
                     const v = Number(jumpPage);
                     if (!isNaN(v) && v >= 1 && v <= totalPages) {
                       setPage(v);
                       setJumpPage("");
                     }
-                  }
-                }}
-                className="w-20 px-2 py-1 border rounded text-sm"
-              />
-              <button
-                onClick={() => {
-                  const v = Number(jumpPage);
-                  if (!isNaN(v) && v >= 1 && v <= totalPages) {
-                    setPage(v);
-                    setJumpPage("");
-                  }
-                }}
-                className="px-3 py-1 bg-primary text-white rounded text-sm"
-              >
-                {isAm ? "ሂድ" : "Go"}
-              </button>
+                  }}
+                  className="px-3 py-1 bg-primary text-white rounded text-sm"
+                >
+                  {isAm ? "ሂድ" : "Go"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
         </>
       )}
 

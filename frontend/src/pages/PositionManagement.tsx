@@ -13,9 +13,7 @@ import {
 } from "lucide-react";
 import { AutoDismissToast } from "../components/AutoDismissToast";
 import { ConfirmDialog } from "../components/ConfirmDialog";
-
-// --- API Configuration Base URL ---
-const API_BASE_URL = "http://localhost:5000/api/positions";
+import { apiRequest } from "../lib/api";
 
 // --- Type Interfaces ---
 interface PositionRequirement {
@@ -99,8 +97,7 @@ export default function PositionManagement() {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const response = await fetch(API_BASE_URL);
-      const result = await response.json();
+      const result: any = await apiRequest("/positions");
 
       if (result.success) {
         setPositions(result.data);
@@ -184,20 +181,17 @@ export default function PositionManagement() {
 
     const url =
       isEditingName && selectedPosition
-        ? `${API_BASE_URL}/${selectedPosition.id}`
-        : API_BASE_URL;
+        ? `/positions/${selectedPosition.id}`
+        : "/positions";
     const method = isEditingName ? "PUT" : "POST";
 
     try {
-      const response = await fetch(url, {
+      const result: any = await apiRequest(url, {
         method: method,
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      const result = await response.json();
-
-      if (response.ok && result.success) {
+      if (result.success) {
         setIsNameModalOpen(false);
         await fetchPositions();
         setSelectedPosition(result.data || selectedPosition);
@@ -268,18 +262,15 @@ export default function PositionManagement() {
 
     setIsCriteriaSaving(true);
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/${criteriaTargetPosition.id}`,
+      const result: any = await apiRequest(
+        `/positions/${criteriaTargetPosition.id}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         },
       );
 
-      const result = await response.json();
-
-      if (response.ok && result.success) {
+      if (result.success) {
         setIsCriteriaConfirmOpen(false);
         setIsCriteriaModalOpen(false);
         setPendingCriteriaRequirements(null);
@@ -318,12 +309,11 @@ export default function PositionManagement() {
     setErrorMessage(null);
     setIsDeleting(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/${pendingDelete.id}`, {
+      const result: any = await apiRequest(`/positions/${pendingDelete.id}`, {
         method: "DELETE",
       });
-      const result = await response.json();
 
-      if (response.ok && result.success) {
+      if (result.success) {
         setSelectedPosition(null);
         await fetchPositions();
         setToast({
