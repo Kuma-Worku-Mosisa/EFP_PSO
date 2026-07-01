@@ -2,7 +2,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  AlertCircle,
   ArrowRight,
   BadgeCheck,
   Building2,
@@ -11,6 +10,7 @@ import {
   Download,
   FileText,
   RefreshCw,
+  Shield,
   ShieldCheck,
   X,
   UserRound,
@@ -632,8 +632,12 @@ export const AdminInspections = () => {
       const matchesStatus =
         statusFilter === "all" ||
         (statusFilter === "scheduled" && statusKey.includes("sched")) ||
-        (statusFilter === "reviewing" && statusKey.includes("review") && !statusKey.includes("field_reviewed")) ||
-        (statusFilter === "completed" && (statusKey.includes("field_reviewed") || statusKey.includes("completed"))) ||
+        (statusFilter === "reviewing" &&
+          statusKey.includes("review") &&
+          !statusKey.includes("field_reviewed")) ||
+        (statusFilter === "completed" &&
+          (statusKey.includes("field_reviewed") ||
+            statusKey.includes("completed"))) ||
         (statusFilter === "rejected" && statusKey.includes("reject"));
 
       return matchesSearch && matchesStatus;

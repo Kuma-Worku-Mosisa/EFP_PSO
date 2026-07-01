@@ -39,11 +39,24 @@ export class IncidentReportService {
           otherPartiesCount: data.otherPartiesCount
             ? parseInt(data.otherPartiesCount)
             : 0,
-          hasCollusion: !!data.hasCollusion,
-          collusionDetails: data.hasCollusion ? data.collusionDetails : null,
-          actionStatus: data.actionStatus || "Submitted",
-          explanation: data.explanation,
-          acceptedLegalResponsibility: !!data.acceptedLegalResponsibility,
+          SecurityCustomerOtherBodyCount:
+            data.SecurityCustomerOtherBodyCount ||
+            data.securityCustomerOtherBodyCount ||
+            data.securityCustomerOtherCount
+              ? parseInt(
+                  data.SecurityCustomerOtherBodyCount ??
+                    data.securityCustomerOtherBodyCount ??
+                    data.securityCustomerOtherCount,
+                )
+              : 0,
+          suspectedBodiesCount: data.suspectedBodiesCount
+            ? parseInt(data.suspectedBodiesCount)
+            : data.suspectedBodies
+              ? parseInt(data.suspectedBodies)
+              : 0,
+          actionTakenStatus:
+            data.actionTakenStatus || data.actionStatus || "Submitted",
+          explanation: data.explanation || null,
           reporterName: data.reporterName,
           reporterTitle: data.reporterTitle,
           reporterJobResp: data.reporterJobResp,
@@ -130,7 +143,7 @@ export class IncidentReportService {
         efpOfficerJobResp: officerData.efpOfficerJobResp,
         efpOfficerSignatureUrl: officerData.efpOfficerSignatureUrl,
         efpSignDate: new Date(),
-        actionStatus: "Verified by EFP Intake Desk",
+        actionTakenStatus: "Verified by EFP Intake Desk",
       },
     });
   }
@@ -145,7 +158,8 @@ export class IncidentReportService {
         superiorFeedback: superiorData.superiorFeedback,
         superiorSignatureUrl: superiorData.superiorSignatureUrl,
         superiorSignDate: new Date(),
-        actionStatus: "Closed / Sent to Criminal Investigation Directorate",
+        actionTakenStatus:
+          "Closed / Sent to Criminal Investigation Directorate",
       },
     });
   }

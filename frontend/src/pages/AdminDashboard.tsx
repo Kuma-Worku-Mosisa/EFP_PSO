@@ -470,8 +470,7 @@ const Overview = () => {
           <p className="mt-2 text-sm text-white/70 max-w-2xl">
             {isAm
               ? "የደህንነት ኤጀንሲዎችን ያስተዳድሩ፣ ማመልከቻዎችን ይከልሱ እና ሪፖርቶችን ይቆጣጠሩ"
-              : "Manage security agencies, review applications, and monitor reports"
-            }
+              : "Manage security agencies, review applications, and monitor reports"}
           </p>
         </div>
       </motion.div>
@@ -535,19 +534,29 @@ const Overview = () => {
           },
           {
             label: isAm ? "የታገዱ ፈቃዶች" : "Suspended Licenses",
-            value: certificationsLoading ? "..." : licenseDistributionCounts.Suspended,
+            value: certificationsLoading
+              ? "..."
+              : licenseDistributionCounts.Suspended,
             icon: <ShieldAlert className="w-6 h-6 text-orange-500" />,
             color: "bg-orange-50",
           },
           {
             label: isAm ? "ያለፉ ፈቃዶች" : "Expired Licenses",
-            value: certificationsLoading ? "..." : licenseDistributionCounts.Expired,
+            value: certificationsLoading
+              ? "..."
+              : licenseDistributionCounts.Expired,
             icon: <Clock className="w-6 h-6 text-red-500" />,
             color: "bg-red-50",
           },
           {
             label: isAm ? "በግምገማ ላይ" : "Total Reviewing",
-            value: appsLoading ? "..." : applications.filter((a) => a.status?.toLowerCase() === "under review" || a.status?.toLowerCase() === "pending").length,
+            value: appsLoading
+              ? "..."
+              : applications.filter(
+                  (a) =>
+                    a.status?.toLowerCase() === "under review" ||
+                    a.status?.toLowerCase() === "pending",
+                ).length,
             icon: <ClipboardCheck className="w-6 h-6 text-blue-500" />,
             color: "bg-blue-50",
           },
@@ -584,8 +593,6 @@ const Overview = () => {
           className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 space-y-6"
           style={{ minWidth: 0 }}
         >
-          style={{ minWidth: 0 }}
-        >
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
               <BarChart3 className="w-5 h-5 text-[#003366]" />
@@ -596,6 +603,27 @@ const Overview = () => {
           </div>
           <div className="w-full" style={{ height: "300px", minWidth: 0 }}>
             <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={data}
+                margin={{ top: 10, right: 0, left: -16, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 11 }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 11 }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <Tooltip />
+                <Bar dataKey="apps" fill="#003366" radius={[10, 10, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         <div
@@ -619,27 +647,25 @@ const Overview = () => {
                   cy="50%"
                   innerRadius={60}
                   outerRadius={100}
-          className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 space-y-6"
-          style={{ minWidth: 0 }}
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center">
-              <ShieldCheck className="w-5 h-5 text-green-600" />
-            </div>
-            <h3 className="text-lg font-bold text-primary">
-              {isAm ? "የፈቃድ ስርጭት" : "License Distribution"}
-            </h3>
+                  dataKey="value"
+                  nameKey="name"
+                  paddingAngle={4}
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell
+                      key={`cell-${entry.name}`}
+                      fill={COLORS[index % COLORS.length]}
+                    />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
           </div>
-          <div className="w-full" style={{ height: "300px", minWidth: 0 }}>
-            <ResponsiveContainer width="100%" height="100%">
-                <div className="relative z-10 rounded-full bg-white/95 px-3 py-1 shadow-sm border border-gray-200 text-sm font-semibold text-gray-700">
-                  {isAm ? "ድምር" : "Total"}
-                  <div className="text-lg font-black text-primary">
-                    {pieData.reduce((sum, item) => sum + item.value, 0)}
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div className="relative z-10 rounded-full bg-white/95 px-3 py-1 shadow-sm border border-gray-200 text-sm font-semibold text-gray-700 inline-flex items-center gap-3">
+            <span>{isAm ? "ድምር" : "Total"}</span>
+            <span className="text-lg font-black text-primary">
+              {pieData.reduce((sum, item) => sum + item.value, 0)}
+            </span>
           </div>
           <div className="mt-4 grid grid-cols-4 gap-3 text-sm">
             {pieData.map((item, index) => (
@@ -687,8 +713,12 @@ const Overview = () => {
                 </h3>
                 <p className="text-[10px] text-white/50 font-medium">
                   {appsLoading
-                    ? isAm ? "በመጫን ላይ..." : "Loading..."
-                    : isAm ? "የማመልከቻዎችን ዝርዝር ይከታተሉ" : "Track and review the latest commission submissions"}
+                    ? isAm
+                      ? "በመጫን ላይ..."
+                      : "Loading..."
+                    : isAm
+                      ? "የማመልከቻዎችን ዝርዝር ይከታተሉ"
+                      : "Track and review the latest commission submissions"}
                 </p>
               </div>
             </div>
@@ -702,14 +732,25 @@ const Overview = () => {
                   onChange={(e) => setFilterStatus(e.target.value)}
                   className="text-xs font-bold px-3 py-2 bg-white/10 border border-white/20 text-white rounded-xl outline-none focus:ring-2 focus:ring-white/30 transition-all"
                 >
-                  <option value="All" className="text-gray-800">{isAm ? "ሁሉም" : "All"}</option>
-                  <option value={isAm ? "በመጠባበቅ ላይ" : "Pending"} className="text-gray-800">
+                  <option value="All" className="text-gray-800">
+                    {isAm ? "ሁሉም" : "All"}
+                  </option>
+                  <option
+                    value={isAm ? "በመጠባበቅ ላይ" : "Pending"}
+                    className="text-gray-800"
+                  >
                     {isAm ? "በመጠባበቅ ላይ" : "Pending"}
                   </option>
-                  <option value={isAm ? "ጸድቋል" : "Approved"} className="text-gray-800">
+                  <option
+                    value={isAm ? "ጸድቋል" : "Approved"}
+                    className="text-gray-800"
+                  >
                     {isAm ? "ጸድቋል" : "Approved"}
                   </option>
-                  <option value={isAm ? "ውድቅ ተደርጓል" : "Rejected"} className="text-gray-800">
+                  <option
+                    value={isAm ? "ውድቅ ተደርጓል" : "Rejected"}
+                    className="text-gray-800"
+                  >
                     {isAm ? "ውድቅ ተደርጓል" : "Rejected"}
                   </option>
                 </select>
@@ -723,11 +764,19 @@ const Overview = () => {
                   onChange={(e) => setFilterType(e.target.value)}
                   className="text-xs font-bold px-3 py-2 bg-white/10 border border-white/20 text-white rounded-xl outline-none focus:ring-2 focus:ring-white/30 transition-all"
                 >
-                  <option value="All" className="text-gray-800">{isAm ? "ሁሉም" : "All"}</option>
-                  <option value={isAm ? "አዲስ" : "New"} className="text-gray-800">
+                  <option value="All" className="text-gray-800">
+                    {isAm ? "ሁሉም" : "All"}
+                  </option>
+                  <option
+                    value={isAm ? "አዲስ" : "New"}
+                    className="text-gray-800"
+                  >
                     {isAm ? "አዲስ" : "New"}
                   </option>
-                  <option value={isAm ? "እድሳት" : "Renewal"} className="text-gray-800">
+                  <option
+                    value={isAm ? "እድሳት" : "Renewal"}
+                    className="text-gray-800"
+                  >
                     {isAm ? "እድሳት" : "Renewal"}
                   </option>
                 </select>

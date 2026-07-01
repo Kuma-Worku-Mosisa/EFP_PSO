@@ -17,7 +17,8 @@ export type NotificationType =
   | "TRANSFER_REQUEST_APPROVED"
   | "ADDRESS_CHANGE_SUBMITTED"
   | "ADDRESS_CHANGE_APPROVED"
-  | "ADDRESS_CHANGE_REQUESTED";
+  | "ADDRESS_CHANGE_REQUESTED"
+  | "CRIMINAL_REPORT_SUBMITTED";
 
 export interface NotificationContext {
   organizationName?: string; // English name
@@ -29,6 +30,7 @@ export interface NotificationContext {
   employeeName?: string;
   faydaId?: string;
   transferReason?: string;
+  requestReason?: string;
   certificateSerial?: string;
   inspectionDate?: string;
   daysRemaining?: number;
@@ -188,6 +190,13 @@ export const getBilingualTemplate = (
         titleAm: "📍 የአድራሻ መለወጥ ጥያቄ ተቀብሎ ታል - ግምገማ ያስፈልጋል",
         msgEn: `📋 New Address Change Request\n\nOrganization: ${ctx.organizationName || "N/A"}\nReason: ${ctx.requestReason || "No reason provided"}\n\n✅ Action:\nPlease review and approve/reject this request in the admin dashboard.\n\n⏱️ Timeline: Review within 5 business days.`,
         msgAm: `📋 አዲስ የአድራሻ መለወጥ ጥያቄ\n\nድርጅት: ${ctx.organizationNameAm || ctx.organizationName || "N/A"}\nምክንያት: ${ctx.requestReason || "ምንም ምክንያት አልተሰጠም"}\n\n✅ ተግባር:\nእባክዎ በአስተዳደር ዳሽቦርድ ውስጥ ይህን ጥያቄ ይገምግሙ እና ይፈቅዱ ወይም ውድቁ ያድርጉ።\n\n⏱️ ጊዜ: ከ 5 ሥራ ቀናት ውስጥ ይገምግሙ።`,
+      };
+    case "CRIMINAL_REPORT_SUBMITTED":
+      return {
+        titleEn: "🚨 New Criminal Report Submitted",
+        titleAm: "🚨 አዲስ የወንጀል ሪፖርት ቀርቧል",
+        msgEn: `A new criminal report has been submitted and requires administrative review.\n\n📋 Report Details:\n• Record Number: ${ctx.customDetailsEn || "N/A"}\n• Organization: ${ctx.organizationName || "N/A"}\n• Submitted By: ${ctx.customDetailsAm || "HR Manager"}\n\n✅ Action:\nPlease review the report Submitted`,
+        msgAm: `አዲስ የወንጀል ሪፖርት ቀርቧል እና ለአስተዳደር ግምገማ ይፈልጋል።\n\n📋 የሪፖርት ዝርዝር:\n• የመዝገብ ቁጥር: ${ctx.customDetailsEn || "N/A"}\n• ተቋም: ${ctx.organizationNameAm || ctx.organizationName || "N/A"}\n• የቀረበው: ${ctx.customDetailsAm || "HR ማኔጀር"}\n\n✅ ተግባር:\nእባክዎ ሪፖርቱን ይገምግሙ።`,
       };
   }
 };

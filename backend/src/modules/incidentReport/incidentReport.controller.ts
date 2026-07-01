@@ -1,6 +1,9 @@
 // filepath: backend/src/modules/incidentReport/incidentReport.controller.ts
+import path from "path";
 import { Request, Response, NextFunction } from "express";
 import { IncidentReportService } from "./incidentReport.service";
+import { getDocumentUrl } from "../../utils/documentOrganizer";
+import { NotificationService } from "../notification/notification.service";
 
 const reportService = new IncidentReportService();
 
@@ -24,16 +27,68 @@ export class IncidentReportController {
         return;
       }
 
-      const {
-        fileNumber,
-        reportDate,
-        serviceReceiverName,
-        crimeType,
-        damageDescription,
-        reporterSignatureUrl,
-        acceptedLegalResponsibility,
-        suspects,
-      } = req.body;
+      const files = (req as any).files as
+        | {
+            signature?: Express.Multer.File[];
+            report?: Express.Multer.File[];
+          }
+        | undefined;
+      const signatureFile = files?.signature?.[0];
+
+      const fileNumber = req.body.fileNumber || req.body.recordNumber;
+      const reportDate = req.body.reportDate || req.body.date;
+      const serviceReceiverName =
+        req.body.serviceReceiverName ||
+        req.body.stolenServiceUser ||
+        req.body.institutionName;
+      const crimeType = req.body.crimeType || req.body.criminalActionType;
+      const damageDescription =
+        req.body.damageDescription || req.body.damageType || "";
+      const incidentStartTimestamp =
+        req.body.incidentStartTimestamp ||
+        (req.body.incidentDate && req.body.incidentTime
+          ? `${req.body.incidentDate}T${req.body.incidentTime}`
+          : undefined);
+      const acceptedLegalResponsibility =
+        req.body.acceptedLegalResponsibility === "true" ||
+        req.body.acceptedLegalResponsibility === true ||
+        Boolean(req.body.agreement);
+      const reporterName =
+        req.body.reporterName ||
+        [
+          req.body.reporterFirstName,
+          req.body.reporterMiddleName,
+          req.body.reporterLastName,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+      const reporterJobResp =
+        req.body.reporterJobResp || req.body.reporterJobResponsibility;
+      const reporterTitle = req.body.reporterTitle;
+      const reporterSignatureUrl = signatureFile
+        ? getDocumentUrl(
+            path
+              .relative(process.cwd(), signatureFile.path)
+              .replace(/\\/g, "/"),
+          )
+        : req.body.reporterSignatureUrl;
+      const securityCustomerOtherBodyCount =
+        req.body.securityCustomerOtherBodyCount ??
+        req.body.SecurityCustomerOtherBodyCount ??
+        req.body.securityCustomerOtherCount ??
+        null;
+      const explanation = req.body.explanation || req.body.agreement || null;
+      const suspects =
+        typeof req.body.suspects === "string"
+          ? (() => {
+              try {
+                return JSON.parse(req.body.suspects);
+              } catch {
+                return [] as any[];
+              }
+            })()
+          : req.body.suspects || [];
 
       // Schema parameter validations
       if (
@@ -42,7 +97,8 @@ export class IncidentReportController {
         !serviceReceiverName ||
         !crimeType ||
         !damageDescription ||
-        !reporterSignatureUrl
+        !reporterSignatureUrl ||
+        !incidentStartTimestamp
       ) {
         res.status(400).json({
           error: "Bad Request",
@@ -71,9 +127,38 @@ export class IncidentReportController {
       const newReport = await reportService.createReport(
         userOrganizationId,
         currentUserId,
-        req.body,
-        suspects || [],
+        {
+          ...req.body,
+          fileNumber,
+          reportDate,
+          serviceReceiverName,
+          crimeType,
+          damageDescription,
+          incidentStartTimestamp,
+          acceptedLegalResponsibility,
+          reporterName,
+          reporterTitle,
+          reporterJobResp,
+          reporterSignatureUrl,
+          securityCustomerOtherBodyCount,
+          explanation,
+          actionTakenStatus:
+            req.body.actionTakenStatus ||
+            req.body.actionStatus ||
+            req.body.takenActionStatus ||
+            "Submitted",
+        },
+        suspects,
       );
+
+      await NotificationService.notifyAdminsOnCriminalReportSubmission(
+        fileNumber,
+        req.body.institutionName ||
+          serviceReceiverName ||
+          "Unknown organization",
+        reporterName || "HR Manager",
+      );
+
       res.status(201).json({
         message: "Incident report logged and securely saved.",
         data: newReport,

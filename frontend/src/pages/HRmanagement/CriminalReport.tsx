@@ -1,8 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
 import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
 import { apiRequest } from "../../lib/api";
 import {
   ShieldAlert,
@@ -25,8 +24,11 @@ import {
   XCircle,
   Eye,
   Image,
+  Plus,
 } from "lucide-react";
 import EthiopianDatePicker from "../../components/EthiopianDatePicker";
+import { AutoDismissToast } from "../../components/AutoDismissToast";
+import { LoadingSpinner } from "../../components/LoadingSpinner";
 
 interface CriminalReportForm {
   recordNumber: string;
@@ -36,16 +38,27 @@ interface CriminalReportForm {
   criminalActionType: string;
   incidentTime: string;
   incidentDate: string;
+  crimeInCapitalAmount: string;
   criminalQuantity: string;
   damageType: string;
   protectionWorkerQuantity: string;
   customerWorkerQuantity: string;
   anotherBodyQuantity: string;
+  securityCustomerOtherCount: string;
   agreement: string;
   suspectedBodies: string;
   takenActionStatus: string;
   explanation: string;
 }
+
+type IncidentSuspectInput = {
+  suspectName: string;
+  relationToAgency: string;
+  faydaNumber: string;
+  employeeId: string;
+  employeeName: string;
+  employeeOrganization: string;
+};
 
 const initialForm: CriminalReportForm = {
   recordNumber: "",
@@ -55,38 +68,18 @@ const initialForm: CriminalReportForm = {
   criminalActionType: "",
   incidentTime: "",
   incidentDate: "",
+  crimeInCapitalAmount: "",
   criminalQuantity: "",
   damageType: "",
   protectionWorkerQuantity: "",
   customerWorkerQuantity: "",
   anotherBodyQuantity: "",
+  securityCustomerOtherCount: "",
   agreement: "",
   suspectedBodies: "",
   takenActionStatus: "",
   explanation: "",
 };
-
-const criminalActionTypes = [
-  "Theft",
-  "Armed Robbery",
-  "Burglary",
-  "Assault",
-  "Vandalism",
-  "Fraud",
-  "Trespassing",
-  "Cyber Crime",
-  "Other",
-];
-
-const damageTypes = [
-  "Property Damage",
-  "Financial Loss",
-  "Physical Injury",
-  "Data Breach",
-  "Equipment Theft",
-  "Document Loss",
-  "Other",
-];
 
 export default function CriminalReport() {
   const { language } = useLanguage();
@@ -95,49 +88,179 @@ export default function CriminalReport() {
 
   const [form, setForm] = useState<CriminalReportForm>(initialForm);
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [toastOpen, setToastOpen] = useState(false);
+  const [toastType, setToastType] = useState<"success" | "error">("success");
+  const [toastMessage, setToastMessage] = useState("");
+  const [organization, setOrganization] = useState<{
+    nameEnglish?: string;
+    nameAmharic?: string;
+  } | null>(null);
+  const [suspects, setSuspects] = useState<IncidentSuspectInput[]>([
+    {
+      suspectName: "",
+      relationToAgency: "",
+      faydaNumber: "",
+      employeeId: "",
+      employeeName: "",
+      employeeOrganization: "",
+    },
+  ]);
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  const [lookupLoading, setLookupLoading] = useState(false);
 
   // Reporter fields
   const [reporterFirstName, setReporterFirstName] = useState("");
   const [reporterMiddleName, setReporterMiddleName] = useState("");
   const [reporterLastName, setReporterLastName] = useState("");
   const [reporterTitle, setReporterTitle] = useState("");
-  const [reporterJobResponsibility, setReporterJobResponsibility] = useState("");
+  const [reporterJobResponsibility, setReporterJobResponsibility] =
+    useState("");
   const [reporterSignature, setReporterSignature] = useState("");
-  const [signatureFileError, setSignatureFileError] = useState<string | null>(null);
+  const [signatureFileError, setSignatureFileError] = useState<string | null>(
+    null,
+  );
   const [showSignaturePreview, setShowSignaturePreview] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
-  const [pdfGenerated, setPdfGenerated] = useState(false);
-
-  const criminalActionAm = [
-    "ስርቆት",
-    "የታጠቀ ዘረፋ",
-    "ሰርጎ መግባት",
-    "ጥቃት",
-    "ብልሽት",
-    "ማጭበርበር",
-    "ያለፍቃድ መግባት",
-    "የሳይበር ወንጀል",
-    "ሌላ",
-  ];
-
-  const damageAm = [
-    "የንብረት ውድመት",
-    "የገንዘብ ኪሳራ",
-    "የአካል ጉዳት",
-    "የመረጃ ፍሳሽ",
-    "የመሳሪያ ስርቆት",
-    "የሰነድ መጥፋት",
-    "ሌላ",
-  ];
 
   const updateField = (
     field: keyof CriminalReportForm,
-    value: string | boolean
+    value: string | boolean,
   ) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
+
+  const updateSuspect = (
+    index: number,
+    field: keyof IncidentSuspectInput,
+    value: string,
+  ) => {
+    setSuspects((prev) =>
+      prev.map((suspect, idx) =>
+        idx === index ? { ...suspect, [field]: value } : suspect,
+      ),
+    );
+  };
+
+  const lookupEmployeeWithFayda = async (index: number, fayda: string) => {
+    setLookupError(null);
+    setLookupLoading(true);
+    try {
+      const query = fayda.trim();
+      if (!query) {
+        setLookupLoading(false);
+        return;
+      }
+
+      const response = await apiRequest<{ success: boolean; data: any }>(
+        `/transfers/employee-lookup?query=${encodeURIComponent(query)}`,
+      );
+      const employee = response.data;
+      if (employee?.id) {
+        setSuspects((prev) =>
+          prev.map((suspect, idx) =>
+            idx === index
+              ? {
+                  ...suspect,
+                  suspectName: employee.user?.fullName || suspect.suspectName,
+                  employeeId: String(employee.id),
+                  faydaNumber: query,
+                  employeeName: employee.user?.fullName || "",
+                  employeeOrganization:
+                    employee.organization?.nameEnglish || "",
+                }
+              : suspect,
+          ),
+        );
+      } else {
+        setLookupError(
+          t(
+            "No employee found for this Fayda number.",
+            "ለዚህ ፋይዳ ቁጥር ምንም ሰራተኛ አልተገኘም።",
+          ),
+        );
+      }
+    } catch (err: any) {
+      setLookupError(
+        err?.message ||
+          t(
+            "Lookup failed. Please check the Fayda number.",
+            "ፍለጋው አልተሳካም። እባክዎ ፋይዳ ቁጥሩን ይፈትሹ።",
+          ),
+      );
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
+  const addSuspect = () => {
+    setSuspects((prev) => [
+      ...prev,
+      {
+        suspectName: "",
+        relationToAgency: "",
+        faydaNumber: "",
+        employeeId: "",
+        employeeName: "",
+        employeeOrganization: "",
+      },
+    ]);
+  };
+
+  const removeSuspect = (index: number) => {
+    setSuspects((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  useEffect(() => {
+    const loadOrganization = async () => {
+      try {
+        const response = await apiRequest<{ success: boolean; data: any }>(
+          "/employees/my-organization",
+        );
+        const org = response.data;
+        if (org) {
+          setOrganization(org);
+          const preferredName = isAm
+            ? org.nameAmharic || org.nameEnglish || ""
+            : org.nameEnglish || org.nameAmharic || "";
+          setForm((prev) => ({
+            ...prev,
+            institutionName: prev.institutionName || preferredName,
+          }));
+        }
+      } catch (error) {
+        // ignore failures; form remains editable
+      }
+    };
+
+    loadOrganization();
+  }, []);
+
+  useEffect(() => {
+    if (!organization) return;
+
+    const preferredName = isAm
+      ? organization.nameAmharic || organization.nameEnglish || ""
+      : organization.nameEnglish || organization.nameAmharic || "";
+
+    setForm((prev) => {
+      const currentValue = prev.institutionName?.trim();
+      const englishName = organization.nameEnglish?.trim() || "";
+      const amharicName = organization.nameAmharic?.trim() || "";
+
+      if (
+        !currentValue ||
+        currentValue === englishName ||
+        currentValue === amharicName
+      ) {
+        return {
+          ...prev,
+          institutionName: preferredName,
+        };
+      }
+
+      return prev;
+    });
+  }, [organization, isAm]);
 
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
@@ -153,20 +276,64 @@ export default function CriminalReport() {
     req("criminalActionType", "Criminal Action Type");
     req("incidentDate", "Incident Date");
     req("incidentTime", "Incident Time");
+    req("crimeInCapitalAmount", "Crime Capital Amount");
     req("criminalQuantity", "Criminal Quantity");
     req("damageType", "Damage Type");
     req("protectionWorkerQuantity", "Protection Worker Quantity");
     req("customerWorkerQuantity", "Customer Worker Quantity");
     req("anotherBodyQuantity", "Another Body Quantity");
-    req("agreement", "Agreement");
+    req("securityCustomerOtherCount", "Security Customer Other Body Quantity");
+    if (!form.agreement) {
+      errors.agreement = t(
+        "You must acknowledge the legal declaration.",
+        "የህጋዊ መግለጫ መቀበል አለብዎት።",
+      );
+    }
     req("suspectedBodies", "Suspected Bodies");
     req("takenActionStatus", "Taken Action Status");
-    if (!reporterFirstName.trim()) errors.reporterFirstName = t("First Name is required.", "ስም ያስፈልጋል።");
-    if (!reporterMiddleName.trim()) errors.reporterMiddleName = t("Middle Name is required.", "የአባት ስም ያስፈልጋል።");
-    if (!reporterLastName.trim()) errors.reporterLastName = t("Last Name is required.", "የአያት ስም ያስፈልጋል።");
-    if (!reporterTitle.trim()) errors.reporterTitle = t("Title is required.", "ማዕረግ ያስፈልጋል።");
-    if (!reporterJobResponsibility.trim()) errors.reporterJobResponsibility = t("Job Responsibility is required.", "የስራ ሃላፊነት ያስፈልጋል።");
-    if (!reporterSignature) errors.reporterSignature = t("Signature image is required.", "የፊርማ ምስል ያስፈልጋል።");
+
+    suspects.forEach((suspect, index) => {
+      const isEmpty =
+        !suspect.suspectName.trim() &&
+        !suspect.relationToAgency.trim() &&
+        !suspect.faydaNumber.trim();
+      if (!isEmpty) {
+        if (!suspect.suspectName.trim()) {
+          errors[`suspect_${index}`] = t(
+            "Suspect name is required.",
+            "የተጠረጠረው ስም ያስፈልጋል።",
+          );
+        }
+        if (!suspect.relationToAgency.trim()) {
+          errors[`suspect_${index}`] = errors[`suspect_${index}`]
+            ? `${errors[`suspect_${index}`]} ` +
+              t("Relation is required.", "ግንኙነት ያስፈልጋል።")
+            : t("Relation is required.", "ግንኙነት ያስፈልጋል።");
+        }
+      }
+    });
+
+    if (!reporterFirstName.trim())
+      errors.reporterFirstName = t("First Name is required.", "ስም ያስፈልጋል።");
+    if (!reporterMiddleName.trim())
+      errors.reporterMiddleName = t(
+        "Middle Name is required.",
+        "የአባት ስም ያስፈልጋል።",
+      );
+    if (!reporterLastName.trim())
+      errors.reporterLastName = t("Last Name is required.", "የአያት ስም ያስፈልጋል።");
+    if (!reporterTitle.trim())
+      errors.reporterTitle = t("Title is required.", "ማዕረግ ያስፈልጋል።");
+    if (!reporterJobResponsibility.trim())
+      errors.reporterJobResponsibility = t(
+        "Job Responsibility is required.",
+        "የስራ ሃላፊነት ያስፈልጋል።",
+      );
+    if (!reporterSignature)
+      errors.reporterSignature = t(
+        "Signature image is required.",
+        "የፊርማ ምስል ያስፈልጋል።",
+      );
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -210,12 +377,16 @@ export default function CriminalReport() {
 
         doc.setFontSize(16);
         doc.setFont("helvetica", "bold");
-        doc.text(t_("Report of Criminal", "የወንጀል ሪፖርት"), margin, y);
+        doc.text(t_("Report of Criminal Form", "የወንጀል ሪፖርት ቅጽ"), margin, y);
         y += 7;
 
         doc.setFontSize(11);
         doc.setFont("helvetica", "normal");
-        const today = new Date().toLocaleDateString(isAm ? "am-ET" : "en-US", { year: "numeric", month: "long", day: "numeric" });
+        const today = new Date().toLocaleDateString(isAm ? "am-ET" : "en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
         doc.text(`${t_("Generated", "የተዘጋጀ")}: ${today}`, margin, y);
         y += 10;
 
@@ -223,28 +394,72 @@ export default function CriminalReport() {
         addRow(t_("Record Number", "የመዝገብ ቁጥር"), form.recordNumber);
         addRow(t_("Date", "ቀን"), form.date);
         addRow(t_("Institution Name", "የተቋም ስም"), form.institutionName);
-        addRow(t_("Stolen Service User", "የተሰረቀ የአገልግሎት ተጠቃሚ"), form.stolenServiceUser);
+        addRow(
+          t_("Stolen Service User", "የተሰረቀ የአገልግሎት ተጠቃሚ"),
+          form.stolenServiceUser,
+        );
 
-        if (y > 240) { doc.addPage(); y = margin; }
+        if (y > 240) {
+          doc.addPage();
+          y = margin;
+        }
 
         addSection(t_("Incident Details", "የክስተት ዝርዝሮች"));
-        addRow(t_("Criminal Action Type", "የወንጀል ድርጊት አይነት"), form.criminalActionType);
+        addRow(
+          t_("Criminal Action Type", "የወንጀል ድርጊት አይነት"),
+          form.criminalActionType,
+        );
         addRow(t_("Incident Date", "የክስተት ቀን"), form.incidentDate);
         addRow(t_("Incident Time", "የክስተት ሰዓት"), form.incidentTime);
+        addRow(
+          t_("Crime Amount in Capital", "በካፒታል የተመዘገበ የወንጀል መጠን"),
+          form.crimeInCapitalAmount ? `${form.crimeInCapitalAmount} ETB` : "",
+        );
         addRow(t_("Criminal Quantity", "የወንጀለኞች ብዛት"), form.criminalQuantity);
         addRow(t_("Damage Type", "የጉዳት አይነት"), form.damageType);
-        addRow(t_("Protection Worker Quantity", "የጥበቃ ሰራተኞች ብዛት"), form.protectionWorkerQuantity);
-        addRow(t_("Customer Worker Quantity", "የደንበኛ ሰራተኞች ብዛት"), form.customerWorkerQuantity);
-        addRow(t_("Another Body Quantity", "የሌላ አካል ብዛት"), form.anotherBodyQuantity);
+        addRow(
+          t_("Protection Worker Quantity", "የጥበቃ ሰራተኞች ብዛት"),
+          form.protectionWorkerQuantity,
+        );
+        addRow(
+          t_("Customer Worker Quantity", "የደንበኛ ሰራተኞች ብዛት"),
+          form.customerWorkerQuantity,
+        );
+        addRow(
+          t_("Another Body Quantity", "የሌላ አካል ብዛት"),
+          form.anotherBodyQuantity,
+        );
         addRow(t_("Agreement", "ስምምነት"), form.agreement);
         addRow(t_("Suspected Bodies", "የተጠረጠሩ አካላት"), form.suspectedBodies);
-        addRow(t_("Taken Action / Status", "የተወሰደ እርምጃ / ሁኔታ"), form.takenActionStatus);
+        addRow(
+          t_("Taken Action / Status", "የተወሰደ እርምጃ / ሁኔታ"),
+          form.takenActionStatus,
+        );
 
-        if (y > 240) { doc.addPage(); y = margin; }
+        if (y > 240) {
+          doc.addPage();
+          y = margin;
+        }
 
         if (form.explanation.trim()) {
           addSection(t_("Explanation", "ማብራሪያ"));
           addRow("", form.explanation);
+        }
+
+        const validSuspects = suspects.filter(
+          (suspect) =>
+            suspect.suspectName.trim() || suspect.relationToAgency.trim(),
+        );
+        if (validSuspects.length > 0) {
+          addSection(t_("Suspect Details", "የተጠረጠሩ ዝርዝር"));
+          validSuspects.forEach((suspect, idx) => {
+            addRow(
+              `${t_("Suspect", "ተጠረጠረ")} ${idx + 1}`,
+              `${suspect.suspectName || "—"} | ${suspect.relationToAgency || "—"}${
+                suspect.employeeId ? ` | ID: ${suspect.employeeId}` : ""
+              }`,
+            );
+          });
         }
 
         addSection(t_("Report The Doer", "ሪፖርት አድራጊ"));
@@ -252,7 +467,10 @@ export default function CriminalReport() {
         addRow(t_("Middle Name", "የአባት ስም"), reporterMiddleName);
         addRow(t_("Last Name", "የአያት ስም"), reporterLastName);
         addRow(t_("Title", "ማዕረግ"), reporterTitle);
-        addRow(t_("Job Responsibility", "የስራ ሃላፊነት"), reporterJobResponsibility);
+        addRow(
+          t_("Job Responsibility", "የስራ ሃላፊነት"),
+          reporterJobResponsibility,
+        );
 
         const blob = doc.output("blob");
         resolve(blob);
@@ -269,27 +487,101 @@ export default function CriminalReport() {
     try {
       const blob = await generatePdfBlob();
       if (!blob) throw new Error("Failed to generate PDF");
-      setPdfBlob(blob);
-      setPdfGenerated(true);
       const formData = new FormData();
       const fileName = `Criminal_Report_${new Date().toISOString().split("T")[0]}.pdf`;
       formData.append("report", blob, fileName);
-      formData.append("recordNumber", form.recordNumber);
+      formData.append("fileNumber", form.recordNumber);
+      formData.append("reportDate", form.date);
       formData.append("institutionName", form.institutionName);
-      formData.append("criminalActionType", form.criminalActionType);
+      formData.append("serviceReceiverName", form.stolenServiceUser);
+      formData.append("crimeType", form.criminalActionType);
+      formData.append("crimeInCapitalAmount", form.crimeInCapitalAmount);
+      formData.append("damageDescription", form.damageType);
       formData.append("incidentDate", form.incidentDate);
+      formData.append("incidentTime", form.incidentTime);
+      formData.append(
+        "incidentStartTimestamp",
+        `${form.incidentDate}T${form.incidentTime}`,
+      );
+      formData.append("crimeCount", form.criminalQuantity);
+      formData.append("securityPersonnelCount", form.protectionWorkerQuantity);
+      formData.append("customerPersonnelCount", form.customerWorkerQuantity);
+      formData.append("otherPartiesCount", form.anotherBodyQuantity);
+      formData.append(
+        "securityCustomerOtherBodyCount",
+        form.securityCustomerOtherCount,
+      );
+      formData.append(
+        "securityCustomerOtherCount",
+        form.securityCustomerOtherCount,
+      );
+      const agreementAccepted = Boolean(form.agreement);
+      formData.append("agreement", agreementAccepted ? "true" : "false");
+      formData.append("takenActionStatus", form.takenActionStatus);
+      formData.append("suspectedBodies", form.suspectedBodies);
+      formData.append("explanation", form.explanation || form.agreement);
+      const suspectPayload = suspects
+        .filter(
+          (suspect) =>
+            suspect.suspectName.trim() ||
+            suspect.relationToAgency.trim() ||
+            suspect.faydaNumber.trim(),
+        )
+        .map((suspect) => ({
+          suspectName: suspect.suspectName.trim(),
+          relationToAgency: suspect.relationToAgency.trim(),
+          employeeId: suspect.employeeId.trim() || null,
+          faydaNumber: suspect.faydaNumber.trim() || null,
+        }));
+      if (suspectPayload.length > 0) {
+        formData.append("suspects", JSON.stringify(suspectPayload));
+      }
       formData.append("reporterFirstName", reporterFirstName);
       formData.append("reporterMiddleName", reporterMiddleName);
       formData.append("reporterLastName", reporterLastName);
+      formData.append("reporterTitle", reporterTitle);
+      formData.append("reporterJobResponsibility", reporterJobResponsibility);
+      formData.append("acceptedLegalResponsibility", String(agreementAccepted));
+      formData.append("actionStatus", form.takenActionStatus || "Submitted");
       if (reporterSignature) {
         const sigBlob = await (await fetch(reporterSignature)).blob();
         formData.append("signature", sigBlob, "signature.png");
       }
-      await apiRequest("/criminal-reports/submit", { method: "POST", body: formData });
-      setSubmitted(true);
-      setTimeout(() => setSubmitted(false), 3000);
+      await apiRequest("/incident-reports", { method: "POST", body: formData });
+      setToastType("success");
+      setToastMessage(
+        t(
+          "Criminal report submitted successfully!",
+          "የወንጀል ሪፖርት በተሳካ ሁኔታ ቀርቧል!",
+        ),
+      );
+      setToastOpen(true);
+      setForm(initialForm);
+      setSuspects([
+        {
+          suspectName: "",
+          relationToAgency: "",
+          faydaNumber: "",
+          employeeId: "",
+          employeeName: "",
+          employeeOrganization: "",
+        },
+      ]);
+      setReporterFirstName("");
+      setReporterMiddleName("");
+      setReporterLastName("");
+      setReporterTitle("");
+      setReporterJobResponsibility("");
+      setReporterSignature("");
+      setShowSignaturePreview(false);
+      setFormErrors({});
     } catch (err: any) {
-      setFormErrors((prev) => ({ ...prev, _submit: err?.message || t("Failed to submit report.", "ሪፖርቱን መላክ አልተሳካም።") }));
+      const message =
+        err?.message || t("Failed to submit report.", "ሪፖርቱን መላክ አልተሳካም።");
+      setToastType("error");
+      setToastMessage(message);
+      setToastOpen(true);
+      setFormErrors((prev) => ({ ...prev, _submit: message }));
     } finally {
       setSubmitting(false);
     }
@@ -336,12 +628,12 @@ export default function CriminalReport() {
             </div>
             <div>
               <h1 className="text-xl font-black text-white uppercase tracking-tight">
-                {t("Report of Criminal", "የወንጀል ሪፖርት")}
+                {t("Report of Criminal Form", "የወንጀል ሪፖርት ቅጽ")}
               </h1>
               <p className="text-xs text-white/50 font-medium mt-0.5">
                 {t(
                   "In Ethiopia Available Personal Protection Institutions Service",
-                  "በኢትዮጵያ ውስጥ በሚገኙ የግል ጥበቃ ተቋማት አገልግሎት"
+                  "በኢትዮጵያ ውስጥ በሚገኙ የግል ጥበቃ ተቋማት አገልግሎት",
                 )}
               </p>
             </div>
@@ -350,14 +642,18 @@ export default function CriminalReport() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {submitted && (
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm font-medium">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
-            {t(
-              "Criminal report submitted successfully!",
-              "የወንጀል ሪፖርት በተሳካ ሁኔታ ቀርቧል!"
-            )}
-          </div>
+        <AutoDismissToast
+          isOpen={toastOpen}
+          type={toastType}
+          message={toastMessage}
+          onClose={() => setToastOpen(false)}
+          durationMs={5000}
+        />
+        {submitting && (
+          <LoadingSpinner
+            overlay
+            text={t("Submitting report...", "ሪፖርት በማስገባት ላይ...")}
+          />
         )}
 
         {/* Section 1: Basic Info */}
@@ -365,20 +661,21 @@ export default function CriminalReport() {
           <div className={sectionHeaderClass}>
             {sectionHeaderContent(
               <FileText className="w-4 h-4 text-[#FFD700]" />,
-              t("Record Information", "የመዝገብ መረጃ")
+              t("Record Information", "የመዝገብ መረጃ"),
             )}
           </div>
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
               <label className={labelClass}>
-                {t("Record Number", "የመዝገብ ቁጥር")} <span className="text-red-500">*</span>
+                {t("Record Number", "የመዝገብ ቁጥር")}{" "}
+                <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                
                 <input
                   type="text"
                   value={form.recordNumber}
-                  onChange={(e) => updateField("recordNumber", e.target.value.replace(/\D/g, ""))}
+                  onChange={(e) => updateField("recordNumber", e.target.value)}
                   placeholder={t("Enter record number...", "የመዝገብ ቁጥር ያስገቡ...")}
                   className={`${inputClass} pl-10`}
                 />
@@ -392,7 +689,8 @@ export default function CriminalReport() {
             </div>
             <div>
               <label className={labelClass}>
-                {t("Date (A.D.)", "ቀን (እ.ኤ.አ.)")} <span className="text-red-500">*</span>
+                {t("Date (A.D.)", "ቀን (እ.ኤ.አ.)")}{" "}
+                <span className="text-red-500">*</span>
               </label>
               <EthiopianDatePicker
                 value={form.date}
@@ -410,24 +708,16 @@ export default function CriminalReport() {
             </div>
             <div>
               <label className={labelClass}>
-                {t(
-                  "Report The Provider Institution Name",
-                  "ሪፖርት አቅራቢ ተቋም ስም"
-                )} <span className="text-red-500">*</span>
+                {t("Report The Provider Institution Name", "ሪፖርት አቅራቢ ተቋም ስም")}{" "}
+                <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
                   value={form.institutionName}
-                  onChange={(e) =>
-                    updateField("institutionName", e.target.value.replace(/[0-9]/g, ""))
-                  }
-                  placeholder={t(
-                    "Enter institution name...",
-                    "የተቋም ስም ያስገቡ..."
-                  )}
-                  className={`${inputClass} pl-10`}
+                  readOnly
+                  className={`${inputClass} bg-gray-100/80 cursor-not-allowed pl-10`}
                 />
               </div>
               {formErrors.institutionName && (
@@ -441,8 +731,9 @@ export default function CriminalReport() {
               <label className={labelClass}>
                 {t(
                   "Stolen Service User Organization / Individual Name",
-                  "የተሰረቀ የአገልግሎት ተጠቃሚ ድርጅት / የግለሰብ ስም"
-                )} <span className="text-red-500">*</span>
+                  "የተሰረቀ የአገልግሎት ተጠቃሚ ድርጅት / የግለሰብ ስም",
+                )}{" "}
+                <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -450,11 +741,14 @@ export default function CriminalReport() {
                   type="text"
                   value={form.stolenServiceUser}
                   onChange={(e) =>
-                    updateField("stolenServiceUser", e.target.value.replace(/[0-9]/g, ""))
+                    updateField(
+                      "stolenServiceUser",
+                      e.target.value.replace(/[0-9]/g, ""),
+                    )
                   }
                   placeholder={t(
                     "Enter organization or individual name...",
-                    "የድርጅት ወይም የግል ስም ያስገቡ..."
+                    "የድርጅት ወይም የግል ስም ያስገቡ...",
                   )}
                   className={`${inputClass} pl-10`}
                 />
@@ -474,7 +768,7 @@ export default function CriminalReport() {
           <div className={sectionHeaderClass}>
             {sectionHeaderContent(
               <AlertTriangle className="w-4 h-4 text-[#FFD700]" />,
-              t("Incident Details", "የክስተት ዝርዝሮች")
+              t("Incident Details", "የክስተት ዝርዝሮች"),
             )}
           </div>
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -482,16 +776,23 @@ export default function CriminalReport() {
               <label className={labelClass}>
                 {t(
                   "What happened? Criminal Action Type",
-                  "ምን ተከሰተ? የወንጀል ድርጊት አይነት"
-                )} <span className="text-red-500">*</span>
+                  "ምን ተከሰተ? የወንጀል ድርጊት አይነት",
+                )}{" "}
+                <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={form.criminalActionType}
                 onChange={(e) =>
-                  updateField("criminalActionType", e.target.value.replace(/[0-9]/g, ""))
+                  updateField(
+                    "criminalActionType",
+                    e.target.value.replace(/[0-9]/g, ""),
+                  )
                 }
-                placeholder={t("Describe what happened...", "ምን እንደተከሰተ ይግለጹ...")}
+                placeholder={t(
+                  "Describe what happened...",
+                  "ምን እንደተከሰተ ይግለጹ...",
+                )}
                 className={inputClass}
               />
               {formErrors.criminalActionType && (
@@ -503,7 +804,8 @@ export default function CriminalReport() {
             </div>
             <div>
               <label className={labelClass}>
-                {t("Incident Date", "የክስተት ቀን")} <span className="text-red-500">*</span>
+                {t("Incident Date", "የክስተት ቀን")}{" "}
+                <span className="text-red-500">*</span>
               </label>
               <EthiopianDatePicker
                 value={form.incidentDate}
@@ -521,7 +823,8 @@ export default function CriminalReport() {
             </div>
             <div>
               <label className={labelClass}>
-                {t("Incident Time", "የክስተት ሰዓት")} <span className="text-red-500">*</span>
+                {t("Incident Time", "የክስተት ሰዓት")}{" "}
+                <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -541,7 +844,8 @@ export default function CriminalReport() {
             </div>
             <div>
               <label className={labelClass}>
-                {t("Criminal Quantity", "የወንጀለኞች ብዛት")} <span className="text-red-500">*</span>
+                {t("Criminal Quantity", "የወንጀለኞች ብዛት")}{" "}
+                <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -565,12 +869,18 @@ export default function CriminalReport() {
             </div>
             <div>
               <label className={labelClass}>
-                {t("Damage Type", "የጉዳት አይነት")} <span className="text-red-500">*</span>
+                {t("Damage Type", "የጉዳት አይነት")}{" "}
+                <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={form.damageType}
-                onChange={(e) => updateField("damageType", e.target.value.replace(/[0-9]/g, ""))}
+                onChange={(e) =>
+                  updateField(
+                    "damageType",
+                    e.target.value.replace(/[0-9]/g, ""),
+                  )
+                }
                 placeholder={t("Describe damage type...", "የጉዳት አይነት ይግለጹ...")}
                 className={inputClass}
               />
@@ -583,7 +893,34 @@ export default function CriminalReport() {
             </div>
             <div>
               <label className={labelClass}>
-                {t("Protection Worker Quantity", "የጥበቃ ሰራተኞች ብዛት")} <span className="text-red-500">*</span>
+                {t("Crime Amount in Capital (ETB)", "በካፒታል የወንጀል መጠን (ኢቲቢ)")}{" "}
+                <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.crimeInCapitalAmount}
+                  onChange={(e) =>
+                    updateField("crimeInCapitalAmount", e.target.value)
+                  }
+                  placeholder={t("Enter amount in ETB...", "በኢቲቢ ያስገቡ...")}
+                  className={`${inputClass} pl-10`}
+                />
+              </div>
+              {formErrors.crimeInCapitalAmount && (
+                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  {formErrors.crimeInCapitalAmount}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className={labelClass}>
+                {t("Protection Worker Quantity", "የጥበቃ ሰራተኞች ብዛት")}{" "}
+                <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -607,7 +944,8 @@ export default function CriminalReport() {
             </div>
             <div>
               <label className={labelClass}>
-                {t("Customer Worker Quantity", "የደንበኛ ሰራተኞች ብዛት")} <span className="text-red-500">*</span>
+                {t("Customer Worker Quantity", "የደንበኛ ሰራተኞች ብዛት")}{" "}
+                <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -631,7 +969,8 @@ export default function CriminalReport() {
             </div>
             <div>
               <label className={labelClass}>
-                {t("Another Body Quantity", "የሌላ አካል ብዛት")} <span className="text-red-500">*</span>
+                {t("Another Body Quantity", "የሌላ አካል ብዛት")}{" "}
+                <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -656,33 +995,32 @@ export default function CriminalReport() {
             <div className="md:col-span-2">
               <label className={labelClass}>
                 {t(
-                  "Security, Customer and Other Body By Agreement",
-                  "ደህንነት፣ ደንበኛ እና ሌላ አካል በስምምነት"
-                )} <span className="text-red-500">*</span>
+                  "Security, Customer and Other Body Quantity",
+                  "ደህንነት፣ ደንበኛ እና ሌላ አካል በስምምነት",
+                )}{" "}
+                <span className="text-red-500">*</span>
               </label>
               <input
-                type="text"
-                value={form.agreement}
-                onChange={(e) => updateField("agreement", e.target.value)}
-                placeholder={t(
-                  "Describe the agreement...",
-                  "ስምምነቱን ይግለጹ..."
-                )}
+                type="number"
+                min="0"
+                value={form.securityCustomerOtherCount}
+                onChange={(e) =>
+                  updateField("securityCustomerOtherCount", e.target.value)
+                }
+                placeholder={t("Enter Count...", "ስምምነቱን ይግለጹ...")}
                 className={inputClass}
               />
-              {formErrors.agreement && (
+              {formErrors.securityCustomerOtherCount && (
                 <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
                   <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {formErrors.agreement}
+                  {formErrors.securityCustomerOtherCount}
                 </p>
               )}
             </div>
             <div className="md:col-span-2">
               <label className={labelClass}>
-                {t(
-                  "By Theft Suspected Bodies",
-                  "በስርቆት የተጠረጠሩ አካላት"
-                )} <span className="text-red-500">*</span>
+                {t("By Theft Suspected Bodies Quantity", "በስርቆት የተጠረጠሩ አካላት")}{" "}
+                <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -691,11 +1029,16 @@ export default function CriminalReport() {
                   min="0"
                   value={form.suspectedBodies}
                   onChange={(e) =>
-                    updateField("suspectedBodies", e.target.value === "" ? "" : String(Math.max(0, parseInt(e.target.value) || 0)))
+                    updateField(
+                      "suspectedBodies",
+                      e.target.value === ""
+                        ? ""
+                        : String(Math.max(0, parseInt(e.target.value) || 0)),
+                    )
                   }
                   placeholder={t(
                     "Enter suspected bodies...",
-                    "የተጠረጠሩ አካላትን ያስገቡ..."
+                    "የተጠረጠሩ አካላትን ያስገቡ...",
                   )}
                   className={`${inputClass} pl-10`}
                 />
@@ -709,10 +1052,8 @@ export default function CriminalReport() {
             </div>
             <div className="md:col-span-2">
               <label className={labelClass}>
-                {t(
-                  "Taken Action Where Status",
-                  "የተወሰደ እርምጃ እና ሁኔታ"
-                )} <span className="text-red-500">*</span>
+                {t("Taken Action Where Status", "የተወሰደ እርምጃ እና ሁኔታ")}{" "}
+                <span className="text-red-500">*</span>
               </label>
               <textarea
                 rows={3}
@@ -724,7 +1065,7 @@ export default function CriminalReport() {
                 }}
                 placeholder={t(
                   "Describe action taken and current status...",
-                  "የተወሰደውን እርምጃ እና አሁን ያለበትን ሁኔታ ይግለጹ..."
+                  "የተወሰደውን እርምጃ እና አሁን ያለበትን ሁኔታ ይግለጹ...",
                 )}
                 className={inputClass}
               />
@@ -742,8 +1083,135 @@ export default function CriminalReport() {
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
           <div className={sectionHeaderClass}>
             {sectionHeaderContent(
+              <Users className="w-4 h-4 text-[#FFD700]" />,
+              t("Suspect Details", "የተጠረጠሩ ዝርዝር"),
+            )}
+          </div>
+          <div className="p-6 space-y-5">
+            {suspects.map((suspect, index) => (
+              <div
+                key={`suspect-${index}`}
+                className="grid grid-cols-1 md:grid-cols-3 gap-5 rounded-3xl border border-gray-100 p-4"
+              >
+                <div>
+                  <label className={labelClass}>
+                    {t("Suspect Full Name", "የተጠረጠረው ሙሉ ስም")}{" "}
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={suspect.suspectName}
+                    onChange={(e) =>
+                      updateSuspect(index, "suspectName", e.target.value)
+                    }
+                    placeholder={t(
+                      "Enter suspect full name...",
+                      "የተጠረጠረውን ሙሉ ስም ያስገቡ...",
+                    )}
+                    className={inputClass}
+                    readOnly={Boolean(suspect.employeeName)}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>
+                    {t("Relation to Agency", "ግንኙነት ከድርጅቱ")}{" "}
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={suspect.relationToAgency}
+                    onChange={(e) =>
+                      updateSuspect(index, "relationToAgency", e.target.value)
+                    }
+                    placeholder={t("Enter relation...", "ግንኙነት ያስገቡ...")}
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>
+                    {t("Fayda number", "ፋይዳ ቁጥር")}
+                    <span className="ml-2 text-xs text-gray-500">
+                      {t("optional", "አማራጭ")}
+                    </span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={suspect.faydaNumber}
+                      onChange={(e) => {
+                        updateSuspect(
+                          index,
+                          "faydaNumber",
+                          e.target.value.replace(/\D/g, ""),
+                        );
+                        updateSuspect(index, "employeeId", "");
+                        updateSuspect(index, "employeeName", "");
+                        updateSuspect(index, "employeeOrganization", "");
+                        setLookupError(null);
+                      }}
+                      placeholder={t(
+                        "Enter Fayda number...",
+                        "ፋይዳ ቁጥር ያስገቡ...",
+                      )}
+                      className={inputClass}
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        lookupEmployeeWithFayda(index, suspect.faydaNumber)
+                      }
+                      disabled={lookupLoading || !suspect.faydaNumber.trim()}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-[#003366] text-white text-[11px] font-bold uppercase px-3 py-2 hover:bg-[#001f3f] disabled:opacity-60"
+                    >
+                      {lookupLoading
+                        ? t("Searching...", "በማስፈለጊያ...")
+                        : t("Resolve", "ያረጋግጡ")}
+                    </button>
+                  </div>
+                  {lookupError && (
+                    <p className="mt-2 text-xs text-red-600 font-medium">
+                      {lookupError}
+                    </p>
+                  )}
+                </div>
+                <div className="md:col-span-3 flex items-center justify-between gap-3">
+                  <p className="text-xs text-gray-500">
+                    {formErrors[`suspect_${index}`] || "\u00A0"}
+                  </p>
+                  <motion.button
+                    whileHover={{ y: -1 }}
+                    whileTap={{ scale: 0.97 }}
+                    type="button"
+                    onClick={() => removeSuspect(index)}
+                    className="inline-flex items-center gap-2 self-end rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs font-bold px-4 py-2 hover:bg-red-100 transition-all"
+                  >
+                    <XCircle className="w-3.5 h-3.5" />
+                    {t("Remove suspect", "ተጠረጠረ ሰውን አስወግድ")}
+                  </motion.button>
+                </div>
+              </div>
+            ))}
+            <motion.button
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.97 }}
+              type="button"
+              onClick={addSuspect}
+              className="inline-flex items-center gap-2 rounded-xl bg-white border border-[#003366] text-[#003366] text-xs font-bold px-5 py-3 hover:bg-[#003366]/5 transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              {t("Add suspect", "ተጠረጠረ ሰው አክሉ")}
+            </motion.button>
+          </div>
+        </div>
+
+        {/* Section 4: Explanation */}
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className={sectionHeaderClass}>
+            {sectionHeaderContent(
               <PenTool className="w-4 h-4 text-[#FFD700]" />,
-              t("Explanation", "ማብራሪያ")
+              t("Explanation", "ማብራሪያ"),
             )}
           </div>
           <div className="p-6">
@@ -753,7 +1221,7 @@ export default function CriminalReport() {
               onChange={(e) => updateField("explanation", e.target.value)}
               placeholder={t(
                 "Provide additional explanation...",
-                "ተጨማሪ ማብራሪያ ይስጡ..."
+                "ተጨማሪ ማብራሪያ ይስጡ...",
               )}
               className={inputClass}
             />
@@ -765,101 +1233,126 @@ export default function CriminalReport() {
           <div className={sectionHeaderClass}>
             {sectionHeaderContent(
               <User className="w-4 h-4 text-[#FFD700]" />,
-              t("Report The Doer", "ሪፖርት አድራጊ")
+              t("Report The Doer", "ሪፖርት አድራጊ"),
             )}
           </div>
           <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-5">
-              <div>
-                <label className={labelClass}>{t("First Name", "ስም")} <span className="text-red-500">*</span></label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    value={reporterFirstName}
-                    onChange={(e) => setReporterFirstName(e.target.value.replace(/[0-9]/g, ""))}
-                    placeholder={t("First name...", "ስም...")}
-                    className={`${inputClass} pl-10`}
-                  />
-                </div>
-                {formErrors.reporterFirstName && (
-                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    {formErrors.reporterFirstName}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className={labelClass}>{t("Middle Name", "የአባት ስም")} <span className="text-red-500">*</span></label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    value={reporterMiddleName}
-                    onChange={(e) => setReporterMiddleName(e.target.value.replace(/[0-9]/g, ""))}
-                    placeholder={t("Middle name...", "የአባት ስም...")}
-                    className={`${inputClass} pl-10`}
-                  />
-                </div>
-                {formErrors.reporterMiddleName && (
-                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    {formErrors.reporterMiddleName}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className={labelClass}>{t("Last Name", "የአያት ስም")} <span className="text-red-500">*</span></label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    value={reporterLastName}
-                    onChange={(e) => setReporterLastName(e.target.value.replace(/[0-9]/g, ""))}
-                    placeholder={t("Last name...", "የአያት ስም...")}
-                    className={`${inputClass} pl-10`}
-                  />
-                </div>
-                {formErrors.reporterLastName && (
-                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    {formErrors.reporterLastName}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className={labelClass}>{t("Title", "ማዕረግ")} <span className="text-red-500">*</span></label>
+            <div>
+              <label className={labelClass}>
+                {t("First Name", "ስም")} <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
-                  value={reporterTitle}
-                  onChange={(e) => setReporterTitle(e.target.value)}
-                  placeholder={t("Enter title...", "ማዕረግ ያስገቡ...")}
-                  className={inputClass}
+                  value={reporterFirstName}
+                  onChange={(e) =>
+                    setReporterFirstName(e.target.value.replace(/[0-9]/g, ""))
+                  }
+                  placeholder={t("First name...", "ስም...")}
+                  className={`${inputClass} pl-10`}
                 />
-                {formErrors.reporterTitle && (
-                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    {formErrors.reporterTitle}
-                  </p>
-                )}
               </div>
-              <div>
-                <label className={labelClass}>{t("Job Responsibility", "የስራ ሃላፊነት")} <span className="text-red-500">*</span></label>
+              {formErrors.reporterFirstName && (
+                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  {formErrors.reporterFirstName}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className={labelClass}>
+                {t("Middle Name", "የአባት ስም")}{" "}
+                <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
-                  value={reporterJobResponsibility}
-                  onChange={(e) => setReporterJobResponsibility(e.target.value)}
-                  placeholder={t("Enter job responsibility...", "የስራ ሃላፊነት ያስገቡ...")}
-                  className={inputClass}
+                  value={reporterMiddleName}
+                  onChange={(e) =>
+                    setReporterMiddleName(e.target.value.replace(/[0-9]/g, ""))
+                  }
+                  placeholder={t("Middle name...", "የአባት ስም...")}
+                  className={`${inputClass} pl-10`}
                 />
-                {formErrors.reporterJobResponsibility && (
-                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    {formErrors.reporterJobResponsibility}
-                  </p>
-                )}
               </div>
-              <div className="md:col-span-2">
-                <label className={labelClass}>{t("Upload Signature Image", "የፊርማ ምስል ይስቀሉ")} <span className="text-red-500">*</span></label>
+              {formErrors.reporterMiddleName && (
+                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  {formErrors.reporterMiddleName}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className={labelClass}>
+                {t("Last Name", "የአያት ስም")}{" "}
+                <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={reporterLastName}
+                  onChange={(e) =>
+                    setReporterLastName(e.target.value.replace(/[0-9]/g, ""))
+                  }
+                  placeholder={t("Last name...", "የአያት ስም...")}
+                  className={`${inputClass} pl-10`}
+                />
+              </div>
+              {formErrors.reporterLastName && (
+                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  {formErrors.reporterLastName}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className={labelClass}>
+                {t("Title", "ማዕረግ")} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={reporterTitle}
+                onChange={(e) => setReporterTitle(e.target.value)}
+                placeholder={t("Enter title...", "ማዕረግ ያስገቡ...")}
+                className={inputClass}
+              />
+              {formErrors.reporterTitle && (
+                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  {formErrors.reporterTitle}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className={labelClass}>
+                {t("Job Responsibility", "የስራ ሃላፊነት")}{" "}
+                <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={reporterJobResponsibility}
+                onChange={(e) => setReporterJobResponsibility(e.target.value)}
+                placeholder={t(
+                  "Enter job responsibility...",
+                  "የስራ ሃላፊነት ያስገቡ...",
+                )}
+                className={inputClass}
+              />
+              {formErrors.reporterJobResponsibility && (
+                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  {formErrors.reporterJobResponsibility}
+                </p>
+              )}
+            </div>
+            <div className="md:col-span-2">
+              <label className={labelClass}>
+                {t("Upload Signature Image", "የፊርማ ምስል ይስቀሉ")}{" "}
+                <span className="text-red-500">*</span>
+              </label>
               <input
                 type="file"
                 accept="image/png,image/jpeg,image/jpg,image/webp"
@@ -869,20 +1362,38 @@ export default function CriminalReport() {
                 onChange={(e) => {
                   setSignatureFileError(null);
                   const file = e.target.files?.[0] || null;
-                  if (!file) { setReporterSignature(""); return; }
-                  const validTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
+                  if (!file) {
+                    setReporterSignature("");
+                    return;
+                  }
+                  const validTypes = [
+                    "image/png",
+                    "image/jpeg",
+                    "image/jpg",
+                    "image/webp",
+                  ];
                   if (!validTypes.includes(file.type)) {
-                    setSignatureFileError(t("Only PNG, JPG, or WebP images are allowed.", "PNG፣ JPG ወይም WebP ምስሎች ብቻ ይፈቀዳሉ።"));
+                    setSignatureFileError(
+                      t(
+                        "Only PNG, JPG, or WebP images are allowed.",
+                        "PNG፣ JPG ወይም WebP ምስሎች ብቻ ይፈቀዳሉ።",
+                      ),
+                    );
                     return;
                   }
                   const maxSize = 2 * 1024 * 1024;
                   if (file.size > maxSize) {
-                    setSignatureFileError(t("File size must be under 2MB.", "የፋይል መጠን ከ 2MB በታች መሆን አለበት።"));
+                    setSignatureFileError(
+                      t(
+                        "File size must be under 2MB.",
+                        "የፋይል መጠን ከ 2MB በታች መሆን አለበት።",
+                      ),
+                    );
                     return;
                   }
                   const reader = new FileReader();
                   reader.onload = (ev) => {
-                    setReporterSignature(ev.target?.result as string || "");
+                    setReporterSignature((ev.target?.result as string) || "");
                   };
                   reader.readAsDataURL(file);
                 }}
@@ -908,7 +1419,10 @@ export default function CriminalReport() {
                     {t("Click to upload signature image", "የፊርማ ምስል ለመስቀል ይጫኑ")}
                   </span>
                   <span className="text-[10px] text-gray-400 font-medium">
-                    {t("PNG, JPG or WebP - Max 2MB", "PNG፣ JPG ወይም WebP - ከፍተኛ 2MB")}
+                    {t(
+                      "PNG, JPG or WebP - Max 2MB",
+                      "PNG፣ JPG ወይም WebP - ከፍተኛ 2MB",
+                    )}
                   </span>
                 </motion.button>
               ) : (
@@ -936,8 +1450,11 @@ export default function CriminalReport() {
                       onClick={() => {
                         setReporterSignature("");
                         setSignatureFileError(null);
-                        const input = (window as any).__criminalSigInput as HTMLInputElement | null;
-                        if (input) { input.value = ""; }
+                        const input = (window as any)
+                          .__criminalSigInput as HTMLInputElement | null;
+                        if (input) {
+                          input.value = "";
+                        }
                       }}
                       className="inline-flex items-center gap-1.5 bg-white border border-red-200 text-red-600 text-xs font-bold px-4 py-2 rounded-xl hover:bg-red-50 hover:border-red-300 transition-all"
                     >
@@ -1019,6 +1536,31 @@ export default function CriminalReport() {
             </motion.div>
           </motion.div>
         )}
+
+        <div className="rounded-2xl border border-gray-200 bg-[#f8fafc] p-4">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.agreement === "true"}
+              onChange={(e) =>
+                updateField("agreement", e.target.checked ? "true" : "")
+              }
+              className="mt-1 h-4 w-4 rounded border-gray-300 text-[#003366] focus:ring-[#003366]"
+            />
+            <span className="text-sm text-gray-700">
+              {t(
+                "I confirm that the report is accurate and I accept the legal declaration.",
+                "ይህ ሪፖርት ትክክለኛ መሆኑን እና የህጋዊ መግለጫ ተቀብዬ እንደምቀበል አረጋግጣለሁ።",
+              )}
+            </span>
+          </label>
+          {formErrors.agreement && (
+            <p className="mt-2 text-xs text-red-600 font-medium flex items-center gap-1">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              {formErrors.agreement}
+            </p>
+          )}
+        </div>
 
         {/* Submit */}
         {formErrors._submit && (

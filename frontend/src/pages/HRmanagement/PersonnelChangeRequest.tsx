@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
 import {
@@ -8,12 +8,12 @@ import {
   ArrowLeft,
   UserCheck,
   Loader2,
-  CheckCircle2,
   X,
   Search,
 } from "lucide-react";
-import { LoadingSpinner } from "../../components/LoadingSpinner";
+import { AutoDismissToast, ToastType } from "../../components/AutoDismissToast";
 import PersonnelDetailsForm from "./PersonnelDetailsForm";
+import { apiRequest } from "../../lib/api";
 
 interface HistoryRecord {
   id: number;
@@ -40,48 +40,72 @@ export default function PersonnelChangeRequest() {
     useState<HistoryRecord | null>(null);
   const [historySearch, setHistorySearch] = useState("");
   const [historyFilter, setHistoryFilter] = useState("ALL");
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setTimeout(() => {
-      setSubmitting(false);
-      setSubmitted(true);
-      setTimeout(() => setSubmitted(false), 3000);
-    }, 1500);
-  };
+  // State for fetching personnel change requests
+  const [historyData, setHistoryData] = useState<HistoryRecord[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [toastOpen, setToastOpen] = useState(false);
+  const [toastType, setToastType] = useState<ToastType>("success");
+  const [toastMessage, setToastMessage] = useState("");
 
-  const historyData: HistoryRecord[] = [
-    {
-      id: 1,
-      positionType: t("Personnel Manager", "የሰራተኞች አስተዳዳሪ"),
-      newPersonName: "Abebe Kebede",
-      previousPersonName: "Meron Alemu",
-      reason: t("Resignation", "ስራ መልቀቅ"),
-      status: "Approved",
-      date: "2025-01-15",
-    },
-    {
-      id: 2,
-      positionType: t("Operations", "ኦፕሬሽን"),
-      newPersonName: "Tigist Haile",
-      previousPersonName: "Dawit Eshetu",
-      reason: t("Transfer", "ዝውውር"),
-      status: "Pending",
-      date: "2025-03-10",
-    },
-    {
-      id: 3,
-      positionType: t("Administration", "አስተዳደር"),
-      newPersonName: "Biruk Tadesse",
-      previousPersonName: "Sara Hailu",
-      reason: t("Promotion", "ማስተዋወቅ"),
-      status: "Rejected",
-      date: "2025-02-20",
-    },
-  ];
+  // Fetch personnel change requests from backend
+  useEffect(() => {
+    const fetchPersonnelChangeRequests = async () => {
+      setHistoryLoading(true);
+      setHistoryError(null);
+      try {
+        const response = await apiRequest("/personnel-change-requests");
+        const payload = (response && (response as any).data) || response;
+
+        // Handle both array and paginated responses
+        let requests = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.data)
+            ? payload.data
+            : [];
+
+        // Map backend response to HistoryRecord format
+        const mappedData = requests.map((req: any) => {
+          const employee = req.targetEmployee || {};
+          const createdDate = req.createdAt
+            ? new Date(req.createdAt).toLocaleDateString("en-CA")
+            : new Date().toLocaleDateString("en-CA");
+
+          return {
+            id: req.id,
+            positionType:
+              req.targetPositionName || employee.position?.name || "Unassigned",
+            newPersonName:
+              employee.user?.fullName || employee.fullName || "N/A",
+            previousPersonName: req.previousPersonName || "",
+            reason: req.reason || "Personnel Change",
+            status:
+              (req.status || "PENDING").toUpperCase() === "PENDING"
+                ? "Pending"
+                : req.status,
+            date: createdDate,
+          };
+        });
+
+        setHistoryData(mappedData);
+      } catch (err: any) {
+        console.error("Failed to fetch personnel change requests:", err);
+        const errorMessage =
+          err?.message || "Failed to load personnel change requests";
+        console.error("Failed to fetch personnel change requests:", err);
+        setHistoryError(errorMessage);
+        setHistoryData([]);
+        setToastType("error");
+        setToastMessage(errorMessage);
+        setToastOpen(true);
+      } finally {
+        setHistoryLoading(false);
+      }
+    };
+
+    fetchPersonnelChangeRequests();
+  }, []);
 
   const filteredHistory = historyData.filter((row) => {
     const matchesSearch =
@@ -154,11 +178,11 @@ export default function PersonnelChangeRequest() {
               }
               setActiveTab(tab.key);
             }}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold tracking-wide transition-all relative ${
+            className={
               activeTab === tab.key
-                ? "bg-[#003366] text-white shadow-md"
-                : "bg-white text-gray-500 border border-gray-200 hover:border-[#003366]/30"
-            }`}
+                ? "flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold tracking-wide transition-all relative bg-[#003366] text-white shadow-md"
+                : "flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold tracking-wide transition-all relative bg-white text-gray-500 border border-gray-200 hover:border-[#003366]/30"
+            }
           >
             {tab.icon}
             {tab.label}
@@ -168,42 +192,22 @@ export default function PersonnelChangeRequest() {
       {/* TAB 1: INITIATE */}
       {activeTab === "initiate" && (
         <>
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 mb-6">
+            <p className="text-sm font-bold text-[#003366]">
+              {t(
+                "Create a new personnel change request",
+                "አዲስ የሰራተኛ ለውጥ ጥያቄ ይፍጠሩ",
+              )}
+            </p>
+            <p className="mt-2 text-xs text-gray-500">
+              {t(
+                "The request now uses the single new employee flow to avoid duplicate entry paths.",
+                "ድግግሞሽ የማስገቢያ መንገዶችን ለማስወገድ ጥያቄው አሁን አንድ የአዲስ ሰራተኛ ፍሰት ይጠቀማል።",
+              )}
+            </p>
+          </div>
+
           <PersonnelDetailsForm />
-
-          <motion.form onSubmit={handleSubmit} className="relative">
-            {submitting && (
-              <LoadingSpinner
-                overlay
-                text={t("Submitting request...", "ጥያቄ በማስገባት ላይ...")}
-              />
-            )}
-
-            {submitted && (
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm font-medium mb-4">
-                <CheckCircle2 className="w-4 h-4 shrink-0" />
-                {t("Request submitted successfully!", "ጥያቄ በተሳካ ሁኔታ ቀርቧል!")}
-              </div>
-            )}
-
-            <div className="flex justify-end">
-              <motion.button
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.97 }}
-                type="submit"
-                disabled={submitting}
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-[#003366] to-[#001F3F] text-white text-xs font-bold tracking-wide px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {submitting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-                {submitting
-                  ? t("Submitting...", "በማስገባት ላይ...")
-                  : t("Submit Request", "ጥያቄ ያስገቡ")}
-              </motion.button>
-            </div>
-          </motion.form>
         </>
       )}
 
@@ -261,73 +265,99 @@ export default function PersonnelChangeRequest() {
             </select>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm">
-              <thead>
-                <tr className="bg-[#003366] text-white text-[11px] uppercase tracking-[0.2em]">
-                  <th className="p-4">{t("Position", "ቦታ")}</th>
-                  <th className="p-4">{t("New Person", "አዲስ ሰው")}</th>
-                  <th className="p-4">{t("Previous Person", "የቀድሞ ሰው")}</th>
-                  <th className="p-4">{t("Reason", "ምክንያት")}</th>
-                  <th className="p-4">{t("Status", "ሁኔታ")}</th>
-                  <th className="p-4">{t("Date", "ቀን")}</th>
-                  <th className="p-4">{t("Action", "ድርጊት")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 text-gray-700">
-                {filteredHistory.map((row) => (
-                  <motion.tr
-                    key={row.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    whileHover={{ backgroundColor: "rgba(0,51,102,0.02)" }}
-                    className="transition-colors"
-                  >
-                    <td className="p-4 font-bold text-[#003366]">
-                      {row.positionType}
-                    </td>
-                    <td className="p-4">{row.newPersonName}</td>
-                    <td className="p-4 text-gray-500">
-                      {row.previousPersonName}
-                    </td>
-                    <td className="p-4">{row.reason}</td>
-                    <td className="p-4">
-                      <span
-                        className={`px-2 py-0.5 rounded text-xs font-semibold ${
-                          row.status === "Approved"
-                            ? "bg-green-50 text-green-700 border border-green-200"
-                            : row.status === "Pending"
-                              ? "bg-amber-50 text-amber-700 border border-amber-200"
-                              : "bg-red-50 text-red-700 border border-red-200"
-                        }`}
-                      >
-                        {isAm
-                          ? row.status === "Approved"
-                            ? "ጸድቋል"
-                            : row.status === "Pending"
-                              ? "በመጠባበቅ ላይ"
-                              : "ውድቅ"
-                          : row.status}
-                      </span>
-                    </td>
-                    <td className="p-4 text-xs text-gray-400">{row.date}</td>
-                    <td className="p-4 text-right">
-                      <div className="flex items-center gap-2 justify-end">
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          type="button"
-                          onClick={() => setDetailViewRecord(row)}
-                          className="px-3 py-1.5 bg-[#003366] text-[#FFD700] rounded-lg text-xs font-bold hover:shadow-md transition-shadow inline-flex items-center gap-1"
+            {historyLoading ? (
+              <div className="w-full p-8 text-center">
+                <Loader2 className="w-8 h-8 animate-spin text-[#003366] mx-auto mb-2" />
+                <p className="text-sm text-gray-500">
+                  {t("Loading requests...", "ጥያቄዎች እየተጫኑ ናቸው...")}
+                </p>
+              </div>
+            ) : historyError ? (
+              <div className="w-full p-6 text-center bg-red-50 border border-red-200 m-4 rounded-xl">
+                <X className="w-8 h-8 text-red-500 mx-auto mb-2" />
+                <p className="text-sm text-red-700 font-medium">
+                  {historyError}
+                </p>
+              </div>
+            ) : filteredHistory.length === 0 ? (
+              <div className="w-full p-8 text-center text-gray-500">
+                <History className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                <p className="text-sm">
+                  {t(
+                    "No personnel change requests found",
+                    "የሰራተኞች ለውጥ ጥያቄ አልተገኘም",
+                  )}
+                </p>
+              </div>
+            ) : (
+              <table className="w-full text-left border-collapse text-sm">
+                <thead>
+                  <tr className="bg-[#003366] text-white text-[11px] uppercase tracking-[0.2em]">
+                    <th className="p-4">{t("Position", "ቦታ")}</th>
+                    <th className="p-4">{t("New Person", "አዲስ ሰው")}</th>
+                    <th className="p-4">{t("Previous Person", "የቀድሞ ሰው")}</th>
+                    <th className="p-4">{t("Reason", "ምክንያት")}</th>
+                    <th className="p-4">{t("Status", "ሁኔታ")}</th>
+                    <th className="p-4">{t("Date", "ቀን")}</th>
+                    <th className="p-4">{t("Action", "ድርጊት")}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 text-gray-700">
+                  {filteredHistory.map((row) => (
+                    <motion.tr
+                      key={row.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      whileHover={{ backgroundColor: "rgba(0,51,102,0.02)" }}
+                      className="transition-colors"
+                    >
+                      <td className="p-4 font-bold text-[#003366]">
+                        {row.positionType}
+                      </td>
+                      <td className="p-4">{row.newPersonName}</td>
+                      <td className="p-4 text-gray-500">
+                        {row.previousPersonName}
+                      </td>
+                      <td className="p-4">{row.reason}</td>
+                      <td className="p-4">
+                        <span
+                          className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                            row.status === "Approved"
+                              ? "bg-green-50 text-green-700 border border-green-200"
+                              : row.status === "Pending"
+                                ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                : "bg-red-50 text-red-700 border border-red-200"
+                          }`}
                         >
-                          <Eye className="w-3.5 h-3.5" />{" "}
-                          {t("Detail View", "ዝርዝር እይታ")}
-                        </motion.button>
-                      </div>
-                    </td>
-                  </motion.tr>
-                ))}
-              </tbody>
-            </table>
+                          {isAm
+                            ? row.status === "Approved"
+                              ? "ጸድቋል"
+                              : row.status === "Pending"
+                                ? "በመጠባበቅ ላይ"
+                                : "ውድቅ"
+                            : row.status}
+                        </span>
+                      </td>
+                      <td className="p-4 text-xs text-gray-400">{row.date}</td>
+                      <td className="p-4 text-right">
+                        <div className="flex items-center gap-2 justify-end">
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            type="button"
+                            onClick={() => setDetailViewRecord(row)}
+                            className="px-3 py-1.5 bg-[#003366] text-[#FFD700] rounded-lg text-xs font-bold hover:shadow-md transition-shadow inline-flex items-center gap-1"
+                          >
+                            <Eye className="w-3.5 h-3.5" />{" "}
+                            {t("Detail View", "ዝርዝር እይታ")}
+                          </motion.button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </motion.div>
       )}
@@ -448,6 +478,13 @@ export default function PersonnelChangeRequest() {
       )}
 
       {/* TAB 3: FILL DETAILS */}
+      <AutoDismissToast
+        isOpen={toastOpen}
+        type={toastType}
+        message={toastMessage}
+        onClose={() => setToastOpen(false)}
+      />
+
       {activeTab === "details" && selectedRecord && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}

@@ -3466,7 +3466,9 @@ export const ApplicationsReview = () => {
                         <div className="relative">
                           <button
                             type="button"
-                            onClick={() => setActionPopup({ isOpen: true, app })}
+                            onClick={() =>
+                              setActionPopup({ isOpen: true, app })
+                            }
                             className="inline-flex items-center space-x-2 px-4 py-2 bg-white border border-gray-200 text-primary rounded-xl font-black text-xs hover:border-primary hover:shadow-sm transition-all"
                             title="Choose action"
                           >
@@ -3485,7 +3487,9 @@ export const ApplicationsReview = () => {
         )}
         <ConfirmDialog
           isOpen={confirmState.isOpen}
-          onClose={() => setConfirmState((prev) => ({ ...prev, isOpen: false }))}
+          onClose={() =>
+            setConfirmState((prev) => ({ ...prev, isOpen: false }))
+          }
           onConfirm={handleExecuteAction}
           type={confirmState.type}
           isLoading={isActionLoading}

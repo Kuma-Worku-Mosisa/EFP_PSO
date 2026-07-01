@@ -170,15 +170,19 @@ export const getOrganizationDetailsHandler = async (
             kebele: {
               select: {
                 nameEnglish: true,
+                nameAmharic: true,
                 woreda: {
                   select: {
                     nameEnglish: true,
+                    nameAmharic: true,
                     zone: {
                       select: {
                         nameEnglish: true,
+                        nameAmharic: true,
                         region: {
                           select: {
                             nameEnglish: true,
+                            nameAmharic: true,
                           },
                         },
                       },
@@ -232,15 +236,19 @@ export const getOrganizationDetailsHandler = async (
             kebele: {
               select: {
                 nameEnglish: true,
+                nameAmharic: true,
                 woreda: {
                   select: {
                     nameEnglish: true,
+                    nameAmharic: true,
                     zone: {
                       select: {
                         nameEnglish: true,
+                        nameAmharic: true,
                         region: {
                           select: {
                             nameEnglish: true,
+                            nameAmharic: true,
                           },
                         },
                       },
@@ -286,7 +294,7 @@ export const getOrganizationDetailsHandler = async (
         incidentStartTimestamp: true,
         crimeCount: true,
         damageDescription: true,
-        actionStatus: true,
+        actionTakenStatus: true,
         reporterName: true,
         reporterTitle: true,
         reporterJobResp: true,
@@ -315,15 +323,19 @@ export const getOrganizationDetailsHandler = async (
             kebele: {
               select: {
                 nameEnglish: true,
+                nameAmharic: true,
                 woreda: {
                   select: {
                     nameEnglish: true,
+                    nameAmharic: true,
                     zone: {
                       select: {
                         nameEnglish: true,
+                        nameAmharic: true,
                         region: {
                           select: {
                             nameEnglish: true,
+                            nameAmharic: true,
                           },
                         },
                       },
@@ -488,7 +500,8 @@ export const getOrganizationDetailsHandler = async (
         incidentStartTimestamp: inc.incidentStartTimestamp.toISOString(),
         crimeCount: inc.crimeCount,
         damageDescription: inc.damageDescription,
-        actionStatus: inc.actionStatus,
+        actionStatus: inc.actionTakenStatus,
+        actionTakenStatus: inc.actionTakenStatus,
         reporterName: inc.reporterName,
         reporterTitle: inc.reporterTitle,
         reporterJobResp: inc.reporterJobResp,
@@ -1048,9 +1061,10 @@ export const createOrganizationServiceContractHandler = async (
     }
 
     try {
+      const resolvedKebeleId = kebeleId as number;
       const address = await prisma.address.create({
         data: {
-          kebeleId,
+          kebeleId: resolvedKebeleId,
           houseNumber: houseNumber.trim() || undefined,
           specialLocation: specialLocation?.trim() || undefined,
         },

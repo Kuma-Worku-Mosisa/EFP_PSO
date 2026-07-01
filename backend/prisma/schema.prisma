@@ -694,36 +694,30 @@ model Certification {
 // ==========================================
 
 model IncidentReport {
-  id         Int      @id @default(autoincrement()) @map("incident_report_id")
-  fileNumber String   @unique @map("file_number") @db.VarChar(50)
-  reportDate DateTime @map("report_date") @db.Date
-
-  // The specific Organization (Private Security Agency) filling and submitting the report
-  // Added explicit onUpdate: NoAction to break cyclic address path cascades
+  id             Int          @id @default(autoincrement()) @map("incident_report_id")
+  fileNumber     String       @unique @map("file_number") @db.VarChar(50)
+  reportDate     DateTime     @map("report_date") @db.Date
   organizationId Int          @map("organization_id")
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   // 1. Service Receiver & Incident Core Metadata
   serviceReceiverName    String   @map("service_receiver_name") @db.NVarChar(255) // Client organization/individual who received the stolen service
-  crimeType              String   @map("crime_type") @db.VarChar(100) // Type of criminal act committed
+  crimeType              String   @map("crime_type") @db.NVarChar(100) // Type of criminal act committed
   crimeInCapitalAmount   Decimal? @map("crime_in_capital_amount") @db.Decimal(18, 2) // Financial evaluation of the theft/crime in ETB
   incidentStartTimestamp DateTime @map("incident_start_timestamp") // Combines From Time, Day, and Year
   crimeCount             Int      @default(1) @map("crime_count")
   damageDescription      String   @map("damage_description") @db.NVarChar(Max) // Specific description of loss/damage rewritten directly to main table
 
   // 6, 7, 8. Personnel Headcounts Involved
-  securityPersonnelCount Int @default(0) @map("security_personnel_count")
-  customerPersonnelCount Int @default(0) @map("customer_personnel_count")
-  otherPartiesCount      Int @default(0) @map("other_parties_count")
+  securityPersonnelCount         Int @default(0) @map("security_personnel_count")
+  customerPersonnelCount         Int @default(0) @map("customer_personnel_count")
+  otherPartiesCount              Int @default(0) @map("other_parties_count")
+  SecurityCustomerOtherBodyCount Int @default(0) @map("security_customar_other_body_count")
+  suspectedBodiesCount           Int @default(0) @map("suspected_bodies_count")
 
   // 9. Collusion & Status Metrics
-  hasCollusion     Boolean @default(false) @map("has_collusion")
-  collusionDetails String? @map("collusion_details") @db.NVarChar(Max) // Details if security, customer, or others acted in collusion
-  actionStatus     String  @map("action_status") @db.NVarChar(255) // Status of action taken
-  explanation      String? @map("explanation") @db.NVarChar(Max)
-
-  // Legal Disclaimer Checkbox tracking
-  acceptedLegalResponsibility Boolean @default(false) @map("accepted_legal_responsibility")
+  actionTakenStatus String  @map("action_taken_status") @db.NVarChar(Max) // Status of action taken
+  explanation       String? @map("explanation") @db.NVarChar(Max)
 
   // --- REPORTING SYSTEM ACTORS & SIGNATURE TRACKING ---
 
@@ -762,7 +756,6 @@ model IncidentReport {
   @@map("incident_reports")
 }
 
-// 10. Normalized Persons Suspected of Theft Table (Remains linked cleanly)
 model IncidentSuspect {
   id               Int            @id @default(autoincrement()) @map("suspect_id")
   incidentReportId Int            @map("incident_report_id")
@@ -773,7 +766,7 @@ model IncidentSuspect {
   employee   Employee? @relation(fields: [employeeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_IncidentSuspects_Employees")
 
   suspectName      String  @map("suspect_name") @db.NVarChar(150)
-  relationToAgency String? @map("relation_to_agency") @db.NVarChar(100) // e.g., "Active Guard", "Fired Guard", "External Suspect"
+  relationToAgency String? @map("relation_to_agency") @db.NVarChar(200) // e.g., "Active Guard", "Fired Guard", "External Suspect"
 
   @@map("incident_suspects")
 }

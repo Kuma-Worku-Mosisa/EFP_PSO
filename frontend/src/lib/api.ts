@@ -1,3 +1,4 @@
+
 /**
  * Frontend API utility for making requests to the backend.
  * Provides detailed error messages for debugging and professional error handling.
@@ -6,9 +7,14 @@
 // filepath: frontend/src/lib/api.ts
 
 // 1. Point to your backend port 5000 explicitly
-export const API_BASE = import.meta.env.DEV
-  ? "http://localhost:5000/api"
-  : "/api"; // Keep /api for production (where frontend/backend are served together)
+// export const API_BASE = import.meta.env.DEV
+//   ? "http://localhost:5000/api"
+//   : "/api"; // Keep /api for production (where frontend/backend are served together)
+
+
+  export const API_BASE = import.meta.env.DEV
+    ? "http://10.170.17.51:5000/api"
+    : "/api";
 
 const IS_DEV = import.meta.env.DEV;
 
@@ -88,7 +94,8 @@ export async function apiRequest<T = any>(
   try {
     const { headers: requestHeaders, ...restOptions } = options || {};
     const url = `${API_BASE}${endpoint}`;
-    const savedToken = localStorage.getItem("efp_token");
+    const savedToken =
+      localStorage.getItem("efp_token") || localStorage.getItem("token");
     const hasBody = typeof restOptions.body !== "undefined";
     const isFormData =
       typeof FormData !== "undefined" && restOptions.body instanceof FormData;

@@ -6,7 +6,12 @@ import { NotificationType } from "./notification.types";
 
 function getAuthUserId(req: Request): number | null {
   const id = req.user?.userId ?? req.user?.id;
-  return id != null ? Number(id) : null;
+  return id != null && !Number.isNaN(Number(id)) ? Number(id) : null;
+}
+
+function parsePositiveInteger(value: unknown): number | null {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.trunc(parsed) : null;
 }
 
 export class NotificationController {
@@ -16,7 +21,7 @@ export class NotificationController {
    */
   static async getMyFeed(req: Request, res: Response) {
     try {
-      const { userId } = req.params;
+      const userId = parsePositiveInteger(req.params.userId);
       if (!userId) {
         return ApiResponse.error(
           res,
@@ -26,7 +31,7 @@ export class NotificationController {
       }
 
       const authUserId = getAuthUserId(req);
-      if (!authUserId || authUserId !== Number(userId)) {
+      if (!authUserId || authUserId !== userId) {
         return ApiResponse.error(
           res,
           "You can only view your own notifications.",
@@ -34,9 +39,8 @@ export class NotificationController {
         );
       }
 
-      const activeFeeds = await NotificationService.getUserNotifications(
-        Number(userId),
-      );
+      const activeFeeds =
+        await NotificationService.getUserNotifications(userId);
 
       return ApiResponse.success(
         res,
@@ -59,7 +63,7 @@ export class NotificationController {
    */
   static async clearNotification(req: Request, res: Response) {
     try {
-      const { notificationId } = req.body;
+      const notificationId = parsePositiveInteger(req.body.notificationId);
       if (!notificationId) {
         return ApiResponse.error(
           res,
@@ -102,7 +106,7 @@ export class NotificationController {
    */
   static async deleteNotification(req: Request, res: Response) {
     try {
-      const { notificationId } = req.params;
+      const notificationId = parsePositiveInteger(req.params.notificationId);
       if (!notificationId) {
         return ApiResponse.error(
           res,
@@ -145,7 +149,7 @@ export class NotificationController {
    */
   static async clearUserFeed(req: Request, res: Response) {
     try {
-      const { userId } = req.params;
+      const userId = parsePositiveInteger(req.params.userId);
       if (!userId) {
         return ApiResponse.error(
           res,
@@ -155,7 +159,7 @@ export class NotificationController {
       }
 
       const authUserId = getAuthUserId(req);
-      if (!authUserId || authUserId !== Number(userId)) {
+      if (!authUserId || authUserId !== userId) {
         return ApiResponse.error(
           res,
           "You can only clear your own notifications.",
@@ -187,12 +191,21 @@ export class NotificationController {
    */
   static async triggerManualAlert(req: Request, res: Response) {
     try {
-      const { recipientUserId, notificationType, context } = req.body;
+      const recipientUserId = parsePositiveInteger(req.body.recipientUserId);
+      const notificationType = req.body.notificationType as
+        | NotificationType
+        | string;
+      const context = req.body.context;
 
-      if (!recipientUserId || !notificationType || !context) {
+      if (
+        !recipientUserId ||
+        !notificationType ||
+        typeof notificationType !== "string" ||
+        !context
+      ) {
         return ApiResponse.error(
           res,
-          "Missing required transaction parameters: recipientUserId, notificationType, or context block.",
+          "Missing or invalid transaction parameters: recipientUserId, notificationType, or context.",
           400,
         );
       }
@@ -215,7 +228,7 @@ export class NotificationController {
       }
 
       await NotificationService.sendBilingualAlert(
-        Number(recipientUserId),
+        recipientUserId,
         notificationType as NotificationType,
         context,
       );
@@ -260,7 +273,7 @@ export class NotificationController {
    */
   static async resendFailed(req: Request, res: Response) {
     try {
-      const { id } = req.body;
+      const id = String(req.body.id || "").trim();
       if (!id) return ApiResponse.error(res, "Missing failed item id.", 400);
 
       await NotificationService.resendFailedEmail(id);
@@ -292,12 +305,16 @@ export class NotificationController {
       );
       console.log("[Notification Controller] Request body:", req.body);
 
-      const { organizationName, organizationNameAm, applicationType } =
-        req.body;
+      const organizationName = String(req.body.organizationName || "").trim();
+      const organizationNameAm = String(
+        req.body.organizationNameAm || "",
+      ).trim();
+      const applicationType = String(req.body.applicationType || "").trim();
 
       if (!organizationName || !applicationType) {
         console.error("[Notification Controller] Missing required fields", {
           organizationName,
+          organizationNameAm,
           applicationType,
         });
         return ApiResponse.error(

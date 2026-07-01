@@ -11,6 +11,11 @@ import {
 } from "./notification.types";
 import { getUsersByRole } from "../user/user.service";
 
+interface SmtpSendError {
+  responseCode?: number;
+  code?: string;
+}
+
 // Configure production SMTP Transporter using safe .env configurations
 const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
 const isGmail = (process.env.SMTP_HOST || "").includes("gmail");
@@ -244,11 +249,9 @@ export class NotificationService {
             console.log(
               ` [SMTP Mailer]: Operational email alert successfully transmitted to ${user.email}`,
             );
-          } catch (sendError) {
-            if (
-              sendError?.responseCode === 535 ||
-              sendError?.code === "EAUTH"
-            ) {
+          } catch (sendError: unknown) {
+            const smtpError = sendError as SmtpSendError;
+            if (smtpError.responseCode === 535 || smtpError.code === "EAUTH") {
               smtpAuthFailed = true;
               console.error(
                 ` [SMTP Mailer]: SMTP auth failed for ${user.email}. Disabling further retries until credentials are fixed.`,
@@ -608,6 +611,54 @@ export class NotificationService {
         error.stack,
       );
       throw error;
+    }
+  }
+
+  /**
+   * Notifies all active admin and super_admin users about a newly submitted criminal report.
+   */
+  static async notifyAdminsOnCriminalReportSubmission(
+    recordNumber: string,
+    organizationName: string,
+    submittedByName: string,
+  ) {
+    try {
+      const adminRoles = ["admin", "super_admin"];
+      const adminUsers = [] as Array<{ id: number; email?: string | null }>;
+
+      for (const role of adminRoles) {
+        const users = await getUsersByRole(role);
+        adminUsers.push(...users);
+      }
+
+      const uniqueAdmins = Array.from(
+        new Map(adminUsers.map((user) => [user.id, user])).values(),
+      );
+
+      if (uniqueAdmins.length === 0) {
+        console.warn(
+          "[Notification Service] No active admin/super_admin users found for criminal report notification.",
+        );
+        return;
+      }
+
+      for (const admin of uniqueAdmins) {
+        await NotificationService.sendBilingualAlert(
+          admin.id,
+          "CRIMINAL_REPORT_SUBMITTED",
+          {
+            organizationName,
+            organizationNameAm: organizationName,
+            customDetailsEn: recordNumber,
+            customDetailsAm: submittedByName,
+          },
+        );
+      }
+    } catch (error: any) {
+      console.error(
+        "[Notification Service] Failed to notify admins about criminal report submission:",
+        error?.message || error,
+      );
     }
   }
 

@@ -699,9 +699,6 @@ export default function PersonnelDetailsForm() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (firstName.trim().length < 3 || middleName.trim().length < 3 || lastName.trim().length < 3) {
-      return;
-    }
     const form = e.currentTarget;
     if (!form.checkValidity()) {
       form.reportValidity();
@@ -876,9 +873,8 @@ export default function PersonnelDetailsForm() {
               <input
                 type="text"
                 value={firstName}
-                onChange={(e) => setFirstName(e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
+                onChange={(e) => setFirstName(e.target.value)}
                 required
-                minLength={3}
                 placeholder={t("First name...", "ስም...")}
                 className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
               />
@@ -891,9 +887,8 @@ export default function PersonnelDetailsForm() {
               <input
                 type="text"
                 value={middleName}
-                onChange={(e) => setMiddleName(e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
+                onChange={(e) => setMiddleName(e.target.value)}
                 required
-                minLength={3}
                 placeholder={t("Middle name...", "የአባት ስም...")}
                 className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
               />
@@ -906,9 +901,8 @@ export default function PersonnelDetailsForm() {
               <input
                 type="text"
                 value={lastName}
-                onChange={(e) => setLastName(e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
+                onChange={(e) => setLastName(e.target.value)}
                 required
-                minLength={3}
                 placeholder={t("Last name...", "የአያት ስም...")}
                 className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
               />
@@ -1064,7 +1058,7 @@ export default function PersonnelDetailsForm() {
               <input
                 type="text"
                 value={faydaId}
-                onChange={(e) => setFaydaId(e.target.value.replace(/\D/g, ''))}
+                onChange={(e) => setFaydaId(e.target.value)}
                 disabled={faydaLocked}
                 required
                 placeholder="FAN-XXXXX"
@@ -1180,7 +1174,7 @@ export default function PersonnelDetailsForm() {
               <input
                 type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                onChange={(e) => setPhone(e.target.value)}
                 disabled={phoneLocked}
                 required
                 placeholder="+251..."
@@ -1784,6 +1778,23 @@ export default function PersonnelDetailsForm() {
             accept=".pdf"
             className="hidden"
           />
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-[#003366] to-[#001F3F] text-white text-sm font-bold tracking-wide px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {submitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+              {submitting
+                ? t("Submitting...", "በማስገባት ላይ...")
+                : t("Submit Request", "ጥያቄ ያስገቡ")}
+            </button>
+          </div>
         </div>
       </motion.form>
     </motion.div>
