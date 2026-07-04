@@ -3,10 +3,53 @@ import { Download, Loader2, FileText } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { apiRequest } from '../lib/api';
 import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
+import html2canvas from 'html2canvas';
 import { AutoDismissToast, ToastType } from "../components/AutoDismissToast";
 
 type Period = "weekly" | "monthly" | "yearly";
+
+function periodDate(period: Period): string {
+  const now = new Date();
+  if (period === "weekly") {
+    const d = new Date(now);
+    d.setDate(d.getDate() - 7);
+    return d.toISOString();
+  }
+  if (period === "monthly") {
+    const d = new Date(now);
+    d.setMonth(d.getMonth() - 1);
+    return d.toISOString();
+  }
+  const d = new Date(now);
+  d.setFullYear(d.getFullYear() - 1);
+  return d.toISOString();
+}
+
+function countBy<T>(items: T[], key: keyof T | ((item: T) => string)): Record<string, number> {
+  const counts: Record<string, number> = {};
+  items.forEach((item) => {
+    const k = typeof key === "function" ? key(item) : String(item[key] ?? "Unknown");
+    counts[k] = (counts[k] || 0) + 1;
+  });
+  return counts;
+}
+
+function wrapText(doc: jsPDF, text: string, x: number, y: number, maxW: number, lineH: number): number {
+  const words = text.split(" ");
+  let line = "";
+  for (const w of words) {
+    const test = line ? line + " " + w : w;
+    if (doc.getTextWidth(test) > maxW && line) {
+      doc.text(line, x, y);
+      y += lineH;
+      line = w;
+    } else {
+      line = test;
+    }
+  }
+  if (line) doc.text(line, x, y);
+  return y;
+}
 
 export const AdminReports = () => {
   const { t, language } = useLanguage();
@@ -26,48 +69,92 @@ export const AdminReports = () => {
     let active = true;
     const load = async () => {
       try {
+        const since = periodDate(period);
+        const filterParam = `?since=${encodeURIComponent(since)}`;
         const [appsRes, licRes, inspRes, agrRes, sumRes] = await Promise.allSettled([
-          apiRequest("/applications"),
-          apiRequest("/certifications"),
-          apiRequest("/inspections"),
-          apiRequest("/agreements?limit=999"),
+          apiRequest(`/applications${filterParam}`),
+          apiRequest(`/certifications${filterParam}`),
+          apiRequest(`/inspections${filterParam}`),
+          apiRequest(`/agreements${filterParam}&limit=999`),
           apiRequest("/admin/summary"),
         ]);
         if (!active) return;
         if (appsRes.status === "fulfilled") {
           const d = appsRes.value?.data || appsRes.value || [];
           setApplications(Array.isArray(d) ? d : []);
-        }
+        } else setApplications([]);
         if (licRes.status === "fulfilled") {
           const d = licRes.value?.data || licRes.value || [];
           setLicenses(Array.isArray(d) ? d : []);
-        }
+        } else setLicenses([]);
         if (inspRes.status === "fulfilled") {
           const d = inspRes.value?.data || inspRes.value || [];
           setInspections(Array.isArray(d) ? d : []);
-        }
+        } else setInspections([]);
         if (agrRes.status === "fulfilled") {
           const d = agrRes.value?.data || agrRes.value || [];
           setAgreements(Array.isArray(d) ? d : []);
-        }
+        } else setAgreements([]);
         if (sumRes.status === "fulfilled") {
           setSummary(sumRes.value?.data || sumRes.value);
-        }
+        } else setSummary(null);
         setDataLoaded(true);
       } catch { /* silent */ }
     };
     load();
     return () => { active = false; };
-  }, []);
+  }, [period]);
 
-  const statusCount = (items: any[], field: string = "status") => {
-    const counts: Record<string, number> = {};
-    items.forEach((item) => {
-      const s = String(item[field] || "Unknown");
-      counts[s] = (counts[s] || 0) + 1;
-    });
-    return counts;
+  const periodLabel = isAm
+    ? (period === "weekly" ? "ሳምንታዊ" : period === "monthly" ? "ወርሃዊ" : "ዓመታዊ")
+    : (period === "weekly" ? "Weekly" : period === "monthly" ? "Monthly" : "Yearly");
+
+  const toEth = (dateStr?: string) => {
+    try {
+      const d = dateStr ? new Date(dateStr) : new Date();
+      if (isNaN(d.getTime())) return "-";
+      return d.toLocaleDateString("am-ET", { calendar: "ethiopic", year: "numeric", month: "long", day: "numeric" });
+    } catch { return "-"; }
   };
+
+  const amVal = (v: string | undefined | null, def = "-") => {
+    if (!v) return def;
+    const map: Record<string, string> = {
+      "Pending": "በመጠባበቅ ላይ", "Approved": "ጸድቋል", "Rejected": "ውድቅ ተደርጓል",
+      "Active": "ንቁ", "Expired": "ጊዜው ያለፈበት", "Suspended": "የታገደ",
+      "New": "አዲስ", "Renewal": "እድሳት",
+      "active": "ንቁ", "inactive": "እንቅስቃሴ የሌለው", "expired": "ጊዜው ያለፈ",
+      "pending": "በመጠባበቅ ላይ", "approved": "ጸድቋል", "rejected": "ውድቅ ተደርጓል",
+      "draft": "ረቂቅ", "submitted": "ቀርቧል", "completed": "ተጠናቋል",
+      "True": "አዎ", "False": "አይ",
+      "true": "አዎ", "false": "አይ",
+      "Scheduled": "በታቀደ ላይ", "In Progress": "በመካሄድ ላይ", "Cancelled": "ተሰርዟል",
+      "scheduled": "በታቀደ ላይ", "in progress": "በመካሄድ ላይ", "cancelled": "ተሰርዟል",
+      "Passed": "አልፏል", "Failed": "ወድቋል", "Under Review": "በመገምገም ላይ",
+      "passed": "አልፏል", "failed": "ወድቋል", "under review": "በመገምገም ላይ",
+      "Amendment": "ማሻሻያ", "Transfer": "ዝውውር", "Replacement": "መተካት",
+      "Correction": "እርማት", "amendment": "ማሻሻያ", "transfer": "ዝውውር",
+      "replacement": "መተካት", "correction": "እርማት",
+      "Renew": "አድስ", "renew": "አድስ",
+    };
+    return map[v] || v;
+  };
+
+  const amKey = (k: string) => {
+    const map: Record<string, string> = {
+      totalAgencies: "ጠቅላላ ኤጀንሲዎች", activeAgencies: "ንቁ ኤጀንሲዎች", inactiveAgencies: "እንቅስቃሴ የሌላቸው ኤጀንሲዎች",
+      totalLicenses: "ጠቅላላ ፈቃዶች", activeLicenses: "ንቁ ፈቃዶች", expiredLicenses: "ጊዜያቸው ያለፈ ፈቃዶች",
+      totalApplications: "ጠቅላላ ማመልከቻዎች", pendingApplications: "በመጠባበቅ ላይ ያሉ ማመልከቻዎች",
+      totalPersonnel: "ጠቅላላ ሰራተኞች", totalRevenue: "ጠቅላላ ገቢ",
+      totalOrganizations: "ጠቅላላ ድርጅቶች", totalUsers: "ጠቅላላ ተጠቃሚዎች",
+      totalInspections: "ጠቅላላ ምርመራዎች", totalAgreements: "ጠቅላላ ስምምነቶች",
+      regions: "ክልሎች", agencies: "ኤጀንሲዎች",
+      organizations: "ድርጅቶች", users: "ተጠቃሚዎች",
+    };
+    return map[k] || k;
+  };
+
+  const nowAm = toEth();
 
   const generatePDF = async () => {
     setGenerating(true);
@@ -75,156 +162,142 @@ export const AdminReports = () => {
       const doc = new jsPDF({ unit: "mm", format: "a4" });
       const pageW = doc.internal.pageSize.getWidth();
       const margin = 16;
-      let y = margin;
+      const maxW = pageW - 2 * margin;
+      const now = isAm ? nowAm : new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 
-      const header = () => {
-        doc.setFontSize(16);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(0, 51, 102);
-        doc.text(t.reports.title, margin, y);
-        y += 6;
-        doc.setFontSize(9);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(100);
-        const now = new Date().toLocaleDateString(isAm ? "am-ET" : "en-US", { year: "numeric", month: "long", day: "numeric" });
-        const periodLabel = isAm
-          ? (period === "weekly" ? "ሳምንታዊ" : period === "monthly" ? "ወርሃዊ" : "ዓመታዊ")
-          : (period === "weekly" ? "Weekly" : period === "monthly" ? "Monthly" : "Yearly");
-        doc.text(`${periodLabel} ${isAm ? "ሪፖርት" : "Report"} — ${now}`, margin, y);
-        y += 8;
-        doc.setDrawColor(0, 51, 102);
-        doc.setLineWidth(0.6);
-        doc.line(margin, y, pageW - margin, y);
-        y += 6;
-      };
+      if (isAm) {
+        const appCounts = countBy(applications, "status");
+        const licCounts = countBy(licenses, "status");
+        const inspCounts = countBy(inspections, "status");
+        const agrCounts = countBy(agreements, "status");
 
-      const section = (title: string) => {
-        if (y > 260) { doc.addPage(); y = margin; header(); }
-        doc.setFontSize(13);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(0, 51, 102);
-        doc.text(title, margin, y);
-        y += 2;
-        doc.setDrawColor(200);
-        doc.setLineWidth(0.3);
-        doc.line(margin, y, pageW - margin, y);
-        y += 5;
-      };
+        const bodyHtml = `
+  <h1>${t.reports.title}</h1>
+  <div class="sub">${periodLabel} ሪፖርት — ${nowAm}</div>
+  <hr class="hline">
+  <h2>1. የማመልከቻ ሪፖርት</h2><hr class="sline">
+  <p><strong>ጠቅላላ ማመልከቻዎች:</strong> ${applications.length}</p>
+  ${Object.entries(appCounts).map(([s, c]) => `<p class="ind"><strong>${amVal(s)}:</strong> ${c}</p>`).join("")}
+  <h2>2. የፈቃድ ሪፖርት</h2><hr class="sline">
+  <p><strong>ጠቅላላ ፈቃዶች:</strong> ${licenses.length}</p>
+  ${Object.entries(licCounts).map(([s, c]) => `<p class="ind"><strong>${amVal(s)}:</strong> ${c}</p>`).join("")}
+  <h2>3. የምርመራ ሪፖርት</h2><hr class="sline">
+  <p><strong>ጠቅላላ ምርመራዎች:</strong> ${inspections.length}</p>
+  ${Object.entries(inspCounts).map(([s, c]) => `<p class="ind"><strong>${amVal(s)}:</strong> ${c}</p>`).join("")}
+  <h2>4. የስምምነት ሪፖርት</h2><hr class="sline">
+  <p><strong>ጠቅላላ ስምምነቶች:</strong> ${agreements.length}</p>
+  ${Object.entries(agrCounts).map(([s, c]) => `<p class="ind"><strong>${amVal(s)}:</strong> ${c}</p>`).join("")}
+  ${summary ? `<h2>5. የኤጀንሲ ማጠቃለያ</h2><hr class="sline">${Object.entries(summary).filter(([, v]) => typeof v === "number" || typeof v === "string").map(([k, v]) => `<p><strong>${amKey(k)}:</strong> ${v}</p>`).join("")}` : ""}`;
 
-      const kv = (label: string, value: string) => {
-        if (y > 270) { doc.addPage(); y = margin; header(); }
-        doc.setFontSize(9);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(60);
-        doc.text(label + ":", margin, y);
-        doc.setFont("helvetica", "normal");
-        const lw = doc.getTextWidth(label + ":  ");
-        doc.text(value, margin + lw, y);
-        y += 4.5;
-      };
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'absolute';
+        wrapper.style.left = '-9999px';
+        wrapper.style.top = '0';
+        wrapper.innerHTML = `<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Ebrima', 'Segoe UI', Tahoma, sans-serif; }
+  .page { width: 210mm; background: #fff; padding: 16mm; }
+  h1 { color: #003366; font-size: 16pt; font-weight: bold; margin-bottom: 8mm; }
+  .sub { color: #666; font-size: 9pt; margin-bottom: 10mm; }
+  .hline { border: none; border-top: 0.6mm solid #003366; margin-bottom: 8mm; width: 100%; }
+  h2 { color: #003366; font-size: 13pt; font-weight: bold; margin-bottom: 4mm; }
+  .sline { border: none; border-top: 0.3mm solid #ccc; margin-bottom: 7mm; width: 100%; }
+  p { margin-bottom: 6mm; font-size: 9pt; color: #1a1a1a; }
+  p strong { color: #3c3c3c; }
+  .ind { margin-left: 3mm; }
+</style>
+<div class="page">${bodyHtml}</div>`;
 
-      header();
+        document.body.appendChild(wrapper);
+        await document.fonts.ready;
+        await new Promise((r) => setTimeout(r, 500));
+        const canvas = await html2canvas(wrapper, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff', logging: false });
+        document.body.removeChild(wrapper);
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const pdfH = (canvas.height * 210) / canvas.width;
+        let pos = 0;
+        doc.addImage(imgData, 'JPEG', 0, pos, 210, pdfH);
+        pos -= 297;
+        while (-pos < pdfH) {
+          doc.addPage();
+          doc.addImage(imgData, 'JPEG', 0, pos, 210, pdfH);
+          pos -= 297;
+        }
+        doc.save(`federal-police-report-${period}-${new Date().toISOString().slice(0, 10)}.pdf`);
+      } else {
+        let y = margin;
+        const header = () => {
+          doc.setFontSize(16);
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(0, 51, 102);
+          doc.text(t.reports.title, margin, y);
+          y += 8;
+          doc.setFontSize(9);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(100);
+          doc.text(`${periodLabel} Report — ${now}`, margin, y);
+          y += 10;
+          doc.setDrawColor(0, 51, 102);
+          doc.setLineWidth(0.6);
+          doc.line(margin, y, pageW - margin, y);
+          y += 8;
+        };
+        const section = (title: string) => {
+          if (y > 250) { doc.addPage(); y = margin; header(); }
+          doc.setFontSize(13);
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(0, 51, 102);
+          doc.text(title, margin, y);
+          y += 4;
+          doc.setDrawColor(200);
+          doc.setLineWidth(0.3);
+          doc.line(margin, y, pageW - margin, y);
+          y += 7;
+        };
+        const kv = (label: string, value: string) => {
+          if (y > 260) { doc.addPage(); y = margin; header(); }
+          doc.setFontSize(9);
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(60);
+          doc.text(label + ":", margin, y);
+          doc.setFont("helvetica", "normal");
+          const lw = doc.getTextWidth(label + ":  ");
+          y = wrapText(doc, value, margin + lw, y, maxW - lw, 6);
+          y += 6;
+        };
 
-      section(isAm ? "1. የማመልከቻ ሪፖርት" : "1. Applications Report");
-      kv(isAm ? "ጠቅላላ ማመልከቻዎች" : "Total Applications", String(applications.length));
-      const appCounts = statusCount(applications);
-      Object.entries(appCounts).forEach(([s, c]) => kv(`  ${s}`, String(c)));
-      if (applications.length > 0) {
-        if (y > 240) { doc.addPage(); y = margin; header(); }
-        autoTable(doc, {
-          startY: y,
-          head: [[isAm ? "ማንነት" : "ID", isAm ? "ኤጀንሲ" : "Agency", isAm ? "አይነት" : "Type", isAm ? "ሁኔታ" : "Status", isAm ? "ቀን" : "Date"]],
-          body: applications.slice(0, 30).map((a) => [
-            String(a.id || a.applicationId || "-"),
-            String(a.agency || a.organization?.name || "-"),
-            String(a.type || a.applicationType || "-"),
-            String(a.status || "-"),
-            a.date || a.applicationDate || a.createdAt ? new Date(a.date || a.applicationDate || a.createdAt).toLocaleDateString() : "-",
-          ]),
-          styles: { fontSize: 7 },
-          headStyles: { fillColor: [0, 51, 102], textColor: 255, fontSize: 7 },
-        });
-        y = (doc as any).lastAutoTable.finalY + 6;
+        header();
+        section("1. Applications Report");
+        kv("Total Applications", String(applications.length));
+        const appCounts = countBy(applications, "status");
+        Object.entries(appCounts).forEach(([s, c]) => kv(`  ${s}`, String(c)));
+
+        section("2. Licenses Report");
+        kv("Total Licenses", String(licenses.length));
+        const licCounts = countBy(licenses, "status");
+        Object.entries(licCounts).forEach(([s, c]) => kv(`  ${s}`, String(c)));
+
+        section("3. Inspections Report");
+        kv("Total Inspections", String(inspections.length));
+        const inspCounts = countBy(inspections, "status");
+        Object.entries(inspCounts).forEach(([s, c]) => kv(`  ${s}`, String(c)));
+
+        section("4. Agreements Report");
+        kv("Total Agreements", String(agreements.length));
+        const agrCounts = countBy(agreements, "status");
+        Object.entries(agrCounts).forEach(([s, c]) => kv(`  ${s}`, String(c)));
+
+        if (summary) {
+          if (y > 230) { doc.addPage(); y = margin; header(); }
+          section("5. Agency Summary");
+          Object.entries(summary).forEach(([k, v]) => {
+            if (typeof v === "number" || typeof v === "string") {
+              kv(k, String(v));
+            }
+          });
+        }
+
+        doc.save(`federal-police-report-${period}-${new Date().toISOString().slice(0, 10)}.pdf`);
       }
-
-      if (y > 240) { doc.addPage(); y = margin; header(); }
-      section(isAm ? "2. የፈቃድ ሪፖርት" : "2. Licenses Report");
-      kv(isAm ? "ጠቅላላ ፈቃዶች" : "Total Licenses", String(licenses.length));
-      const licCounts = statusCount(licenses);
-      Object.entries(licCounts).forEach(([s, c]) => kv(`  ${s}`, String(c)));
-      if (licenses.length > 0) {
-        if (y > 240) { doc.addPage(); y = margin; header(); }
-        autoTable(doc, {
-          startY: y,
-          head: [[isAm ? "ፈቃድ ቁጥር" : "License No", isAm ? "ኤጀንሲ" : "Agency", isAm ? "ሁኔታ" : "Status", isAm ? "የተሰጠበት" : "Issued", isAm ? "የሚያበቃበት" : "Expiry"]],
-          body: licenses.slice(0, 30).map((l) => [
-            String(l.certificateSerialNumber || l.licenseNo || "-"),
-            String(l.organization?.name || l.agency || "-"),
-            String(l.status || "-"),
-            l.issueDate ? new Date(l.issueDate).toLocaleDateString() : "-",
-            l.expiryDate ? new Date(l.expiryDate).toLocaleDateString() : "-",
-          ]),
-          styles: { fontSize: 7 },
-          headStyles: { fillColor: [0, 51, 102], textColor: 255, fontSize: 7 },
-        });
-        y = (doc as any).lastAutoTable.finalY + 6;
-      }
-
-      if (y > 240) { doc.addPage(); y = margin; header(); }
-      section(isAm ? "3. የምርመራ ሪፖርት" : "3. Inspections Report");
-      kv(isAm ? "ጠቅላላ ምርመራዎች" : "Total Inspections", String(inspections.length));
-      const inspCounts = statusCount(inspections);
-      Object.entries(inspCounts).forEach(([s, c]) => kv(`  ${s}`, String(c)));
-      if (inspections.length > 0) {
-        if (y > 240) { doc.addPage(); y = margin; header(); }
-        autoTable(doc, {
-          startY: y,
-          head: [[isAm ? "ማንነት" : "ID", isAm ? "ኤጀንሲ" : "Agency", isAm ? "ሁኔታ" : "Status", isAm ? "ቀን" : "Date"]],
-          body: inspections.slice(0, 30).map((i) => [
-            String(i.id || "-"),
-            String(i.agency || i.organization?.name || "-"),
-            String(i.status || "-"),
-            i.date || i.createdAt ? new Date(i.date || i.createdAt).toLocaleDateString() : "-",
-          ]),
-          styles: { fontSize: 7 },
-          headStyles: { fillColor: [0, 51, 102], textColor: 255, fontSize: 7 },
-        });
-        y = (doc as any).lastAutoTable.finalY + 6;
-      }
-
-      if (y > 240) { doc.addPage(); y = margin; header(); }
-      section(isAm ? "4. የስምምነት ሪፖርት" : "4. Agreements Report");
-      kv(isAm ? "ጠቅላላ ስምምነቶች" : "Total Agreements", String(agreements.length));
-      const agrCounts = statusCount(agreements);
-      Object.entries(agrCounts).forEach(([s, c]) => kv(`  ${s}`, String(c)));
-      if (agreements.length > 0) {
-        if (y > 240) { doc.addPage(); y = margin; header(); }
-        autoTable(doc, {
-          startY: y,
-          head: [[isAm ? "ማንነት" : "ID", isAm ? "ኤጀንሲ" : "Agency", isAm ? "ሁኔታ" : "Status", isAm ? "ቀን" : "Date"]],
-          body: agreements.slice(0, 30).map((a) => [
-            String(a.id || "-"),
-            String(a.agency || a.organization?.name || "-"),
-            String(a.status || "-"),
-            a.date || a.createdAt ? new Date(a.date || a.createdAt).toLocaleDateString() : "-",
-          ]),
-          styles: { fontSize: 7 },
-          headStyles: { fillColor: [0, 51, 102], textColor: 255, fontSize: 7 },
-        });
-        y = (doc as any).lastAutoTable.finalY + 6;
-      }
-
-      if (summary) {
-        if (y > 240) { doc.addPage(); y = margin; header(); }
-        section(isAm ? "5. የኤጀንሲ ማጠቃለያ" : "5. Agency Summary");
-        Object.entries(summary).forEach(([k, v]) => {
-          if (typeof v === "number" || typeof v === "string") {
-            kv(k, String(v));
-          }
-        });
-      }
-
-      doc.save(`federal-police-report-${period}-${new Date().toISOString().slice(0, 10)}.pdf`);
       setToast({ isOpen: true, type: "success", message: t.reports.success });
     } catch (err) {
       console.error("PDF generation failed", err);

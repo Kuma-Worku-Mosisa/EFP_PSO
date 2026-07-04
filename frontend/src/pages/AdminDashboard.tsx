@@ -652,20 +652,12 @@ const Overview = () => {
                   paddingAngle={4}
                 >
                   {pieData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${entry.name}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
+                <Tooltip />
               </PieChart>
             </ResponsiveContainer>
-          </div>
-          <div className="relative z-10 rounded-full bg-white/95 px-3 py-1 shadow-sm border border-gray-200 text-sm font-semibold text-gray-700 inline-flex items-center gap-3">
-            <span>{isAm ? "ድምር" : "Total"}</span>
-            <span className="text-lg font-black text-primary">
-              {pieData.reduce((sum, item) => sum + item.value, 0)}
-            </span>
           </div>
           <div className="mt-4 grid grid-cols-4 gap-3 text-sm">
             {pieData.map((item, index) => (
@@ -679,19 +671,6 @@ const Overview = () => {
                 />
                 <p className="font-semibold text-gray-700">{item.name}</p>
                 <p className="text-xs text-gray-500">{item.value}</p>
-              </div>
-            ))}
-          </div>
-          <div className="flex flex-wrap justify-center gap-4 pt-2">
-            {pieData.map((entry, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <span
-                  className="w-3.5 h-3.5 rounded-full"
-                  style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                />
-                <span className="text-xs font-semibold text-gray-600">
-                  {entry.name}
-                </span>
               </div>
             ))}
           </div>
