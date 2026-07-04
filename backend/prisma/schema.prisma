@@ -118,6 +118,8 @@ model User {
   receivedContacts           Contact[]
   newsArticles               NewsArticle[]
   initiatedPersonnelRequests PersonnelChangeRequest[]     @relation("HRManagerInitiator")
+  createdPeriodReports       RegularPeriodReport[]        @relation("PeriodReportCreator")
+  approvedPeriodReports      RegularPeriodReport[]        @relation("PeriodReportSuperior")
 
   @@map("users")
 }
@@ -244,6 +246,7 @@ model Organization {
   documents             OrganizationDocument[]
   employees             Employee[]
   applications          Application[]
+  regularPeriodReports  RegularPeriodReport[]
   certifications        Certification[]
   renewalApplications   RenewalApplication[]
   guardEducationStats   GuardEducationLevelStat[]
@@ -874,4 +877,55 @@ model Contact {
   updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime
 
   @@map("contacts")
+}
+
+model RegularPeriodReport {
+  id          Int    @id @default(autoincrement()) @map("period_report_id")
+  reportTitle String @map("report_title") @db.NVarChar(255)
+
+  // CHANGED: Replaced reportYear with a robust tracking Date
+  reportDate DateTime @map("report_date") @db.Date
+
+  // 1. Regular Reporting Period 
+  reportingPeriod String @map("reporting_period") @db.VarChar(50)
+
+  // --- PDF FILE ATTACHMENT STORAGE ---
+  reportFileUrl String @map("report_file_url") @db.VarChar(255)
+
+  // --- SYSTEM LINK RELATIONSHIPS ---
+  organizationId Int          @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // Tracks which security agency user account created/logged the report
+  userId Int?  @map("user_id")
+  user   User? @relation("PeriodReportCreator", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // --- REPORTING SYSTEM ACTORS & SIGNATURE TRACKING ---
+
+  // 2. Reporter: The Agency representative who compiles and uploads the period breakdown
+  reporterName         String @map("reporter_name") @db.NVarChar(150)
+  reporterTitle        String @map("reporter_title") @db.NVarChar(100)
+  reporterJobResp      String @map("reporter_job_responsibility") @db.NVarChar(150)
+  reporterSignatureUrl String @map("reporter_signature_url") @db.VarChar(255)
+
+  // 3. Ethiopian Federal Police: The Officer/Professional receiving and reviewing the log
+  efpOfficerName         String?   @map("efp_officer_name") @db.NVarChar(150)
+  efpOfficerTitle        String?   @map("efp_officer_title") @db.NVarChar(100)
+  efpOfficerJobResp      String?   @map("efp_officer_job_responsibility") @db.NVarChar(150)
+  efpOfficerSignatureUrl String?   @map("efp_officer_signature_url") @db.VarChar(255)
+  efpSignDate            DateTime? @map("efp_sign_date") @db.Date
+
+  // 4. Normalized EFP Superior Relationship (Points to User model)
+  superiorId Int?  @map("superior_id")
+  superior   User? @relation("PeriodReportSuperior", fields: [superiorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // Feedback specific metadata kept on the transaction report
+  superiorFeedbackText String?   @map("superior_feedback_text") @db.NVarChar(Max)
+  superiorSignDate     DateTime? @map("superior_sign_date") @db.Date
+
+  // System Management Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("regular_period_reports")
 }

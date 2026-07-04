@@ -35,6 +35,7 @@ import contactRoutes from "./modules/contact/contact.routes";
 import newsRoutes from "./modules/news/news.routes";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes";
 import incidentReportRouter from "./modules/incidentReport/incidentReport.routes";
+import regularReportRoutes from "./modules/regularReport/regularReport.routes";
 
 const app = express();
 
@@ -103,6 +104,7 @@ app.use("/api/personnel-change-requests", personnelChangeRoutes);
 app.use("/api/transfers", transferRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/incident-reports", incidentReportRouter);
+app.use("/api/reports", regularReportRoutes);
 // ... other middleware
 app.use("/api/contact", contactRoutes);
 app.use("/api", newsRoutes);

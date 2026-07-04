@@ -11,7 +11,6 @@ import {
   Eye,
   X,
   Download,
-  Plus,
   History,
   Trash2,
   Camera,
@@ -52,14 +51,7 @@ export const LicenseManagement = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedLic, setSelectedLic] = useState<any>(null);
   const [actionType, setActionType] = useState<
-    | "none"
-    | "renew"
-    | "revoke"
-    | "view"
-    | "edit"
-    | "create"
-    | "send"
-    | "history"
+    "none" | "renew" | "revoke" | "view" | "edit" | "send" | "history"
   >("none");
   const [licenses, setLicenses] = useState<LicenseRow[]>([]);
   const { user } = useAuth();
@@ -286,7 +278,6 @@ export const LicenseManagement = () => {
     title: isAm ? "የፈቃድ አስተዳደር" : "License Management",
     search: isAm ? "ኤጀንሲ ይፈልጉ..." : "Search agency...",
     filter: isAm ? "አጣራ" : "Filter",
-    create: isAm ? "አዲስ ፈቃድ ጨምር" : "Add New License",
     table: {
       agency: isAm ? "የኤጀንሲ ስም" : "Agency Name",
       ownership: isAm ? "ባለቤትነት" : "Ownership",
@@ -426,62 +417,42 @@ export const LicenseManagement = () => {
     }
   };
 
-  const openEditor = (
-    lic: any = null,
-    type: "edit" | "create" | "renew" = "edit",
-  ) => {
-    if (lic) {
-      setCertData({
-        agencyLogo: "",
-        applicantPhoto: "",
-        qrCode: "",
-        agencyName: lic.agency,
-        address: lic.region || "Addis Ababa, Ethiopia",
-        level:
-          lic.type === "LEVEL - TWO (2)"
-            ? 2
-            : lic.type === "LEVEL - THREE (3)"
-              ? 3
-              : 1,
-        issuedDate: lic.issued,
-        expiryDate: lic.expiry,
-        licenseNo: lic.licenseNo,
-        status: lic.status,
-      });
-      setSelectedLic(lic);
-      setActionType(type);
-    } else {
-      setCertData({
-        agencyLogo: "",
-        applicantPhoto: "",
-        qrCode: "",
-        agencyName: "",
-        address: "",
-        level: 1,
-        issuedDate: "",
-        expiryDate: "",
-        licenseNo: "",
-        status: "Active",
-      });
-      setSelectedLic({});
-      setActionType("create");
-    }
+  const openEditor = (lic: any = null, type: "edit" | "renew" = "edit") => {
+    if (!lic) return;
+
+    setCertData({
+      agencyLogo: "",
+      applicantPhoto: "",
+      qrCode: "",
+      agencyName: lic.agency,
+      address: lic.region || "Addis Ababa, Ethiopia",
+      level:
+        lic.type === "LEVEL - TWO (2)"
+          ? 2
+          : lic.type === "LEVEL - THREE (3)"
+            ? 3
+            : 1,
+      issuedDate: lic.issued,
+      expiryDate: lic.expiry,
+      licenseNo: lic.licenseNo,
+      status: lic.status,
+    });
+    setSelectedLic(lic);
+    setActionType(type);
   };
 
-  const filteredLicenses = licenses.filter(
-    (lic) => {
-      const matchesSearch =
-        lic.agency.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lic.ownership.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lic.licenseNo.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredLicenses = licenses.filter((lic) => {
+    const matchesSearch =
+      lic.agency.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lic.ownership.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lic.licenseNo.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesStatus =
-        statusFilter === "all" ||
-        normalizeCertificationStatus(lic.status) === statusFilter;
+    const matchesStatus =
+      statusFilter === "all" ||
+      normalizeCertificationStatus(lic.status) === statusFilter;
 
-      return matchesSearch && matchesStatus;
-    },
-  );
+    return matchesSearch && matchesStatus;
+  });
 
   // Group certificates by organization so one organization can show multiple yearly certificates.
   const groupedByOrganization = React.useMemo(() => {
@@ -498,17 +469,10 @@ export const LicenseManagement = () => {
     <div className="space-y-8 pb-20">
       <div className="flex flex-col gap-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <h3 className="text-2xl font-bold text-primary shrink-0">{t.title}</h3>
+          <h3 className="text-2xl font-bold text-primary shrink-0">
+            {t.title}
+          </h3>
           <div className="flex flex-wrap items-center gap-4">
-            <button
-              onClick={() => openEditor()}
-              className="flex items-center space-x-2 px-6 py-4 bg-[#003366] text-white rounded-[20px] text-sm font-black shadow-lg shadow-[#003366]/30 hover:bg-[#002244] active:scale-95 transition-all group"
-            >
-              <div className="p-1 bg-white/20 rounded-lg group-hover:rotate-90 transition-transform duration-500">
-                <Plus className="w-5 h-5" />
-              </div>
-              <span>{t.create}</span>
-            </button>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
@@ -1032,7 +996,7 @@ export const LicenseManagement = () => {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className={`bg-white rounded-[40px] shadow-2xl w-full ${["edit", "create", "renew"].includes(actionType) ? "max-w-4xl" : "max-w-2xl"} p-10 space-y-8 relative overflow-hidden`}
+              className={`bg-white rounded-[40px] shadow-2xl w-full ${["edit", "renew"].includes(actionType) ? "max-w-4xl" : "max-w-2xl"} p-10 space-y-8 relative overflow-hidden`}
             >
               <div className="flex justify-between items-center relative z-10">
                 <div className="flex items-center space-x-4">
@@ -1075,9 +1039,7 @@ export const LicenseManagement = () => {
                               ? "License Renewal Unit"
                               : actionType === "revoke"
                                 ? "License Revocation System"
-                                : actionType === "create"
-                                  ? "Add New Agency License"
-                                  : "Update Credentials"}
+                                : "Update Credentials"}
                     </h4>
                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.3em]">
                       {selectedLic.agency || "New Issuance"}
@@ -1155,7 +1117,7 @@ export const LicenseManagement = () => {
                   </div>
                 )}
 
-                {["edit", "create", "renew"].includes(actionType) && (
+                {["edit", "renew"].includes(actionType) && (
                   <div className="flex flex-col space-y-10">
                     <p className="text-xs text-amber-600 font-black uppercase tracking-widest bg-amber-50 p-4 rounded-xl text-center">
                       {actionType === "renew"

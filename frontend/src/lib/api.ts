@@ -1,4 +1,3 @@
-
 /**
  * Frontend API utility for making requests to the backend.
  * Provides detailed error messages for debugging and professional error handling.
@@ -6,15 +5,14 @@
 
 // filepath: frontend/src/lib/api.ts
 
-// 1. Point to your backend port 5000 explicitly
+// // 1. Point to your backend port 5000 explicitly
+export const API_BASE = import.meta.env.DEV
+  ? "http://localhost:5000/api"
+  : "/api"; // Keep /api for production (where frontend/backend are served together)
+
 // export const API_BASE = import.meta.env.DEV
-//   ? "http://localhost:5000/api"
-//   : "/api"; // Keep /api for production (where frontend/backend are served together)
-
-
-  export const API_BASE = import.meta.env.DEV
-    ? "http://10.170.17.51:5000/api"
-    : "/api";
+//   ? "http://10.61.123.51:5000/api"
+//   : "/api";
 
 const IS_DEV = import.meta.env.DEV;
 
