@@ -37,9 +37,11 @@ import {
   Upload,
 } from "lucide-react";
 import DocumentPreviewer from "../../components/DocumentPreviewer";
+import RegularPeriodReportView from "../HRmanagement/RegularPeriodReportView";
 import { AutoDismissToast, ToastType } from "../../components/AutoDismissToast";
 import { useAuth } from "../../context/AuthContext";
 import { apiRequest } from "../../lib/api";
+import { IncidentReportDetail } from "../HRmanagement/IncidentDetailView";
 
 interface IncidentPenaltyMock {
   id: number;
@@ -65,6 +67,7 @@ interface IncidentReportMock {
     | "Penalized"
     | "Resolved";
   penalties: IncidentPenaltyMock[];
+  raw?: any;
 }
 
 interface EmployeeDocumentMock {
@@ -199,10 +202,132 @@ interface OrganizationMock {
   dmsDocuments: DMSDocumentMock[]; // Integrated DMS array
 }
 
+interface RegularPeriodReportMock {
+  id: number;
+  reportTitle: string;
+  reportDate: string;
+  reportingPeriod: string;
+  reportFileUrl: string;
+  reporterName: string;
+  reporterTitle: string;
+  reporterJobResp: string;
+  reporterSignatureUrl: string;
+  efpOfficerName?: string | null;
+  efpOfficerTitle?: string | null;
+  efpOfficerSignatureUrl?: string | null;
+  efpSignDate?: string | null;
+  superior?: { fullName: string; title?: string; signatureUrl?: string } | null;
+  superiorFeedbackText?: string | null;
+  superiorSignDate?: string | null;
+  organization?: { nameEnglish?: string; nameAmharic?: string } | null;
+  user?: { fullName?: string } | null;
+}
+
 interface AgenciesManagementProps {
   organizationId: string;
   onBack: () => void;
 }
+
+const formatDateValue = (value: string | Date | null | undefined) => {
+  if (!value) return "—";
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  return date.toLocaleDateString("en-GB", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
+
+const normalizeIncidentStatus = (
+  status?: string | null,
+): IncidentReportMock["federalPoliceStatus"] => {
+  const normalized = (status || "").toLowerCase();
+
+  if (normalized.includes("investig")) return "Under Investigation";
+  if (normalized.includes("penal")) return "Penalized";
+  if (normalized.includes("resolv")) return "Resolved";
+
+  return "Pending Review";
+};
+
+const normalizeIncidentData = (incident: any): IncidentReportMock => {
+  const reportedAt = incident?.createdAt || incident?.reportDate;
+  const incidentDate = incident?.reportDate || incident?.incidentStartTimestamp;
+  const description =
+    incident?.damageDescription ||
+    incident?.actionTakenStatus ||
+    incident?.explanation ||
+    "No description provided";
+  const serviceReceiver = incident?.serviceReceiverName || "—";
+
+  return {
+    id: incident?.id ?? 0,
+    crimeCategory: incident?.crimeType || "Unspecified",
+    incidentDate: formatDateValue(incidentDate),
+    locationOfIncident: serviceReceiver,
+    incidentDescription: description,
+    reportedAt: formatDateValue(reportedAt),
+    isReportedWithin24h: false,
+    localPoliceStation: serviceReceiver,
+    localPoliceRefNumber: incident?.fileNumber || "—",
+    federalPoliceStatus: normalizeIncidentStatus(incident?.actionTakenStatus),
+    penalties: [],
+    raw: incident,
+  };
+};
+
+const buildIncidentDetailReport = (incident: IncidentReportMock) => ({
+  id: incident.id,
+  fileNumber: incident.localPoliceRefNumber,
+  reportDate:
+    incident.raw?.reportDate ||
+    incident.raw?.createdAt ||
+    new Date().toISOString(),
+  organizationId: incident.raw?.organizationId ?? 0,
+  organization: incident.raw?.organization,
+  serviceReceiverName: incident.locationOfIncident,
+  crimeType: incident.crimeCategory,
+  crimeInCapitalAmount: incident.raw?.crimeInCapitalAmount ?? null,
+  incidentStartTimestamp:
+    incident.raw?.incidentStartTimestamp ||
+    incident.raw?.reportDate ||
+    new Date().toISOString(),
+  crimeCount: incident.raw?.crimeCount ?? 1,
+  damageDescription: incident.incidentDescription,
+  securityPersonnelCount: incident.raw?.securityPersonnelCount ?? 0,
+  customerPersonnelCount: incident.raw?.customerPersonnelCount ?? 0,
+  otherPartiesCount: incident.raw?.otherPartiesCount ?? 0,
+  SecurityCustomerOtherBodyCount:
+    incident.raw?.SecurityCustomerOtherBodyCount ?? 0,
+  suspectedBodiesCount: incident.raw?.suspectedBodiesCount ?? 0,
+  actionTakenStatus:
+    incident.raw?.actionTakenStatus || incident.federalPoliceStatus,
+  explanation: incident.raw?.explanation ?? null,
+  reporterName: incident.raw?.reporterName || "—",
+  reporterTitle: incident.raw?.reporterTitle || "—",
+  reporterJobResp: incident.raw?.reporterJobResp || "—",
+  reporterSignatureUrl: incident.raw?.reporterSignatureUrl || "",
+  efpOfficerName: incident.raw?.efpOfficerName ?? null,
+  efpOfficerTitle: incident.raw?.efpOfficerTitle ?? null,
+  efpOfficerJobResp: incident.raw?.efpOfficerJobResp ?? null,
+  efpOfficerSignatureUrl: incident.raw?.efpOfficerSignatureUrl ?? null,
+  efpSignDate: incident.raw?.efpSignDate ?? null,
+  superiorName: incident.raw?.superiorName ?? null,
+  superiorTitle: incident.raw?.superiorTitle ?? null,
+  superiorJobResp: incident.raw?.superiorJobResp ?? null,
+  superiorFeedback: incident.raw?.superiorFeedback ?? null,
+  superiorSignatureUrl: incident.raw?.superiorSignatureUrl ?? null,
+  superiorSignDate: incident.raw?.superiorSignDate ?? null,
+  suspects: (incident.raw?.suspects || []).map((suspect: any) => ({
+    id: suspect.id,
+    suspectName: suspect.suspectName,
+    relationToAgency: suspect.relationToAgency ?? null,
+    employeeId: suspect.employeeId ?? null,
+  })),
+});
 
 // Real data: helper to create defaults
 const emptyEducationStats = (): GuardEducationStatMock => ({
@@ -494,6 +619,17 @@ export function AgenciesManagement({
   const [selectedContractName, setSelectedContractName] = useState<string>("");
   const [selectedDocUrl, setSelectedDocUrl] = useState<string | null>(null);
   const [selectedDocName, setSelectedDocName] = useState<string>("");
+  const [selectedIncident, setSelectedIncident] =
+    useState<IncidentReportMock | null>(null);
+  const [regularReports, setRegularReports] = useState<
+    RegularPeriodReportMock[]
+  >([]);
+  const [selectedRegularReport, setSelectedRegularReport] =
+    useState<RegularPeriodReportMock | null>(null);
+  const [regularReportsLoading, setRegularReportsLoading] = useState(false);
+  const [regularReportsError, setRegularReportsError] = useState<string | null>(
+    null,
+  );
   const [showAppendContract, setShowAppendContract] = useState(false);
   const [isSubmittingContract, setIsSubmittingContract] = useState(false);
   const [editingContractId, setEditingContractId] = useState<number | null>(
@@ -670,7 +806,9 @@ export function AgenciesManagement({
             numberOfVehicles: details.numberOfVehicles ?? 0,
             numberOfComputers: details.numberOfComputers ?? 0,
             hasStoreHouse: details.hasStoreHouse ?? false,
-            incidents: details.incidents ?? [],
+            incidents: (details.incidents ?? []).map((incident: any) =>
+              normalizeIncidentData(incident),
+            ),
             employees: details.employees ?? [],
             educationStats: details.educationStats ?? emptyEducationStats(),
             trainingDetails: details.trainingDetails ?? [],
@@ -689,6 +827,53 @@ export function AgenciesManagement({
 
     loadOrgDetails();
   }, [organizationId]);
+
+  useEffect(() => {
+    if (activeTab !== "regularReports") {
+      return;
+    }
+
+    const loadRegularReports = async () => {
+      setRegularReportsLoading(true);
+      setRegularReportsError(null);
+
+      const orgId = Number(organizationId);
+      if (!orgId) {
+        setRegularReports([]);
+        setRegularReportsLoading(false);
+        return;
+      }
+
+      try {
+        const data = await apiRequest(`/reports?organizationId=${orgId}`);
+        const reports = Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data)
+            ? data
+            : [];
+        setRegularReports(reports);
+      } catch (error: any) {
+        console.error("Failed to load regular reports:", error);
+        setRegularReports([]);
+        setRegularReportsError(
+          error?.message ||
+            (isAm
+              ? "የወረዳ ሪፖርቶችን ማግኘት አልተቻለም"
+              : "Unable to load regular reports"),
+        );
+      } finally {
+        setRegularReportsLoading(false);
+      }
+    };
+
+    loadRegularReports();
+  }, [activeTab, organizationId, isAm]);
+
+  useEffect(() => {
+    if (activeTab !== "regularReports") {
+      setSelectedRegularReport(null);
+    }
+  }, [activeTab]);
 
   const org = selectedOrg ?? defaultOrg();
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeMock | null>(
@@ -1660,6 +1845,11 @@ export function AgenciesManagement({
               icon: BookOpen,
             },
             {
+              id: "regularReports",
+              label: isAm ? "የወረዳ ሪፖርቶች" : "Regular Reports",
+              icon: Calendar,
+            },
+            {
               id: "contracts",
               label: `${isAm ? "የአገልግሎት ውሎች" : "Service Contracts"} (${org.serviceContracts.length})`,
               icon: FileCheck,
@@ -2264,6 +2454,189 @@ export function AgenciesManagement({
                     })}
                   </tbody>
                 </table>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {activeTab === "regularReports" && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="space-y-6"
+          >
+            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-bold text-[#003366]">
+                    {isAm ? "የወረዳ ሪፖርቶች" : "Regular Period Reports"}
+                  </h3>
+                  <p className="text-sm text-slate-500 mt-1">
+                    {isAm
+                      ? "ይህ የድርጅቱ የወረዳ ሪፖርቶች ነው። ሪፖርቶችን ይመልከቱ እና ዝርዝር ይታያሉ።"
+                      : "Browse regular period reports for this organization and view the detail layout."}
+                  </p>
+                </div>
+                {selectedRegularReport && (
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    type="button"
+                    onClick={() => setSelectedRegularReport(null)}
+                    className="px-3 py-2 rounded-lg bg-[#003366] text-white text-sm font-bold hover:bg-[#003366]/90 transition"
+                  >
+                    {isAm ? "ወደ ዝርዝር ይመለሱ" : "Back to report list"}
+                  </motion.button>
+                )}
+              </div>
+            </div>
+
+            {selectedRegularReport ? (
+              <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                <RegularPeriodReportView
+                  report={{
+                    id: selectedRegularReport.id,
+                    reportTitle:
+                      selectedRegularReport.reportTitle ||
+                      `Regular Report ${selectedRegularReport.id}`,
+                    reportDate: selectedRegularReport.reportDate || "",
+                    reportingPeriod:
+                      selectedRegularReport.reportingPeriod || "monthly",
+                    reportFileUrl: selectedRegularReport.reportFileUrl || "",
+                    organization: {
+                      name:
+                        org.nameEnglish ||
+                        org.nameAmharic ||
+                        selectedRegularReport.organization?.nameEnglish ||
+                        selectedRegularReport.organization?.nameAmharic ||
+                        "",
+                    },
+                    reporterName:
+                      selectedRegularReport.reporterName ||
+                      selectedRegularReport.user?.fullName ||
+                      "",
+                    reporterTitle: selectedRegularReport.reporterTitle || "",
+                    reporterJobResp:
+                      selectedRegularReport.reporterJobResp || "",
+                    reporterSignatureUrl:
+                      selectedRegularReport.reporterSignatureUrl || "",
+                    efpOfficerName:
+                      selectedRegularReport.efpOfficerName || null,
+                    efpOfficerTitle:
+                      selectedRegularReport.efpOfficerTitle || null,
+                    efpOfficerSignatureUrl:
+                      selectedRegularReport.efpOfficerSignatureUrl || null,
+                    efpSignDate: selectedRegularReport.efpSignDate || null,
+                    superior:
+                      selectedRegularReport.superior &&
+                      selectedRegularReport.superior.fullName
+                        ? {
+                            name: selectedRegularReport.superior.fullName,
+                            title: selectedRegularReport.superior.title || "",
+                            signatureUrl:
+                              selectedRegularReport.superior.signatureUrl || "",
+                          }
+                        : null,
+                    superiorFeedbackText:
+                      selectedRegularReport.superiorFeedbackText || null,
+                    superiorSignDate:
+                      selectedRegularReport.superiorSignDate || null,
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                <div className="p-4 border-b border-slate-200">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <h4 className="text-base font-bold text-slate-900">
+                        {isAm ? "የወረዳ ሪፖርት ዝርዝር" : "Regular report list"}
+                      </h4>
+                      <p className="text-sm text-slate-500 mt-1">
+                        {isAm
+                          ? "እባክዎ ከታች ከሚገኙ ሪፖርቶች አንዱን ይምረጡ።"
+                          : "Select a report to review its detail view."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {regularReportsLoading ? (
+                  <div className="p-10 text-center text-slate-500">
+                    {isAm ? "በሪፖርቶች ላይ ማግኘት..." : "Loading reports..."}
+                  </div>
+                ) : regularReportsError ? (
+                  <div className="p-10 text-center text-red-600">
+                    {regularReportsError}
+                  </div>
+                ) : regularReports.length === 0 ? (
+                  <div className="p-10 text-center text-slate-500">
+                    {isAm
+                      ? "ምንም የወረዳ ሪፖርት አልተገኘም"
+                      : "No regular reports found."}
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm text-slate-700">
+                      <thead className="bg-slate-50 text-xs uppercase tracking-[0.18em] text-slate-500">
+                        <tr>
+                          <th className="px-4 py-3">
+                            {isAm ? "ርዕስ" : "Title"}
+                          </th>
+                          <th className="px-4 py-3">{isAm ? "ቀን" : "Date"}</th>
+                          <th className="px-4 py-3">
+                            {isAm ? "የጊዜ ክፍል" : "Period"}
+                          </th>
+                          <th className="px-4 py-3">
+                            {isAm ? "የሪፖርት አባል" : "Reporter"}
+                          </th>
+                          <th className="px-4 py-3 text-right">
+                            {isAm ? "እርምጃ" : "Action"}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 bg-white">
+                        {regularReports.map((report) => (
+                          <tr key={report.id}>
+                            <td className="px-4 py-3 font-semibold text-slate-900">
+                              {report.reportTitle || `Report #${report.id}`}
+                            </td>
+                            <td className="px-4 py-3 text-slate-700">
+                              {new Date(report.reportDate).toLocaleDateString(
+                                "en-GB",
+                                {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                },
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-slate-700">
+                              {report.reportingPeriod}
+                            </td>
+                            <td className="px-4 py-3 text-slate-700">
+                              {report.reporterName ||
+                                report.user?.fullName ||
+                                "—"}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                type="button"
+                                onClick={() => setSelectedRegularReport(report)}
+                                className="inline-flex items-center gap-2 rounded-full border border-[#003366] bg-[#003366] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#003366]/90"
+                              >
+                                {isAm ? "ተመርጧል" : "View"}
+                              </motion.button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
           </motion.div>
@@ -3812,35 +4185,105 @@ export function AgenciesManagement({
               </div>
             </motion.div>
 
-            {org.incidents.map((incident, idx) => (
-              <motion.div
-                key={incident.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + idx * 0.1 }}
-                whileHover={{ boxShadow: "0 8px 30px rgba(0,51,102,0.08)" }}
-                className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
-              >
-                <div className="bg-gradient-to-r from-gray-50 to-[#f8faff] px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <h4 className="text-base font-bold text-[#003366]">
-                    {incident.crimeCategory}
-                  </h4>
-                  <span
-                    className={`px-2.5 py-1 text-xs font-bold rounded-full border ${getStatusStyles(incident.federalPoliceStatus)}`}
-                  >
-                    {incident.federalPoliceStatus}
-                  </span>
-                </div>
-                <div className="p-6">
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    {incident.incidentDescription}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
+            {org.incidents.length > 0 ? (
+              <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+                <table className="min-w-full divide-y divide-slate-200 text-sm">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                        {isAm ? "የጥቃት ዓይነት" : "Crime Type"}
+                      </th>
+                      <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                        {isAm ? "የፋይል ቁጥር" : "File Number"}
+                      </th>
+                      <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                        {isAm ? "ቀን" : "Date"}
+                      </th>
+                      <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                        {isAm ? "የአገልግሎት ተቀባይ" : "Service Receiver"}
+                      </th>
+                      <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                        {isAm ? "ሁኔታ" : "Status"}
+                      </th>
+                      <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                        {isAm ? "የተወሰደው እርምጃ" : "Action Taken"}
+                      </th>
+                      <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                        {isAm ? "እርምጃዎች" : "Actions"}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {org.incidents.map((incident, idx) => (
+                      <tr
+                        key={incident.id}
+                        className={`transition-colors ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/60"}`}
+                      >
+                        <td className="px-4 py-3 font-semibold text-slate-900">
+                          {incident.crimeCategory}
+                        </td>
+                        <td className="px-4 py-3 text-slate-700">
+                          {incident.localPoliceRefNumber}
+                        </td>
+                        <td className="px-4 py-3 text-slate-700">
+                          {incident.incidentDate}
+                        </td>
+                        <td className="px-4 py-3 text-slate-700">
+                          {incident.locationOfIncident}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${getStatusStyles(incident.federalPoliceStatus)}`}
+                          >
+                            {incident.federalPoliceStatus}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-slate-700">
+                          {incident.raw?.actionTakenStatus || "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedIncident(incident)}
+                            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-[#003366] transition hover:bg-slate-50"
+                            title={isAm ? "ዝርዝር እይታ" : "View details"}
+                          >
+                            <Eye size={14} />
+                            {isAm ? "ዝርዝር" : "Details"}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
+                {isAm ? "ምንም የክስተት ሪፖርት አልተገኘም" : "No incident reports found"}
+              </div>
+            )}
           </motion.div>
         )}
       </div>
+
+      {selectedIncident && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-3 sm:p-4">
+          <div className="relative max-h-[95vh] w-full max-w-7xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setSelectedIncident(null)}
+              className="absolute right-4 top-4 z-10 rounded-full border border-slate-200 bg-white p-2 text-slate-600 transition hover:bg-slate-100"
+              aria-label={isAm ? "ዝርዝር እይታ ዝጋ" : "Close incident details"}
+            >
+              <X size={18} />
+            </button>
+            <IncidentReportDetail
+              report={buildIncidentDetailReport(selectedIncident)}
+              onClose={() => setSelectedIncident(null)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Selected Employee Document Preview Modal */}
       {selectedDocUrl && (

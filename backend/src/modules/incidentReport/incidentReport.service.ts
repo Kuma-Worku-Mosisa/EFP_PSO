@@ -143,7 +143,6 @@ export class IncidentReportService {
         efpOfficerJobResp: officerData.efpOfficerJobResp,
         efpOfficerSignatureUrl: officerData.efpOfficerSignatureUrl,
         efpSignDate: new Date(),
-        actionTakenStatus: "Verified by EFP Intake Desk",
       },
     });
   }
@@ -158,8 +157,6 @@ export class IncidentReportService {
         superiorFeedback: superiorData.superiorFeedback,
         superiorSignatureUrl: superiorData.superiorSignatureUrl,
         superiorSignDate: new Date(),
-        actionTakenStatus:
-          "Closed / Sent to Criminal Investigation Directorate",
       },
     });
   }

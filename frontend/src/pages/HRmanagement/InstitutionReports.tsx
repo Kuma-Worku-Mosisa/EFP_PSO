@@ -781,15 +781,14 @@ export default function InstitutionReports() {
       const successMessage = isAm
         ? "ሪፖርቱ በተሳካ ሁኔታ ተልኳል!"
         : "Report sent successfully to Federal Police Admin!";
-      
+
       setToastType("success");
       setToastMessage(successMessage);
       setToastOpen(true);
     } catch (err: any) {
       const errorMessage =
-        err?.message ||
-        (isAm ? "ሪፖርቱን መላክ አልተሳካም" : "Failed to send report");
-      
+        err?.message || (isAm ? "ሪፖርቱን መላክ አልተሳካም" : "Failed to send report");
+
       setToastType("error");
       setToastMessage(errorMessage);
       setToastOpen(true);

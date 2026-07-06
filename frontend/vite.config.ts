@@ -10,13 +10,18 @@ export default defineConfig(({ mode }) => {
     plugins: [react(), tailwindcss()],
     define: {
       "process.env.GEMINI_API_KEY": JSON.stringify(env.GEMINI_API_KEY),
+      global: "window",
     },
     resolve: {
       alias: {
+        buffer: "buffer/",
         // Change this from '.' to './src' to match your tsconfig.json
         "@": path.resolve(__dirname, "./src"),
       },
       dedupe: ["react", "react-dom"],
+    },
+    optimizeDeps: {
+      include: ["buffer"],
     },
     server: {
       host: "0.0.0.0",
