@@ -1,6 +1,4 @@
 import prisma from "../../lib/prisma";
-import { getDocumentUrl } from "../../utils/documentOrganizer";
-import path from "path";
 
 export class RegularReportService {
   async createReport(input: any) {
@@ -44,10 +42,47 @@ export class RegularReportService {
         efpOfficerJobResp: input.efpOfficerJobResp || null,
         efpOfficerSignatureUrl: input.efpOfficerSignatureUrl || null,
         superiorId: input.superiorId ? Number(input.superiorId) : null,
+        superiorName: input.superiorName || null,
+        superiorTitle: input.superiorTitle || null,
+        superiorSignatureUrl: input.superiorSignatureUrl || null,
         superiorFeedbackText: input.superiorFeedbackText || null,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
+    });
+  }
+
+  async updateReview(reportId: number, reviewType: string, input: any) {
+    const updateData: Record<string, any> = {
+      updatedAt: new Date(),
+    };
+
+    if (reviewType === "officer") {
+      updateData.efpOfficerName = input.efpOfficerName ?? null;
+      updateData.efpOfficerTitle = input.efpOfficerTitle ?? null;
+      updateData.efpOfficerSignatureUrl = input.efpOfficerSignatureUrl ?? null;
+      updateData.efpSignDate =
+        input.signDate || input.efpSignDate
+          ? new Date(input.signDate || input.efpSignDate)
+          : new Date();
+    } else if (reviewType === "superior") {
+      updateData.superiorName = input.superiorName ?? null;
+      updateData.superiorTitle = input.superiorTitle ?? null;
+      updateData.superiorSignatureUrl = input.superiorSignatureUrl ?? null;
+      updateData.superiorFeedbackText =
+        input.feedbackText ?? input.superiorFeedbackText ?? null;
+      updateData.superiorSignDate =
+        input.signDate || input.superiorSignDate
+          ? new Date(input.signDate || input.superiorSignDate)
+          : new Date();
+      if (input.superiorId) {
+        updateData.superiorId = Number(input.superiorId);
+      }
+    }
+
+    return prisma.regularPeriodReport.update({
+      where: { id: reportId },
+      data: updateData,
     });
   }
 

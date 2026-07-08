@@ -80,7 +80,7 @@ export default function DocumentPreviewer({
 
   return (
     <div
-      className={`relative flex flex-col bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm ${className}`}
+      className={`relative flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm ${className}`}
     >
       {/* Header Toolbar */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/80">
@@ -134,7 +134,7 @@ export default function DocumentPreviewer({
       )}
 
       {/* Document Viewer Canvas */}
-      <div className="flex-1 bg-slate-100 relative overflow-hidden">
+      <div className="relative flex-1 min-h-0 overflow-hidden bg-slate-100">
         {detectedType === "pdf" ? (
           <iframe
             src={`${normalizedUrl}#view=FitH`} // FitH tells the native PDF viewer to fit horizontally

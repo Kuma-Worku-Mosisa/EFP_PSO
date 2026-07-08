@@ -1,3 +1,4 @@
+//filepath: backend/src/modules/regularReport/regularReport.routes.ts
 import { Router } from "express";
 import multer from "multer";
 import path from "path";
@@ -88,6 +89,15 @@ router.post(
     { name: "periodDocument", maxCount: 1 },
   ]),
   (req, res, next) => controller.submit(req, res, next),
+);
+router.put(
+  "/:id/review",
+  authenticate,
+  upload.fields([
+    { name: "efpOfficerSignature", maxCount: 1 },
+    { name: "superiorSignature", maxCount: 1 },
+  ]),
+  (req, res, next) => controller.updateReview(req, res, next),
 );
 router.get("/", authenticate, (req, res, next) =>
   controller.list(req, res, next),

@@ -920,6 +920,9 @@ model RegularPeriodReport {
   superior   User? @relation("PeriodReportSuperior", fields: [superiorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   // Feedback specific metadata kept on the transaction report
+  superiorName         String?   @map("superior_name") @db.NVarChar(150)
+  superiorTitle        String?   @map("superior_title") @db.NVarChar(100)
+  superiorSignatureUrl String?   @map("superior_signature_url") @db.VarChar(255)
   superiorFeedbackText String?   @map("superior_feedback_text") @db.NVarChar(Max)
   superiorSignDate     DateTime? @map("superior_sign_date") @db.Date
 

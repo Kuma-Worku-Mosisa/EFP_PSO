@@ -362,245 +362,10 @@ const defaultOrg = (): OrganizationMock => ({
   numberOfComputers: 0,
   hasStoreHouse: false,
   incidents: [],
-  employees: [
-    {
-      id: 1,
-      userId: 1,
-      organizationId: 1,
-      fullName: "Abebe Kebede",
-      email: "abebe.k@example.com",
-      phone: "+251911111111",
-      faydaId: "FAN-001",
-      positionName: "Security Manager",
-      gender: "Male",
-      citizenship: "Ethiopian",
-      age: 38,
-      educationLevel: "Degree",
-      workExpYears: 12,
-      totalExpYears: 15,
-      isBlacklisted: false,
-      employmentStatus: "Active",
-      employmentStartDate: "2019-03-15",
-      documents: [],
-    },
-    {
-      id: 2,
-      userId: 2,
-      organizationId: 1,
-      fullName: "Tigist Haile",
-      email: "tigist.h@example.com",
-      phone: "+251922222222",
-      faydaId: "FAN-002",
-      positionName: "Operations Head",
-      gender: "Female",
-      citizenship: "Ethiopian",
-      age: 42,
-      educationLevel: "Degree",
-      workExpYears: 16,
-      totalExpYears: 18,
-      isBlacklisted: false,
-      employmentStatus: "Active",
-      employmentStartDate: "2018-07-22",
-      documents: [],
-    },
-    {
-      id: 3,
-      userId: 3,
-      organizationId: 1,
-      fullName: "Dawit Eshetu",
-      email: "dawit.e@example.com",
-      phone: "+251933333333",
-      faydaId: "FAN-003",
-      positionName: "Admin Head",
-      gender: "Male",
-      citizenship: "Ethiopian",
-      age: 45,
-      educationLevel: "Degree",
-      workExpYears: 20,
-      totalExpYears: 22,
-      isBlacklisted: false,
-      employmentStatus: "Active",
-      employmentStartDate: "2017-01-10",
-      documents: [],
-    },
-    {
-      id: 4,
-      userId: 4,
-      organizationId: 1,
-      fullName: "Meron Alemu",
-      email: "meron.a@example.com",
-      phone: "+251944444444",
-      faydaId: "FAN-004",
-      positionName: "Security Officer",
-      gender: "Female",
-      citizenship: "Ethiopian",
-      age: 29,
-      educationLevel: "Certificate",
-      workExpYears: 5,
-      totalExpYears: 6,
-      isBlacklisted: false,
-      employmentStatus: "Active",
-      employmentStartDate: "2021-11-05",
-      documents: [],
-    },
-    {
-      id: 5,
-      userId: 5,
-      organizationId: 1,
-      fullName: "Biruk Tadesse",
-      email: "biruk.t@example.com",
-      phone: "+251955555555",
-      faydaId: "FAN-005",
-      positionName: "Field Agent",
-      gender: "Male",
-      citizenship: "Ethiopian",
-      age: 32,
-      educationLevel: "Diploma",
-      workExpYears: 8,
-      totalExpYears: 10,
-      isBlacklisted: false,
-      employmentStatus: "Inactive",
-      employmentStartDate: "2022-09-12",
-      documents: [],
-    },
-    {
-      id: 6,
-      userId: 6,
-      organizationId: 1,
-      fullName: "Sara Hailu",
-      email: "sara.h@example.com",
-      phone: "+251966666666",
-      faydaId: "FAN-006",
-      positionName: "Compliance Officer",
-      gender: "Female",
-      citizenship: "Ethiopian",
-      age: 35,
-      educationLevel: "Degree",
-      workExpYears: 10,
-      totalExpYears: 12,
-      isBlacklisted: false,
-      employmentStatus: "Approved",
-      employmentStartDate: "2020-04-18",
-      documents: [],
-    },
-    {
-      id: 7,
-      userId: 7,
-      organizationId: 1,
-      fullName: "Henok Mesfin",
-      email: "henok.m@example.com",
-      phone: "+251977777777",
-      faydaId: "FAN-007",
-      positionName: "IT Support",
-      gender: "Male",
-      citizenship: "Ethiopian",
-      age: 27,
-      educationLevel: "Degree",
-      workExpYears: 4,
-      totalExpYears: 5,
-      isBlacklisted: false,
-      employmentStatus: "Pending",
-      employmentStartDate: "2023-06-30",
-      documents: [],
-    },
-    {
-      id: 8,
-      userId: 8,
-      organizationId: 1,
-      fullName: "Betelhem Assefa",
-      email: "betelhem.a@example.com",
-      phone: "+251988888888",
-      faydaId: "FAN-008",
-      positionName: "HR Assistant",
-      gender: "Female",
-      citizenship: "Ethiopian",
-      age: 24,
-      educationLevel: "Diploma",
-      workExpYears: 2,
-      totalExpYears: 3,
-      isBlacklisted: false,
-      employmentStatus: "Pending",
-      employmentStartDate: "2024-02-14",
-      documents: [],
-    },
-    {
-      id: 9,
-      userId: 9,
-      organizationId: 1,
-      fullName: "Tekle Ayele",
-      email: "tekle.a@example.com",
-      phone: "+251999999999",
-      faydaId: "FAN-009",
-      positionName: "Security Guard",
-      gender: "Male",
-      citizenship: "Ethiopian",
-      age: 31,
-      educationLevel: "Grade 10-12",
-      workExpYears: 7,
-      totalExpYears: 9,
-      isBlacklisted: false,
-      employmentStatus: "Rejected",
-      employmentStartDate: "2023-11-01",
-      documents: [],
-    },
-    {
-      id: 10,
-      userId: 10,
-      organizationId: 1,
-      fullName: "Lemlem Wondimu",
-      email: "lemlem.w@example.com",
-      phone: "+251910101010",
-      faydaId: "FAN-010",
-      positionName: "Secretary",
-      gender: "Female",
-      citizenship: "Ethiopian",
-      age: 26,
-      educationLevel: "Degree",
-      workExpYears: 3,
-      totalExpYears: 4,
-      isBlacklisted: false,
-      employmentStatus: "Suspended",
-      employmentStartDate: "2023-08-20",
-      documents: [],
-    },
-  ],
+  employees: [],
   educationStats: emptyEducationStats(),
   trainingDetails: [],
-  serviceContracts: [
-    {
-      id: 1,
-      serviceUserName: "Addis Security PLC",
-      contractUrl: "/contracts/001.pdf",
-      assignedPersonnelCount: 15,
-      addressText: "Bole, Addis Ababa",
-      status: "Active",
-      createdAt: "2023-06-01",
-      updatedAt: "2024-06-01",
-      terminatedAt: "2024-06-01",
-    },
-    {
-      id: 2,
-      serviceUserName: "Ethio Guard Solutions",
-      contractUrl: "/contracts/002.pdf",
-      assignedPersonnelCount: 8,
-      addressText: "Kazanchis, Addis Ababa",
-      status: "Active",
-      createdAt: "2023-09-15",
-      updatedAt: "2024-09-15",
-      terminatedAt: "2024-09-15",
-    },
-    {
-      id: 3,
-      serviceUserName: "Tena Security Services",
-      contractUrl: "/contracts/003.pdf",
-      assignedPersonnelCount: 22,
-      addressText: "Megenagna, Addis Ababa",
-      status: "Expiring Soon",
-      createdAt: "2022-01-10",
-      updatedAt: "2024-01-10",
-      terminatedAt: "2024-01-10",
-    },
-  ],
+  serviceContracts: [],
   branches: [],
   dmsDocuments: [],
 });
@@ -702,7 +467,7 @@ export function AgenciesManagement({
       const woredas = data?.data || data || [];
       setContractWoredas(woredas);
       return woredas;
-    } catch {
+    } catch (error) {
       setContractWoredas([]);
       return [];
     }
@@ -715,7 +480,7 @@ export function AgenciesManagement({
       const kebeles = data?.data || data || [];
       setContractKebeles(kebeles);
       return kebeles;
-    } catch {
+    } catch (error) {
       setContractKebeles([]);
       return [];
     }
@@ -858,7 +623,7 @@ export function AgenciesManagement({
         setRegularReportsError(
           error?.message ||
             (isAm
-              ? "የወረዳ ሪፖርቶችን ማግኘት አልተቻለም"
+              ? "የመደበኛ ሪፖርቶችን ማግኘት አልተቻለም"
               : "Unable to load regular reports"),
         );
       } finally {
@@ -925,7 +690,6 @@ export function AgenciesManagement({
       const regionValue = newContract.region?.trim();
       const zoneValue = newContract.zone?.trim();
       const woredaValue = newContract.woreda?.trim();
-      const kebeleValue = newContract.kebele?.trim();
 
       if (!regionValue) {
         setContractZones([]);
@@ -982,12 +746,6 @@ export function AgenciesManagement({
         setContractKebeles([]);
         return;
       }
-
-      if (kebeleValue) {
-        await fetchContractKebeles(woreda.id);
-      } else {
-        setContractKebeles([]);
-      }
     };
 
     loadLocationHierarchy();
@@ -996,7 +754,6 @@ export function AgenciesManagement({
     newContract.region,
     newContract.zone,
     newContract.woreda,
-    newContract.kebele,
   ]);
 
   // Close address dropdowns on outside click
@@ -1029,9 +786,13 @@ export function AgenciesManagement({
 
   // Fetch zones when region changes
   const handleContractRegionChange = (value: string) => {
-    const region = contractRegions.find(
-      (r: any) => (r.nameEnglish || r.name) === value || String(r.id) === value,
-    );
+    const normalizeVal = (v: string) => (v || "").trim().toLowerCase();
+    const region = contractRegions.find((r: any) => {
+      const rName = r.nameEnglish || r.name || "";
+      return (
+        normalizeVal(rName) === normalizeVal(value) || String(r.id) === value
+      );
+    });
     setNewContract((prev: any) => ({
       ...prev,
       region: value,
@@ -1039,36 +800,53 @@ export function AgenciesManagement({
       woreda: "",
       kebele: "",
     }));
-    if (region?.id) fetchContractZones(region.id);
-    else setContractZones([]);
+    if (region?.id) {
+      fetchContractZones(region.id);
+    } else {
+      setContractZones([]);
+    }
     setContractWoredas([]);
     setContractKebeles([]);
   };
 
   // Fetch woredas when zone changes
   const handleContractZoneChange = (value: string) => {
-    const zone = contractZones.find(
-      (z: any) => (z.nameEnglish || z.name) === value || String(z.id) === value,
-    );
+    const normalizeVal = (v: string) => (v || "").trim().toLowerCase();
+    const zone = contractZones.find((z: any) => {
+      const zName = z.nameEnglish || z.name || "";
+      return (
+        normalizeVal(zName) === normalizeVal(value) || String(z.id) === value
+      );
+    });
     setNewContract((prev: any) => ({
       ...prev,
       zone: value,
       woreda: "",
       kebele: "",
     }));
-    if (zone?.id) fetchContractWoredas(zone.id);
-    else setContractWoredas([]);
+    if (zone?.id) {
+      fetchContractWoredas(zone.id);
+    } else {
+      setContractWoredas([]);
+    }
     setContractKebeles([]);
   };
 
   // Fetch kebeles when woreda changes
   const handleContractWoredaChange = (value: string) => {
-    const woreda = contractWoredas.find(
-      (w: any) => (w.nameEnglish || w.name) === value || String(w.id) === value,
-    );
+    const normalizeVal = (v: string) => (v || "").trim().toLowerCase();
+    const woreda = contractWoredas.find((w: any) => {
+      const wName = w.nameEnglish || w.name || "";
+      return (
+        normalizeVal(wName) === normalizeVal(value) || String(w.id) === value
+      );
+    });
     setNewContract((prev: any) => ({ ...prev, woreda: value, kebele: "" }));
-    if (woreda?.id) fetchContractKebeles(woreda.id);
-    else setContractKebeles([]);
+    if (woreda?.id) {
+      fetchContractKebeles(woreda.id);
+    } else {
+      setContractKebeles([]);
+    }
   };
 
   const getStatusStyles = (status: string) => {
@@ -1643,6 +1421,7 @@ export function AgenciesManagement({
     searchTerm,
     onSearchChange,
     innerRef,
+    helperText,
   }: {
     label: string;
     placeholder: string;
@@ -1657,6 +1436,7 @@ export function AgenciesManagement({
     searchTerm: string;
     onSearchChange: (v: string) => void;
     innerRef: React.RefObject<HTMLDivElement | null>;
+    helperText?: string;
   }) => {
     const normalizeValue = (raw: string) => (raw || "").trim().toLowerCase();
     const selected = options.find((o: any) => {
@@ -1665,6 +1445,32 @@ export function AgenciesManagement({
         (item) => normalizeValue(String(item || "")) === normalizeValue(value),
       );
     });
+    const [displayText, setDisplayText] = useState<string>(
+      selected ? getLocationName(selected) : "",
+    );
+
+    useEffect(() => {
+      if (!value?.trim()) {
+        setDisplayText("");
+        return;
+      }
+
+      const matched = options.find((o: any) => {
+        const optionValues = [
+          o.nameEnglish,
+          o.nameAmharic,
+          o.name,
+          String(o.id),
+        ];
+        return optionValues.some(
+          (item) =>
+            normalizeValue(String(item || "")) === normalizeValue(value),
+        );
+      });
+
+      setDisplayText(matched ? getLocationName(matched) : value);
+    }, [options, value]);
+
     const filtered = options.filter((o: any) =>
       (getLocationName(o) || "")
         .toLowerCase()
@@ -1684,23 +1490,34 @@ export function AgenciesManagement({
           className={`w-full px-3 py-2.5 rounded-xl border text-sm text-left flex items-center justify-between gap-2 transition-all relative ${disabled ? "bg-gray-50 text-gray-400 cursor-not-allowed" : "bg-white text-gray-700 hover:border-[#003366]/30 cursor-pointer"} ${isOpen ? "border-[#003366]/50 ring-2 ring-[#003366]/20" : "border-gray-200"}`}
         >
           <span
-            className={`truncate ${selected ? "font-bold text-[#003366]" : "text-gray-400"}`}
+            className={`truncate ${displayText ? "font-bold text-[#003366]" : "text-gray-400"}`}
           >
-            {selected ? getLocationName(selected) : placeholder}
+            {displayText || placeholder}
           </span>
           <span className="flex items-center gap-1 shrink-0">
             {selected ? (
-              <button
-                type="button"
+              <span
+                role="button"
+                tabIndex={0}
                 onClick={(e) => {
                   e.stopPropagation();
+                  setDisplayText("");
                   onClear();
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDisplayText("");
+                    onClear();
+                  }
                 }}
                 className="text-red-400 hover:text-red-600 transition-colors p-0.5"
                 title="Clear"
+                aria-label={isAm ? "ጠፋ" : "Clear"}
               >
                 <X className="w-4 h-4" />
-              </button>
+              </span>
             ) : (
               <ChevronDown
                 className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
@@ -1708,6 +1525,9 @@ export function AgenciesManagement({
             )}
           </span>
         </button>
+        {helperText && (
+          <p className="mt-1 text-[10px] text-slate-500">{helperText}</p>
+        )}
         {isOpen && !disabled && (
           <div className="absolute left-0 right-0 top-full z-30 mt-1 rounded-xl border border-gray-200 bg-white shadow-xl overflow-hidden">
             <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-2.5 bg-gray-50">
@@ -1739,6 +1559,22 @@ export function AgenciesManagement({
                       key={o.id}
                       type="button"
                       onClick={() => {
+                        const selectedLabel = getLocationName(
+                          options.find((item: any) => {
+                            const optionValues = [
+                              item.nameEnglish,
+                              item.nameAmharic,
+                              item.name,
+                              String(item.id),
+                            ];
+                            return optionValues.some(
+                              (itemValue) =>
+                                normalizeValue(String(itemValue || "")) ===
+                                normalizeValue(val),
+                            );
+                          }),
+                        );
+                        setDisplayText(selectedLabel || val);
                         onSelect(val);
                       }}
                       className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all ${val === value ? "bg-[#003366]/10 text-[#003366] font-bold" : "text-gray-700 hover:bg-gray-100"}`}
@@ -1846,7 +1682,7 @@ export function AgenciesManagement({
             },
             {
               id: "regularReports",
-              label: isAm ? "የወረዳ ሪፖርቶች" : "Regular Reports",
+              label: isAm ? "መደበኛ ሪፖርቶች" : "Regular Reports",
               icon: Calendar,
             },
             {
@@ -2470,11 +2306,11 @@ export function AgenciesManagement({
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h3 className="text-lg font-bold text-[#003366]">
-                    {isAm ? "የወረዳ ሪፖርቶች" : "Regular Period Reports"}
+                    {isAm ? "መደበኛ ሪፖርቶች" : "Regular Period Reports"}
                   </h3>
                   <p className="text-sm text-slate-500 mt-1">
                     {isAm
-                      ? "ይህ የድርጅቱ የወረዳ ሪፖርቶች ነው። ሪፖርቶችን ይመልከቱ እና ዝርዝር ይታያሉ።"
+                      ? "ይህ የድርጅቱ የመደበኛ ሪፖርቶች ነው። ሪፖርቶችን ይመልከቱ እና ዝርዝር ይታያሉ።"
                       : "Browse regular period reports for this organization and view the detail layout."}
                   </p>
                 </div>
@@ -2484,8 +2320,9 @@ export function AgenciesManagement({
                     whileTap={{ scale: 0.98 }}
                     type="button"
                     onClick={() => setSelectedRegularReport(null)}
-                    className="px-3 py-2 rounded-lg bg-[#003366] text-white text-sm font-bold hover:bg-[#003366]/90 transition"
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#003366] text-white text-sm font-bold hover:bg-[#003366]/90 transition"
                   >
+                    <ArrowLeft className="h-4 w-4" />
                     {isAm ? "ወደ ዝርዝር ይመለሱ" : "Back to report list"}
                   </motion.button>
                 )}
@@ -2538,6 +2375,7 @@ export function AgenciesManagement({
                               selectedRegularReport.superior.signatureUrl || "",
                           }
                         : null,
+
                     superiorFeedbackText:
                       selectedRegularReport.superiorFeedbackText || null,
                     superiorSignDate:
@@ -2551,7 +2389,7 @@ export function AgenciesManagement({
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <h4 className="text-base font-bold text-slate-900">
-                        {isAm ? "የወረዳ ሪፖርት ዝርዝር" : "Regular report list"}
+                        {isAm ? "የመደበኛ ሪፖርት ዝርዝር" : "Regular report list"}
                       </h4>
                       <p className="text-sm text-slate-500 mt-1">
                         {isAm
@@ -2573,7 +2411,7 @@ export function AgenciesManagement({
                 ) : regularReports.length === 0 ? (
                   <div className="p-10 text-center text-slate-500">
                     {isAm
-                      ? "ምንም የወረዳ ሪፖርት አልተገኘም"
+                      ? "ምንም የመደበኛ ሪፖርት አልተገኘም"
                       : "No regular reports found."}
                   </div>
                 ) : (
@@ -2581,6 +2419,9 @@ export function AgenciesManagement({
                     <table className="w-full text-left text-sm text-slate-700">
                       <thead className="bg-slate-50 text-xs uppercase tracking-[0.18em] text-slate-500">
                         <tr>
+                          <th className="px-4 py-3">
+                            {isAm ? "ተራ ቁጥር" : "Serial No"}
+                          </th>
                           <th className="px-4 py-3">
                             {isAm ? "ርዕስ" : "Title"}
                           </th>
@@ -2591,14 +2432,20 @@ export function AgenciesManagement({
                           <th className="px-4 py-3">
                             {isAm ? "የሪፖርት አባል" : "Reporter"}
                           </th>
+                          <th className="px-4 py-3 text-center">
+                            {isAm ? "ሰነድ" : "Document"}
+                          </th>
                           <th className="px-4 py-3 text-right">
                             {isAm ? "እርምጃ" : "Action"}
                           </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200 bg-white">
-                        {regularReports.map((report) => (
+                        {regularReports.map((report, index) => (
                           <tr key={report.id}>
+                            <td className="px-4 py-3 font-medium text-slate-700">
+                              {index + 1}
+                            </td>
                             <td className="px-4 py-3 font-semibold text-slate-900">
                               {report.reportTitle || `Report #${report.id}`}
                             </td>
@@ -2619,6 +2466,25 @@ export function AgenciesManagement({
                               {report.reporterName ||
                                 report.user?.fullName ||
                                 "—"}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                type="button"
+                                onClick={() => {
+                                  if (!report.reportFileUrl) return;
+                                  setSelectedDocUrl(report.reportFileUrl);
+                                  setSelectedDocName(
+                                    report.reportTitle ||
+                                      `Report #${report.id}`,
+                                  );
+                                }}
+                                disabled={!report.reportFileUrl}
+                                className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                {isAm ? "እይታ" : "Preview"}
+                              </motion.button>
                             </td>
                             <td className="px-4 py-3 text-right">
                               <motion.button
@@ -2748,91 +2614,130 @@ export function AgenciesManagement({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 text-gray-700">
-                    {org.serviceContracts.map((contract, idx) => (
-                      <motion.tr
-                        key={contract.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3 + idx * 0.03 }}
-                        whileHover={{ backgroundColor: "rgba(0,51,102,0.02)" }}
-                        className="transition-colors"
-                      >
-                        <td className="p-4">
-                          <div className="font-bold text-[#003366]">
-                            {contract.serviceUserName}
-                          </div>
-                          <div className="text-xs text-gray-400 mt-1 font-mono flex items-center gap-1">
-                            <span className="px-1.5 py-0.5 bg-[#003366]/5 text-[#003366] rounded text-[10px] font-bold">
-                              CID-{contract.id}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <div className="flex items-start gap-1 text-xs text-gray-600 max-w-xs leading-relaxed">
-                            <MapPin
-                              size={14}
-                              className="text-[#003366]/40 shrink-0 mt-0.5"
-                            />
-                            <span>{contract.addressText}</span>
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <span
-                            className={`inline-flex items-center justify-center text-xs font-bold uppercase tracking-wider rounded-full px-3 py-1 ${getContractStatusBadge(contract.status)}`}
-                          >
-                            {contract.status ?? (isAm ? "ያልታወቀ" : "Unknown")}
-                          </span>
-                        </td>
-                        <td className="p-4 text-center">
-                          <span className="inline-flex items-center justify-center font-bold text-sm text-[#003366] bg-[#003366]/5 border border-[#003366]/10 px-3 py-1 rounded-lg min-w-[50px]">
-                            {contract.assignedPersonnelCount}
-                          </span>
-                        </td>
-                        <td className="p-4 text-center">
-                          <div className="text-sm text-gray-700 font-medium">
-                            {contract.createdAt}
-                          </div>
-                        </td>
-                        <td className="p-4 text-xs space-y-1 text-gray-500">
-                          <p>
-                            {contract.terminatedAt ||
-                              contract.updatedAt ||
-                              contract.createdAt}
-                          </p>
-                        </td>
-                        <td className="p-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <motion.button
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
-                              type="button"
-                              onClick={() => handleOpenContractModal(contract)}
-                              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#003366] bg-[#003366]/5 hover:bg-[#003366]/10 px-3 py-1.5 rounded-lg border border-[#003366]/10 transition"
-                            >
-                              <Pencil size={14} />
-                              <span>{isAm ? "አስተካክል" : "Edit"}</span>
-                            </motion.button>
-                            <motion.button
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
-                              type="button"
-                              onClick={() => {
-                                setSelectedContractUrl(contract.contractUrl);
-                                setSelectedContractName(
-                                  contract.serviceUserName,
-                                );
-                              }}
-                              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#003366] bg-[#003366]/5 hover:bg-[#003366]/10 px-3 py-1.5 rounded-lg border border-[#003366]/10 transition"
-                            >
-                              <span>
-                                {isAm ? "ውሉን ይመልከቱ" : "Review Contract"}
+                    {org.serviceContracts && org.serviceContracts.length > 0 ? (
+                      org.serviceContracts.map((contract, idx) => (
+                        <motion.tr
+                          key={contract.id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.3 + idx * 0.03 }}
+                          whileHover={{
+                            backgroundColor: "rgba(0,51,102,0.02)",
+                          }}
+                          className="transition-colors"
+                        >
+                          <td className="p-4">
+                            <div className="font-bold text-[#003366]">
+                              {contract.serviceUserName}
+                            </div>
+                            <div className="text-xs text-gray-400 mt-1 font-mono flex items-center gap-1">
+                              <span className="px-1.5 py-0.5 bg-[#003366]/5 text-[#003366] rounded text-[10px] font-bold">
+                                CID-{contract.id}
                               </span>
-                              <ArrowUpRight size={14} />
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-start gap-1 text-xs text-gray-600 max-w-xs leading-relaxed">
+                              <MapPin
+                                size={14}
+                                className="text-[#003366]/40 shrink-0 mt-0.5"
+                              />
+                              <span>{contract.addressText}</span>
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <span
+                              className={`inline-flex items-center justify-center text-xs font-bold uppercase tracking-wider rounded-full px-3 py-1 ${getContractStatusBadge(contract.status)}`}
+                            >
+                              {contract.status ?? (isAm ? "ያልታወቀ" : "Unknown")}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className="inline-flex items-center justify-center font-bold text-sm text-[#003366] bg-[#003366]/5 border border-[#003366]/10 px-3 py-1 rounded-lg min-w-[50px]">
+                              {contract.assignedPersonnelCount}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <div className="text-sm text-gray-700 font-medium">
+                              {contract.createdAt}
+                            </div>
+                          </td>
+                          <td className="p-4 text-xs space-y-1 text-gray-500">
+                            <p>
+                              {contract.terminatedAt ||
+                                contract.updatedAt ||
+                                contract.createdAt}
+                            </p>
+                          </td>
+                          <td className="p-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                type="button"
+                                onClick={() =>
+                                  handleOpenContractModal(contract)
+                                }
+                                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#003366] bg-[#003366]/5 hover:bg-[#003366]/10 px-3 py-1.5 rounded-lg border border-[#003366]/10 transition"
+                              >
+                                <Pencil size={14} />
+                                <span>{isAm ? "አስተካክል" : "Edit"}</span>
+                              </motion.button>
+                              <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedContractUrl(contract.contractUrl);
+                                  setSelectedContractName(
+                                    contract.serviceUserName,
+                                  );
+                                }}
+                                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#003366] bg-[#003366]/5 hover:bg-[#003366]/10 px-3 py-1.5 rounded-lg border border-[#003366]/10 transition"
+                              >
+                                <span>
+                                  {isAm ? "ውሉን ይመልከቱ" : "Review Contract"}
+                                </span>
+                                <ArrowUpRight size={14} />
+                              </motion.button>
+                            </div>
+                          </td>
+                        </motion.tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={7} className="p-12">
+                          <div className="flex flex-col items-center justify-center gap-3 text-center">
+                            <div className="rounded-full bg-gray-100 p-3">
+                              <FileText
+                                className="w-6 h-6 text-gray-400"
+                                strokeWidth={1.5}
+                              />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-700">
+                                {isAm
+                                  ? "ምንም ውል ገብቷል ወይም ተመዝግቦ ነበር"
+                                  : "No service contracts recorded yet"}
+                              </p>
+                              <p className="text-sm text-gray-500 mt-1">
+                                {isAm
+                                  ? "ሞገስ ይደግፍ ወይም ጡረታ እስኪካሄድ ድረስ"
+                                  : "Service contracts will appear here once added"}
+                              </p>
+                            </div>
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => handleOpenContractModal()}
+                              className="mt-4 px-4 py-2 bg-gradient-to-r from-[#003366] to-[#001F3F] text-white rounded-lg text-sm font-bold hover:shadow-lg transition"
+                            >
+                              {isAm ? "+ ውል ያክሉ" : "+ Add Contract"}
                             </motion.button>
                           </div>
                         </td>
-                      </motion.tr>
-                    ))}
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -3484,6 +3389,9 @@ export function AgenciesManagement({
                       searchTerm={regionSearch}
                       onSearchChange={setRegionSearch}
                       innerRef={contractRefs.region}
+                      helperText={
+                        isAm ? "ጠፋ ለማድረግ X ይጫኑ" : "Click the X to clear"
+                      }
                     />
                     <SearchableLocationSelect
                       label={isAm ? "ዞን/ከተማ" : "Zone/Sub-city"}
@@ -3510,6 +3418,9 @@ export function AgenciesManagement({
                       searchTerm={zoneSearch}
                       onSearchChange={setZoneSearch}
                       innerRef={contractRefs.zone}
+                      helperText={
+                        isAm ? "ጠፋ ለማድረግ X ይጫኑ" : "Click the X to clear"
+                      }
                     />
                     <SearchableLocationSelect
                       label={isAm ? "ወረዳ" : "Woreda"}
@@ -3538,6 +3449,9 @@ export function AgenciesManagement({
                       searchTerm={woredaSearch}
                       onSearchChange={setWoredaSearch}
                       innerRef={contractRefs.woreda}
+                      helperText={
+                        isAm ? "ጠፋ ለማድረግ X ይጫኑ" : "Click the X to clear"
+                      }
                     />
                     <SearchableLocationSelect
                       label={isAm ? "ቀበሌ" : "Kebele"}
@@ -3554,6 +3468,17 @@ export function AgenciesManagement({
                         setKebeleSearch("");
                       }}
                       onSelect={(val) => {
+                        const normalizeVal = (v: string) =>
+                          (v || "").trim().toLowerCase();
+                        const selectedKebele = contractKebeles.find(
+                          (k: any) => {
+                            const kName = k.nameEnglish || k.name || "";
+                            return (
+                              normalizeVal(kName) === normalizeVal(val) ||
+                              String(k.id) === val
+                            );
+                          },
+                        );
                         setNewContract((prev: any) => ({
                           ...prev,
                           kebele: val,
@@ -3572,6 +3497,9 @@ export function AgenciesManagement({
                       searchTerm={kebeleSearch}
                       onSearchChange={setKebeleSearch}
                       innerRef={contractRefs.kebele}
+                      helperText={
+                        isAm ? "ጠፋ ለማድረግ X ይጫኑ" : "Click the X to clear"
+                      }
                     />
                     <div>
                       <label className="text-[9px] uppercase tracking-[0.1em] font-bold text-[#003366] mb-1 block">
@@ -4431,6 +4359,4 @@ export function AgenciesManagement({
     </div>
   );
 }
-
-// Fixed build safety target redundancy fallback export mapping rules:
 export default AgenciesManagement;

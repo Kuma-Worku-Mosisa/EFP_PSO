@@ -1,11 +1,11 @@
 // filepath: frontend/src/pages/admin/OrganizationsDashboard.tsx
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { useLanguage } from "../../context/LanguageContext";
 import {
   Building2,
   Search,
   SlidersHorizontal,
-  Plus,
   ArrowRight,
   CheckCircle2,
   XCircle,
@@ -62,6 +62,9 @@ export default function OrganizationDashboard() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { language } = useLanguage();
+  const isAm = language === "am";
+  const t = (en: string, am: string) => (isAm ? am : en);
 
   // Ensure the imported component is recognized with expected props
   const AgenciesManagementComponent = AgenciesManagement as ComponentType<{
@@ -125,42 +128,42 @@ export default function OrganizationDashboard() {
   }, []);
 
   // Normalize various DB status strings into UI keys/labels/styles
-  function normalizeStatus(s?: string) {
+  function normalizeStatus(s?: string, isAm = false) {
     if (!s)
       return {
         key: "unknown",
-        label: "Unknown",
+        label: isAm ? "ያልታወቀ" : "Unknown",
         style: "bg-gray-50 text-gray-700 border border-gray-100",
       } as const;
     const v = s.toLowerCase();
     if (v.includes("suspend"))
       return {
         key: "suspended",
-        label: "Suspended",
+        label: isAm ? "ተሰናክሏል" : "Suspended",
         style: "bg-purple-50 text-purple-700 border border-purple-100",
       } as const;
     if (v.includes("review"))
       return {
         key: "under_review",
-        label: "Under Review",
+        label: isAm ? "ግምገማ ላይ" : "Under Review",
         style: "bg-sky-50 text-sky-700 border border-sky-100",
       } as const;
     if (v.includes("approve") || v.includes("active"))
       return {
         key: "active",
-        label: "Active",
+        label: isAm ? "ንቁ" : "Active",
         style: "bg-green-50 text-green-700 border border-green-100",
       } as const;
     if (v.includes("pending"))
       return {
         key: "pending",
-        label: "Pending",
+        label: isAm ? "በመጠበቅ ላይ" : "Pending",
         style: "bg-amber-50 text-amber-700 border border-amber-100",
       } as const;
     if (v.includes("reject") || v.includes("revock") || v.includes("revoked"))
       return {
         key: "revocked",
-        label: "Revocked",
+        label: isAm ? "ተሰርዟል" : "Revocked",
         style: "bg-red-50 text-red-700 border border-red-100",
       } as const;
     return {
@@ -178,17 +181,17 @@ export default function OrganizationDashboard() {
 
     const matchesStatus =
       statusFilter === "ALL" ||
-      normalizeStatus(org.status).label === statusFilter;
+      normalizeStatus(org.status, isAm).label === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
 
   const totalOrgs = organizations.length;
   const activeOrgs = organizations.filter(
-    (o) => normalizeStatus(o.status).key === "active",
+    (o) => normalizeStatus(o.status, isAm).key === "active",
   ).length;
   const pendingOrgs = organizations.filter(
-    (o) => normalizeStatus(o.status).key === "pending",
+    (o) => normalizeStatus(o.status, isAm).key === "pending",
   ).length;
 
   const renderOrgLogo = (name: string, id: number, logoUrl?: string | null) => {
@@ -309,12 +312,15 @@ export default function OrganizationDashboard() {
     <div className="space-y-6">
       {loading && (
         <div className="min-h-[60vh] flex items-center justify-center rounded-3xl border border-gray-100 bg-white p-8 shadow-sm">
-          <LoadingSpinner fullPage text="Loading organizations..." />
+          <LoadingSpinner
+            fullPage
+            text={t("Loading organizations...", "ድርጅቶችን በመጫን ላይ...")}
+          />
         </div>
       )}
       {error && (
         <div className="p-3 bg-red-50 border-l-4 border-red-400 text-red-700 rounded">
-          Could not load organizations: {error}
+          {t("Could not load organizations:", "ድርጅቶችን መጫን አልተቻለም:")} {error}
         </div>
       )}
       {/* Structural Header Ribbon */}
@@ -326,23 +332,15 @@ export default function OrganizationDashboard() {
         <div className="absolute top-0 right-0 w-32 h-full bg-gradient-to-l from-[#FFD700]/5 to-transparent" />
         <div className="relative">
           <h2 className="text-2xl font-black text-white uppercase tracking-tight">
-            Organization Registry
+            {t("Organization Registry", "የድርጅት መዝገብ")}
           </h2>
           <div className="h-0.5 w-16 bg-gradient-to-r from-[#FFD700] to-transparent mt-1" />
           <p className="text-xs text-white/60 font-medium mt-2">
-            Audit licensed enterprise records, operational branch scope,
-            deployment workforce sizes, and legal authorization signatures.
+            {t(
+              "Audit licensed enterprise records, operational branch scope, deployment workforce sizes, and legal authorization signatures.",
+              "የተፈቀዱ የንግድ ማዕከሎችን መዝገብ፣ የሥራ ቅርንጫፎች ስፋት፣ የሰራተኞች ብዛት እና ህጋዊ ፈቃድ ፊርማዎችን ይመረምራል。",
+            )}
           </p>
-        </div>
-        <div className="relative">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#FFD700] px-4 py-2.5 text-xs font-black text-[#003366] uppercase tracking-wider shadow-md hover:shadow-lg transition-all duration-200"
-          >
-            <Plus className="h-4 w-4" />
-            Register Enterprise
-          </motion.button>
         </div>
       </motion.div>
 
@@ -350,19 +348,19 @@ export default function OrganizationDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
           {
-            label: "Total Legal Entities",
+            label: t("Total Legal Organizations", "አጠቃላይ ህጋዊ ድርጅቶች"),
             value: totalOrgs,
             icon: <Building2 className="w-5 h-5 text-blue-600" />,
             color: "bg-blue-50/60",
           },
           {
-            label: "Authorized Nodes",
+            label: t("Active Organizations", "ንቁ ድርጅቶች"),
             value: activeOrgs,
             icon: <CheckCircle2 className="w-5 h-5 text-emerald-600" />,
             color: "bg-emerald-50/60",
           },
           {
-            label: "Awaiting Clearance",
+            label: t("Pending Organizations", "በመጠበቅ ላይ ያሉ ድርጅቶች"),
             value: pendingOrgs,
             icon: <Clock className="w-5 h-5 text-amber-500" />,
             color: "bg-amber-50/60",
@@ -391,7 +389,10 @@ export default function OrganizationDashboard() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by corporate name or አማርኛ መስሪያ ቤት..."
+            placeholder={t(
+              "Search by corporate name or አማርኛ መስሪያ ቤት...",
+              "በድርጅት ስም ወይም በአማርኛ መስሪያ ቤት ይፈልጉ...",
+            )}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-2.5 text-xs rounded-xl border border-gray-100 bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all font-medium text-slate-700"
@@ -405,12 +406,14 @@ export default function OrganizationDashboard() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="text-xs font-bold rounded-xl border border-gray-100 bg-gray-50/50 py-2.5 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-primary transition-all text-slate-600 cursor-pointer"
           >
-            <option value="ALL">All Classifications</option>
-            <option value="Active">Active</option>
-            <option value="Pending">Pending Clearance</option>
-            <option value="Under Review">Under Review</option>
-            <option value="Revocked">Revocked</option>
-            <option value="Suspended">Suspended</option>
+            <option value="ALL">{t("All Classifications", "ሁሉም ምድቦች")}</option>
+            <option value="Active">{t("Active", "ንቁ")}</option>
+            <option value="Pending">
+              {t("Pending Clearance", "በመጠበቅ ላይ")}
+            </option>
+            <option value="Under Review">{t("Under Review", "ግምገማ ላይ")}</option>
+            <option value="Revocked">{t("Revocked", "ተሰርዟል")}</option>
+            <option value="Suspended">{t("Suspended", "ተሰናክሏል")}</option>
           </select>
         </div>
       </div>
@@ -421,16 +424,32 @@ export default function OrganizationDashboard() {
           <table className="w-full text-left border-collapse whitespace-nowrap">
             <thead>
               <tr className="bg-gray-50/70 border-b border-gray-100 text-[10px] font-black text-gray-400 tracking-widest uppercase">
-                <th className="px-6 py-4 text-center w-12">Logo</th>
-                <th className="px-6 py-4">Organization Name</th>
-                <th className="px-6 py-4">Trade Name</th>
-                <th className="px-6 py-4">Branch Network</th>
-                <th className="px-6 py-4">Total Workforce</th>
-                <th className="px-6 py-4">Service Contracts</th>
-                <th className="px-6 py-4">Capital Strength</th>
-                <th className="px-6 py-4">Registered Date</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+                <th className="px-6 py-4 text-center w-12">
+                  {t("Logo", "ሎጎ")}
+                </th>
+                <th className="px-6 py-4">
+                  {t("Organization Name", "የድርጅት ስም")}
+                </th>
+                <th className="px-6 py-4">{t("Trade Name", "የንግድ ስም")}</th>
+                <th className="px-6 py-4">
+                  {t("Branch Network", "የቅርንጫፍ ኔትዎርክ")}
+                </th>
+                <th className="px-6 py-4">
+                  {t("Total Workforce", "አጠቃላይ ሰራተኞች")}
+                </th>
+                <th className="px-6 py-4">
+                  {t("Service Contracts", "የአገልግሎት ውሎች")}
+                </th>
+                <th className="px-6 py-4">
+                  {t("Capital Strength", "የካፒታል ጥንካሬ")}
+                </th>
+                <th className="px-6 py-4">
+                  {t("Registered Date", "የተመዘገበበት ቀን")}
+                </th>
+                <th className="px-6 py-4">{t("Status", "ሁኔታ")}</th>
+                <th className="px-6 py-4 text-right">
+                  {t("Actions", "እርምጃዎች")}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 text-sm font-medium text-slate-700">
@@ -481,7 +500,7 @@ export default function OrganizationDashboard() {
                             {org.totalBranches}
                           </span>
                           <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">
-                            Bureaus
+                            {t("Bureaus", "ቢሮዎች")}
                           </span>
                         </div>
                       </div>
@@ -498,7 +517,7 @@ export default function OrganizationDashboard() {
                             {org.totalEmployees.toLocaleString()}
                           </span>
                           <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">
-                            Personnel
+                            {t("Personnel", "ሰራተኞች")}
                           </span>
                         </div>
                       </div>
@@ -515,7 +534,7 @@ export default function OrganizationDashboard() {
                             {org.totalServiceContracts}
                           </span>
                           <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">
-                            Active Clients
+                            {t("Active Clients", "ንቁ ደንበኞች")}
                           </span>
                         </div>
                       </div>
@@ -591,7 +610,7 @@ export default function OrganizationDashboard() {
                         onClick={() => setSelectedOrgId(org.id)}
                         className="inline-flex items-center gap-1.5 text-[10px] font-black text-secondary hover:text-primary uppercase tracking-widest transition-colors cursor-pointer group/btn px-3 py-1 rounded-lg border border-gray-100 bg-white"
                       >
-                        Agencies
+                        {t("Agencies", "ኤጀንሲዎች")}
                         <ArrowRight className="h-3 w-3 transition-transform duration-150 group-hover/btn:translate-x-0.5" />
                       </button>
 
@@ -599,7 +618,7 @@ export default function OrganizationDashboard() {
                         onClick={() => openEditModal(org)}
                         className="inline-flex items-center gap-1 text-[10px] font-black text-white bg-primary px-3 py-1 rounded-lg uppercase tracking-wider hover:bg-opacity-90 transition-all"
                       >
-                        Update
+                        {t("Update", "አስተካክል")}
                       </button>
                     </td>
                   </motion.tr>
@@ -615,7 +634,10 @@ export default function OrganizationDashboard() {
                 <Building2 className="w-6 h-6 text-gray-300" />
               </div>
               <p className="text-sm font-bold text-gray-400">
-                No organization matches found across regional branches.
+                {t(
+                  "No organization matches found across regional branches.",
+                  "በክልል ቅርንጫፎች ውስጥ የሚመሳሰሉ ድርጅቶች አልተገኙም。",
+                )}
               </p>
             </div>
           )}
@@ -645,7 +667,7 @@ export default function OrganizationDashboard() {
                 {/* Modal Header */}
                 <div className="bg-gradient-to-r from-primary to-secondary p-4 flex items-center justify-between">
                   <h3 className="text-white font-black uppercase tracking-wider text-sm">
-                    Organization Logo
+                    {t("Organization Logo", "የድርጅት ሎጎ")}
                   </h3>
                   <button
                     onClick={() => setSelectedLogoUrl(null)}
@@ -671,7 +693,7 @@ export default function OrganizationDashboard() {
                     onClick={() => setSelectedLogoUrl(null)}
                     className="px-4 py-2 bg-primary text-white rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-opacity-90 transition-all"
                   >
-                    Close
+                    {t("Close", "ዝጋ")}
                   </button>
                 </div>
               </div>
@@ -701,7 +723,7 @@ export default function OrganizationDashboard() {
               <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
                 <div className="p-4 flex items-center justify-between border-b">
                   <h3 className="font-black uppercase tracking-wider text-sm">
-                    Edit Organization
+                    {t("Edit Organization", "ድርጅት አስተካክል")}
                   </h3>
                   <button
                     onClick={closeEditModal}
@@ -714,7 +736,7 @@ export default function OrganizationDashboard() {
                 <div className="p-6 space-y-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-600 mb-1">
-                      Status
+                      {t("Status", "ሁኔታ")}
                     </label>
                     <select
                       value={editStatus}
@@ -731,7 +753,7 @@ export default function OrganizationDashboard() {
 
                   <div>
                     <label className="block text-xs font-bold text-gray-600 mb-1">
-                      Registered Date
+                      {t("Registered Date", "የተመዘገበበት ቀን")}
                     </label>
                     <input
                       type="datetime-local"
@@ -747,13 +769,13 @@ export default function OrganizationDashboard() {
                     onClick={closeEditModal}
                     className="px-4 py-2 rounded-lg border"
                   >
-                    Cancel
+                    {t("Cancel", "ሰርዝ")}
                   </button>
                   <button
                     onClick={submitUpdate}
                     className="px-4 py-2 rounded-lg bg-primary text-white font-bold"
                   >
-                    Save
+                    {t("Save", "አስቀምጥ")}
                   </button>
                 </div>
               </div>

@@ -201,8 +201,8 @@ export const IncidentReportPDF: React.FC<Props> = ({
   const isAmharic = normalizedLanguage === "am";
 
   const formatCurrency = (amount: any) => {
-    if (!amount) return "N/A";
-    return `${parseFloat(amount).toLocaleString()} ETB`;
+    if (!amount) return "---";
+    return `${parseFloat(amount).toLocaleString()} ${isAmharic ? "ብር" : "ETB"}`;
   };
 
   const formatDate = (dateString: any) => {
@@ -237,44 +237,44 @@ export const IncidentReportPDF: React.FC<Props> = ({
 
   const labels = {
     govTitle: isAmharic
-      ? "የኢትዮጵያ ፌደራል ፖሊስ ኮሚሽን"
+      ? "በኢትዮጵያ ፌደራል ፖሊስ ኮሚሽን"
       : "Ethiopian Federal Police Commission",
     subGovTitle: isAmharic
-      ? "የግል ጥበቃ ድርጅቶች ቁጥጥር እና አስተዳደር ዳይሬክቶሬት"
-      : "Private Security Organizations Control & Administration Directorate",
-    docTitle: isAmharic
-      ? "የወንጀል እና የክስተት ምርመራ ሪፖርት"
-      : "Official Crime & Incident Investigation Report",
+      ? " የጦር  መሳሪያ እና  የጥበቃ ተቋማት  ቁጥጥር መምሪያ"
+      : "Arms and Security Institutions Control Department",
+    docTitle: isAmharic ? "የወንጀል ክስተት  ሪፖርት" : "Crime incident report",
     fileNumber: isAmharic ? "የመዝገብ ቁጥር" : "Official File Number",
     filingDate: isAmharic ? "የተመዘገበበት ቀን" : "Filing Date",
     organizationLabel: isAmharic ? "የተቋሙ ስም" : "Organization Name",
     section1Title: isAmharic
-      ? "1. የክስተት ኢላማ እና ዋና መረጃ"
-      : "1. Incident Target & Core Metadata",
+      ? "1. ክስተት የተፈጸመበት እና የመረጃ አይነት፡-"
+      : "1. Where the incident occurred and the type of information:",
     section2Title: isAmharic
-      ? "2. የቦታ ሰራተኞች ብዛት"
+      ? "2. የሳይት  ሰራተኞች ብዛት፡-"
       : "2. Dynamic Scene Personnel Headcounts",
     section3Title: isAmharic
-      ? "3. የተጠርጣሪዎች እና የተቋሙ ግንኙነት"
-      : "3. Identified Suspects & Affiliation",
+      ? "3. የተጠርጣሪዎች እና የተቋሙ   ያለው ግንኙነት"
+      : "3. The relationship between the suspects and the institution",
     serviceReceiverLabel: isAmharic
-      ? "የአገልግሎት ተቀባይ (ደንበኛ ኢላማ)"
-      : "Service Receiver (Client Target)",
+      ? "የአገልግሎት  ተጠቃሚ  (ደንበኛ)"
+      : "Service user (customer)",
     crimeTypeLabel: isAmharic
       ? "የወንጀል / የክስተት ምድብ"
       : "Crime / Incident Category",
     occurrenceLabel: isAmharic ? "የክስተት ሰዓት" : "Occurrence Timestamp",
     financialImpactLabel: isAmharic
-      ? "የተገመገመ የገንዘብ ጉዳት (ETB)"
-      : "Evaluated Financial Loss (ETB)",
-    damageLabel: isAmharic ? "የጉዳት እና የኪሳራ መግለጫ" : "Damage & Loss Description",
-    actionTakenLabel: isAmharic ? "የተወሰደው እርምጃ ሁኔታ" : "Action Taken Status",
+      ? "በንብረት  የደረሰ  ጉዳት  የገንዘብ  ግምት (ኢቲቢ)"
+      : "Estimated monetary value of property damage ",
+    damageLabel: isAmharic ? "ጉዳት እና  መግለጫ" : "Damage & Loss Description",
+    actionTakenLabel: isAmharic ? "የተወሰደ  የሁኔታ  እርምጃ" : "Action Taken Status",
     additionalExplanationLabel: isAmharic
       ? "ተጨማሪ ማብራሪያ"
       : "Additional Explanation",
-    suspectNameLabel: isAmharic ? "የተጠርጣሪ ስም" : "Suspect Name",
-    relationLabel: isAmharic ? "ከአካል ጋር ያለው ግንኙነት" : "Relation to Agency",
-    employeeIdLabel: isAmharic ? "የሰራተኛ መታወቂያ" : "Employee ID",
+    suspectNameLabel: isAmharic ? "የተጠርጣሪ ሙሉ ስም" : "Suspect Full Name",
+    relationLabel: isAmharic
+      ? "ከድርጅቱ ጋር ያለው ግንኙነት"
+      : "Relationship with the Institution",
+    employeeIdLabel: isAmharic ? " የተቋሙ  መታወቂያ" : "Institution ID",
     reviewerFeedbackLabel: isAmharic
       ? "የገመጋው እርማት እና አስተያየት"
       : "Reviewer Directives & Feedback",
@@ -290,11 +290,13 @@ export const IncidentReportPDF: React.FC<Props> = ({
     signedLabel: isAmharic ? "ተፈርመዋል:" : "Signed:",
     unknownValue: isAmharic ? "ያልታወቀ" : "Unknown",
     naValue: isAmharic ? "የለም" : "N/A",
-    guardsLabel: isAmharic ? "ጠባቂዎች" : "Guards",
-    clientStaffLabel: isAmharic ? "የደንበኛ ሰራተኞች" : "Client Staff",
-    bystandersLabel: isAmharic ? "ታዳሚዎች" : "Bystanders",
-    totalPresentLabel: isAmharic ? "አጠቃላይ የተገኙ" : "Total Present",
-    suspectsLabel: isAmharic ? "ተጠርጣሪዎች" : "Suspects",
+    guardsLabel: isAmharic ? "ጥበቃዎች" : "Guards",
+    clientStaffLabel: isAmharic ? "የደንበኛ ሰራተኞች" : "Customer staff",
+    bystandersLabel: isAmharic ? "በሌላ አካል" : "In another body",
+    totalPresentLabel: isAmharic
+      ? "በፖሊስ  ቁጥጥር  ስር   ውለዋል"
+      : "They have been taken into police custody.",
+    suspectsLabel: isAmharic ? " የተጠርጣሪዎች ጠ/ድምር" : "Total number of suspects",
   };
 
   return (
@@ -304,6 +306,8 @@ export const IncidentReportPDF: React.FC<Props> = ({
           <Text style={styles.govTitle}>{labels.govTitle}</Text>
           <Text style={styles.subGovTitle}>{labels.subGovTitle}</Text>
         </View>
+
+        <Text style={styles.docTitle}>{labels.docTitle}</Text>
 
         <View style={styles.metaGrid}>
           <View style={styles.metaColumn}>
@@ -321,8 +325,6 @@ export const IncidentReportPDF: React.FC<Props> = ({
             </Text>
           </View>
         </View>
-
-        <Text style={styles.docTitle}>{labels.docTitle}</Text>
 
         <View style={styles.sectionTitle}>
           <Text>{labels.section1Title}</Text>
