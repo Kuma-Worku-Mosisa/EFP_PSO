@@ -32,8 +32,8 @@ INSERT [dbo].[regions] ([region_id], [region_name_am], [region_name_en]) VALUES 
 GO
 INSERT [dbo].[regions] ([region_id], [region_name_am], [region_name_en]) VALUES (8, N'ኦሮሚያ', N'Oromia')
 GO
-INSERT [dbo].[regions] ([region_id], [region_name_am], [region_name_en]) VALUES (9, N'ደቡብ ብሔሮች ብሔረሰቦችና ሕዝቦች', N'SNNP')
-GO
+--INSERT [dbo].[regions] ([region_id], [region_name_am], [region_name_en]) VALUES (9, N'ደቡብ ብሔሮች ብሔረሰቦችና ሕዝቦች', N'SNNP')
+---GO
 INSERT [dbo].[regions] ([region_id], [region_name_am], [region_name_en]) VALUES (10, N'ጋምቤላ', N'Gambella')
 GO
 INSERT [dbo].[regions] ([region_id], [region_name_am], [region_name_en]) VALUES (11, N'ደቡብ ኢትዮጵያ', N'South Ethiopia')
@@ -365,46 +365,6 @@ INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VA
 GO
 INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (155, 13, N'ዳዎሮ', N'Dawro')
 GO
-INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (156, 9, N'የም ሊዩ', N'Yem Liyu')
-GO
-INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (157, 9, N'ዌላይታ', N'Welayta')
-GO
-INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (158, 9, N'ሲልቴ', N'Silite')
-GO
-INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (159, 9, N'ኮንሶ', N'Konso')
-GO
-INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (160, 9, N'ኬምባታ ቴምባሮ', N'Kembata Tembaro')
-GO
-INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (161, 9, N'ሃላባ', N'Halaba')
-GO
-INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (162, 9, N'ሃዲያ', N'Hadiya')
-GO
-INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (163, 9, N'ጉራጌ', N'Gurage')
-GO
-INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (164, 9, N'ጎፋ', N'Gofa')
-GO
-INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (165, 9, N'ጌደዎ', N'Gedeo')
-GO
-INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (166, 9, N'ጋሞ', N'Gamo')
-GO
-INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (167, 9, N'ዲላ ከተማ አስተዳደር', N'Dilla City Admin')
-GO
-INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (168, 9, N'ደራሼ ሊዩ', N'Derashe Liyu')
-GO
-INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (169, 9, N'ደቡባዊ', N'Debubawi')
-GO
-INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (170, 9, N'ደቡብ ኦሞ', N'Debub Omo')
-GO
-INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (171, 9, N'ዳዎሮ', N'Dawro')
-GO
-INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (172, 9, N'ቡርጂ ሊዩ', N'Burji Liyu')
-GO
-INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (173, 9, N'ቤንች ሼኮ', N'Bench Sheko')
-GO
-INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (174, 9, N'ባስኬቶ ልዩ', N'Basketo Special')
-GO
-INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (175, 9, N'አማሮ ሊዩ', N'Amaro Liyu')
-GO
 INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (176, 3, N'ሌሚ ኩራ', N'Lemi Kura')
 GO
 INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (177, 3, N'ቦሌ ንግድ ክፍል', N'Bole SubCity')
@@ -442,8 +402,6 @@ GO
 INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (193, 6, N'ደቡባዊ', N'Debubawi')
 GO
 INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (194, 6, N'ምዕራባዊ', N'Mirabawi')
-GO
-INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (195, 9, N'አማሮ ልዩ', N'Amaro Liyu')
 GO
 INSERT [dbo].[zones] ([zone_id], [region_id], [zone_name_am], [zone_name_en]) VALUES (196, 13, N'ዳውሮ', N'Dawro')
 GO
@@ -1514,234 +1472,6 @@ INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_e
 GO
 INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (522, 189, N'ትስኤልኤምት', N'Tselemt')
 GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (523, 195, N'አልልኤ ልኢይኡ ውኤርኤድአ', N'Alle Liyu Wereda')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (524, 175, N'አምአርኦ ልኢይኡ ውኤርኤድአ', N'Amaro Liyu Wereda')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (525, 174, N'በአስክኤትኦ', N'Basketo')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (526, 173, N'አንድርአሲህአ', N'Andracha')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (527, 173, N'ግኤትአ', N'Geta')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (528, 172, N'በኡርጅኢ ልኢይኡ ውኤርኤድአ', N'Burji Liyu Wereda')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (529, 171, N'በኦልኦስኦበኦምበኤ', N'Bolosobombe')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (530, 171, N'ድኢትአ', N'Dita')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (531, 171, N'ኤስኤርአ', N'Esera')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (532, 170, N'በኤንአ ትስኤምአይ', N'Bena Tsemay')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (533, 170, N'ድአስኤንኤሲህ', N'Dasenech')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (534, 170, N'ድኤበኡበ አርኢ', N'Debub Ari')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (535, 170, N'ግኤድኤበአንኦ ግኡትአዝአር ውኤልኤንኤ', N'Gedebano Gutazar Welene')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (536, 170, N'ህአምኤር', N'Hamer')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (537, 170, N'ጅኢንክአ ክኤትኤምአ አስትኤድአድኤር', N'Jinka Ketema Astedader')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (538, 170, N'ምአልልኤ', N'Malle')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (539, 170, N'ንይአንግአትኦም', N'Nyangatom')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (540, 170, N'ስአልአምአግኦ', N'Salamago')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (541, 170, N'ስኤምኤን አርኢ', N'Semen Ari')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (542, 169, N'አልአጅኤ', N'Alaje')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (543, 168, N'ድኢርአስህኤ ልኢይኡ ውኤርኤድአ', N'Dirashe Liyu Wereda')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (544, 167, N'ድኢልልአ በኤድኤሲህአ ትኦውን', N'Dilla Bedecha Town')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (545, 167, N'ድኢልልአ ህአርኦውኤልአበኦ ትኦውን', N'Dilla Harowelabo Town')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (546, 167, N'ድኢልልአ ስኤስስአ ትኦውን', N'Dilla Sessa Town')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (547, 166, N'አድኢይኦ', N'Adiyo')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (548, 166, N'አርበአ ምኢንሲህ ክኤትኤምአ አስትኤድኤድአድኤር', N'Arba Minch Ketema Astededader')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (549, 166, N'አርበአምኢንሲህ ዝኡርኢይአ', N'Arbaminch Zuriya')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (550, 166, N'በአበአ_ግአሲህኦ', N'Baba_Gacho')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (551, 166, N'በኢርበኢር ክኤትኤምአ አስትኤድአድኤር', N'Birbir Ketema Astedader')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (552, 166, N'በኦንክኤ', N'Bonke')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (553, 166, N'በኦርኤድአ', N'Boreda')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (554, 166, N'ሲህኤንሲህአ ክኤትኤምአ አስኤትኤድአድኤር', N'Chencha Ketema Asetedader')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (555, 166, N'ሲህኤንሲህአ ዝኡርኢይአ', N'Chencha Zuriya')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (556, 166, N'ድኤርኤምአልኦ', N'Deremalo')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (557, 166, N'ድኢልልአ ዝኡርኢአ', N'Dilla Zuria')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (558, 166, N'ድኢትአ', N'Dita')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (559, 166, N'ግአሲህኦ_በአበአ', N'Gacho_Baba')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (560, 166, N'ግአርድአ ምአርትአ', N'Garda Marta')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (561, 166, N'ግኤርኤስስኤ', N'Geresse')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (562, 166, N'ግኤርኤስስኤ ክኤትኤምአ አስትኤድአድኤር', N'Geresse Ketema Astedader')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (563, 166, N'ክኤምበአ', N'Kemba')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (564, 166, N'ክኤምበአ ክኤትኤምአ አስትኤድአድኤር', N'Kemba Ketema Astedader')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (565, 166, N'ክኢልትኤ አውልአልኦ', N'Kilte Awlalo')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (566, 166, N'ምኢስርአክ አዝኤርንኤት', N'Misrak Azernet')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (567, 166, N'ቅኦግኦትአ', N'Qogota')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (568, 166, N'ቅኡሲህአ አልፍአ', N'Qucha Alfa')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (569, 165, N'በኡልኤ', N'Bule')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (570, 165, N'ድኢልልአ ዝኡርኢአ', N'Dilla Zuria')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (571, 165, N'ግኤድኤበ', N'Gedeb')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (572, 165, N'ውኦንአግኦ', N'Wonago')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (573, 165, N'ይኢርግአ ሲህኤፍኤ ሲኢትይ አድምኢን', N'Yirga Chefe City Admin')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (574, 164, N'ሲህኤንአ', N'Chena')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (575, 164, N'ድኤንበአ ግኦፍአ', N'Denba Gofa')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (576, 164, N'ግኤዝኤ ግኦፍአ', N'Geze Gofa')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (577, 164, N'ምአስህአ', N'Masha')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (578, 164, N'ምኤልኦ ክኦዝአ', N'Melo Koza')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (579, 164, N'ኦይኢድአ', N'Oyida')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (580, 164, N'ኡበአ ድኤበርኤትስኤህአይ', N'Uba Debretsehay')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (581, 163, N'አበአስህኢግኤ', N'Abashige')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (582, 163, N'በኡትአጅኢርአ ክኤትኤምአ አስትኤድአድኤር', N'Butajira Ketema Astedader')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (583, 163, N'ድኤበኡበ ስኦድኦ', N'Debub Sodo')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (584, 163, N'ኤንድኤግአግን', N'Endegagn')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (585, 163, N'ኤንኤምኦር ኤንአ ኤንኤር', N'Enemor Ena Ener')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (586, 163, N'ግኤድኤበአንኦ ግኡትአዝአር ውኤልኤንኤ', N'Gedebano Gutazar Welene')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (587, 163, N'ግኡምኤር', N'Gumer')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (588, 163, N'ክአበኤንአ', N'Kabena')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (589, 163, N'ምኤስክአን', N'Meskan')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (590, 163, N'ምኢስርአክ ምኤስክአን', N'Misrak Meskan')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (591, 163, N'ስኦድኦ', N'Sodo')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (592, 162, N'አመካ', N'Ameka')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (593, 162, N'አመካ', N'Ameka')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (594, 162, N'አንአልኤምምኦ', N'Analemmo')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (595, 162, N'ሲህኤትአ', N'Cheta')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (596, 162, N'ዱና', N'Duna')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (597, 162, N'ግኤምበኦርአ', N'Gembora')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (598, 162, N'ሊሙ', N'Limu')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (599, 162, N'ምኤርአበ በአድአውአሲህኦ', N'Merab Badawacho')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (600, 162, N'ሚሻ', N'Misha')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (601, 162, N'ስአንክኡርአ', N'Sankura')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (602, 162, N'ስህአስህኤግኦ', N'Shashego')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (603, 162, N'ሶሮ', N'Soro')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (604, 161, N'አትኦትኤ ኡልኤ', N'Atote Ule')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (605, 161, N'ውኤርአ', N'Wera')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (606, 160, N'አድኢልኦኦ ዝኡርኢይአ', N'Adiloo Zuriya')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (607, 160, N'አንግኤሲህአ', N'Angecha')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (608, 160, N'ድአምኦትግአልኤ', N'Damotgale')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (609, 160, N'ድኡርአምኤ ሲኢትይ አድምኢን', N'Durame City Admin')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (610, 160, N'ህአድአርኦ ትኡንትኦ', N'Hadaro Tunto')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (611, 160, N'ክአሲህአበኢርአ', N'Kachabira')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (612, 160, N'ክኤድኢድአ ግአምኤልልአ', N'Kedida Gamella')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (613, 160, N'ትኤምበአርኦ', N'Tembaro')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (614, 159, N'ክአርአትኤ_ዝኡርኢአ', N'Karate_Zuria')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (615, 159, N'ክኤንአ', N'Kena')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (616, 159, N'ስኤግኤን_ዝኡርኢይአ', N'Segen_Zuriya')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (617, 158, N'ድአልልኦሲህአ', N'Dallocha')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (618, 158, N'ህኡልበአርኤግ', N'Hulbareg')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (619, 158, N'ክኤበኤት ክኤትኤምአ አስትኤድአድኤር', N'Kebet Ketema Astedader')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (620, 158, N'ምኢኤርኤበ አዝኤርንኤት በኤርበኤርኤ', N'Miereb Azernet Berbere')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (621, 158, N'ምኢስርአክ ስኢልኢትኤ', N'Misrak Silite')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (622, 158, N'ስአንክኡርአ', N'Sankura')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (623, 158, N'ውኦርአበኤ ትኦውን አድምኢንስትርአትኢኦን', N'Worabe Town Adminstration')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (624, 157, N'አርኤክአ ክኤትኤምአ አስትኤድአድኤር', N'Areka Ketema Astedader')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (625, 157, N'በኦድኢትኢ ትኦውን', N'Boditi Town')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (626, 157, N'በኦልኦስኦ ስኦርኤ', N'Boloso Sore')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (627, 157, N'ድአምኦት ስኦርኤ', N'Damot Sore')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (628, 157, N'ድአምኦት ውኤይድኤ', N'Damot Weyde')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (629, 157, N'ድአምኦትፕኡልአስአ', N'Damotpulasa')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (630, 157, N'ህኦበኢሲህአ አበአይአ', N'Hobicha Abaya')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (631, 157, N'ክአውኦ ክኦይኢስህአ', N'Kawo Koyisha')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (632, 157, N'ክኢንድኦ ክኦኢስህአ', N'Kindo Koisha')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (633, 157, N'ኦፍአ', N'Ofa')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (634, 157, N'ስኦድኦ ዝኡርኢአ', N'Sodo Zuria')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (635, 156, N'ይኤም ልኢይኡ', N'Yem Liyu')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (636, 162, N'ስኢርአርኦ በአድውአሲህኦ', N'Siraro Badwacho')
-GO
 INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (637, 134, N'ሲህአግንኢ', N'Chagni')
 GO
 INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (638, 107, N'በኡርአይኡ ግአፍአርስአ', N'Burayu Gafarsa')
@@ -2454,8 +2184,6 @@ INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_e
 GO
 INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (992, 178, N'ውኤርኤድአ 1', N'Wereda 1')
 GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (993, 176, N'ውኤርኤድአ 1', N'Wereda 1')
-GO
 INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (994, 57, N'ድኢዝኡ-ግኤድኢ', N'Dizu-Gedi')
 GO
 INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (995, 57, N'ግኡርአፍኤርድአ', N'Guraferda')
@@ -2727,98 +2455,6 @@ GO
 INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1128, 191, N'ቅኡኢህአ', N'Quiha')
 GO
 INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1129, 194, N'ክአፍትአ ህኡምኤርአ', N'Kafta Humera')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1130, 166, N'ምኢርአበ አበአይአ', N'Mirab Abaya')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1131, 166, N'ቅኡሲህአ', N'Qucha')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1132, 166, N'ስኤልአም በኤር ክኤትኤምአ አስኤትኤድአድኤር', N'Selam Ber Ketema Asetedader')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1133, 165, N'ክኦሲህኦርኤ', N'Kochore')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1134, 165, N'ይኢርግአ ሲህኤፍኤ', N'Yirga Chefe')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1135, 164, N'በኡልክኢ ክኤትኤምአ አስኤትኤድአድኤር', N'Bulki Ketema Asetedader')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1136, 164, N'ክኦንትአ ልኢይኡ', N'Konta Liyu')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1137, 164, N'ምኤልኦ ግአድአ', N'Melo Gada')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1138, 164, N'ስአውኡልአ', N'Sawula')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1139, 164, N'ዝአልአ', N'Zala')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1140, 163, N'አንግኤሲህአ', N'Angecha')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1141, 163, N'ሲህኤህአ', N'Cheha')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1142, 163, N'ኤንድበኢር ትኦውን አድምኢንስትርአትኢኦን', N'Endbir Town Adminstration')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1143, 163, N'ኤዝህአ', N'Ezha')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1144, 163, N'ግኤትአ', N'Geta')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1145, 163, N'ግኡምኤር', N'Gumer')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1146, 163, N'ምአርኤክኦ', N'Mareko')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1147, 163, N'ምኢህኡርኢንአአክልኢልኢ', N'Mihurinaaklili')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1148, 163, N'ውኦልኢክትኤ ትኦውን አድምኢንስትርአኢኦን', N'Wolikte Town Adminstraion')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1149, 162, N'በኦድኢትኢ ትኦውን', N'Boditi Town')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1150, 162, N'ድኦይኦግኤንአ', N'Doyogena')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1151, 162, N'ጊቤ', N'Gibe')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1152, 162, N'ህኦስአንአ', N'Hosana')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1153, 162, N'ምራብ ሶሮ', N'Mirab Soro')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1154, 162, N'ምኢስርአክ በአድኦውኦሲህ', N'Misrak Badowoch')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1155, 162, N'ስህኦንኤ ሲኢትይ አድምኢን', N'Shone City Admin')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1156, 161, N'ህአልአበአ ክኡልኢትኦ', N'Halaba Kulito')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1157, 161, N'ውኤርአ ድኢጅኦ', N'Wera Dijo')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1158, 160, N'ድአምበኦይአ', N'Damboya')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1159, 160, N'ድኦይኦግኤንአ', N'Doyogena')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1160, 160, N'ህአድአርኦ ክኤትኤምአ አስትኢድአድአር', N'Hadaro Ketema Astidadar')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1161, 160, N'ስህኢንስህኢሲህኦ ሲኢትይ', N'Shinshicho City')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1162, 159, N'ክአርአትኤ_ሲኢትይ_አድምኢን', N'Karate_City_Admin')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1163, 159, N'ክኦልምኤ ሲልኡስትኤር', N'Kolme Cluster')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1164, 158, N'ህአልኢሲህኦ ውኢርኢርኦኦ', N'Halicho Wiriroo')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1165, 158, N'ልአንፍኡርኦ', N'Lanfuro')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1166, 158, N'ምኢስርአክ አዝኤርንኤት', N'Misrak Azernet')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1167, 158, N'ስኢልኢትኤ', N'Silite')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1168, 157, N'አበአልአ አበአይአ', N'Abala Abaya')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1169, 157, N'በአይርአ ክኦይስህአ', N'Bayra Koysha')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1170, 157, N'በኦልኦስኦበኦምበኤ', N'Bolosobombe')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1171, 157, N'ድአምኦትግአልኤ', N'Damotgale')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1172, 157, N'ድኡግኡንአ ፍአንግኦ', N'Duguna Fango')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1173, 157, N'ህኡምበኦ', N'Humbo')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1174, 157, N'ክኢንድኦ ድኢድአይኤ', N'Kindo Didaye')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1175, 157, N'ስኦድኦ ክኤትኤምአ አስትኤድአድኤር', N'Sodo Ketema Astedader')
 GO
 INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1176, 120, N'ምኤርስአ ክኤትኤምአ አስትኤድአድኤር', N'Mersa Ketema Astedader')
 GO
@@ -3135,8 +2771,6 @@ GO
 INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1332, 83, N'ያያ ጉሌሌ', N'Yaya Gulele')
 GO
 INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1333, 80, N'ወሊሶ', N'Woliso')
-GO
-INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1334, 170, N'ሃዋጋላን', N'Hawagalan')
 GO
 INSERT [dbo].[woredas] ([woreda_id], [zone_id], [woreda_name_am], [woreda_name_en]) VALUES (1335, 91, N'አለልቱ', N'Aleltu')
 GO
@@ -13705,387 +13339,17 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4815, 522, N'ጽአድአኬርንኢ', N'Tsaedakerni')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4816, 523, N'በኦልሌ', N'Bolle')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4817, 523, N'ዴግአ ምአሽኢሌ', N'Dega Mashile')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4818, 523, N'ዴልቤንአ ግአምአ', N'Delbena Gama')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4819, 523, N'ኤይአንአ', N'Eyana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4820, 523, N'ጌዋድአ', N'Gewada')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4821, 523, N'ግኡምአ', N'Guma')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4822, 523, N'ልአልኢችኦ', N'Lalicho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4823, 523, N'ጽአምአህአ', N'Tsamaha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4824, 523, N'ዎልአንግኦ', N'Wolango')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4825, 1471, N'ዎልአንግኦ', N'Wolango')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4826, 524, N'አልፍአችኦ', N'Alfacho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4827, 524, N'አይስኡመ', N'Aysume')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4828, 524, N'ድአልአ', N'Dalae')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4829, 524, N'ድአንኦ በኡልትኦ', N'Dano Bulto')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4830, 524, N'ድይኬትአ', N'Dyketa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4831, 524, N'ግአምኦሌ', N'Gamole')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4832, 524, N'ግኦልኢቤ', N'Golibe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4833, 524, N'ጅአልኦ', N'Jalo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4834, 524, N'ምአርኤትአ', N'Mareta')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4835, 524, N'ሴጌን', N'Segen')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4836, 524, N'ስኡልኡክኦ', N'Suluko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4837, 539, N'ክኦፕርኢይአ', N'Kopriya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4838, 539, N'ክኡችኡርኡ', N'Kuchuru')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4839, 539, N'ሌቤርኤ', N'Lebere')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4840, 539, N'ልኦክኦመይግንአን', N'Lokomeygnan')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4841, 539, N'ልኦክኦርሌም', N'Lokorlem')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4842, 539, N'ልኦፕኦኬር', N'Lopoker')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4843, 539, N'ልኦርኤንክአችኤው', N'Lorenkachew')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4844, 539, N'ልኦትኦመን', N'Lotomen')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4845, 539, N'ንአክርኢይአምአን', N'Nakriyaman')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4846, 539, N'ንአፕትኢይአክኦይት', N'Naptiyakoyt')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4847, 539, N'ንአፕኡስኡምኡርኢይአ', N'Napusumuriya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4848, 539, N'ንአርአግኦይ', N'Naragoy')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4849, 539, N'ንአትኢክአር', N'Natikar')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4850, 539, N'ንይአውይአፕኤ', N'Nyawuyape')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4851, 1474, N'ክአንግአትኢን', N'Kangatin')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4852, 540, N'አርኡም', N'Arum')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4853, 540, N'በኦንግኦዝኦ', N'Bongozo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4854, 540, N'ችኤድምኢስ', N'Chedmis')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4855, 540, N'ድኢመ ግአችአ', N'Dime Gacha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4856, 540, N'ድኢመ ግአንችኢርኤ', N'Dime Ganchire')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4857, 540, N'ድኢመ ጌርፍአ', N'Dime Gerfa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4858, 540, N'ድኢመ ጌርኦ', N'Dime Gero')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4859, 540, N'ድኢመ ኡጽአ', N'Dime Utsa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4860, 540, N'ኤርክአ', N'Erka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4861, 540, N'ግኢይኦ', N'Giyo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4862, 540, N'ግኢይኦ ድአክኡበአ', N'Giyo Dakuba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4863, 540, N'ግኡርአ', N'Gura')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4864, 540, N'ህአይልውህአ', N'Haylwuha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4865, 540, N'ክአንችኡዋ', N'Kanchuwa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4866, 540, N'ምአክኢ', N'Maki')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4867, 540, N'ምኦይዝኦ', N'Moyzo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4868, 540, N'ኦምኦ ህአንአ', N'Omo Hana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4869, 540, N'ኦምኦ ርኦምቤ', N'Omo Rombe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4870, 540, N'ሽኡምኡትኦ', N'Shumuto')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4871, 540, N'ጽኢጽኢምአ', N'Tsitsima')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4872, 541, N'አፍኢኔት ዋችአ', N'Afinet Wacha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4873, 541, N'አልአግኢችአ', N'Alagicha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4874, 541, N'አምበኢ', N'Ambi')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4875, 541, N'አመርሽአ', N'Amersha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4876, 541, N'አርፍአርኦ', N'Arfaro')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4877, 541, N'አይምአትኦል', N'Aymatol')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4878, 541, N'ቤርጌዴ ድኡድኢ', N'Bergede Dudi')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4879, 541, N'ችኢልሽአ', N'Chilsha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4880, 541, N'ድኦልአ ምአሽቴል', N'Dola Mashtel')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4881, 541, N'ፍኤርአ ዝአግመር', N'Fera Zagmer')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4882, 541, N'ግአምአ ክኡርአ', N'Gama Kura')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4883, 541, N'ግአርሽኢንኦ ግኢምጅአ', N'Garshino Gimja')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4884, 541, N'ግአስንአ ዝኤምአ', N'Gasna Zema')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4885, 541, N'ጌምኢት አችኤት', N'Gemit Achet')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4886, 541, N'ግኦዝአ በአልክኢሽ', N'Goza Balkish')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4887, 541, N'ሌልኦ', N'Lelo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4888, 541, N'መልት', N'Melt')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4889, 541, N'መትአ ዝአበኢር', N'Meta Zabir')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4890, 541, N'ሴፍኤርአ', N'Sefera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4891, 541, N'ሽአርአ ድኢፍትኢ', N'Shara Difti')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4892, 541, N'ውርክኢሽ', N'Wurkish')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4893, 541, N'ዝኢፍኢት ኡጽአ', N'Zifit Utsa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4894, 541, N'ዝኦፍንአ ድአዋ', N'Zofna Dawa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4895, 541, N'ጌልኢልአ ዝኤርኦ አንድ', N'Gelila Zero And')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4896, 541, N'ኬሌትኢችኤክአር', N'Keletichekar')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4897, 541, N'ስአምአ በኡልክኢት', N'Sama Bulkit')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4898, 543, N'ዋልአይቴ', N'Walayte')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4899, 543, N'ግአትኦ 01', N'Gato 01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4900, 543, N'ግኢድኦሌ 02', N'Gidole 02')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4901, 543, N'ይኤልአይግንአው አርግኡበአ', N'Yelaygnaw Arguba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4902, 543, N'አትአይአ', N'Ataya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4903, 543, N'በኡስአ ክኢልልአ', N'Busa Killa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4904, 543, N'ክአይአምአ', N'Kayama')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4905, 543, N'ንአልኦ', N'Nalo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4906, 543, N'ኦንኦትአ', N'Onota')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4907, 543, N'ዋልስአ', N'Walsa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4908, 543, N'ይኤ ልአይግንአው ህኦልቴ', N'Ye Laygnaw Holte')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4909, 544, N'ውኤልዴንአ', N'Weldena')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4910, 545, N'ህአሴዴልልአ', N'Hasedella')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4911, 546, N'ኦድአይአ', N'Odaya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4912, 548, N'ቤርኤ', N'Bere')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4913, 548, N'ድኢል ፍአንአ', N'Dil Fana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4914, 548, N'ኤድኢጌት ቤር', N'Ediget Ber')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4915, 548, N'ክኡልፍኦ', N'Kulfo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4916, 548, N'መንአህአርኢአ', N'Menaharia')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4917, 548, N'ውኤዝኤ', N'Weze')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4918, 549, N'ችአንኦ ችአልበአ', N'Chano Chalba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4919, 549, N'ችአንኦ ምኢሌ', N'Chano Mile')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4920, 549, N'ዴግአ ኦችኦልኦ', N'Dega Ocholo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4921, 549, N'ጌንትአ አፍአዝኤ', N'Genta Afaze')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4922, 549, N'ጌንትአ ክአንችአምአ', N'Genta Kanchama')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4923, 549, N'ክኦልአ ሽኤሌ', N'Kola Shele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4924, 549, N'ልአንቴ', N'Lante')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4925, 549, N'ሽኤሌ መልአ', N'Shele Mela')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4926, 549, N'ዝኤይሴ ኤልኢግኦ', N'Zeyse Eligo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4927, 549, N'አርበአምኢንች ዝኡርኢይአ', N'Arbaminch Zuriya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4928, 550, N'ዝኢግኢትኢ በአክኦሌ', N'Zigiti Bakole')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4929, 550, N'ግኢንአ', N'Gina')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4930, 551, N'ምኦልሌ', N'Molle')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4931, 552, N'ጌዝኤስኦ', N'Gezeso')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4932, 552, N'ክአልበኦ ልአክአ', N'Kalbo Laka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4933, 552, N'ክአልኦ ግአግኡልአ', N'Kalo Gagula')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4934, 552, N'ክኦሌ ክአንችአምአ', N'Kole Kanchama')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4935, 552, N'ክኡትአ', N'Kuta')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4936, 552, N'ጌዝኤስኦ 01', N'Gezeso 01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4937, 553, N'በኦርአግኦ', N'Borago')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4938, 553, N'ችአልቤ', N'Chalbe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4939, 553, N'ችኢሌሽኤ ዴምበአ', N'Chileshe Demba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4940, 553, N'ድአምቤ ኦንኦንኦ', N'Dambe Onono')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4941, 553, N'ዴግአ አውስአትኦ', N'Dega Awusato')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4942, 553, N'ድኡበአንአ በኡልኦ', N'Dubana Bulo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4943, 553, N'ጌምቤልአ', N'Gembela')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4944, 553, N'ግኡምግኡምትአ', N'Gumgumta')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4945, 553, N'ግኡርአመ ዎልክኦ', N'Gurame Wolko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4946, 553, N'ህአትኢስአ', N'Hatisa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4947, 553, N'ኬችአ ክአልአይኦ', N'Kecha Kalayo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4948, 553, N'ክኦድኦ አውስአትኦ ምአንኡክአ', N'Kodo Awusato Manuka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4949, 553, N'ምአንአ ሽኤፍኦ', N'Mana Shefo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4950, 553, N'ምአስአልአ ምአርኢክአት', N'Masala Marikat')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4951, 553, N'መቴክአ መሌ', N'Meteka Mele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4952, 553, N'ቴንቴሌ', N'Tentele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4953, 553, N'ዝኤፍአንኦ', N'Zefano')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4954, 553, N'ዝኤቴልአ ውኤልልኦ ሴፍኤር', N'Zetela Wello Sefer')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4955, 553, N'ዝኦንግአ ዋችአ', N'Zonga Wacha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4956, 553, N'ዝኤፍኢኔ', N'Zefine')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4957, 1475, N'ችኤንችአ', N'Chencha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4958, 1716, N'ችኤንችአ', N'Chencha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4959, 554, N'ድኦክኦሽአይኤ', N'Dokoshaye')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4960, 554, N'ምአፍኦንአ ዝኦልኦ', N'Mafona Zolo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4961, 555, N'በኢልአልአንአ ሽአይኤ', N'Bilalana Shaye')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4962, 555, N'ዴግአ ጌምአ', N'Dega Gema')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4963, 555, N'ድኦክኦ  ድአምበኦ', N'Doko  Dambo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4964, 555, N'ድኦክኦ ኤልኦ', N'Doko Elo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4965, 555, N'ድኦክኦ ጌንድኦ', N'Doko Gendo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4966, 555, N'ድኦክኦ ልኦሽአ', N'Doko Losha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4967, 555, N'ድኦክኦ መሽኦ', N'Doko Mesho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4968, 555, N'ድኦክኦ ጽኢድአ', N'Doko Tsida')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4969, 555, N'ድኦክኦዝኦልኦ', N'Dokozolo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4970, 555, N'ድኦርዝኤ አይርአ', N'Dorze Ayra')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4971, 555, N'ድኦርዝኤ ቤልሌ', N'Dorze Belle')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4972, 555, N'ድኦርዝኤ ግኦድኢይኤ', N'Dorze Godiye')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4973, 555, N'ድኦርዝኤ ህኢርፕኦ', N'Dorze Hirpo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4974, 555, N'ድኦርዝኤ ህኦልልኦ', N'Dorze Hollo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4975, 555, N'ድኦርዝኤ ምአጽኦንአግአርአድኢትአ', N'Dorze Matsonagaradita')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4976, 555, N'ኤሌንአችኤርኤ', N'Elenachere')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4977, 555, N'ግኡልትአ ግኡይኤ ድኦግኢሌ', N'Gulta Guye Dogile')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4978, 555, N'ሽአምአ', N'Shama')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4979, 555, N'ዝአርድኦድኦይኢንአዴምኦዝኤ', N'Zardodoyinademoze')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4980, 555, N'ድኦርዝኤ01', N'Dorze01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4981, 556, N'ችኦይኤ', N'Choye')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4982, 556, N'ድኦምአ', N'Doma')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4983, 556, N'ኤልኢክኦድኦ', N'Elikodo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4984, 556, N'ግኡጌ በኦይርኤ', N'Guge Boyre')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4985, 556, N'ግኡጌ ሽአሌ', N'Guge Shale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4986, 556, N'ሌዴህ', N'Ledeh')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4987, 556, N'ምአልኦ ኤዝኦ', N'Malo Ezo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4988, 556, N'ምአንአንአ አበበአይአ', N'Manana Abbaya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4989, 571, N'በአንክኦ ትአትአትኡ', N'Banko Tatatu')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4990, 571, N'በኢሽአ ምኦርአ', N'Bisha Mora')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4991, 571, N'ጌዴበ ጌልችአ', N'Gedeb Gelcha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4992, 571, N'ጌዴበ ግኡቤትአ', N'Gedeb Gubeta')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4993, 571, N'ጌሽኤ ጅኤጅኤበአ', N'Geshe Jejeba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4994, 571, N'ግኦርአ ድኢበአንድኢቤ', N'Gora Dibandibe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4995, 571, N'ህአልልኦ በአርኢትኢ', N'Hallo Bariti')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4996, 571, N'ህአልልኦ ህአርትኡመ', N'Hallo Hartume')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4997, 571, N'ህአርምኡፍኦ', N'Harmufo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4998, 571, N'ኬድኢድአ ግኡቤትአ', N'Kedida Gubeta')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (4999, 571, N'ምኦርአ ልአይኦ', N'Mora Layo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5000, 571, N'ዎርክአ ችኤልቤስአ', N'Worka Chelbesa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5001, 571, N'ዎርክአ ችኤልችኤሌ', N'Worka Chelchele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5002, 571, N'ዎርክአ ስአክአርኦ', N'Worka Sakaro')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5003, 1478, N'በአንክኦ ችኤልችኤሌ', N'Banko Chelchele')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5004, 1478, N'በአንክኦ ግኦትኢትኢ', N'Banko Gotiti')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5005, 1478, N'ችኦርስኦ ምአዝኦርኢአ', N'Chorso Mazoria')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5006, 571, N'ሴስኦሌ', N'Sesole')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5007, 1478, N'ዎርክአ ስአክአርኦ', N'Worka Sakaro')
 GO
@@ -14107,15 +13371,11 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5016, 1133, N'ርአግኦ', N'Rago')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5017, 1133, N'ርአክኦ', N'Rako')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5018, 1133, N'ሽአሽአምአኔ', N'Shashamane')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5019, 1133, N'ሽኢፍኦ', N'Shifo')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5020, 1133, N'ስኢግኢግአ', N'Sigiga')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5021, 1133, N'ስኢስኦትአ', N'Sisota')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5022, 1133, N'ትአክአ ድኢምአ', N'Taka Dima')
 GO
@@ -14123,43 +13383,7 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5024, 1479, N'ችኤሌሌክኢትኡ', N'Chelelekitu')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5025, 1629, N'ችኤሌሌክኢትኡ', N'Chelelekitu')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5026, 1133, N'ፍኢሽአ ጌኔት', N'Fisha Genet')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5027, 572, N'በአንክኦ ኦክኦቴ', N'banko okote')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5028, 572, N'ቤሌ በኡክኢስአ', N'bele bukisa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5029, 572, N'ዴበኦትአ', N'debota')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5030, 572, N'ዴክኦ', N'deko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5031, 572, N'ድኦድኦርኦ', N'dodoro')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5032, 572, N'ጌሌልችኦ', N'gelelcho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5033, 572, N'ህአሌምኦ', N'halemo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5034, 572, N'ህአሴ ህአርኦ ጌቴር', N'hase haro geter')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5035, 572, N'ጅኤምጅኤምኦ', N'jemjemo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5036, 572, N'ክአርአ ስኦድኢትኢ', N'kara soditi')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5037, 572, N'ኬሌችአ', N'kelecha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5038, 572, N'ምኦክኦንኢስስአ', N'mokonissa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5039, 572, N'ስኦክኢችአ', N'sokicha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5040, 572, N'ስኡግአሌ', N'sugale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5041, 572, N'ትኡምአትአ ችኢርኤችአ', N'tumata chirecha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5042, 572, N'ህአሴ ህአርኦ ኬቴምአ', N'hase haro ketema')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5043, 572, N'በኡንኦ', N'buno')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5044, 1134, N'ክኦኬ', N'koke')
 GO
@@ -14217,78 +13441,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5071, 1135, N'ይኦንግኢ ምኢንድኢርኤ', N'Yongi Mindire')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5072, 575, N'በኦርድአ', N'Borda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5073, 575, N'ድአክኢሽኦ ስኡበኦ', N'Dakisho Subo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5074, 575, N'ድኦምቤ', N'Dombe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5075, 575, N'ክአርችኦ መልአ', N'Karcho Mela')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5076, 575, N'ክአርዝአ', N'Karza')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5077, 575, N'ልኦቴ ግአይልአ ችአልቤ', N'Lote Gayla Chalbe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5078, 575, N'ልኦቴ ዝአድአ ድኦልአ', N'Lote Zada Dola')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5079, 575, N'ሽአሽአ ክኦልትአ', N'Shasha Kolta')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5080, 575, N'ጽአንግአ ድአርአርአ', N'Tsanga Darara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5081, 575, N'ኡበአ በአንድአ', N'Uba Banda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5082, 575, N'ኡበአ በአርግኡኔ', N'Uba Bargune')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5083, 575, N'ኡበአ ፕኢዝግኦ', N'Uba Pizgo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5084, 575, N'ዎይዴ ድአርግአንስአ', N'Woyde Dargansa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5085, 575, N'ዎይዴ ዝአፍአ ዴሌ', N'Woyde Zafa Dele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5086, 575, N'ውርችኢ ልአይምአ', N'Wurchi Layma')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5087, 575, N'ዝአንግአ ድኦርምአሌ', N'Zanga Dormale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5088, 575, N'ዝአንግአ ዝኤልግኦ', N'Zanga Zelgo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5089, 575, N'ዝኤሌሌ', N'Zelele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5090, 575, N'ዝኡልኦ ክአልአችአ', N'Zulo Kalacha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5091, 575, N'ግአይልአ ችአልቤ', N'Gayla Chalbe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5092, 575, N'ትኢጅአ ስኢቤ', N'Tija Sibe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5093, 576, N'አልአ ግአልትአ', N'Ala Galta')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5094, 576, N'አልአ ሽአርአሽአምፕአ', N'Ala Sharashampa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5095, 576, N'አምአርኦ ሽአጌ', N'Amaro Shage')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5096, 576, N'አይክኢንአ ፍአኔ', N'Aykina Fane')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5097, 576, N'ቤድርኦ ችአፍአርኦ', N'Bedro Chapharo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5098, 576, N'ቤድርኦ ግአርምአ', N'Bedro Garma')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5099, 576, N'ቤድርኦ ክኦትአምአክአርአ', N'Bedro Kotamakara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5100, 576, N'ቤግአ ቤርዝአ', N'Bega Berza')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5101, 576, N'ድአድአ አልኢዝአ አይኤጌትአ', N'Dada Aliza Ayegeta')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5102, 576, N'ድአድአ ጌህአ ውኤርአ', N'Dada Geha Wera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5103, 576, N'ጅአውልአ ግኦርአ አዴ', N'Jawula Gora Ade')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5104, 576, N'ጅአውልአ ውግአ ምአሽኢትአልአ', N'Jawula Wuga Mashitala')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5105, 576, N'ክኢንችኦ ሽአችአ ግኦዝድኢ', N'Kincho Shacha Gozdi')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5106, 576, N'አንክኦ', N'Anko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5107, 576, N'ጅአውልአ', N'Jawula')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5108, 1136, N'ጌርፍአ', N'Gerfa')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5109, 1137, N'አልኢዝአ ግኦይድኦ', N'Aliza Goydo')
@@ -14299,217 +13451,9 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5112, 1137, N'ሽአምአ ግኦበአንኦ', N'Shama Gobano')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5113, 578, N'በአልትአ', N'Balta')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5114, 578, N'በኦክርኤ ይኦይአ', N'Bokre Yoya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5115, 578, N'በኦርአድአ ክአክኢሽአ', N'Borada Kakisha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5116, 578, N'ድአውልአ', N'Dawla')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5117, 578, N'ፍርአ ሽኡምአ', N'Fra Shuma')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5118, 578, N'ግአይስአ', N'Gaysa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5119, 578, N'ክኦዝአ አልኢዝአ', N'Koza Aliza')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5120, 578, N'ምአሽኢርአ', N'Mashira')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5121, 578, N'ምአይዝኤልኦ ዝኡርኢአ', N'Mayzelo Zuria')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5122, 578, N'ፕኢርችአ', N'Pircha')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5123, 1631, N'ስአልአይኢሽ መንዴር_', N'Salayish Mender_')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5124, 1718, N'ስአልአይኢሽ መንዴር_', N'Salayish Mender_')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5125, 578, N'ሽኡችአ ኬስአ', N'Shucha Kesa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5126, 578, N'ትአፍአ', N'Tafa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5127, 578, N'ጽኢልአ በኦልአ', N'Tsila Bola')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5128, 578, N'ዎበአልአ ንአ ትኦግአ', N'Wobala Na Toga')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5129, 578, N'ልአህአ 01', N'Laha 01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5130, 578, N'ትአትአ', N'Tata')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5131, 579, N'በአግአርአ', N'Bagara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5132, 579, N'በአልኢጽአ', N'Balitsa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5133, 579, N'ድአይኤሽአልአ', N'Dayeshala')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5134, 579, N'ግአርኤድኢድአ', N'Garedida')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5135, 579, N'ግኦይኤበኢ', N'Goyebi')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5136, 579, N'ህአርኤበኢር', N'Harebir')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5137, 579, N'ክአምአኦ', N'Kamao')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5138, 579, N'ምአርኤክአልአ', N'Marekala')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5139, 556, N'ምአስትአ', N'Masta')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5140, 556, N'ሽኤልአ ስኡበኦ', N'Shela Subo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5141, 556, N'ሽኤልአ ቴልልኦ', N'Shela Tello')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5142, 556, N'ሽኤልልአ ዴድአ', N'Shella Deda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5143, 556, N'ትኢልአሌ', N'Tilale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5144, 556, N'ዝኢንቤ', N'Zinbe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5145, 556, N'ዝኢንጌ', N'Zinge')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5146, 556, N'ዴርአምአልኦ', N'Deramalo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5147, 557, N'በኡልአ', N'Bula')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5148, 558, N'አጌርስአ ዎኬ', N'Agersa Woke')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5149, 558, N'አንድኡርኦ ሌሌ', N'Anduro Lele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5150, 558, N'አኔድርኦ ግኢጌልኦ', N'Anedro Gigelo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5151, 558, N'ድአልበአንስአ', N'Dalbansa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5152, 558, N'ድኦክአምአ', N'Dokama')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5153, 558, N'ግአንአ ክአርኤ', N'Gana Kare')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5154, 558, N'ግኢይአስአ', N'Giyasa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5155, 558, N'ግኦዝአ', N'Goza')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5156, 558, N'ህአይልአ', N'Hayla')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5157, 558, N'ክኦድኦ ዎኬ', N'Kodo Woke')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5158, 558, N'ልኢሽአ', N'Lisha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5159, 558, N'ምአርዝኦ', N'Marzo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5160, 558, N'መጌስአ በኦቤ', N'Megesa Bobe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5161, 558, N'ኦችኦልኦ በአድኢግአ', N'Ocholo Badiga')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5162, 558, N'ስኦዝኦ', N'Sozo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5163, 558, N'ትኢበአ', N'Tiba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5164, 558, N'ጽኤልአ', N'Tsela')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5165, 558, N'ትኡክአንአ ግአንአ ዎይዝ', N'Tukana Gana Woyz')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5166, 558, N'ዎግኡልአ', N'Wogula')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5167, 558, N'ዎይዝአ  ድአይችአ', N'Woyza  Daycha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5168, 559, N'ግአርበአንስአቴንኬሌ', N'Garbansatenkele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5169, 559, N'ግአጽኤ', N'Gatse')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5170, 559, N'ክኡይኢሌ', N'Kuyile')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5171, 559, N'ልአክአ', N'Laka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5172, 559, N'ምአዝኦድኦይስአ', N'Mazodoysa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5173, 560, N'ስኡሌ', N'Sule')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5174, 559, N'ጽአይቴ', N'Tsayte')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5175, 559, N'ጽኢንግኦክኦይኢርአ', N'Tsingokoyira')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5176, 559, N'ውስአምኦ', N'Wusamo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5177, 559, N'ዝኢግኢትኢ ፍኤርአስኦ', N'Zigiti Feraso')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5178, 560, N'በኦልልአ ግአርድአ', N'Bolla Garda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5179, 560, N'ግአርድአ ሽአቅአርኦ', N'Garda Shaqaro')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5180, 560, N'ግአርድአ ይአጌሌ', N'Garda Yagele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5181, 560, N'ግአርኤስሴ ግአርድአ', N'Garesse Garda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5182, 560, N'ግኦግአሌ ዝኡርኢአ', N'Gogale Zuria')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5183, 560, N'ህአርድአ', N'Harda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5184, 560, N'ኬርአ', N'Kera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5185, 560, N'ክኦልአ ልአይሽአ', N'Kola Laysha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5186, 560, N'ምአልሌ ውዴ', N'Malle Wude')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5187, 560, N'ምአርኢትአ ችኢልበኦ', N'Marita Chilbo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5188, 560, N'ምአርትአ በኦሄ', N'Marta Bohe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5189, 560, N'ምአርትአ ልአድኦ', N'Marta Ladho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5190, 560, N'ምአርትአ ልአይኢሽአ', N'Marta Layisha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5191, 560, N'ግኡግአሌ 01', N'Gugale 01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5192, 561, N'አልግኡዴ', N'Algude')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5193, 561, N'ድአምበኢሌ ፕኡሴ', N'Dambile Puse')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5194, 561, N'ዴሽኬሌ', N'Deshkele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5195, 561, N'ድኡርቤ', N'Durbe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5196, 561, N'ፍኡድአሌ', N'Fudale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5197, 561, N'ግአርበአንስአ ክአርችኤ', N'Garbansa Karche')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5198, 561, N'ግኦበኦ በአኬ', N'Gobo Bake')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5199, 561, N'ግኦርአቴ', N'Gorate')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5200, 561, N'ኬቴሌ', N'Ketele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5201, 561, N'ክኦሽአሌ', N'Koshale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5202, 561, N'መሌ ግአግኡልአ', N'Mele Gagula')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5203, 561, N'ዝአልአ ድኦልአ', N'Zala Dola')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5204, 1476, N'ጌርኤስሴ', N'Geresse')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5205, 563, N'በአልትአ ክአሌ', N'Balta Kale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5206, 563, N'በአልትአ ትኦልትአ', N'Balta Tolta')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5207, 563, N'በአልትአ ይኤልኢኤ', N'Balta Yelie')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5208, 563, N'ዴንግአምኦ', N'Dengamo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5209, 563, N'ድኦምቤ ስአልሌ', N'Dombe Salle')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5210, 563, N'ግአርስአ አንኢክኦ', N'Garsa Aniko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5211, 563, N'ህአርኢንግአ', N'Haringa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5212, 563, N'ምአዝኤ', N'Maze')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5213, 563, N'ኦትኦልኦ', N'Otolo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5214, 563, N'ሴርርኦ', N'Serro')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5215, 563, N'ሽኤሌ', N'Shele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5216, 563, N'ቴልልኦ', N'Tello')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5217, 563, N'ክአምበአ', N'Kamba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5218, 564, N'ክኦሌ 01', N'Kole 01')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5219, 1130, N'አንክኦቤር', N'Ankober')
 GO
@@ -14534,14 +13478,6 @@ GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5229, 1130, N'ይኤኬ', N'Yeke')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5230, 1130, N'ዝአልልአ ግኡቴችአ', N'Zalla Gutecha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5231, 567, N'ግአውግአ', N'Gawuga')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5232, 567, N'ግኢንክኦ', N'Ginko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5233, 567, N'ልኢሽኤንአ', N'Lishena')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5234, 567, N'ኦቴ', N'Ote')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5235, 1131, N'Chal''''A', N'Chal''''A')
 GO
@@ -14585,96 +13521,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5255, 1131, N'ውዝኤቴ', N'Wuzete')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5256, 568, N'ችአበአ ስኦንበአ', N'Chaba Sonba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5257, 568, N'ክአስኢኬ ጌንኢዝኤ', N'Kasike Genize')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5258, 568, N'ክኦድኦ ጌርኤርአ', N'Kodo Gerera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5259, 568, N'ክኦድኦ ዎንኦ', N'Kodo Wono')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5260, 568, N'ውኤይዴ ውኤሽኤ', N'Weyde Weshe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5261, 568, N'ዎይዴ ኡርኡክአ', N'Woyde Uruka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5262, 568, N'ችአበአ ቤሌስ', N'Chaba Beles')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5263, 568, N'ትኦክኦ ድአንበኢይአ', N'Toko Danbiya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5264, 569, N'1ግንአ ኦክኦልኡ', N'1gna Okolu')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5265, 569, N'2ግንአ ኦክኦልኡ', N'2gna Okolu')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5266, 569, N'በአስኡርአ', N'Basura')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5267, 569, N'ችአርአክአ', N'Charaka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5268, 569, N'ችኤኬስአ ልኢሽአ', N'Chekesa Lisha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5269, 569, N'ድአርኦ ስኦክኢችአ', N'Daro Sokicha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5270, 569, N'ኤልአሌችአ ልኦኬ', N'Elalecha Loke')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5271, 569, N'ግኡበአትኦ አዋርኤ', N'Gubato Aware')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5272, 569, N'ሄዴኔ ምኡትኡር', N'Hedene Mutur')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5273, 569, N'ሄርኤዴ', N'Herede')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5274, 569, N'ክኦልኢሽአ ክአርአ', N'Kolisha Kara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5275, 569, N'ልአበአ ርኤጅኢ', N'Laba Reji')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5276, 569, N'ምአንድኦ ዎልአጌ', N'Mando Wolage')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5277, 569, N'ርአፍኤ ትኦርአ', N'Raphe Tora')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5278, 569, N'ርአስአ ድአንግኦ', N'Rasa Dango')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5279, 569, N'ዎክአ ድኢበኢትኡ', N'Woka Dibitu')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5280, 569, N'በኡሌ01', N'Bule01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5281, 569, N'ርአፍኤ 01', N'Raphe 01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5282, 570, N'አምበአ', N'Amba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5283, 570, N'አይትኢሌ ስኡኬ', N'Aytile Suke')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5284, 570, N'ችኢችኡ', N'Chichu')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5285, 570, N'ህኦትኢችአ', N'Hoticha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5286, 570, N'ምኢችኢሌ ህኦልአንአ', N'Michile Holana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5287, 570, N'ምኢችኢሌ ስኢስኦትአ', N'Michile Sisota')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5288, 570, N'ኦትኢልችኦ', N'Otilcho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5289, 570, N'ትኡንትኢችአ', N'Tunticha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5290, 570, N'አንድኢድአ 01', N'Andida 01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5291, 571, N'አቤል', N'Abel')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5292, 524, N'ዎርክአሌ', N'Workale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5293, 524, N'ይኤርኦ', N'Yero')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5294, 524, N'ዝአርግአቴ', N'Zargate')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5295, 524, N'ዝኦኬስአ', N'Zokesa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5296, 524, N'ዴርበአ መኔንአ', N'Derba Menena')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5297, 524, N'ጅኢጅኦልአ', N'Jijola')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5298, 524, N'ኬሌ 01', N'Kele 01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5299, 524, N'ኬሌ 02', N'Kele 02')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5300, 524, N'ኬርኤድአ', N'Kereda')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5301, 1472, N'አንግልአ ክኡትኢር_', N'Angla Kutir_')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5302, 1626, N'አንግልአ ክኡትኢር_', N'Angla Kutir_')
@@ -14682,288 +13528,6 @@ GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5303, 1715, N'አንግልአ ክኡትኢር_', N'Angla Kutir_')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5304, 1738, N'አንኢግልአ ክኡትኢር_', N'Anigla Kutir_')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5305, 525, N'አውርአስኦስትአ ጌዝኢኤ ዴልበአ', N'Awurasosta Gezie Delba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5306, 525, N'በአይኦ በኦርዝአ በኦርግአልአ', N'Bayo Borza Borgala')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5307, 525, N'በኦክኦ በኡችአ', N'Boko Bucha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5308, 525, N'በኦልአ በአስኬትኦ', N'Bola Basketo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5309, 525, N'በኦልአ ግአበአልአ', N'Bola Gabala')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5310, 525, N'በኦንአርኤ ምአርክአንአ', N'Bonare Markana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5311, 525, N'በኡንአ በአስአ በአስኬትኦ', N'Buna Basa Basketo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5312, 525, N'በኡንአ በአስአ ዎልኢአትአ', N'Buna Basa Woliata')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5313, 525, N'ዴበጽአ ዴልኬንስአ', N'Debtsa Delkensa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5314, 525, N'ድኦክኦ አይምአ', N'Doko Ayma')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5315, 525, N'ኤርግኢንኦ', N'Ergino')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5316, 525, N'ግአርአ በአስኬትኦ', N'Gara Basketo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5317, 525, N'ግአርአ ህአድይአ', N'Gara Hadya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5318, 525, N'ግአርአ ዎልአይትአ', N'Gara Wolaita')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5319, 525, N'ግአርበኢይአ', N'Garbiya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5320, 525, N'ጌዝኤ አይምአ', N'Geze Ayma')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5321, 525, N'ምኦትኢኬስአ አርኢዝኤክአ', N'Motikesa Arizeka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5322, 525, N'ስአስአምአኬስአ', N'Sasamakesa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5323, 525, N'ሽአንክአ ግአምኢግአይኢልአ', N'Shanka Gamigayila')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5324, 525, N'ሽኤልአ ክአንኢ ቨኦልአ', N'Shela Kani Vola')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5325, 525, N'ድኦክኦ ችኤርኤ', N'Doko Chere')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5326, 525, N'ልአስክአ 01', N'Laska 01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5327, 525, N'ልአስክአ 02', N'Laska 02')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5328, 525, N'ዋድአ በአልአንስአ', N'Wada Balansa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5329, 525, N'ኦበችአ', N'Obcha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5330, 526, N'ህኢበርኤት', N'Hibret')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5331, 528, N'ቤኔይአ', N'Beneya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5332, 528, N'ድአልኦ', N'Dalo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5333, 528, N'ጌምኢይኦ', N'Gemiyo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5334, 528, N'ግኦቤዝኤ', N'Gobeze')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5335, 528, N'ህአልአመ', N'Halame')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5336, 528, N'ልአድኢሽኤ', N'Ladishe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5337, 528, N'ሌምኦ', N'Lemo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5338, 528, N'ምኡርኤ', N'Mure')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5339, 528, N'ኔዴሌ', N'Nedele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5340, 528, N'ኦትኦምኦልኦ', N'Otomolo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5341, 528, N'ሴግኦ', N'Sego')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5342, 528, N'ትኢሽኦ', N'Tisho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5343, 528, N'ውኤርዴይአ ድኢንበአችኦ', N'Werdeya Dinbacho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5344, 528, N'ውኤርዴይአ ግኡዴ', N'Werdeya Gude')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5345, 528, N'ይኤቤንኦ', N'Yebeno')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5346, 528, N'ቤርኤክ', N'Berek')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5347, 528, N'ግኦችኤ', N'Goche')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5348, 528, N'ክኢልችኦ', N'Kilcho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5349, 1473, N'ስኦይአምአ', N'Soyama')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5350, 528, N'ዋሌይአ', N'Waleya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5351, 532, N'አልድኡበአ', N'Alduba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5352, 532, N'አርግኦ', N'Argo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5353, 532, N'በኦፍኦ', N'Bofo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5354, 532, N'ድኢዝኢ አምአ', N'Dizi Ama')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5355, 532, N'ኤንችኤቴ', N'Enchete')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5356, 532, N'ግኦልድኢይአ', N'Goldiya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5357, 532, N'ግኡርድኦ', N'Gurdo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5358, 532, N'ክአክኦ', N'Kako')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5359, 532, N'ምኦርግአልአ', N'Morgala')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5360, 532, N'ኦልክአ ክኢበኦ', N'Olka Kibo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5361, 532, N'ሽአበአ አርግአምአንድአ', N'Shaba Argamanda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5362, 532, N'ስኢሌ', N'Sile')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5363, 532, N'ስኢትኢንበአ ክአልአምአይአ', N'Sitinba Kalamaya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5364, 532, N'ውርኡርኢ', N'Wururi')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5365, 532, N'በርአይሌ', N'Brayle')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5366, 533, N'አበኢአንአሌ', N'Abianale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5367, 533, N'አድግንአንግአልኦክ', N'Adgnangalok')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5368, 533, N'አልክአትአክአች', N'Alkatakach')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5369, 533, N'አርስአምአይኤ', N'Arsamaye')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5370, 533, N'በኦርኬኔች', N'Borkenech')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5371, 533, N'ዴሌግንአምኦር', N'Delegnamor')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5372, 533, N'ድኦሽኤ', N'Doshe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5373, 533, N'ግኔመመር', N'Gnememer')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5374, 533, N'ግኡምበኡርበኡር', N'Gumburbur')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5375, 533, N'ግኡርኤ ንአርአምአ', N'Gure Narama')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5376, 533, N'ኬልዋይኤ', N'Kelwaye')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5377, 533, N'ልኢቤምኡኬት', N'Libemuket')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5378, 533, N'ልኦክኦርኦ', N'Lokoro')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5379, 533, N'ንአክኢይአ', N'Nakiya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5380, 533, N'ኦችኤሌች', N'Ochelech')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5381, 533, N'ርኡክርኡክ', N'Rukruk')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5382, 533, N'ሴርምኢርኤት', N'Sermiret')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5383, 533, N'ትኦልትአሌ', N'Toltale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5384, 534, N'አርፍኤስ', N'Arfes')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5385, 534, N'አሽትኢ', N'Ashti')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5386, 534, N'አይክአመር', N'Aykamer')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5387, 534, N'በአክኦ', N'Bako')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5388, 534, N'ችኤሌግኦድ', N'Chelegod')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5389, 534, N'ዴልል', N'Dell')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5390, 534, N'ድኦርኢድኦርአ', N'Doridora')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5391, 534, N'ጌድኢር', N'Gedir')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5392, 534, N'ጌዝኢ', N'Gezi')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5393, 534, N'ግኦይድ', N'Goyd')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5394, 534, N'ግኡመቴር', N'Gumeter')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5395, 534, N'ክኦመር', N'Komer')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5396, 534, N'ምአሌቴር', N'Maleter')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5397, 534, N'ምአይትኦል', N'Maytol')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5398, 534, N'ኦልድአመር', N'Oldamer')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5399, 534, N'ፕኢልአ', N'Pila')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5400, 534, N'ሽአምአመር', N'Shamamer')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5401, 534, N'ሽአንግአምአ በኢልኢ', N'Shangama Bili')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5402, 534, N'ሽአንግአምአ ዎሴት', N'Shangama Woset')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5403, 534, N'ሽኤፍኢ', N'Shephi')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5404, 534, N'ስኢድአ', N'Sida')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5405, 534, N'ዝኤመር', N'Zemer')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5406, 534, N'ግአዝኤር', N'Gazer')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5407, 534, N'ሴኔግአል', N'Senegal')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5408, 534, N'ውበህአመር', N'Wubhamer')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5409, 536, N'አችኢ  አልኢግኦኔ', N'Achi  Aligone')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5410, 536, N'አርኤአይ ኡምበኡሌ', N'Areay Umbule')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5411, 536, N'አርኢበኦርኤ ምኡርአሌ', N'Aribore Murale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5412, 536, N'አርኢይአ ክአይኢስአ', N'Ariya Kayisa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5413, 536, N'በአሽአድአ', N'Bashada')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5414, 536, N'ችአርኢክአክአ', N'Charikaka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5415, 536, N'ዴግአ ክአጅአ ክአሌ', N'Dega Kaja Kale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5416, 536, N'ዴምበኢይኢቴ', N'Dembiyite')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5417, 536, N'ኤግኡዴ', N'Egude')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5418, 536, N'ጌድኢ በአስክ', N'Gedi Back')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5419, 536, N'ግኦንድኦርኦበአ', N'Gondoroba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5420, 536, N'ክአርአ ክኦርችኦ', N'Kara Korcho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5421, 536, N'ክኡፍኡር', N'Kufur')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5422, 536, N'መንኦ ግአልኢት', N'Meno Galit')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5423, 536, N'ምኢርኢሽአ በኢትአ ግአልፍአ', N'Mirisha Bita Galfa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5424, 536, N'ሽአንክኦ ኬልምአ', N'Shanko Kelma')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5425, 536, N'ስኢምበአሌ', N'Simbale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5426, 536, N'ዎንግአ በኢንኦ', N'Wonga Bino')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5427, 536, N'ዝኤሌኬትአ', N'Zeleketa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5428, 536, N'ድኢመክአ 01', N'Dimeka 01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5429, 536, N'ትኡርኤምኢ 01', N'Turemi 01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5430, 537, N'በአዝኤት', N'Bazet')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5431, 537, N'ቴንአድአም', N'Tenadam')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5432, 538, N'አርክኢርኦክኦ', N'Arkiroko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5433, 538, N'በአልአ', N'Bala')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5434, 538, N'በኢይኦ በኦሽክኦርኦ', N'Biyo Boshkoro')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5435, 538, N'ድአምኢኬር', N'Damiker')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5436, 538, N'ድኦይስኦ', N'Doyso')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5437, 538, N'ጌንትኦ', N'Gento')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5438, 538, N'ግኦልኦ', N'Golo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5439, 538, N'ግኡድኦ', N'Gudo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5440, 538, N'ክኦይቤ', N'Koybe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5441, 538, N'ምአክአንአ', N'Makana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5442, 538, N'ሽኦልትአክአ', N'Sholtaka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5443, 539, N'አይፕአ', N'Aypa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5444, 539, N'ክአጅአምይኬ', N'Kajamyke')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5445, 539, N'ክአውትኦም', N'Kawutom')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5446, 477, N'ሴርኤት', N'Seret')
 GO
@@ -15617,143 +14181,11 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5771, 1154, N'ሌንኢድአ', N'Lenida')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5772, 602, N'አፍኢትኦአትኡርአንችኦ', N'Afitoaturancho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5773, 602, N'አጅአችኦበኦይኦ', N'Ajachoboyo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5774, 602, N'አምአርኬበአሽአምኦ', N'Amarkebashamo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5775, 602, N'በአችአግኦልአ', N'Bachagola')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5776, 602, N'በኢድኢክአ', N'Bidika')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5777, 602, N'በኢርአምኦርአክአምኦ', N'Biramorakamo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5778, 602, N'በኦንኦሽአ ውንችኢክኦትአ', N'Bonosha Wnchikota')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5779, 602, N'ድኦኢሽአአምበአርኢችኦ', N'Doishaambaricho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5780, 602, N'ድኦኢሽአቤልአይኤ', N'Doishabelaye')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5781, 602, N'ድኦኢሽአግኦልአ', N'Doishagola')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5782, 602, N'ግኦልኢችኦበኦይኦ', N'Golichoboyo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5783, 602, N'ህኢርክኦፍኦፍኦ', N'Hirkofofo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5784, 602, N'ህኦይአዋ', N'Hoyawa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5785, 602, N'ህኡሌግኡትአንችኦ', N'Hulegutancho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5786, 602, N'ህኡሌስኢፍአ', N'Hulesifa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5787, 602, N'ጅአልኦአድአንችኦ', N'Jaloadancho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5788, 602, N'ጅኤምአይአ', N'Jemaya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5789, 602, N'ኬመችኦ', N'Kemecho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5790, 602, N'ልአይኢግንአውግኢምበኢችኡ', N'Layignawgimbichu')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5791, 602, N'ምኦልኦልኢችኦ', N'Mololicho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5792, 602, N'ምኡስአጌስአህአበሌርአ', N'Musagesahablera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5793, 602, N'ምኡስአጌስአሽኢርኦ', N'Musagesashiro')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5794, 602, N'ሽአምኢስአግኢምበኢችኡ', N'Shamisagimbichu')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5795, 602, N'ሽአምኢስአጅኤምአይአ', N'Shamisajemaya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5796, 602, N'ሽአምኢስአምኢሴ', N'Shamisamise')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5797, 602, N'ሽአምኦበኦይኦ', N'Shamoboyo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5798, 602, N'ሽአይአምቤውንችኢክኦትአ', N'Shayambewnchikota')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5799, 602, N'ስኡትአ', N'Suta')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5800, 602, N'ኡርቤችአአንትአትአ', N'Urbechaantata')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5801, 602, N'ኡሽግኦልአ', N'Ushgola')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5802, 1155, N'አርኤንኢችአ', N'Arenicha')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5803, 1155, N'ልአልኦግአርኢቤ', N'Lalogaribe')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5804, 1155, N'ምአዝኦርኢይአ', N'Mazoriya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5805, 636, N'አዋርኢክአስአ', N'Awarikasa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5806, 636, N'ክኡምኡድኦ', N'Kumudo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5807, 636, N'ሽኤርኢክኦ ጌፍኤርኢስኦ', N'Sheriko Geferiso')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5808, 636, N'ውኤልኢዴይአ', N'Welideya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5809, 636, N'ውኤርአምኦበኦንኢክኦይአ', N'Weramobonikoya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5810, 603, N'አበኡንአ', N'abuna')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5811, 603, N'በኦንአድኢበአርኦ', N'bonadibaro')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5812, 603, N'በኡርይኤ ልአንጌ', N'burye lange')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5813, 603, N'ኤሌ', N'eile')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5814, 603, N'ግኢድአችአምኦ', N'gidachamo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5815, 603, N'ህኡሌቴግንአ ቤንአርአ', N'huletegna benara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5816, 603, N'ህኡሌቴግንአ ኦድአ', N'huletegna oda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5817, 603, N'ህኡሌቴግንአ ሴልፍኤ', N'huletegna selfe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5818, 603, N'ክኦሽአ', N'kosha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5819, 603, N'ሽአንኦ', N'shano')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5820, 603, N'ሽኤርአ', N'shera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5821, 603, N'ስኢበኢይአ', N'sibiya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5822, 603, N'ዎሽኤበአ', N'wosheba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5823, 603, N'1ግንአ ኦድአ', N'1Gna Oda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5824, 603, N'በኦይኢድኡንአ', N'Boyiduna')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5825, 603, N'ስኢጌድአ', N'Sigeda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5826, 603, N'ህኡምአርኦ', N'Humaro')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5827, 603, N'1ግንአ ጅአጅኡርአ', N'1Gna Jajura')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5828, 603, N'በአምበኦ', N'Bambo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5829, 603, N'ጅአጅኡርአ 01', N'Jajura 01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5830, 604, N'አንዴግንአአንሽአ', N'Andegnaansha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5831, 604, N'አንዴግንአትኡክአ', N'Andegnatuka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5832, 604, N'ግኢርመ', N'Girme')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5833, 604, N'ህኡሌቴግንአአንሽአ', N'Huletegnaansha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5834, 604, N'ህኡሌቴግንአቴፍኦ', N'Huletegnatefo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5835, 604, N'ህኡሌቴግንአትኡክአ', N'Huletegnatuka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5836, 604, N'መጅአ', N'Meja')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5837, 604, N'ሽኤዋክኦ', N'Shewako')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5838, 604, N'ስኢንኬሌበኢትአንአ', N'Sinkelebitana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5839, 604, N'ይኤይኤ', N'Yeye')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5840, 604, N'ግኡበአ ሽኤርአርኦ', N'guba sheraro')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5841, 1156, N'1ግንአ ችኦርኦክኦ', N'1gna choroko')
 GO
@@ -15770,32 +14202,6 @@ GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5847, 1156, N'ትአች ሌንድአ', N'tach lenda')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5848, 1156, N'ዋንጅአቤር', N'wanjaber')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5849, 605, N'አንዴግንአአሽኦክአ', N'Andegnaashoka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5850, 605, N'አስኦርኤ', N'Asore')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5851, 605, N'ኤልኦሌክአ', N'Eloleka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5852, 605, N'ህአበኢበኦፍኡርኤንአ', N'Habibofurena')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5853, 605, N'ህአምአትአ', N'Hamata')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5854, 605, N'ህኡሌቴግንአመክአልአ ህአ', N'Huletegnamekala Ha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5855, 605, N'ልአይኢግንአዋርሽኦ', N'Layignawarsho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5856, 605, N'ልአይኢግንአውሌንድአ', N'Layignawlenda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5857, 605, N'ምኢርአበግኦርትአንችኦ', N'Mirabgortancho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5858, 605, N'ምኡድአድኢንኦክኦስአ', N'Mudadinokosa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5859, 605, N'ሽኤክአቴ', N'Shekate')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5860, 605, N'ስኦርጌ', N'Sorge')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5861, 605, N'ትአችኢግንአውቤዴኔ', N'Tachignawbedene')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5862, 1157, N'አጅኦህኡልኡክኦ', N'Ajohuluko')
 GO
@@ -15827,37 +14233,9 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5876, 1157, N'ክኡልኡበኢ', N'kulubi')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5877, 606, N'አድኢልኦ', N'Adiloo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5878, 606, N'ህአምኢድኦ', N'Hamidoo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5879, 606, N'ልአንኢግኡቴችአፍኤኤ', N'Lanigutechafee')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5880, 606, N'ሽኤሽኤርአ', N'Sheshera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5881, 607, N'አምበአርኢችኦ ዋስስአርአ', N'Ambaricho Wassara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5882, 607, N'አንግአችአ ክአልአምአ', N'Angacha Kalama')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5883, 607, N'ድኦንክኦርኢችኦ', N'Donkoricho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5884, 607, N'ግአዴ ጌንአት', N'Gade Genat')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5885, 607, N'ግአርኢበአ ፍአንድኢዴ', N'Gariba Fandide')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5886, 607, N'ህኦበኢችኦ ምኢልኢስአ', N'Hobicho Milisa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5887, 607, N'ክአርአክኢችኦ', N'Karakicho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5888, 607, N'መስአንአ', N'Mesana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5889, 607, N'ዝኦቤችኦ', N'Zobecho')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5890, 1634, N'አንግአችአ', N'Angacha')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5891, 1721, N'አንግአችአ', N'Angacha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5892, 607, N'ፍኡንአምኡርአ', N'Funamura')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5893, 1158, N'ድአትኦድአርአበኦርአ', N'Datodarabora')
 GO
@@ -15917,28 +14295,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5921, 1159, N'ሴርኤርአ ትኦውን', N'Serera Town')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5922, 609, N'አበኦንስአ', N'Abonsa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5923, 609, N'ቤዝአንአ ቤንአርአ', N'Bezana Benara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5924, 609, N'ዴግአኬድኢድአ', N'Degakedida')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5925, 609, N'ፍኡልአስአ', N'Fulasa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5926, 609, N'ክአሽአአ', N'Kashaa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5927, 609, N'ኬርችኢችኦ', N'Kerchicho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5928, 609, N'ልአልኦ', N'Laloo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5929, 609, N'ቴዝአ አግአርአ', N'Teza Agara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5930, 609, N'ቴዝአጌርኢበአ', N'Tezageriba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5931, 609, N'ዝአትኦ ሽዴርአ', N'Zato Shdera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5932, 609, N'ዝኤርአርኦ', N'Zeraroo')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5933, 1490, N'ህአድአርኦ ክአቴምአ ኬቤሌ', N'Hadaro Katema Kebele')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5934, 1636, N'ህአድአርኦ ክአቴምአ ኬቤሌ', N'Hadaro Katema Kebele')
@@ -15947,123 +14303,13 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5936, 1741, N'ህአድአርኦ ክአቴምአ ኬቤሌ', N'Hadaro Katema Kebele')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5937, 610, N'1ግንአ ትኡንትኦን', N'1gna tunton')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5938, 610, N'አመሌክአ', N'ameleka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5939, 610, N'በኦህአትኦርአ', N'bohatora')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5940, 610, N'ግአልኢቤ', N'galibe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5941, 610, N'ህኦምአ', N'homa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5942, 610, N'ምአንድኦይኤ', N'mandoye')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5943, 610, N'ምኡግኡንጅአ', N'mugunja')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5944, 610, N'ስኦድኢችኦ', N'sodicho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5945, 610, N'2ግንአ ትኡንትኦ', N'2gna tunto')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5946, 610, N'አጅኦርአ', N'ajora')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5947, 610, N'ህ_ችአችኦ', N'h_chacho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5948, 610, N'ልአ_ችአችኦ', N'la_chacho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5949, 610, N'ልአልኦ', N'lalo')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5950, 1491, N'ሌሽኦ ምአዝኦርኢአ ኬቴምአ', N'Lesho Mazoria Ketema')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5951, 611, N'አሽኢርአ', N'Ashira')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5952, 611, N'በኡርችአንአ', N'Burchana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5953, 611, N'ጌመሽአ', N'Gemesha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5954, 611, N'ህኦድአ', N'Hoda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5955, 611, N'ኢትአ', N'Ita')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5956, 611, N'ልአድአ', N'Lada')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5957, 611, N'መስአፍኤ', N'Mesafe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5958, 611, N'ምኢስርአክሌሽኦ', N'Misraklesho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5959, 611, N'ውኤንክኦ', N'Wenko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5960, 611, N'ዝኦግኦበአ', N'Zogoba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5961, 612, N'አበኦንኢስአአ', N'Abonisaa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5962, 612, N'አዝኤድኦበኦ', N'Azedoboo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5963, 612, N'ዴግአኬድኢድአአ', N'Degakedidaa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5964, 612, N'ጌርአመአምኢበአርኢችኦ', N'Gerameamibaricho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5965, 612, N'ኬርኢችኤችኦ', N'Kerichecho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5966, 612, N'ቴዝኤጌርኢበአአ', N'Tezegeribaa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5967, 612, N'ኦድኦልኢችኦ', N'Odolicho')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5968, 1161, N'ኬቴልአ', N'Ketela')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5969, 613, N'ስኦይአመ', N'Soyame')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5970, 613, N'በአድአ', N'Bada')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5971, 613, N'በኦሄ', N'Bohe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5972, 613, N'ድኡርግኢ', N'Durgi')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5973, 613, N'ፍኤርዝአንኦ', N'Ferzano')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5974, 613, N'ግአይችአ', N'Gaicha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5975, 613, N'ህአዝኤምበአርአ', N'Hazembara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5976, 613, N'ኬሌትአዝኡርኢይአ', N'Keletazuriya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5977, 613, N'ኦሽኤትኦበኡልትኡምአ', N'Oshetobultuma')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5978, 613, N'ፕኦስኬትልአንድኬርኤርአ', N'Pocketlandkerera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5979, 613, N'ስኢጌዝኦ', N'Sigezo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5980, 613, N'ህኦድአ በኦልትኡምአ', N'Hoda Boltuma')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5981, 613, N'ኬሌትአ', N'Keleta')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5982, 613, N'ምኡድኡልአ02', N'Mudula02')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5983, 1162, N'ድኦክአትኦ', N'Dokato')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5984, 1162, N'ክአርአቴ', N'Karate')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5985, 614, N'አበአርኦበአ', N'Abaroba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5986, 614, N'አርፍአይዴ', N'Arfayde')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5987, 614, N'ፍኡችኡችአ', N'Fuchucha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5988, 614, N'ግኦችአ', N'Gocha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5989, 614, N'ምአችአልኦ', N'Machalo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5990, 614, N'ስኦርኦበኦ', N'Sorobo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5991, 615, N'ድኦህአ', N'Doha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5992, 615, N'ግአህኦ', N'Gaho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5993, 615, N'ክአሽአሌ', N'Kashale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5994, 615, N'ኬመሌ', N'Kemele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5995, 615, N'ስአውግአመ', N'Sawugame')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5996, 1163, N'በኦርክኦርአ', N'Borkora')
 GO
@@ -16072,40 +14318,6 @@ GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5998, 1163, N'ምአዴርኢይአንአ ግኢዝአበአ', N'Maderiyana Gizaba')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (5999, 1163, N'ክኦልመ 01', N'Kolme 01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6000, 616, N'አድድኢስ ጌቤር', N'Addis Geber')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6001, 616, N'ቤችኦ', N'Becho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6002, 616, N'ቤርቤርስአ', N'Berbersa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6003, 616, N'ልኡሌትኡ', N'Luletu')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6004, 616, N'ስአጌን ግአንቴ', N'Sagen Gante')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6005, 616, N'ኬይአቴ', N'Keyate')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6006, 617, N'በኡርኢክአ ድኢልልአፕአ', N'Burika Dillapa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6007, 617, N'ድኡቤ ግኦድአበአምኦ', N'Dube Godabamo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6008, 617, N'ኤበኦት', N'Ebot')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6009, 617, N'ኤንክአት አግአም', N'Enkat Agam')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6010, 617, N'ግአቴ ክኡትይኦ', N'Gate Kutyo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6011, 617, N'ግኦልኦችኦበአ', N'Golochoba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6012, 617, N'ጅኢግኢንአ ልአሽኦ', N'Jigina Lasho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6013, 617, N'ምአትአይአ ድአንጌ', N'Mataya Dange')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6014, 617, N'ንአድኡግኔ ልኦልአ', N'Nadugne Lola')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6015, 617, N'ፍአርአጅአት02', N'Farajat02')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6016, 617, N'ስኦጅአት01', N'Sojat01')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6017, 1164, N'አበኢዝአንአ ህኡልአት', N'Abizana Hulat')
 GO
@@ -16135,26 +14347,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6030, 1164, N'ክኡትአርኤ', N'Kutare')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6031, 618, N'አምቤርኢችኦ አችአምኦ', N'Ambericho Achamo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6032, 618, N'በኢልአዋንጅአ', N'Bilawanja')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6033, 618, N'በርኢህአን ክኢትክኢትአ', N'Brihan Kitkita')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6034, 618, N'ምአርአበኦ ኬልኬል', N'Marabo Kelkel')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6035, 618, N'ዋችኦ ኦበኢስኦ', N'Wacho Obiso')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6036, 618, N'ኬርአቴ ኬበአሌ', N'Kerate Kebale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6037, 619, N'አግኦዴ', N'agode')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6038, 619, N'ክኢቤት 04', N'kibet 04')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6039, 619, N'ክኦቴቤሌስአ', N'kotebelesa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6040, 619, N'ዋሌይአ6', N'waleya6')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6041, 1165, N'አምችኤ', N'Amche')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6042, 1165, N'አርችኡምአ ዎንቴ', N'Archuma Wonte')
@@ -16173,77 +14365,11 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6049, 1165, N'ርኤፕኤ ችኤፍኡንአ', N'Repe Chefuna')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6050, 627, N'ሽአምበአ ክኢሌንአ', N'Shamba Kilena')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6051, 627, N'ስኦርኤ ክኢሌንአ', N'Sore Kilena')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6052, 627, N'ስኦርኤ ምአሽኢድኦ', N'Sore Mashido')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6053, 627, N'ስኦርኤ ዋምኡርአ', N'Sore Wamura')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6054, 627, N'ስኡንክአሌ', N'Sunkale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6055, 627, N'ዝአምኢኔ ክኦልበአይኤ', N'Zamine Kolbaye')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6056, 627, N'ዝአምኢኔ ንአርኤ', N'Zamine Nare')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6057, 627, N'አንችኡችኦ ትኦውን', N'Anchucho Town')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6058, 1494, N'ግኡንኡንኦ ኬቴምአ', N'Gununo Ketema')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6059, 1637, N'ግኡንኡንኦ ኬቴምአ', N'Gununo Ketema')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6060, 1723, N'ግኡንኡንኦ ኬቴምአ', N'Gununo Ketema')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6061, 627, N'ሌድኢስአ ትኦውን', N'Ledisa Town')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6062, 628, N'አድአችአ', N'Adacha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6063, 628, N'አዴ ድአውኤ ምኡንድአጅአ', N'Ade Dawe Mundaja')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6064, 628, N'አምቤ በአዴስስአ', N'Ambe Badessa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6065, 628, N'አንክአ ሽአሽአርአ', N'Anka Shashara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6066, 628, N'በኢልበኦ በአዴስአ', N'Bilbo Badesa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6067, 628, N'ድአውኤ ስአኬ', N'Dawe Sake')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6068, 628, N'ዴግአግአ ሌንድአ', N'Degaga Lenda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6069, 628, N'ዴምበአ ግኢርአርአ', N'Demba Girara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6070, 628, N'ግአልችአ ስአኬ', N'Galcha Sake')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6071, 628, N'ግኢርአርአ አምቤ', N'Girara Ambe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6072, 628, N'ክኢንድኦ ክኦይኦ', N'Kindo Koyo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6073, 628, N'ክኦይኦ ስአኬ', N'Koyo Sake')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6074, 628, N'ምአይኦ ክኦቴ', N'Mayo Kote')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6075, 628, N'ምአይኦ ኦፕኦርኤ', N'Mayo Opore')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6076, 628, N'ምኡንድአጅአ ስአኬ', N'Mundaja Sake')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6077, 628, N'ኦልኦበአ', N'Oloba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6078, 628, N'ስኡርአ ክኦይኦ', N'Sura Koyo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6079, 628, N'ትኦርአ ኦፍርኤ', N'Tora Ofre')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6080, 628, N'ትኦርአ ስአዴበኦ', N'Tora Sadebo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6081, 628, N'ትኦርአ ውልኢሽኦ', N'Tora Wulisho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6082, 628, N'አድኢስኡ ኬቤሌ', N'Adisu Kebele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6083, 628, N'ቴሌ ኬቤሌ', N'Tele Kebele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6084, 628, N'ግአልኢችአምአዝኤግአጅአ', N'Galichamazegaja')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6085, 628, N'ግኢርአርአምአዝኤግአጅአ', N'Giraramazegaja')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6086, 1171, N'አዴ አርኦ', N'Ade Aro')
 GO
@@ -16291,32 +14417,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6108, 1171, N'ጅአጌ ምአዝኤግአጅአ', N'Jage Mazegaja')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6109, 629, N'አዴ ሽአንትኦ', N'Ade Shanto')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6110, 629, N'በኢበኢስኦ ኦልኦልአ', N'Bibiso Olola')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6111, 629, N'ዴምበአ ግአሌ', N'Demba Gale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6112, 629, N'ግአሌ በኡጌ', N'Gale Buge')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6113, 629, N'ግኦልኦ ሽአንትኦ', N'Golo Shanto')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6114, 629, N'ግኡድኢችኦ', N'Gudicho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6115, 629, N'ልአምአርአድአ', N'Lamarada')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6116, 629, N'ኦልኦልአ', N'Olola')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6117, 629, N'ስኢይአርአ ምአሄ', N'Siyara Mahe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6118, 629, N'ትኦምትኦመ መንትአ', N'Tomtome Menta')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6119, 629, N'ዋርበኢርአ ስኡኬ', N'Warbira Suke')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6120, 629, N'ዋሴድኦ', N'Wasedo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6121, 629, N'ሽአንትኦ ኬቴምአ', N'Shanto Ketema')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6122, 1172, N'አንክአ ድአምኦት', N'Anka Damot')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6123, 1172, N'አርኡሴ ውኤይኢዴ', N'Aruse Weyide')
@@ -16357,16 +14457,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6141, 1172, N'ኬርችኤችኤ ምአዝኤግአጅአ', N'Kercheche Mazegaja')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6142, 630, N'በኦልአ ዋንችኤ', N'Bola Wanche')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6143, 630, N'ኤልልኦ ኤርአሽኦ', N'Ello Erasho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6144, 630, N'ህኦበኢችአ በኦንግኦትአ', N'Hobicha Bongota')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6145, 630, N'ህኦበኢችአ በኦርክኦሽኤ', N'Hobicha Borkoshe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6146, 630, N'ምኦትአልአ', N'Motala')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6147, 1173, N'አበመ ሽኦይአ', N'Abme Shoya')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6148, 1173, N'አንክአ ዎችአ', N'Anka Wocha')
@@ -16395,18 +14485,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6160, 1173, N'ቴቤልአ02', N'Tebela02')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6161, 631, N'ክኦይኢሽአ ዋምኡርአ', N'Koyisha Wamura')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6162, 631, N'ኦፍአ ችአውክአርኤ', N'Ofa Chawkare')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6163, 631, N'ኦመ በኦልኦልአ', N'Ome Bolola')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6164, 631, N'ዋምኡርአ በኦርክኦሽኤ', N'Wamura Borkoshe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6165, 631, N'ዝአምኦ', N'Zamo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6166, 631, N'ልአሽኦ_01', N'Lasho_01')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6167, 1174, N'በኦስአ በኦርትኦ', N'Bosa Borto')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6168, 1174, N'ግአልአ', N'Gala')
@@ -16422,44 +14500,6 @@ GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6173, 1174, N'ዝኤርአድአ', N'Zerada')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6174, 1174, N'ህአልአሌ_01', N'Halale_01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6175, 632, N'በኦርክኦሽኤ', N'Borkoshe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6176, 632, N'ችኤርአችኢ', N'Cherachi')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6177, 632, N'ድኦጌ ልአርኦስኦ', N'Doge Laroso')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6178, 632, N'ህአንአዝኤ', N'Hanaze')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6179, 632, N'ምአሽኢንግአ', N'Mashinga')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6180, 632, N'ምኦልትኢችኦ', N'Molticho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6181, 632, N'ኦይድኡ ችአምአ', N'Oydu Chama')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6182, 632, N'ሴርኤ ፍኢንችአዋ', N'Sere Finchawa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6183, 632, N'ዝኤቤትኦ', N'Zebeto')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6184, 632, N'ቤሌ 02', N'Bele 02')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6185, 632, N'ስኦርትኦ ምአዝኤግአጅአ', N'Sorto Mazegaja')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6186, 633, N'ግአርቤ', N'Garbe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6187, 633, N'ክአንክኦ በኦሽአሽኤ', N'Kanko Boshashe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6188, 633, N'ኦፍአ ሄርአምኦ', N'Ofa Heramo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6189, 633, N'ስአድኦይኤ', N'Sadoye')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6190, 633, N'ሴርኤ ኤሽኦ', N'Sere Esho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6191, 633, N'ዋችኢግአ ኤሽኦ', N'Wachiga Esho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6192, 633, N'ዎሽ ዎችአ ድአክአይአ', N'Wosh Wocha Dakaya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6193, 633, N'ጌስኡበአ ዝኤርኦ አንድ', N'Gesuba Zero And')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6194, 1175, N'በኦስአክአችአ', N'Bosakacha')
 GO
@@ -16495,42 +14535,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6210, 1165, N'ምኢልኢንኢኡም', N'Milinium')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6211, 620, N'አምፍአር', N'Amfar')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6212, 620, N'በኢልአልኦ', N'Bilalo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6213, 620, N'ዴመሌ ዴቤይ በኢርአ', N'Demele Debey Bira')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6214, 620, N'ዴመሌ ኦድአ ኢድኦ', N'Demele Oda Ido')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6215, 620, N'ድኡንአ ግ/ምአህቤር', N'Duna G/Mahber')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6216, 620, N'ጌድአምኦ', N'Gedamo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6217, 620, N'ጅአርአምኦ', N'Jaramo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6218, 620, N'ጅኢርኦ', N'Jiro')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6219, 620, N'ኬዴ', N'Kede')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6220, 620, N'መህአል ምኡግኦ', N'Mehal Mugo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6221, 620, N'ምኢኤርኤበ ምኡግኦ', N'Miereb Mugo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6222, 620, N'ምኡግኦ ቴርአርአ', N'Mugo Terara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6223, 620, N'ሴመን ምኡግኦ', N'Semen Mugo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6224, 620, N'ዊልልኦ ሌርአ', N'Willo Lera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6225, 620, N'ዎጌር ግኡንጅኡበኡል', N'Woger Gunjubul')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6226, 620, N'ድኡንአ ኬቴምአ', N'Duna Ketema')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6227, 620, N'ሌርአ ኬቴምአ', N'Lera Ketema')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6228, 620, N'ምኡግኦ ኬቴምአ', N'Mugo Ketema')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6229, 1166, N'አድአዝኤር አበኢችኤ', N'Adazer Abiche')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6230, 1166, N'አድአዝኤር ሽኤቤል', N'Adazer Shebel')
@@ -16558,62 +14562,6 @@ GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6241, 1166, N'ውኤሌይአ', N'Weleya')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6242, 1166, N'ክኢልትኦ01', N'Kilto01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6243, 621, N'በአልኦ ክአርኢስኦ', N'Balo Kariso')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6244, 621, N'ዴበኡበ ግኦትኦ', N'Debub Goto')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6245, 621, N'ግኦትኦ ዋችኦ', N'Goto Wacho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6246, 621, N'ልኡኬ ፍኦኬ', N'Luke Foke')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6247, 621, N'ምኢስርአክ ይአክኦችኤ', N'Misrak Yakoche')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6248, 621, N'ሴድአ ግኦርኤ', N'Seda Gore')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6249, 621, N'ጌርበኢቤር', N'Gerbiber')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6250, 621, N'ኡድአስአ', N'Udasa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6251, 621, N'ዴበኡበ-ግኦትኦ', N'Debub-Goto')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6252, 621, N'ሴመን-ግኦትኦ', N'Semen-Goto')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6253, 622, N'አድአሽአ ዝኢክኦ', N'Adasha Ziko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6254, 622, N'በአርችኦ ክኡልኡፍኦ', N'Barcho Kulufo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6255, 622, N'ፍኤቴን', N'Feten')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6256, 622, N'ግ/ኢንጅአምኦ', N'G/Injamo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6257, 622, N'ጌትአም ግኡርበአይኤ', N'Getam Gurbaye')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6258, 622, N'ግኡትአንችኦ', N'Gutancho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6259, 622, N'ጅአትአ', N'Jata')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6260, 622, N'ጅኤጅኤበኢችኦ ሌምሌም', N'Jejebicho Lemlem')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6261, 622, N'ልአይ ኬምኦ', N'Lay Kemo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6262, 622, N'ምአንዝኦ ስኦይአትኦ', N'Manzo Soyato')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6263, 622, N'መንዝኦ ፍኤቴን', N'Menzo Feten')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6264, 622, N'ርአግድኢንአ ቅኦርኤ', N'Ragdina Qore')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6265, 622, N'ዎርአቤ ስኢምኢትአ', N'Worabe Simita')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6266, 622, N'አድአሽአ', N'Adasha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6267, 622, N'መንዝኦግኡንበኢ', N'Menzogunbi')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6268, 622, N'ክኡልኡፍኦ ሽአግዴር', N'Kulufo Shagder')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6269, 622, N'ርኤግኢድኢንአ', N'Regidina')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6270, 622, N'ርኤግኢድኢንአ ክኦርኤ ምአዝኦርኢይአ', N'Regidina Kore Mazoriya')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6271, 1167, N'አበዝአንአ', N'abzana')
 GO
@@ -16645,10 +14593,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6285, 1167, N'መንህአርኢአ', N'menharia')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6286, 623, N'ድአቴ ዎዝር', N'Date Wozr')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6287, 623, N'ዎርአቤ 01', N'Worabe 01')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6288, 1168, N'አበአልአ አጅአጅአ', N'Abala Ajaja')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6289, 1168, N'አበአልአ ፍአርአችኦ', N'Abala Faracho')
@@ -16667,12 +14611,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6296, 1168, N'አበአይአ 01', N'Abaya 01')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6297, 624, N'አርኤክአ 01 ኬቤሌ', N'Areka 01 Kebele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6298, 624, N'አርኤክአ 03 ኬቤሌ', N'Areka 03 Kebele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6299, 624, N'አርኤክአ 04', N'Areka 04')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6300, 1169, N'አምአች ክኦድኦ', N'Amach Kodo')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6301, 1169, N'ግአሌ ዋርግኦ', N'Gale Wargo')
@@ -16684,52 +14622,6 @@ GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6304, 1169, N'ውኤይዴ መሴንአ', N'Weyde Mesena')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6305, 1169, N'ግአሌ ህአምኡሴ ምአዝኤግአጅአ', N'Gale Hamuse Mazegaja')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6306, 625, N'በኦድኢትኢ ችኤውስአርኤ', N'Boditi Chewcare')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6307, 625, N'በኦድኢትኢ ህአግአዝአ', N'Boditi Hagaza')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6308, 625, N'በኦድኢትኢ ቅኦርኬ', N'Boditi Qorke')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6309, 625, N'ህአግአዝአ ድኦጌ', N'Hagaza Doge')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6310, 626, N'አድምአንችኦ አርፍኢትአ', N'Admancho Arfita')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6311, 626, N'አፍአምአ አድኢልአ', N'Afama Adila')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6312, 626, N'አፍአምአ ግአርኦ', N'Afama Garo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6313, 626, N'በአስስአ ግኦፍፍኤርአ', N'Bassa Goffera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6314, 626, N'ድአችኤ ግኦፍኤርአ', N'Dache Gofera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6315, 626, N'ድአንግአርአ ምአድአልችኦ', N'Dangara Madalcho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6316, 626, N'ድኦጌ ውኤይበኦ', N'Doge Weybo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6317, 626, N'ድኡበኦ', N'Dubo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6318, 626, N'ግኢድኦ ህኦምበአ', N'Gido Homba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6319, 626, N'ግኡርኡምኦ ክኦይሽአ', N'Gurumo Koysha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6320, 626, N'ሌግአምአ', N'Legama')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6321, 626, N'ቅኦርኬ ድኦጌ', N'Qorke Doge')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6322, 626, N'ሽኦይኤ ህኦምበአ', N'Shoye Homba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6323, 626, N'ትአድኢስአ', N'Tadisa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6324, 626, N'ትኦቅኢስአ ግኦድኦ', N'Toqisa Godo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6325, 626, N'ዎርምኡምአ', N'Wormuma')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6326, 626, N'አችኡርአምአዝኤግአጅአትኦውን', N'Achuramazegajatown')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6327, 626, N'ግኡርኡምኦክኦኢሽአምአዝኤግአጅአ', N'Gurumokoishamazegaja')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6328, 626, N'ውኤበኦምአዝኤግአጅአትኦውን', N'Weibomazegajatown')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6329, 1170, N'አድኢልአ', N'Adila')
 GO
@@ -16755,26 +14647,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6340, 1170, N'ዋንጅአመ', N'Wanjame')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6341, 627, N'አንችኡችኦ ችአው ክአርኤ', N'Anchucho Chaw Kare')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6342, 627, N'ዴምበአ ዝአምኢኔ', N'Demba Zamine')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6343, 627, N'ድኦጌ ምአሽኢድኦ', N'Doge Mashido')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6344, 627, N'ድኦጌ ሽአክኢሽኦ', N'Doge Shakisho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6345, 627, N'ግኡርኡምኦ ሌድኢስአ', N'Gurumo Ledisa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6346, 627, N'ሽአምበአ ኬቤሌ', N'Shamba Kebele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6347, 579, N'ስኡበኢ', N'Subi')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6348, 579, N'ኡበአ ድአምአ', N'Uba Dama')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6349, 579, N'ኡበአ ግአንኢችኢልአ', N'Uba Ganichila')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6350, 579, N'ኡበአ ይአምበአልአ', N'Uba Yambala')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6351, 1482, N'ሽኤፍኢቴ ቅኡቴር', N'Shefite Quter')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6352, 1632, N'ሽኤፍኢቴ ቅኡቴር', N'Shefite Quter')
@@ -16794,40 +14666,6 @@ GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6359, 1138, N'ይአልአ', N'Yala')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6360, 1138, N'ዝኢርክኦ', N'Zirko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6361, 580, N'አርምአፍአርአ', N'Armafara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6362, 580, N'በአህኢ', N'Bahi')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6363, 580, N'በኦልልአ በአልልአ', N'Bolla Balla')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6364, 580, N'ግአድኦልአ ግኦድኢምአ', N'Gadola Godima')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6365, 580, N'ግአልአድአ', N'Galada')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6366, 580, N'ግአርኦ ክኦርፕአ', N'Garo Korpa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6367, 580, N'ግዋስስአ', N'Guassa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6368, 580, N'ኬንችኦ', N'Kencho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6369, 580, N'ሽአልአትኢትኦትኢፍኤ', N'Shalatitotife')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6370, 580, N'ሽአምበአርአ', N'Shambara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6371, 580, N'ሽኤሌበኡኔ', N'Shelebune')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6372, 580, N'ስኦምበአ', N'Somba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6373, 580, N'ኡበአይኤልአ', N'Ubayela')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6374, 580, N'ዎርክአግኦህአ', N'Workagoha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6375, 580, N'ይኤልአሽአበኦ', N'Yelashabo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6376, 580, N'ዝኤክአ ዝኤልትኦ', N'Zeka Zelto')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6377, 580, N'ህኦሽአልአ ሽአምበአርአ', N'Hoshala Shambara')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6378, 1139, N'አምቤ ግአይሌ', N'Ambe Gayle')
 GO
@@ -16881,43 +14719,7 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6403, 1139, N'መልአ 01', N'Mela 01')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6404, 581, N'አበኡክኦ', N'Abuko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6405, 581, N'በኢድኦ ትአድአሌ', N'Bido Tadale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6406, 581, N'በኦርአር', N'Borar')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6407, 581, N'ድአርኢጌግአትአር', N'Darigegatar')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6408, 581, N'ድኢርኤ ልአፍትኦ', N'Dire Lafto')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6409, 581, N'ግኢቤ ይኢበአር', N'Gibe Yibar')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6410, 581, N'ህኡድአድ 7', N'Hudad 7')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6411, 581, N'ህኡድአድ4', N'Hudad4')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6412, 581, N'ጅአጅአበአንአ ግአስኦርኤ', N'Jajabana Gasore')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6413, 581, N'ልአችኤንአ ኦምአንችኦ', N'Lachena Omancho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6414, 581, N'ምአምአዴ', N'Mamade')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6415, 581, N'ንአችአ ክኡልኢት', N'Nacha Kulit')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6416, 581, N'ትአች ግአርአበአ', N'Tach Garaba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6417, 581, N'ትኡበአንአ ትአልኢልኦ', N'Tubana Talilo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6418, 581, N'ክኡልኢት', N'Kulit')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6419, 1483, N'ዋልኢግአትኦውን', N'Waligatown')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6420, 582, N'በኡትአጅኢርአ 01', N'Butajira 01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6421, 582, N'በኡትአጅኢርአ 03', N'Butajira 03')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6422, 582, N'በኡትአጅኢርአ 05', N'Butajira 05')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6423, 1141, N'አበርኤት', N'abret')
 GO
@@ -16959,119 +14761,13 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6442, 1141, N'መጌንአሴ', N'megenase')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6443, 583, N'አድአሌ ችአልክአ', N'Adale Chalka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6444, 583, N'ቤኬ በኢስአን ጅኢልበአ', N'Beke Bisan Jilba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6445, 583, N'ድአምኡ1', N'Damu1')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6446, 583, N'ድአምኡ2', N'Damu2')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6447, 583, N'ግኦጌትኢ1', N'Gogeti1')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6448, 583, N'ግኦጌትኢ3', N'Gogeti3')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6449, 583, N'ግኡምበአርንአድአ', N'Gumbarnada')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6450, 583, N'ክኦልአንኡርአንአ', N'Kolanurana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6451, 583, N'መልክኦ', N'Melko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6452, 583, N'ኬልአ01', N'Kela01')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6453, 1142, N'ኤንድኢቤር 02', N'endiber 02')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6454, 1142, N'ይኤፍኤክቴርኤክ', N'yefekterek')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6455, 1142, N'ይኤፍኤርኤዝኢኤ', N'yeferezie')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6456, 584, N'አርአትኢችኦ', N'Araticho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6457, 584, N'ዴበርኤጽኢጌ', N'Debretsige')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6458, 584, N'ጌቴህ', N'Geteh')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6459, 584, N'ጅኤድአ', N'Jeda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6460, 584, N'ሽኦርኤክኦ', N'Shoreko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6461, 584, N'ዎሌችኦ', N'Wolecho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6462, 584, N'ድኡንክኡልአ ኬቤሌ', N'Dunkula Kebele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6463, 585, N'አበኢርኢር', N'Abirir')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6464, 585, N'አበኦግአዴ', N'Abogade')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6465, 585, N'አግአርኤ', N'Agare')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6466, 585, N'አምኦግአርኤ', N'Amogare')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6467, 585, N'አስትኢር', N'Astir')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6468, 585, N'አውድ', N'Awud')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6469, 585, N'በአርኡግን', N'Barugn')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6470, 585, N'ድአምኢር', N'Daemir')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6471, 585, N'ዴምቤር', N'Dember')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6472, 585, N'ኤቤርኤግን', N'Eberegn')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6473, 585, N'ኤጌዝኤ', N'Egeze')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6474, 585, N'ኤንዴህኦርአ', N'Endehora')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6475, 585, N'ኤኔር ጌድአም', N'Ener Gedam')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6476, 585, N'ኤሴሄር', N'Eseher')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6477, 585, N'ጌንድአ ትአርቤ', N'Genda Tarbe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6478, 585, N'ጌርድአሽኤ', N'Gerdashe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6479, 585, N'ግኦምሽኤ', N'Gomshe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6480, 585, N'ግኦንዴርኤችኤ', N'Gondereche')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6481, 585, N'ግኡውኤትአንአ', N'Guwetana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6482, 585, N'ህኡርኤድ', N'Hured')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6483, 585, N'ጅአትኡ', N'Jatu')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6484, 585, N'ክአስአይ', N'Kasay')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6485, 585, N'ኬርኤቤድ', N'Kerebed')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6486, 585, N'ክኦስአድ', N'Kosad')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6487, 585, N'ልአንክአትኦርኤ', N'Lankatore')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6488, 585, N'መኢድ', N'Meid')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6489, 585, N'ሴንዴክአይ', N'Sendekay')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6490, 585, N'ሽኦምኡርኦ', N'Shomuro')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6491, 585, N'ቴርኤድ', N'Tered')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6492, 585, N'ቴርኤህኦግኔ', N'Terehogne')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6493, 585, N'ውኤዴሽአ', N'Wedesha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6494, 585, N'ውኤርአ ስኡኬ', N'Wera Suke')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6495, 585, N'ዎርኤ ስኢቤት', N'Wore Sibet')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6496, 585, N'ይአክአትኢት', N'Yakatit')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6497, 1484, N'ግኡንችኢርኤ', N'Gunchire')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6498, 585, N'ግኡንችኢርኤምአዝኦርኢይአ', N'Gunchiremazoriya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6499, 585, N'ክኦሴ ኬቴምአ', N'Kose Ketema')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6500, 1143, N'አምበአግአንአት', N'Ambaganat')
 GO
@@ -17129,62 +14825,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6527, 1143, N'ሽአምአንአ', N'Shamana')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6528, 586, N'አዴርኦ', N'Adero')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6529, 586, N'አመትኡልአ ጌዴልኦ', N'Ametula Gedelo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6530, 586, N'አርኤድአ', N'Areda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6531, 586, N'አስፍኤድኢን', N'Asfedin')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6532, 586, N'ቤድዴር', N'Bedder')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6533, 586, N'በኦኔ', N'Bone')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6534, 586, N'በኦርበኦር ሴፍአትኦ', N'Borbor Sefato')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6535, 586, N'ዴኔበ', N'Deneb')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6536, 586, N'ዴስአ', N'Desa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6537, 586, N'ኤርኤስኦ', N'Ereso')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6538, 586, N'ጌርኤንኦ', N'Gereno')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6539, 586, N'ግኢችኤ ድኢምትኡ', N'Giche Dimtu')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6540, 586, N'ህኡትኢር', N'Hutir')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6541, 586, N'ጅኢምምአ', N'Jimma')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6542, 586, N'ኬችአ', N'Kecha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6543, 586, N'ኬንትዋት', N'Kentwat')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6544, 586, N'ኬስኢ ምአርአንትኦ', N'Kesi Maranto')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6545, 586, N'ክኡርበአንኦ', N'Kurbano')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6546, 586, N'ምአንግኦርአግኡር', N'Mangoragur')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6547, 586, N'መህአልግኡትአዝአር', N'Mehalgutazar')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6548, 586, N'ኦችኢንአንኬድኢ', N'Ochinankedi')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6549, 586, N'ሴፍአትኦ ኬርስአ', N'Sefato Kersa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6550, 586, N'ስኦድኦአይቤጌርኤን', N'Sodoaybegeren')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6551, 586, N'ቴይኢበአ', N'Teyiba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6552, 586, N'ዋበኦን', N'Wabon')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6553, 586, N'ውኤሌግአዴሴ', N'Welegadese')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6554, 586, N'ዝኤርኤ', N'Zere')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6555, 586, N'ኢንጌ', N'Inge')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6556, 1144, N'አትአዝኦ', N'Atazo')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6557, 1144, N'ኤስምአዴር', N'Esmader')
@@ -17221,28 +14861,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6573, 1145, N'አርኤክኢት', N'Arekit')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6574, 588, N'ችአክአ ድአምክአሽአ', N'Chaka Damkasha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6575, 588, N'ድአክአንሽኤምኦልአ', N'Dakanshemola')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6576, 588, N'ፍአርኤጅአቴ', N'Farejate')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6577, 588, N'ግኡርአስአድይ', N'Gurasady')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6578, 588, N'ክአርኤምኢስአ', N'Karemisa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6579, 588, N'ክአዋ', N'Kawa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6580, 588, N'ልአንችአ', N'Lancha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6581, 588, N'ርኤምኡግአ', N'Remuga')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6582, 588, N'ትአቴስስአዋሽኤርበአ', N'Tatessawasherba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6583, 588, N'ኡግኡምአሄርአምበአ', N'Ugumaheramba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6584, 588, N'ዎሽአርኤበአ ልአጌዴምአ', N'Woshareba Lagedema')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6585, 1146, N'አርኤግኦ', N'Arego')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6586, 1146, N'በኢድአርአ ፍአቅአ', N'Bidara Faqa')
@@ -17275,38 +14893,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6600, 1146, N'ክኦሽኤ 01', N'Koshe 01')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6601, 589, N'በአትኢ ፍኡትኦ', N'Bati Futo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6602, 589, N'ዴድኡድ ሽኤሽኤርአ', N'Dedud Sheshera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6603, 589, N'ዴርምአ ክኢበሌ', N'Derma Kible')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6604, 589, N'ግኢዴንአ አበኦርኦት', N'Gidena Aborot')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6605, 589, N'ጅኦሌ 1', N'Jole 1')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6606, 589, N'መክኢችኦ', N'Mekicho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6607, 589, N'መሴርኤቴ ዎጌርአም', N'Meserete Wogeram')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6608, 589, N'ምኢኤርኤበ መስክአን', N'Miereb Meskan')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6609, 589, N'ምኢስርኤክ ኤምበኦር', N'Misrek Embor')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6610, 589, N'ስአምኢኔ ሽአሽኤርአ', N'Samine Shashera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6611, 589, N'ሽአሽአርኤ በኢድኦ', N'Shashare Bido')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6612, 589, N'ስኦስት አምበአ', N'Sost Amba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6613, 589, N'ውኤልንሽኦ 1', N'Welnsho 1')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6614, 589, N'ዊትአ', N'Wita')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6615, 589, N'ይኤትአበኦን', N'Yetabon')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6616, 589, N'ኤንሴንኦ 02', N'Enseno 02')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6617, 1147, N'አንዝኢርኤ', N'Anzire')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6618, 1147, N'በአትኢንአኬርአስ', N'Batinakeras')
@@ -17335,79 +14921,7 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6630, 1147, N'ህአዋርኢይአት', N'Hawariyat')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6631, 590, N'በአምኦ', N'Bamo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6632, 590, N'ድኦበኢንአ በአትኢ', N'Dobina Bati')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6633, 590, N'ድኦበኢንአ ግኦልአ', N'Dobina Gola')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6634, 590, N'ኢሌ', N'Ile')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6635, 590, N'ዎጅአ ክኢበሌ', N'Woja Kible')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6636, 1486, N'ይኢመር ዋችኦ', N'Yimer Wacho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6637, 590, N'ይኢመርዋችኦ-3', N'Yimerwacho-3')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6638, 590, N'በአምኦ', N'Bamo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6639, 590, N'ህኡሌቴግንአ-ይኢመርዋችኤው', N'Huletegna-Yimerwachew')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6640, 591, N'አድአልአ ግኦሴ', N'Adala Gose')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6641, 591, N'አድአልአሴልአሴ', N'Adalaselase')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6642, 591, N'አድአዝኤር', N'Adazer')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6643, 591, N'አምኡንቴ ልአልአጌ', N'Amounte Lalage')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6644, 591, N'አንአትኢ', N'Anati')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6645, 591, N'አሽጌዴ', N'Ashgede')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6646, 591, N'አይመሌልኢ', N'Aymeleli')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6647, 591, N'በኡኤኤ ዝኡርኢይአ', N'Buee Zuriya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6648, 591, N'ድኡበአንአ ክስኡምኡግአ', N'Dubana Xumuga')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6649, 591, N'ድኡግድአ ግኦርኡ', N'Dugda Goru')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6650, 591, N'ፍአትኦ', N'Fato')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6651, 591, N'ፍኤርሽኢ', N'Fershi')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6652, 591, N'ግአኔቤልአ ኬርኤስስአ', N'Ganebela Keressa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6653, 591, N'ግአርኢንኦ ቤትአት ዎንዝ', N'Garino Betat Wonz')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6654, 591, N'ጌኔት ምአርኢአም', N'Genet Mariam')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6655, 591, N'ግኢምኢሴ', N'Gimise')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6656, 591, N'ህአምኡስ ጌበአይአ', N'Hamus Gebaya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6657, 591, N'ኢንድኢበኡይኤ', N'Indibuye')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6658, 591, N'ንአጌስስአ', N'Nagessa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6659, 591, N'ርኤፍአንስኦ', N'Refanso')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6660, 591, N'ሴምአርኦ', N'Semaro')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6661, 591, N'ስኦዋትኢኤንአ ጌድአም', N'Sowatiena Gedam')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6662, 591, N'ስኡቴን ዝኡርኢይአ', N'Suten Zuriya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6663, 591, N'ዋችኦ', N'Wacho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6664, 591, N'ውድኢጌት', N'Wudiget')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6665, 591, N'በኡኤኤ', N'Buee')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6666, 591, N'ስኡቴን', N'Suten')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6667, 591, N'ቴይአ', N'Teya')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6668, 1148, N'አድኢስ ህኢዎት', N'Adis Hiwot')
 GO
@@ -17421,135 +14935,7 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6673, 1148, N'ስአልአም በአር', N'Salam Bar')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6674, 593, N'በኦርአርአ', N'borara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6675, 593, N'ድኢምአ', N'dima')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6676, 593, N'ድኡንአ ጌመድኦ', N'duna gemedo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6677, 593, N'ፍኦርክኦሴ', N'forkose')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6678, 593, N'ፍኡጌጅአ', N'fugeja')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6679, 593, N'ግኢድአሽአ', N'gidasha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6680, 593, N'ኦልኦልኢችኦ', N'ololicho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6681, 593, N'ስአስኦክኦትአ ጌጅአ', N'sasokota geja')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6682, 593, N'ትኢንኢክአ', N'tinika')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6683, 593, N'ኡሽኡሽአ በአትአርአ', N'ushusha batara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6684, 593, N'ኡሽኡሽአ በኦንክአ', N'ushusha bonka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6685, 593, N'ጌጅአትኦውን', N'gejatown')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6686, 594, N'አምኢበኢችኦቤልአይኤ', N'Amibichobelaye')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6687, 594, N'አንአትኢግኦ', N'Anatigo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6688, 594, N'በአንኢድአልኢችኦፍአትአ', N'Banidalichofatae')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6689, 594, N'በአንኢድአልኢችኦክኦምኦበኦትአ', N'Banidalichokomobota')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6690, 594, N'በኢልአግአልአ', N'Bilagala')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6691, 594, N'ችኢንኢግኦ', N'Chinigo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6692, 594, N'ዴበኡበድአርኢሽአ', N'Debubdarisha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6693, 594, N'ዴበኡበፍኦንኢክኦ', N'Debubfoniko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6694, 594, N'ዴምአልአበአልኢበኡልአ', N'Demalabalibula')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6695, 594, N'ድኡልአንኢችኦቤሌልአ', N'Dulanichobelela')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6696, 594, N'ኤንኢትኦልአፍኢትኦሌንኢክአ', N'Enitolafitolenika')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6697, 594, N'ህአክአግአልአ', N'Hakagala')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6698, 594, N'ህኦምአግአርአ', N'Homagara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6699, 594, N'ልአይኢግንአውፍኦንኢክኦ', N'Layignawufoniko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6700, 594, N'ልአይኢግንአውኬቤችኦ', N'Layignawukebecho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6701, 594, N'መንኢትኦአኬበአልአ', N'Menitoakebala')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6702, 594, N'ምኢርአበአንአሌምምኦ', N'Mirabanalemmo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6703, 594, N'ምኢርአበህኦምምአ', N'Mirabhomma')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6704, 594, N'ምኢስኢርአክ አንአ', N'Misirak Ana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6705, 594, N'ምኢስኢርአክፍኦንኢክኦ', N'Misirakfoniko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6706, 594, N'ምኢስኢርአክኢኬቤችኦ', N'Misirakikebecho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6707, 594, N'ሴመንፍኦንኢክኦ', N'Semenfoniko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6708, 594, N'ሴንኢፍኤዋስአልአ', N'Senifewasala')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6709, 1487, N'ሽአሽአግኢምኢበአ', N'Shashagimiba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6710, 594, N'አችአምኦ', N'Achamo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6711, 595, N'አርአርአ', N'Arara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6712, 596, N'አንዴግንአ ዴንስአ', N'andegna densa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6713, 596, N'ቤልኡጅአ', N'beluja')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6714, 596, N'ቤርክኡንችኦ', N'berkuncho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6715, 596, N'ድአበኢይአግኦ', N'dabiyago')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6716, 596, N'ህአ ክኡፍኤንአ', N'ha kufena')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6717, 596, N'ህአ ሌቴበኦ', N'ha letebo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6718, 596, N'ህኡሌቴግንአዴንስአ', N'huletegnadensa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6719, 596, N'ኬንክኢችኦ', N'kenkicho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6720, 596, N'ኬሽኢርአ', N'keshira')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6721, 596, N'ሌ ክኡፍኤንአ', N'le kufena')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6722, 596, N'ሌዋጌቤትአ', N'lewagebeta')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6723, 596, N'መህአል ክኡፍኤንአ', N'mehal kufena')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6724, 596, N'ሴመን ኦትኦርኦ', N'semen otoro')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6725, 596, N'ሴንግኢይኤ', N'sengiye')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6726, 596, N'ስኦምኢችኦ', N'somicho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6727, 596, N'አንሽኦትኦውን', N'Anshotown')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6728, 597, N'አዴአንንአ', N'Adeanna')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6729, 597, N'አርአርአ ኦግአርኦ', N'Arara Ogaro')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6730, 597, N'ግኦርኢክስአ', N'Gorixa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6731, 597, N'ልአምበኡድአ', N'Lambuda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6732, 597, N'ምኢስአ', N'Misa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6733, 597, N'ኦርኢዴ በኦበኢችኦ', N'Oride Bobicho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6734, 597, N'ስአጌ', N'Sage')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6735, 597, N'ሽኦድኢርአንአ ህኦንአንአ', N'Shodirana Honana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6736, 597, N'ዋቤትኦ', N'Wabeto')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6737, 597, N'ዎንኢድኦ', N'Wonido')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6738, 597, N'ህአበኢችኦ ትኦውን', N'Habicho Town')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6739, 1151, N'አስቴኬርኬር', N'Astekerker')
 GO
@@ -17581,64 +14967,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6753, 1152, N'ሴችድኡንአ', N'Sechduna')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6754, 598, N'አሌልአ', N'Alela')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6755, 598, N'አንአቤሌስአ', N'Anabelesa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6756, 598, N'አሽኤክኡበአግአ', N'Ashekubaega')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6757, 598, N'በኡክኡንአችአችአይኤንኢችኦ', N'Bukunachachayenicho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6758, 598, N'ድኢግኢበአ', N'Digiba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6759, 598, N'ድኡበአንችኦ', N'Dubancho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6760, 598, N'ግኦርአትኡመ', N'Goratume')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6761, 598, N'ህኡሌቴግንአኦምኦ', N'Huletegnaomo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6762, 598, N'ክኢድኢግኢስአ', N'Kidigisa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6763, 598, N'ልአይኢግንአውክኦዴ', N'Layignawukode')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6764, 598, N'ልኢስአንአክኡስአ', N'Lisanakusa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6765, 598, N'መሴንአበአክኦ', N'Mesenabako')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6766, 598, N'ሴድአምአምአርድኡንኢችኦ', N'Sedamamardunicho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6767, 598, N'ሴንአልኢስአንአ', N'Senalisana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6768, 598, N'ሽኡርምኦ', N'Shurmo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6769, 598, N'ትአችኢግንአውዋምበኢችኦ', N'Tachignawuambicho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6770, 598, N'ትአችኢግንአውክኦዴ', N'Tachignawukode')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6771, 598, N'ልኢስአንአትኦውን', N'Lisanatown')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6772, 599, N'1ግንአ ክኦትትኦ', N'1Gna Kotto')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6773, 599, N'2ግንአ ክአሽኤርአ', N'2Gna Kashera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6774, 599, N'ድአንአምአ', N'Danama')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6775, 599, N'ጌርኢበኦ', N'Geribo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6776, 599, N'ጅአርስኦ ኦንኢጅኦጅኦ', N'Jarso Onijojo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6777, 599, N'ምኢርአበ አጅአበአ', N'Mirab Ajaba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6778, 599, N'ኦፍኦድአ', N'Ofoda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6779, 599, N'ዋድአ 02', N'Wada 02')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6780, 599, N'ዎበአርአ', N'Wobara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6781, 599, N'ድአንአምአ01', N'Danama01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6782, 599, N'ዋድአ ትኦውን', N'Wada Town')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6783, 1153, N'አንዴግንአ አክአምአ', N'andegna akama')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6784, 1153, N'ችአችኦ', N'chacho')
@@ -17652,32 +14980,6 @@ GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6788, 1153, N'ኦዴችኦ', N'odecho')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6789, 1153, N'ኡስምአኔችኦ', N'usmanecho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6790, 600, N'አበኡሽኡርአ', N'abushura')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6791, 600, N'አሽኢዋልአ ዋችኤ', N'ashiwala wache')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6792, 600, N'በኢኡምአ', N'biuma')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6793, 600, N'ዴበኡበ ዋስጌቤትአ', N'debub wasgebeta')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6794, 600, N'ድኢልበአርአ', N'dilbara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6795, 600, N'ኤርአ ጌመድኦ', N'era gemedo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6796, 600, N'ህአጌ', N'hage')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6797, 600, N'ክኡንአፍአ', N'kunafa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6798, 600, N'ምአር ቤትአምበአ', N'mar betamba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6799, 600, N'ስአንትኦ አምቤክአ', N'santo ambeka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6800, 600, N'ሴመን ዋስጌቤትአ', N'semen wasgebeta')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6801, 600, N'ስኢክኦ', N'siko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6802, 600, N'ትኡልአ', N'tula')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (6803, 1154, N'አጅአበአሌሌ', N'Ajabaelele')
 GO
@@ -19420,106 +16722,6 @@ GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7672, 1175, N'ዋርኤዝአ ጌርኤርአ', N'Wareza Gerera')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7673, 1175, N'ዋርኤዝአ ልአሽኦ', N'Wareza Lasho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7674, 634, N'አንስኦመ ጌምቤልአ', N'Ansome Gembela')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7675, 634, N'በኦስአ ክአችአ', N'Bosa Kacha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7676, 634, N'በኡጌ ዋንችኤ', N'Buge Wanche')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7677, 634, N'ድአልበኦ ዎጌኔ', N'Dalbo Wogene')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7678, 634, N'ድአምኦት ዋጅአ', N'Damot Waja')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7679, 634, N'ግኢልኦ በኢስአርኤ', N'Gilo Bisare')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7680, 634, N'ግኡልግኡልአ', N'Gulgula')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7681, 634, N'ግኡርኡምኦ ዎይኢዴ', N'Gurumo Woyide')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7682, 634, N'ክኦድኦ ግአውልኢአ', N'Kodo Gawlia')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7683, 634, N'ክኡትኦ ስኦርፍኤልአ', N'Kuto Sorfela')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7684, 634, N'ምአንቴ ጌርኤርአ', N'Mante Gerera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7685, 634, N'ሽኤልአ በኦርክኦሽኤ', N'Shela Borkoshe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7686, 634, N'ሽኦልአ ክኦድኦ', N'Shola Kodo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7687, 634, N'ትኦመ ጌርኤርአ', N'Tome Gerera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7688, 634, N'ዋችኢግአ በኡሽአ', N'Wachiga Busha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7689, 634, N'ዋጅአ ሽኦይአ', N'Waja Shoya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7690, 634, N'ዝአልአ ሽአሽአ', N'Zala Shasha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7691, 634, N'ዝኢግአ በኦርክኦሽኤ', N'Ziga Borkoshe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7692, 634, N'ድአልበኦ ምአዝኤግአጅአ', N'Dalbo Mazegaja')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7693, 634, N'ግኡልግኡልአ ምአዝኤግአጅአ', N'Gulgula Mazegaja')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7694, 634, N'ህኢምቤቤ', N'Himbebe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7695, 634, N'ልአሽኦ ምአዝኤግአጅአ', N'Lasho Mazegaja')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7696, 634, N'ሽኤልአ በኦርክኦሽኤ ምአዝኤግአጅአ', N'Shela Borkoshe Mazegaja')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7697, 634, N'ትኦመ ምአዝኤግአጅአ', N'Tome Mazegaja')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7698, 635, N'አሽኤር', N'Asher')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7699, 635, N'አዝግኢ ዝኤምድአ', N'Azgi Zemda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7700, 635, N'ዴርኢ ኬፍኦ', N'Deri Kepho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7701, 635, N'ዴርኢ ቴግኡ', N'Deri Tegu')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7702, 635, N'ኤዝኦ ዝአትአ', N'Ezo Zata')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7703, 635, N'ፍአይአ', N'Faya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7704, 635, N'ጌስኢ', N'Gesi')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7705, 635, N'ኬሌችኢ', N'Kelechi')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7706, 635, N'ኬርዝኢ ድኦይኦ', N'Kerzi Doyo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7707, 635, N'ክኦኔር', N'Koner')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7708, 635, N'ልአይግንአው ኬሽኤልኢ', N'Laygnaw Kesheli')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7709, 635, N'መሌክአ', N'Meleka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7710, 635, N'ንኡበአ', N'Nuba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7711, 635, N'ኦይአ ኤድኢይአ', N'Oya Ediya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7712, 635, N'ኦይአ ኤርኤትኦ', N'Oya Ereto')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7713, 635, N'ኦይአ ኬፍኦ', N'Oya Kepho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7714, 635, N'ስአጅአ ልአፍቴን', N'Saja Laften')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7715, 635, N'ስአይኤ ምአፍኦ', N'Saye Mafo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7716, 635, N'ሴምኡንአምአ', N'Semunama')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7717, 635, N'ሽኦሽኤ ኤኔ አልምአምአ', N'Shoshe Ene Almama')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7718, 635, N'ሽኦሽኦ', N'Shosho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7719, 635, N'ትአችኢንግአው ኬሽኤልኢ', N'Tachingaw Kesheli')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7720, 635, N'ውኤጌር ኤንአ ህአንጌር', N'Weger Ena Hanger')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7721, 635, N'ውኤንጌችኦ', N'Wengecho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7722, 635, N'ዴርኢ 01', N'Deri 01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7723, 635, N'ስአጅአ 01', N'Saja 01')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (7724, 1545, N'ኢልኡ ህአርኤር', N'Ilu Harer')
 GO
@@ -31201,26 +28403,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13563, 522, N'መበርአህትኦም ሽኢልአ', N'Mebrahtom Shila')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13564, 523, N'አድኢስኡ ኦልትአምአ', N'Adisu Oltama')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13565, 523, N'ዴግኢንትኢ', N'Deginti')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13566, 523, N'ድኡግኡልኦ', N'Dugulo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13567, 523, N'ጌርኤግአምአ', N'Geregama')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13568, 523, N'ግኦርኦዝኤ', N'Goroze')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13569, 523, N'ክአርክአርቴ', N'Karkarte')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13570, 523, N'ልኦክኢቴ', N'Lokite')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13571, 523, N'ትኡርኡበአ', N'Turuba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13572, 523, N'ግአዋድአ', N'Gawada')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13573, 524, N'አበኡልኦ', N'Abulo')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13574, 1134, N'በኢርበኢርስአ ክአልአ', N'birbirsa kala')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13575, 1134, N'በኡድኡክኢስአ', N'budukisa')
@@ -31261,151 +28443,15 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13593, 1135, N'ስአርኢንግአ ስአንክአ', N'Saringa Sanka')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13594, 575, N'ችአንአ ጌርፍአ', N'Chana Gerfa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13595, 575, N'ድኦችአ ድአምበአልአ', N'Docha Dambala')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13596, 575, N'ፍአልክአ ጽአዋይኤ', N'Falka Tsawaye')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13597, 575, N'ልአይምአ ጽአልአበአንአ', N'Layma Tsalabana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13598, 575, N'ሽአሌ ምኢጽአ', N'Shale Mitsa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13599, 575, N'ጽአልአ ጽአምበአ', N'Tsala Tsamba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13600, 575, N'ትኡርግአ', N'Turga')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13601, 575, N'ኡበአ በአርኤ', N'Uba Bare')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13602, 575, N'ኡበአ ሴልኦ ግአችአ', N'Uba Selo Gacha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13603, 575, N'ዎይዴ ይአልኦ አልኢዝአ', N'Woyde Yalo Aliza')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13604, 575, N'ዝአንግአ አዋንዴ', N'Zanga Awande')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13605, 575, N'ዝአንግአ ምአግአዝአ', N'Zanga Magaza')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13606, 575, N'ዝኡልኢዝኢ ጽኢልአ', N'Zulizi Tsila')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13607, 575, N'ልአይምአጽአልአ በአንአ', N'Laymatsala bana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13608, 575, N'ዝአድአ ድኦልአ', N'Zada Dola')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13609, 576, N'አልአ ግይአበኦልአ', N'Ala Gyabola')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13610, 576, N'አምአርኦ ግኦምአ', N'Amaro Goma')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13611, 576, N'አይክኢንአ ዝአግምአርኤ', N'Aykina Zagmare')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13612, 576, N'ቤድርኦ ኤልልአ', N'Bedro Ella')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13613, 576, N'ቤድርኦ ሴልኦ', N'Bedro Selo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13614, 576, N'ድአድአ', N'Dada')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13615, 576, N'ድአድአ ድአልኢችአ', N'Dada Dalicha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13616, 576, N'ጅአውልአ በአልአል አርኬትአ', N'Jawula Balal Arketa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13617, 576, N'ኬንችኦ ዎይዝአ ችአፍአ', N'Kencho Woyza Chafa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13618, 576, N'ጌዝኤ ግኦፍአ', N'Geze Gofa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13619, 576, N'ውዝአቴ', N'Wuzate')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13620, 577, N'ቤትኦ', N'Beto')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13621, 1137, N'በኦርኤድአ ግኦልክኦስኦ', N'Boreda Golkoso')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13622, 1137, N'ጌንዝኤ ግአድአ', N'Genze Gada')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13623, 1137, N'ዝኢትአ', N'Zita')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13624, 578, N'በአንክአ ግአርአ ህአስቴ', N'Banka Gara Haste')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13625, 578, N'ድአልአ ልኦመ', N'Dala Lome')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13626, 578, N'ኤልኢ ድአበአ', N'Eli Daba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13627, 578, N'ግአይኢንአ', N'Gayina')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13628, 578, N'ጌርጌድአ', N'Gergeda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13629, 578, N'ልአህአ ዝኡርኢአ', N'Laha Zuria')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13630, 578, N'ኦሽአ ችኢክአልኦ', N'Osha Chikalo')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13631, 1481, N'ስአልአይኢሽ መንዴር_', N'Salayish Mender_')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13632, 1739, N'ስአልአይኢሽ መንዴር_', N'Salayish Mender_')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13633, 578, N'ትኦበአ', N'Toba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13634, 578, N'ዋልችአ ሽአሽአ', N'Walcha Shasha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13635, 578, N'ዎልአይስአ', N'Wolaysa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13636, 578, N'ልአህአ 02', N'Laha 02')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13637, 578, N'ምአይዝኤልኦ ኬቴምአ', N'Mayzelo Ketema')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13638, 579, N'ድአልኢሽአ', N'Dalisha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13639, 579, N'ግአመት ግኦችኦ', N'Gamet Gocho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13640, 579, N'ግአርኢድአ', N'Garida')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13641, 579, N'ክአልአ ምአልኦ', N'Kala Malo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13642, 579, N'ልአምኢኤ', N'Lamie')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13643, 579, N'ሽአልአ በአርኤንድኢኤ', N'Shala Barendie')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13644, 560, N'ግአርድአ 01', N'Garda 01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13645, 561, N'ድአምበኢሌ ኦትኦርአ', N'Dambile Otora')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13646, 561, N'ድኢምአሌ', N'Dimale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13647, 561, N'ፍኢሽትኦ', N'Fishto')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13648, 561, N'ግአርበአንስአ ግአልኦ', N'Garbansa Galo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13649, 561, N'ግአርበአንስአ ስኦርኦጌ', N'Garbansa Soroge')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13650, 561, N'ክአምአሌ በአርኢኤ ኦርኦ', N'Kamale Barie Oro')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13651, 561, N'ክኦይርአ ምኡክኡልአ', N'Koyra Mukula')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13652, 561, N'ዝአግአ', N'Zaga')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13653, 561, N'ድኢምአሌ 01', N'Dimale 01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13654, 563, N'በአልትአ በአኬ', N'Balta Bake')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13655, 563, N'በአልትአ ትኦይልኦ', N'Balta Toylo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13656, 563, N'በኦልልአ አንኢክኦ', N'Bolla Aniko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13657, 563, N'ድኦምቤ ድአልበኦ', N'Dombe Dalbo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13658, 563, N'ግኢይአልኦ', N'Giyalo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13659, 563, N'ክኦች', N'Koch')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13660, 563, N'መርርኦ', N'Merro')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13661, 563, N'ፍአስአ', N'Phasa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13662, 563, N'ሽአምአልአ', N'Shamala')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13663, 563, N'ስኦኬ', N'Soke')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13664, 563, N'በአሌትአ 01', N'Baleta 01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13665, 563, N'ዝኡልኦ', N'Zulo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13666, 565, N'ግኡሌ', N'Gule')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13667, 1130, N'ድአዝኦ', N'Dazo')
 GO
@@ -31426,12 +28472,6 @@ GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13675, 1130, N'ዝአልልአ በአርአንአ', N'Zalla Barana')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13676, 1130, N'ዋንኬ ዋጅኢፍኦ', N'Wanke Wajifo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13677, 567, N'ግኦስኢርአ', N'Gosira')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13678, 567, N'ኦሌአ', N'Olea')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13679, 567, N'አዝኦ01', N'Azo01')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13680, 1131, N'ችኦይትአ', N'Choyta')
 GO
@@ -31467,319 +28507,13 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13696, 1131, N'ሽኦችኦርአ ርአፍአርኢ', N'Shochora rafari')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13697, 568, N'ችአበአ ዎንበኢ', N'Chaba Wonbi')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13698, 568, N'ክአስኬ ዝኡልኦ', N'Kaske Zulo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13699, 568, N'ክኦድኦ ልአዴ', N'Kodo Lade')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13700, 568, N'ዎይዴ ግኦንትአ', N'Woyde Gonta')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13701, 568, N'ዎይዴ ዎክኦ', N'Woyde Woko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13702, 568, N'ችኦሽኦ', N'Chosho')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13703, 1132, N'ሴልአምቤር', N'Selamber')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13704, 569, N'አልድአበኦ', N'Aldabo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13705, 569, N'በኢርድአ በኦችኤስስአ', N'Birda Bochessa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13706, 569, N'ችአርበአንትአ', N'Charbanta')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13707, 569, N'ድአክኡዋ ህአሽአርኤ', N'Dakuwa Hashare')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13708, 569, N'ጌልድአችኦ', N'Geldacho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13709, 569, N'ህአርኦ ዎልአበኦ', N'Haro Wolabo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13710, 569, N'ክኦችኦርኤ', N'Kochore')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13711, 569, N'ልአበአ ግአሽአ', N'Laba Gasha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13712, 569, N'ልአይኦ ርአስአ', N'Layo Rasa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13713, 569, N'ኦስኦሌ ምአጅኦ', N'Osole Majo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13714, 569, N'ስኡክኦ', N'Suko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13715, 569, N'በኡሌ 02', N'Bule 02')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13716, 569, N'በኡሌ03', N'Bule03')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13717, 570, N'አኬሽኦ ህአፍኤርኦ', N'Akesho Hafero')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13718, 570, N'አንድኢድአ', N'Andida')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13719, 570, N'በአንትኢሴበኡ', N'Bantisebu')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13720, 570, N'ምኢችኢሌ ግርኢስአ', N'Michile Grisa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13721, 570, N'ምኢችኢሌ ሽስክኦአ', N'Michile Shskoa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13722, 570, N'ሽኢጌድኦ', N'Shigedo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13723, 570, N'ውኤችኤምአ', N'Wechema')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13724, 1477, N'ትኡምትኢችአ', N'Tumticha')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13725, 571, N'በአንክኦ ግኦትኢትኢ', N'Banko Gotiti')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13726, 1627, N'ስኦይአምአ', N'Soyama')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13727, 531, N'ምአንአርአ', N'Manara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13728, 532, N'አንስኦንድአ', N'Ansonda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13729, 532, N'አይመሌ', N'Aymele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13730, 532, N'በኦርኢ', N'Bori')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13731, 532, N'ድኡምአ', N'Duma')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13732, 532, N'ግኢስምአ', N'Gisma')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13733, 532, N'ግኦኔ', N'Gone')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13734, 532, N'ግኡርምአ መርኦ', N'Gurma Mero')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13735, 532, N'ልኡክአ', N'Luka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13736, 532, N'ምኡኬችአ', N'Mukecha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13737, 532, N'ኦልኦ', N'Olo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13738, 532, N'ሽአልአ ግኡይአይኤ', N'Shala Guyaye')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13739, 532, N'ኡፍኢ', N'Ufi')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13740, 532, N'ይኢርግአ', N'Yirga')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13741, 532, N'ኬይ አፍኤር', N'Key Afer')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13742, 533, N'አድበኦርኤን', N'Adboren')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13743, 533, N'አክኡድኡንግኡሌ', N'Akudungule')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13744, 533, N'አርኢክኦል', N'Arikol')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13745, 533, N'በአይኦ', N'Bayo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13746, 533, N'በኡበኡዋ', N'Bubuwa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13747, 533, N'ዴሌርአሌ', N'Delerale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13748, 533, N'ፍኤጅኤጅ', N'Fejej')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13749, 533, N'ግኡበኡርበኡር ኔቤርምኡስ', N'Guburbur Nebermus')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13750, 533, N'ሄርኢኬር', N'Heriker')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13751, 533, N'ልአንግአይ', N'Langay')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13752, 533, N'ልኦቤት', N'Lobet')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13753, 533, N'ልኦምኦስኢይአ', N'Lomosiya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13754, 533, N'ርአቴ', N'Rate')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13755, 533, N'ሴሌግን', N'Selegn')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13756, 533, N'ቴርኤንግኦሌ', N'Terengole')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13757, 533, N'ኦምኦርአቴ', N'Omorate')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13758, 534, N'አርክኢሽአ', N'Arkisha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13759, 534, N'አይድአመር', N'Aydamer')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13760, 534, N'አይንአሌም', N'Aynalem')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13761, 524, N'አይክኡርኤ', N'Aykure')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13762, 524, N'በኡንኢትኢ', N'Buniti')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13763, 524, N'ድኦርኢበአዴ', N'Doribade')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13764, 524, N'ኤቴቴ ህኢይልኦ', N'Etete Hiylo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13765, 524, N'ጌንአ', N'Gena')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13766, 524, N'ግኡምኡርኤ', N'Gumure')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13767, 524, N'ኬሌ', N'Kele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13768, 524, N'መድአይኔ', N'Medayne')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13769, 524, N'ሽአፍኡሌ', N'Shafule')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13770, 524, N'ትኢፍአቴ', N'Tifate')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13771, 541, N'መልኦ ርአሽአ', N'Melo Rasha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13772, 541, N'ኦትልአ ዋሌርስ', N'Otla Walers')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13773, 541, N'ሽአንግአምአ ጽአክ', N'Shangama Tsak')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13774, 541, N'ዋልአ', N'Wala')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13775, 541, N'ዝኢፍኢት አክኢችአ', N'Zifit Akicha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13776, 541, N'አይክአሽኤሌምኢ', N'Aykashelemi')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13777, 541, N'ጌልኢልአ ዝኤርኦ ህኡሌት', N'Gelila Zero Hulet')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13778, 542, N'ፍአንአ', N'Fana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13779, 543, N'አርግኡበአ ትአንአኦ', N'Arguba Tanao')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13780, 543, N'ግኢድኦሌ 01', N'Gidole 01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13781, 543, N'ህኦልቴ 01', N'Holte 01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13782, 543, N'በኡስአ በአስኦ', N'Busa Baso')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13783, 543, N'ህአይቤንአ', N'Haybena')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13784, 543, N'ክኦልአ ምአሽኢሌ', N'Kola Mashile')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13785, 543, N'ሽኢልአሌ', N'Shilale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13786, 543, N'ይአይቤ', N'Yaybe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13787, 544, N'በኦይኢቴ', N'Boyite')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13788, 545, N'በኡንኦ', N'Buno')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13789, 546, N'ህአርኦኬ', N'Haroke')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13790, 547, N'ሽአሽአ', N'Shasha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13791, 548, N'ችአምኦ ኬቤሌ', N'Chamo kebele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13792, 548, N'ድኦይኢስአ', N'Doyisa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13793, 548, N'ግኡርበአ', N'Gurba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13794, 548, N'መህአል ኬቴምአ', N'Mehal Ketema')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13795, 548, N'ውህአ ምኢንች', N'Wuha Minch')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13796, 549, N'ችአንኦ ድኦርግአ', N'Chano Dorga')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13797, 549, N'ዴግአ ችኤንጌ', N'Dega Chenge')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13798, 549, N'ጌንትአ በኦንኬ', N'Genta Bonke')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13799, 549, N'ጌንትአ መችኤ', N'Genta Meche')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13800, 549, N'ሽአርአ', N'Shara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13801, 549, N'ዝኤይሴ ድአምበኢሌ', N'Zeyse Dambile')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13802, 549, N'ዝኤይሴ ውኤዝኤክአ', N'Zeyse Wezeka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13803, 550, N'ዝኢግኢትኢ መርችኤ', N'Zigiti Merche')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13804, 551, N'ድአልበኦ', N'Dalbo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13805, 552, N'ችኦሽአ', N'Chosha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13806, 552, N'ክአችአ ክአሽአስኦ', N'Kacha Kashaso')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13807, 552, N'ኬችአ ሴንግአ', N'Kecha Senga')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13808, 552, N'ክኦሌ ዝአሌ', N'Kole Zale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13809, 552, N'ይኤልአ', N'Yela')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13810, 553, N'አውስአትኦ አበአይአ', N'Awusato Abaya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13811, 553, N'ችኢሌሽኤ አልኦ', N'Chileshe Alo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13812, 553, N'ችኢሌሽኤ ሽአርአ', N'Chileshe Shara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13813, 553, N'ዴግአ ዝኦንግአ', N'Dega Zonga')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13814, 553, N'ድኡግአንአ ግአመርኦ', N'Dugana Gamero')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13815, 553, N'ግኦሽኤ ዝኤሌ', N'Goshe Zele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13816, 553, N'ህአምበኢስአ', N'Hambisa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13817, 553, N'ህይልአሽኦ ውዴሴርኤቴ', N'Hylasho Wudeserete')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13818, 553, N'ክኦድኦ ምኦክኦ', N'Kodo Moko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13819, 553, N'ምአስአ በኡንትአዝአ', N'Masa Buntaza')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13820, 553, N'መቴክአ ድአንአ', N'Meteka Dana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13821, 553, N'ዎይዴ ምኡልአትኦ', N'Woyde Mulato')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13822, 553, N'ዝኤፍኢኔ ምአንኡክአ', N'Zefine Manuka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13823, 553, N'ችኢልአሽኤ', N'Chilashe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13824, 554, N'በኦይኤንአ ትኡፕአ', N'Boyena Tupa')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13825, 1628, N'ችኤንችአ', N'Chencha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13826, 554, N'ጌንድኦ ጌምቤልአ', N'Gendo Gembela')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13827, 554, N'ትኡትኡሽአ', N'Tutusha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13828, 555, N'ድአልኦንአ ዝአድአ', N'Dalona Zada')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13829, 555, N'ድኦክኦ ኤሌዝኤ', N'Doko Eleze')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13830, 555, N'ድኦክኦ ጌድድኢንኦ', N'Doko Geddino')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13831, 555, N'ድኦክኦ ክአሌ', N'Doko Kale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13832, 555, N'ድኦክኦ ሽአሌ', N'Doko Shale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13833, 555, N'ድኦክኦ ይኦይርአ', N'Doko Yoyra')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13834, 555, N'ድኦርዝኤ አምአርአንአ በኦድኦ', N'Dorze Amarana Bodo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13835, 555, N'ድኦርዝኤ ድኦሽኬ', N'Dorze Doshke')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13836, 555, N'ድኦርዝኤ ህአይዝኦ', N'Dorze Hayzo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13837, 555, N'ድኦርዝኤ ልአክአ', N'Dorze Laka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13838, 555, N'ድኦርዝኤ ቴጌችአ', N'Dorze Tegecha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13839, 555, N'ሴቴንአበኦርችኤ', N'Setenaborche')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13840, 555, N'ውኤቤርአ', N'Webera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13841, 555, N'ዝኡቴ', N'Zute')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13842, 556, N'አንትአሽኤ', N'Antashe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13843, 556, N'ዴርአድኢመ', N'Deradime')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13844, 556, N'ኤልኢ ድኦዝኤ', N'Eli Doze')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13845, 556, N'ግኡጌ ግአትአ', N'Guge Gatha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13846, 556, N'ህኦይአ ዴጌዝአ', N'Hoya Degeza')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13847, 556, N'ሌፍኤ', N'Lefe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13848, 556, N'ምአልኦ ምአችኤ', N'Malo Mache')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13849, 556, N'ምአንአንአ ሴልኦ', N'Manana Selo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13850, 572, N'ትኦክኢችአ', N'tokicha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13851, 572, N'ውኤትኢክኦ', N'wetiko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13852, 572, N'ርኤስአ', N'resa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13853, 572, N'ትኡትኡፍኤልአ', N'tutufela')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (13854, 1134, N'አርኤችአ', N'arecha')
 GO
@@ -32393,12 +29127,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14159, 1167, N'ኤልኦስ', N'elos')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14160, 623, N'አልበአዝአር', N'Albazar')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14161, 623, N'ፍኡጌአችኢርኢይኤ', N'Fugeachiriye')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14162, 623, N'ዎርአቤ 02', N'Worabe 02')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14163, 1168, N'አበአልአ ጌፍኤትአ', N'Abala Gefeta')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14164, 1168, N'አበአልአ ልኦንጌንአ', N'Abala Longena')
@@ -32411,8 +29139,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14168, 1168, N'ፍአርአችኦ01', N'Faracho01')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14169, 624, N'አርኤክአ 02 ኬቤሌ', N'Areka 02 Kebele')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14170, 1169, N'አድአይአ ድአክአይአ', N'Adaya Dakaya')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14171, 1169, N'በኡክአምአ ፍኤኬክአ', N'Bukama Fekeka')
@@ -32422,38 +29148,6 @@ GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14173, 1169, N'ሴርኤ በአልአስአ', N'Sere Balaca')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14174, 1169, N'በአክኡልኦ ስአይግንኦ ምአዝኤግአጅአ', N'Bakulo Saygno Mazegaja')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14175, 625, N'በኦድኢትኢ ድኦጌ', N'Boditi Doge')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14176, 625, N'ግኢድኦ በኦድኢትኢ', N'Gido Boditi')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14177, 625, N'ስኢበአይኤ ቅኦርኬ', N'Sibaye Qorke')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14178, 626, N'አፍአምአ በአንችአ', N'Afama Bancha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14179, 626, N'አፍአምአ ምኢንኦ', N'Afama Mino')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14180, 626, N'ችአምአ ህኢንቤችኦ', N'Chama Hinbecho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14181, 626, N'ድአንግአርአ ሴልአትአ', N'Dangara Selata')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14182, 626, N'ድኦልአ', N'Dola')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14183, 626, N'ጌኔት አችኡርአ', N'Genet Achura')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14184, 626, N'ህአግኦ ሴልአትአ', N'Hago Selata')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14185, 626, N'ምአትአልአ ህኢንቤችኦ', N'Matala Hinbecho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14186, 626, N'ስኦርኤ ህኦምበአ', N'Sore Homba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14187, 626, N'ትኢይኦ ህኢንቤችኦ', N'Tiyo Hinbecho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14188, 626, N'ይኡክአርአ', N'Youkara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14189, 626, N'ግአርአግኦድኦምአዝኤግአጅአ', N'Garagodomazegaja')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14190, 626, N'ህኢንቤችኦምአዝኤግአጅአትኦውን', N'Hinbechomazegajatown')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14191, 1170, N'አጅኦርአ', N'Ajora')
 GO
@@ -32473,14 +29167,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14199, 1170, N'ምኦሌ ትኦውን', N'Mole Town')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14200, 627, N'በኦልኦልአ ችአው ክአርኤ', N'Bolola Chaw Kare')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14201, 627, N'ድኦጌ አንችኡችኦ', N'Doge Anchucho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14202, 627, N'ግኡንኡንኦ ህአምኡስኦ', N'Gununo Hamuso')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14203, 627, N'ክኦይኢሽአ ንአርኤ', N'Koyisha Nare')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14204, 1139, N'መልአ ክአውስአ', N'Mela Kawusa')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14205, 1139, N'ኦድአ ሽአቤ', N'Oda Shabe')
@@ -32493,33 +29179,11 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14209, 1139, N'ግአልኢምአ 01', N'Galima 01')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14210, 581, N'አምበአልትአ', N'Ambalta')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14211, 581, N'በኦክአትአንአ ሴርኢቴ', N'Bokatana Serite')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14212, 581, N'ችኢስአንአ ክኦርኢቤስአ', N'Chisana Koribesa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14213, 581, N'ፍኢቴ ጅአጅኡ', N'Fite Jaju')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14214, 1748, N'ህኡድአድ 5&', N'Hudad 5&')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14215, 581, N'ህኡድአድ1', N'Hudad1')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14216, 581, N'ክኡልኢት2', N'Kulit2')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14217, 581, N'ልአይ ግአርአበአ', N'Lay Garaba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14218, 581, N'ምኢችኢሌንአ ትአርአክኦ', N'Michilena Tarako')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14219, 581, N'ትአውልአንአ ግአፍኤርስአ', N'Tawulana Gafersa')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14220, 1483, N'ድአርጌ ትኦውን', N'Darge Town')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14221, 1140, N'በኡችአ', N'Bucha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14222, 582, N'በኡትአጅኢርአ 02', N'Butajira 02')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14223, 582, N'በኡትአጅኢርአ 04', N'Butajira 04')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14224, 1141, N'አድኦሽኤ', N'adoshe')
 GO
@@ -32555,25 +29219,9 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14240, 1141, N'ይኤፍኤቅቴርቅ', N'yefeqterq')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14241, 583, N'አግአምኢስአንድኦ', N'Agamisando')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14242, 583, N'ድአግአንኡርአንአ', N'Daganurana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14243, 583, N'ድአምኡ3', N'Damu3')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14244, 583, N'ግኦጌትኢ2', N'Gogeti2')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14245, 583, N'ግኦስአ ስአልኢን', N'Gosa Salin')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14246, 583, N'ኬልአዝኡርኢይአ', N'Kelazuriya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14247, 583, N'ምአሄቤርአዊ ስአይአት', N'Maheberawi Sayat')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14248, 1142, N'ኤንድኢቤር 01', N'endiber 01')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14249, 1142, N'ግኢርአርኢንአይኤዝኢግቤ', N'girarinayezigbe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14250, 584, N'አኔ', N'Aene')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14251, 701, N'ዋቴ', N'Wate')
 GO
@@ -32761,89 +29409,9 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14343, 1167, N'ትኡትኦ ዝኦግአርኤ', N'tuto zogare')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14344, 584, N'አስአምአት', N'Asamat')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14345, 584, N'ጌኔት', N'Genet')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14346, 584, N'ህአርኤጌ', N'Harege')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14347, 584, N'ሽአውርአ', N'Shawura')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14348, 584, N'ቴፍኤክአ', N'Tefeka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14349, 584, N'ዝኤጌዝ', N'Zegez')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14350, 584, N'ጅአኔ ኬቤሌ', N'Jane Kebele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14351, 585, N'አችአውዴ', N'Achawude')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14352, 585, N'አግአትአ', N'Agata')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14353, 585, N'አንዝአችአ', N'Anzacha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14354, 585, N'አዋሴር', N'Awaser')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14355, 585, N'በአርአዋ', N'Barawa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14356, 585, N'በኦርቴንአ', N'Bortena')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14357, 585, N'ድአይአስአ', N'Dayasa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14358, 585, N'ድኦበአ', N'Doba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14359, 585, N'ኤጌቤግን', N'Egebegn')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14360, 585, N'ኤንአንጌርአ', N'Enangera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14361, 585, N'ኤኔር ክኦልአ', N'Ener Kola')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14362, 585, N'ግአስአውዴ', N'Gasawde')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14363, 585, N'ጌርአድ', N'Gerad')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14364, 585, N'ጌርኤንበኦ', N'Gerenbo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14365, 585, N'ግኦንችኤቤቴ', N'Gonchebete')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14366, 585, N'ግኦርአበአ', N'Goraba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14367, 585, N'ህኦርበአጽኢዝኦ', N'Horbatzizo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14368, 585, N'ክአንአስ', N'Kanas')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14369, 585, N'ኬንድኢ', N'Kendi')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14370, 585, N'ክኦችኢርአ', N'Kochira')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14371, 585, N'ክኡኔቤር', N'Kuneber')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14372, 585, N'ምአፍኤድ', N'Mafed')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14373, 585, N'መክአንአ', N'Mekana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14374, 585, N'ሽአንክአ', N'Shanka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14375, 585, N'ቴርቤ ሽኢክኡር', N'Terbe Shikur')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14376, 585, N'ትኡመንኦ', N'Tumeno')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14377, 585, N'ውኤኔችኤ', N'Weneche')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14378, 585, N'ውኤርክአት', N'Werkat')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14379, 585, N'ዎሽኤዝኢውኤር', N'Wosheziwer')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14380, 585, N'ግአዝአንችኤ', N'Gazanche')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14381, 1633, N'ግኡንችኢርኤ', N'Gunchire')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14382, 1143, N'አግዋጅኤቴርአ', N'Aguajetera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14383, 586, N'ትኢልአምኦ', N'Tilamo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14384, 586, N'ዝኤሌዋን ሴፍአትኦ', N'Zelewan Sefato')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14385, 586, N'መህአል አምበአ', N'Mehal Amba')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14386, 1144, N'ኤስክኡት', N'Eskut')
 GO
@@ -32873,26 +29441,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14399, 1145, N'ይኤሽአርኤበኢንአ ኤንአ ይኤቴቴር', N'Yesharebina Ena Yeteter')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14400, 588, N'በአርኤይኦ', N'Bareyo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14401, 588, N'ችአንችኦ ውኤትኢግን', N'Chancho Wetign')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14402, 588, N'ግአርኤበጅአ', N'Garebja')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14403, 588, N'ጅአበድኡ', N'Jabdu')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14404, 588, N'ክአቴበአርኤ', N'Katebare')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14405, 588, N'ክኦልአክአበድአ', N'Kolakabda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14406, 588, N'ኦድአቤርአ', N'Odabera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14407, 588, N'ስኡንክአ ዴንችኦ', N'Sunka Dencho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14408, 588, N'ዎልአግአ ስኡምአግአ', N'Wolaga Sumaga')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14409, 588, N'ዎሽአርበአ', N'Wosharba')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14410, 1146, N'ድኢድአ ህአልኢበኦ', N'Dida Halibo')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14411, 1146, N'ኤልአልአ ጌበኢበአ', N'Elala Gebiba')
@@ -32913,29 +29461,7 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14419, 1146, N'ውኤጅአ ጅአር ዴመክአ', N'Weja Jar Demeka')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14420, 589, N'በአርኤስአ', N'Baresa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14421, 589, N'ዴግአ ግኦግኦግት', N'Dega Gogogt')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14422, 589, N'ድኡበኦ ትኡትኦ', N'Dubo Tuto')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14423, 589, N'ግኦይበአን', N'Goyban')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14424, 1720, N'ጅኦሌ 2አንድ', N'Jole 2And')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14425, 589, N'ምኢኤርኤበ ኤምበኦር', N'Miereb Embor')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14426, 589, N'ምኢክአልኦ', N'Mikaelo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14427, 589, N'ምኢስርኤክ መስክአን', N'Misrek Meskan')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14428, 589, N'ሽኤሽአርኤ መችኢመንአ', N'Sheshare Mechimena')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14429, 589, N'ውኤሌንሽኦ ህኡሌት', N'Welensho Hulet')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14430, 589, N'ውርበ', N'Wurb')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14431, 589, N'ኤንሴንኦ 01', N'Enseno 01')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14432, 1147, N'አቤጅኢ', N'Abeji')
 GO
@@ -33147,84 +29673,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14536, 1147, N'ዝኤንአቤኔር', N'Zenabener')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14537, 590, N'በአችኤ', N'Bache')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14538, 590, N'በአትኢ  ሌጅአንኦ', N'Bati  Lejano')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14539, 590, N'ኤንሴንኦ ኡስመ', N'Enseno Usme')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14540, 590, N'ኦችአ ግአኔምአ ክኢበአሌ', N'Ocha Ganema Kibale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14541, 590, N'ይኢመርዋችኦ-2', N'Yimerwacho-2')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14542, 590, N'ህአምኡስ-ጌቤይአ', N'Hamus-Gebeya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14543, 591, N'አበኡንአ', N'Abuna')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14544, 591, N'አድአልአ መርቴ ምአትጅአ', N'Adala Merte Matja')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14545, 591, N'አምኡንቴ ግኢፍትኢጌ', N'Amounte Giftige')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14546, 591, N'አምኡንቴ ምኦርአጌ', N'Amounte Morage')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14547, 591, N'አይጌድኦ በኦንኦ', N'Aygedo Bono')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14548, 591, N'በኦርኤበኦርኤ ኤንአ ግኦበኦ', N'Borebore Ena Gobo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14549, 591, N'ድኡግድአ ግአርኤይኦ', N'Dugda Gareyo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14550, 591, N'ኤንሴት ቴክኢል', N'Enset Tekil')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14551, 591, N'ፍኡሌ አምአንኡኤል', N'Fule Amanuel')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14552, 594, N'ሴመንድአርኢሽአ', N'Semendarisha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14553, 594, N'ዎግኢልአአቤርአ', N'Wogilaabera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14554, 594, N'ፍኦንክኦ', N'Fonko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14555, 596, N'አጅአርአንአ', N'ajarana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14556, 596, N'አንዴግንአ ኦትኦርኦ', N'andegna otoro')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14557, 596, N'በኡርኤ በኡልሽአንአ', N'bure bulshana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14558, 596, N'ድኡንመርአ', N'dunmera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14559, 596, N'ህአ ዋጌቤትአ', N'ha wagebeta')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14560, 596, N'ህኡሌቴግንአኦትኦርኦ', N'huletegnaotoro')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14561, 596, N'ክኦጅኦጌምቤርአ', N'kojogembera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14562, 596, N'ሌ ሌቴበኦ', N'le letebo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14563, 596, N'ምአንዴ', N'mande')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14564, 596, N'ኦልአዋ', N'olawa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14565, 596, N'ሴመንዋጌቤትአ', N'semenwagebeta')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14566, 596, N'ዝኤልዴምአ', N'zeldema')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14567, 597, N'2 ኦሌ', N'2 Ole')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14568, 597, N'አዴአንንአ ኦሌ', N'Adeanna Ole')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14569, 597, N'በኡክኡርኦ ስአልአትአ', N'Bukuro Salata')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14570, 597, N'ምአህአል ግአንአ', N'Mahal Ghana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14571, 597, N'ኦልአዊችኦ ኬቤሌ', N'Olawicho Kebele')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14572, 597, N'ስአትአርአ', N'Satara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14573, 597, N'ትአች ግአንአ', N'Tach Gana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14574, 597, N'ዎግአንኦ', N'Wogano')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14575, 597, N'በኡሽአንአ ትኦውን', N'Bushana Town')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14576, 1151, N'አምበኦርኦግኦይንአንአ', N'Amborogoynana')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14577, 1151, N'ችኤችኦ', N'Checho')
@@ -33249,52 +29697,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14587, 1152, N'ልኢችአ አምበአ', N'Licha Amba')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14588, 598, N'አጅኦትአይስአ', N'Ajotaisa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14589, 598, N'አምኢበኢችኦ ግኦዴ', N'Amibicho Gode')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14590, 598, N'አንዴግንአኦምኦሽኦርአ', N'Andegnaomoshora')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14591, 598, N'ዴበኡቤቤሌስአ', N'Debubebelesa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14592, 598, N'ድኢጅኦዴምአልአ', N'Dijodemala')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14593, 598, N'ህአይኢሴ', N'Hayise')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14594, 598, N'ክአልኢሽአ', N'Kalisha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14595, 598, N'ልአይኢግንአውግአንአ', N'Layignawugana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14596, 598, N'ሌርኤበአ', N'Lereba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14597, 598, N'ምአስበኢርአ', N'Masbira')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14598, 598, N'ሴመንቤሌስአ', N'Semenbelesa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14599, 598, N'ሽኤችአንአርኦምአ', N'Shechanaroma')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14600, 598, N'ሽኡርምኦድአችኦ', N'Shurmodacho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14601, 598, N'ቤሌስስአትኦውን', N'Belessatown')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14602, 599, N'1ግንአ ክአሽኤርአ', N'1Gna Kashera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14603, 599, N'2ግንአ ክኦትትኦ', N'2Gna Kotto')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14604, 599, N'ዴድአ', N'Deda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14605, 599, N'ጅአርስኦ ምአዝኦርኢይአ', N'Jarso Mazoriya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14606, 599, N'ክአችአ ቤኤርአ', N'Kacha Beera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14607, 599, N'ስኢበአይአ', N'Sibaya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14608, 599, N'ዋርአ በኦይአ', N'Wara Boya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14609, 599, N'ይአበኡክኡንአ', N'Yabukuna')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14610, 599, N'ህኢልኢፍአትአ ትኦውን', N'Hilifata Town')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14611, 1153, N'በአድአችአክአምአ', N'badachakama')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14612, 1153, N'ድኦምበአ', N'domba')
@@ -33304,20 +29706,6 @@ GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14614, 1153, N'ጅአችኦ ጌቤርኤ ምአህኢቤር', N'jacho gebere mahiber')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14615, 1153, N'ኦርችአ', N'orcha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14616, 600, N'ምኦርስኢትኦ ትኦውን', N'morsito town')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14617, 600, N'አሽኢዋልአ ዋትኦ', N'ashiwala wato')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14618, 600, N'በኦክኦምኡርአ', N'bokomura')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14619, 600, N'ዴንግአበኡርአ ሴግአምኦ', N'dengabura segamo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14620, 600, N'ግኡንአ በኦንኦችኦርአ', N'guna bonochora')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14621, 600, N'ሌንችኢችኦ', N'lenchicho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14622, 600, N'ምኦርስኢትኦ ጌቤርኤምአህኢቤር', N'morsito geberemahiber')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (14623, 814, N'ይአክክአ ግኦርርኦ በኢይኦር', N'Yakka Gorro Biyoor')
 GO
@@ -35133,20 +31521,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (15529, 874, N'በኡሽኤ ድአንአበአ', N'Bushe Danaba')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (15530, 635, N'ሽኤመንአ መቴልኦ', N'Shemena Metelo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (15531, 635, N'ስኦርኡ', N'Soru')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (15532, 635, N'ትኢግር', N'Tigr')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (15533, 635, N'ውኤጌርኦ ኤንአ አዝአግን', N'Wegero Ena Azagn')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (15534, 635, N'ውኤይርአ', N'Weyra')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (15535, 635, N'ፍኦፍአ 01', N'Fofa 01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (15536, 635, N'ትኦበአ 01', N'Toba 01')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (15537, 1374, N'አበአበኦርአ', N'Ababora')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (15538, 1374, N'አሌኤድአበአስኦ', N'Aleedabaso')
@@ -36078,102 +32452,6 @@ GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16001, 782, N'በኦንድአዎ ድኢልአ', N'Bondawo Dila')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16002, 782, N'ድአምኦትአ ምአንአ ጅአርቴ', N'Damota Mana Jarte')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16003, 534, N'ድኢርአመር', N'Diramer')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16004, 534, N'ፍአ', N'Fae')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16005, 534, N'ጌንአመር', N'Genamer')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16006, 534, N'ግኦመር', N'Gomer')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16007, 534, N'ግኦይድአመር', N'Goydamer')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16008, 534, N'ክአይስአ', N'Kaysa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16009, 534, N'ልኦፍኤት', N'Lofet')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16010, 534, N'ምአምአ', N'Mama')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16011, 534, N'መንድኢር', N'Mendir')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16012, 534, N'ፕኤልፕአ', N'Pelpa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16013, 534, N'ሴንምአመር', N'Senmamer')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16014, 534, N'ሽአንአግአምአ አርክኢ', N'Shanagama Arki')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16015, 534, N'ሽኤክአመር', N'Shekamer')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16016, 534, N'ሽኢሽኢር', N'Shishir')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16017, 534, N'ቴምቤል', N'Tembel')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16018, 534, N'ዝኦምበአ', N'Zomba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16019, 534, N'መጽኤር', N'Metser')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16020, 534, N'ትኦልትአ', N'Tolta')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16021, 536, N'አችኤ ምኡስአ', N'Ache Musa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16022, 536, N'አንግኡዴ', N'Angude')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16023, 536, N'አርኢበኦርኤ ክኡልአምአ', N'Aribore Kulama')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16024, 536, N'አስኢሌ', N'Asile')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16025, 536, N'በኦንቅኦሌ ልአጌ', N'Bonqole Lage')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16026, 536, N'ዴግአ ክአጅአ  አልአ', N'Dega Kaja  Ala')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16027, 536, N'ድኢምክአ ዝኡርኢይአ', N'Dimka Zuriya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16028, 536, N'ግአምበአልአ', N'Gambala')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16029, 536, N'ክአርአ ድኡስ', N'Kara Dus')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16030, 536, N'ክአርአ ልአበኡክ', N'Kara Labuk')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16031, 536, N'ልአልአ', N'Lala')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16032, 536, N'ምኢርኤሽአ ክኡልኢምአ', N'Miresha Kulima')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16033, 536, N'ሽአንክኦ ዎልፍኦ', N'Shanko Wolfo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16034, 536, N'ስኢምቤሌ ዎርኦ', N'Simbele Woro')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16035, 536, N'ዝኤግአርምአ', N'Zegarma')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16036, 536, N'ኤርኤበኦርኤ 01', N'Erebore 01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16037, 537, N'አልግአ', N'Alga')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16038, 537, N'መህአል አርአድአ', N'Mehal Arada')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16039, 538, N'አሌዝኤ', N'Aleze')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16040, 538, N'አሽኤኬር', N'Asheker')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16041, 538, N'ቤኔትአ', N'Beneta')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16042, 538, N'በኡይልአንስአ', N'Buylansa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16043, 538, N'ኤርበኦ', N'Erbo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16044, 538, N'ጌርአ ግአድኦ', N'Gera Gado')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16045, 538, N'ግኦንግኦዴ', N'Gongode')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16046, 538, N'ክአምበአ በኦበኦ', N'Kamba Bobo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16047, 538, N'ሌምኦክአሌንኢድኦ', N'Lemokalenido')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16048, 538, N'ትኢክኢ በኦክኦ', N'Tiki Boko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16049, 539, N'ችአርኤ', N'Chare')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16050, 539, N'ክአክኡትአ', N'Kakuta')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16051, 481, N'ግኦንክአ', N'Gonka')
 GO
@@ -37121,69 +33399,7 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16523, 508, N'አርአ', N'Arae')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16524, 602, N'ትአችኢግንአውግኢምበኢችኡ', N'Tachignawgimbichu')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16525, 602, N'ድኦኢሽአ', N'Doisha')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16526, 1155, N'ክአንኢችኤርአ', N'Kanichera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16527, 636, N'አበኡክአ', N'Abuka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16528, 636, N'ድኦንኢግኦርአበኦንኢክኦይአ', N'Donigorabonikoya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16529, 636, N'ሌንኢግአንኦ', N'Lenigano')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16530, 636, N'ትኢልኡክኡበኢዴምኢትኡኡ', N'Tilukubidemituu')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16531, 636, N'ህአንኢችአ', N'Hanicha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16532, 603, N'አንዴግንአ ቤንአርአ', N'andegna benara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16533, 603, N'ድአንአትኦርአ', N'danatora')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16534, 603, N'ጌበአበአ ልአንጌ', N'gebaba lange')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16535, 603, N'ህአንጌድአ', N'hangeda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16536, 603, N'ህኡሌቴግንአ ህአንክኦትአ', N'huletegna hankota')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16537, 603, N'ኬችአ', N'kecha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16538, 603, N'ኦምቤ ልአንጌ', N'ombe lange')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16539, 603, N'ሽኦንክኦልአ', N'shonkola')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16540, 603, N'ስኦንድአ', N'sonda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16541, 603, N'1ግንአ ህአንክኦትአ', N'1Gna Hankota')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16542, 603, N'1ግንአ ሴልፍኤ', N'1Gna Selfe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16543, 603, N'ህአርችኤ ኡይአይአ', N'Harche Uyaya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16544, 603, N'ጅአችኦትኦውን', N'Jachotown')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16545, 603, N'2ግንአ ጅአጅኡርአ', N'2Gna Jajura')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16546, 603, N'ስኡንድኡስአ', N'Sundusa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16547, 604, N'አንዴግንአቴፍኦ', N'Andegnatefo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16548, 604, N'ፍኤልክአ', N'Felka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16549, 604, N'ግኦፍኤስአ', N'Gofesa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16550, 604, N'ህኡሌቴግንአመክአልአ ሌ', N'Huletegnamekala Le')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16551, 604, N'ክኡንችኤይኤይኤ', N'Kuncheyeye')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16552, 604, N'ርኡክአንአኔቴፍኦ', N'Rukananetefo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16553, 604, N'ቴፍኦችኡፍኦ', N'Tefochufo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16554, 604, N'ዴበአስኦ', N'debaso')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16555, 604, N'ግኡርኡርአ በኡትኡ', N'gurura butu')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16556, 1156, N'2ግንአ ችኦርኦክኦ', N'2gna choroko')
 GO
@@ -37194,28 +33410,6 @@ GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16559, 1156, N'መህአልአርአድአ', N'mehalarada')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16560, 1156, N'ዋንጅአ', N'wanja')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16561, 605, N'አሌምቴንአ', N'Alemtena')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16562, 605, N'አንዴግንአመክአልአ', N'Andegnamekala')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16563, 605, N'አይኢምአሌ', N'Ayimale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16564, 605, N'ጌርኤምአ', N'Gerema')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16565, 605, N'ህኡሌቴግንአአሽኦክአ', N'Huletegnaashoka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16566, 605, N'ክኡፍኤ', N'Kufe')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16567, 605, N'ልአይኢግንአውቤዴኔ', N'Layignawbedene')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16568, 605, N'ምኢስርአክግኦርትአንችኦ', N'Misrakgortancho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16569, 605, N'ምኡድአመይአፍአ', N'Mudameyafa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16570, 605, N'ትአችኢግንአው አርሽኦ', N'Tachignaw Arsho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16571, 605, N'ዊሽአምኦ', N'Wishamo')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16572, 1157, N'አንዴግንአክኦንኢችአ', N'Andegnakonicha')
 GO
@@ -37238,22 +33432,6 @@ GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16581, 1157, N'ቤሽኤንኦ', N'besheno')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16582, 1157, N'ዎቴትአ', N'woteta')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16583, 606, N'ጌሽግኦልአ', N'Geshgola')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16584, 606, N'ህኦልአግአበአዝአትኦ', N'Holagabazatoo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16585, 606, N'ኦድአመኤ', N'Odamee')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16586, 607, N'አድአንኢችኦ ኢበአልአ', N'Adanicho Ibala')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16587, 607, N'በኦንኢድአንአ', N'Bonidana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16588, 607, N'ግአድአልኦአ ግአዋድአ', N'Gadaloa Gawada')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16589, 607, N'ግኡበአንአ አምበአርኢችኦ', N'Gubana Ambaricho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16590, 607, N'ጅአበአ ድኦድኦበአ', N'Jaba Dodoba')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16591, 692, N'ድአሌጌትኦ', N'Dalegeto')
 GO
@@ -37587,31 +33765,7 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16756, 1158, N'ሄግኦ', N'Hego')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16757, 610, N'ትኡንኢትኦ ኬትአምአ', N'Tunito Ketama')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16758, 611, N'አዋይኤ', N'Awaye')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16759, 611, N'ድኦርኤበአ', N'Doreba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16760, 611, N'ህኦበኢችአክአ', N'Hobichaka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16761, 611, N'ክአችአበኢርአ', N'Kachabira')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16762, 611, N'ሌንኢ', N'Leni')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16763, 611, N'መሴንአ', N'Mesena')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16764, 611, N'ዋሌንአ', N'Walena')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16765, 611, N'ውኤርኤርአምአ', N'Wererama')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16766, 1492, N'ህኦበኢችአክአ', N'Hobichaka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16767, 612, N'በአዝአንአቤንአርአ', N'Bazanabenara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16768, 612, N'ፍኡልስአአ', N'Fulsaa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16769, 612, N'ጅኦርኤ', N'Jore')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16770, 1493, N'ትአዝአአግአርአ', N'Tazaagara')
 GO
@@ -37619,77 +33773,15 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16772, 1161, N'መትኦምአ', N'Metoma')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16773, 613, N'በአችኢርአ', N'Bachira')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16774, 613, N'ቤሌልአ', N'Belela')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16775, 613, N'ዴበኡበአምበኡክኡንአ', N'Debubambukuna')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16776, 613, N'ፍኤርስኡምአ', N'Fersuma')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16777, 613, N'ግኢድአንስኦንግአ', N'Gidansonga')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16778, 613, N'ህኦድኦበኡልትኡምአ', N'Hodobultuma')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16779, 613, N'ሌዝኤምበአርአ', N'Lezembara')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16780, 613, N'ስአመንአምበኡክኡንአ', N'Samenambukuna')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16781, 613, N'አምኢበኡክኡንአ ኬቴምአ', N'Amibukuna Ketema')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16782, 613, N'ምኡድኡልአ01', N'Mudula01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16783, 613, N'ምኡድኡልአ03', N'Mudula03')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16784, 1162, N'ድኦኬትኡ', N'Doketu')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16785, 1162, N'ንአልአይአ ሴጌን', N'Nalaya Segen')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16786, 614, N'ቤአይዴ', N'Beayde')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16787, 614, N'ጌልአበኦ', N'Gelabo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16788, 614, N'ሌህአይኢቴ', N'Lehayite')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16789, 614, N'ንአልአ ሴጌን', N'Nala Segen')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16790, 614, N'ትኢሽምአሌ', N'Tishmale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16791, 615, N'ፍአሽአ', N'Fasha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16792, 615, N'ጌሴርግኢይኦ', N'Gesergiyo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16793, 615, N'መችኤኬ', N'Mecheke')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16794, 615, N'ፍአሽአ 01', N'Fasha 01')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16795, 1163, N'ጌልጌልኦንአ ክኦልምአሌ', N'Gelgelona Kolmale')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16796, 1163, N'ቴቤልአንአ ክኡችአልአ', N'Tebelana Kuchala')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16797, 1163, N'ምአስኦይአ', N'Masoya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16798, 616, N'አይልኦትአ ድኦክአትአ', N'Aylota Dokata')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16799, 616, N'ግአርኤችኦ', N'Garecho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16800, 616, N'ምአልግአንአ ድኡግአይአ', N'Malgana Dugaya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16801, 616, N'ሴጌን 01', N'Segen 01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16802, 617, N'ድአልልኦችአ ትአልኢክአስአ', N'Dallocha Talikasa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16803, 617, N'ኤበኦት ትኢርኦርአ', N'Ebot Tirora')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16804, 617, N'ግአርኢምአምአ ግአሌ', N'Garimama Gale')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16805, 617, N'ግኦልአ ክኡርኤ', N'Gola Kure')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16806, 617, N'ክኦርኦችኢምኦ', N'Korochimo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16807, 617, N'ንአድኡግኔ አግአም', N'Nadugne Agam')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16808, 617, N'ዋንጅአ ሽኦልልአ', N'Wanja Sholla')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16809, 1164, N'አበኢዝአንአ አንኢድ', N'Abizana Anid')
 GO
@@ -37712,24 +33804,6 @@ GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16818, 1164, N'ዎሽኦ', N'Wosho')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16819, 1164, N'ዎዝኢርኢይ ህኡልአት', N'Woziriy Hulat')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16820, 618, N'አምበአርኢችኦ ግኢምበአ', N'Ambaricho Gimba')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16821, 618, N'አንግአምኦ ይኤዴ', N'Angamo Yede')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16822, 618, N'ድአምአኬ', N'Damake')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16823, 618, N'ትኦዴ ቴምአድድአ', N'Tode Temadda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16824, 618, N'ዎርአቤት ሽአምአ', N'Worabet Shama')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16825, 619, N'በኦዝኤ ስአበኦልአ', N'boze sabola')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16826, 619, N'ክኢቤት 06', N'kibet 06')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16827, 619, N'ሴኔን', N'senen')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16828, 619, N'ይኤቴኬር', N'yeteker')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16829, 1165, N'አርችኡምአ ግኦልአ', N'Archuma Gola')
 GO
@@ -37754,8 +33828,6 @@ GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16839, 1171, N'ዝኤጌርኤ', N'Zegere')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16840, 1171, N'ግአችኤንኦ ኬቴምአ', N'Gacheno Ketema')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16841, 629, N'አበኦትአ ኡልኢትኦ', N'Abota Ulito')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16842, 696, N'ዋንክኢር', N'Wankir')
 GO
@@ -37959,24 +34031,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16942, 1411, N'ድኢልልአ ግኦቤ', N'Dilla Gobe')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16943, 629, N'በኡሽአ', N'Busha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16944, 629, N'ግአልችአ ስኡኬ', N'Galcha Suke')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16945, 629, N'ግአመ ክአቤችኦ', N'Game Kabecho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16946, 629, N'ህኢሌንአ ክኦርኬ', N'Hilena Korke')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16947, 629, N'ሌርአ', N'Lera')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16948, 629, N'ፕኡልአስአ በአክአልአ', N'Pulasa Bakala')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16949, 629, N'ዋርበኢርአ ግኦልኦ', N'Warbira Golo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16950, 629, N'ዋርቴ በአልአክአ', N'Warte Balaka')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16951, 629, N'ዝአምኢኔ ውልኢሽኦ', N'Zamine Wulisho')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16952, 1172, N'አንክአ ድኡግኡንአ', N'Anka Duguna')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16953, 1172, N'ቤልአቴአ ኤአትአ', N'Belatea Eata')
@@ -38003,16 +34057,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16964, 1172, N'ኤድኦ ምአዝኤግአጅአ', N'Edo Mazegaja')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16965, 630, N'አበአይአ በኢስአርኤ', N'Abaya Bisare')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16966, 630, N'ችኢፕኢስአ', N'Chipisa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16967, 630, N'ህኦበኢችአ በአድአ', N'Hobicha Bada')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16968, 630, N'ህኦበኢችአ ድኢግኢስኦ', N'Hobicha Digiso')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16969, 630, N'ህኦበኢችአ01', N'Hobicha01')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16970, 1173, N'አምፕኦ ክኦይኢሽአ', N'Ampo Koyisha')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16971, 1173, N'ዴምበአ ክኦይኢሽአ', N'Demba Koyisha')
@@ -38029,16 +34073,6 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16977, 1173, N'ሽኦችኦርአ ኦሴ', N'Shochora Ose')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16978, 631, N'ክኦይኢሽአ ችአውክአርኤ', N'Koyisha Chawkare')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16979, 631, N'ልአሽኦ', N'Lasho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16980, 631, N'ኦፍአ ህኢርአ', N'Ofa Hira')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16981, 631, N'ቴፕአ', N'Tepa')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16982, 631, N'ዎሽኤ አልድአድአ', N'Woshe Aldada')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16983, 1495, N'ዋምኡርአ_', N'Wamura_')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16984, 1174, N'በኦስአ ምአንአርአ', N'Bosa Manara')
@@ -38051,77 +34085,11 @@ INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16988, 1174, N'ግኦችኦ ምአዝኤግአጅአ', N'Gocho Mazegaja')
 GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16989, 632, N'በአዴ ዎይዴ', N'Bade Woyde')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16990, 632, N'ድአድአ ክአርኤ', N'Dada Kare')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16991, 632, N'ፍአግኢንአ ምአትአ', N'Fagina Mata')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16992, 632, N'ክኢንድኦ ህአንግአልአ', N'Kindo Hangala')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16993, 632, N'ምኡንድኢንአ', N'Mundina')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16994, 632, N'ፕአችአንአ', N'Pachana')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16995, 632, N'ስኦርትኦ', N'Sorto')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16996, 632, N'ቤሌ 01', N'Bele 01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16997, 632, N'ህአንአዝኤ 01', N'Hanaze 01')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16998, 633, N'ግአልድአ', N'Galda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (16999, 633, N'ጌሌክኦ', N'Geleko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17000, 633, N'ምአንችአ', N'Mancha')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17001, 633, N'ኦክኦትኦ ሴርኤ', N'Okoto Sere')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17002, 633, N'ቴድአ', N'Teda')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17003, 633, N'ዋርአዝአ', N'Waraza')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17004, 633, N'ይአክኢምአ', N'Yakima')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17005, 633, N'ጌስኡበአ ዝኤርኦ ህኡሌት', N'Gesuba Zero Hulet')
-GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17006, 1175, N'ግኢድኦ', N'Gido')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17007, 1175, N'ህኡምበኦ ልአርኤንአ', N'Humbo Larena')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17008, 1175, N'ክኦክአቴ', N'Kokate')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17009, 621, N'ሴመን ግኦትኦ', N'Semen Goto')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17010, 621, N'ምኢስርአክ-ይአክኦችኤ', N'Misrak-Yakoche')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17011, 621, N'ግኦትኦ-ዋችኦ', N'Goto-Wacho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17012, 621, N'ኡንንአምአ-ድኢጌ', N'Unnama-Dige')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17013, 622, N'በአርችኦ', N'Barcho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17014, 622, N'ኤንጅአምኦ ግኡትአንችኦ', N'Enjamo Gutancho')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17015, 622, N'ጌትአም', N'Getam')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17016, 622, N'ጌትአም ዝኢክኦ', N'Getam Ziko')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17017, 622, N'ጅአጅአበኢችኦ ስኦይአትኦ', N'Jajabicho Soyato')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17018, 622, N'ክኡልኡፍኦ ሽአግድአር', N'Kulufo Shagdar')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17019, 622, N'መንዝኦ', N'Menzo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17020, 622, N'ርአግድኢንአ', N'Ragdina')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17021, 622, N'ትአች ኬምኦ', N'Tach Kemo')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17022, 622, N'ዎትኢትአ', N'Wotita')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17023, 622, N'አሌምጌበአይአ', N'Alemgebaya')
-GO
-INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17024, 622, N'ዝኢክኦ ድኦልኦል', N'Ziko Dolol')
 GO
 INSERT [dbo].[kebeles] ([kebele_id], [woreda_id], [kebele_name_am], [kebele_name_en]) VALUES (17025, 622, N'ርኤግኢድኢንአ ክኦርኤ', N'Regidina Kore')
 GO
