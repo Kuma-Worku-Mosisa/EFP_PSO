@@ -493,7 +493,12 @@ export function AgenciesManagement({
   const { language } = useLanguage();
   const isAm = language === "am";
   const navigate = useNavigate();
-  const isOrgHrManager = user?.roles.includes("org_hr_manager");
+  const isOrgHrManager = user?.roles?.includes("org_hr_manager") ?? false;
+  const isAdminOrSuperAdmin =
+    user?.roles?.some(
+      (role) =>
+        role === "admin" || role === "super_admin" || role === "system_admin",
+    ) ?? false;
 
   const getOrganizationDocumentActionLabel = (
     doc: DMSDocumentMock,
@@ -535,6 +540,117 @@ export function AgenciesManagement({
     setToastType(type);
     setToastMessage(message);
     setToastOpen(true);
+  };
+
+  const handleOpenStatusEditor = (employee: EmployeeMock) => {
+    const normalizedStatus = (employee.employmentStatus || "")
+      .trim()
+      .toLowerCase();
+    setStatusEditEmployee(employee);
+    setStatusEditValue(
+      normalizedStatus === "terminated" ? "Terminated" : "Resigned",
+    );
+  };
+
+  const handleUpdateEmployeeStatus = async () => {
+    if (!statusEditEmployee) return;
+
+    setStatusUpdating(true);
+    try {
+      await apiRequest(`/employees/${statusEditEmployee.id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: statusEditValue }),
+      });
+
+      setSelectedOrg((prev) =>
+        prev
+          ? {
+              ...prev,
+              employees: prev.employees.map((employee) =>
+                employee.id === statusEditEmployee.id
+                  ? { ...employee, employmentStatus: statusEditValue }
+                  : employee,
+              ),
+            }
+          : prev,
+      );
+
+      setSelectedEmployee((prev) =>
+        prev && prev.id === statusEditEmployee.id
+          ? { ...prev, employmentStatus: statusEditValue }
+          : prev,
+      );
+
+      showToast(
+        "success",
+        isAm
+          ? `የሰራተኛው ሁኔታ በተሳካ ሁኔታ ተስተካክሏል`
+          : `Employee status updated to ${statusEditValue}.`,
+      );
+      setStatusEditEmployee(null);
+    } catch (error: any) {
+      showToast(
+        "error",
+        error?.message ||
+          (isAm
+            ? "የሰራተኛ ሁኔታ ማሻሻል አልተሳካም"
+            : "Failed to update employee status."),
+      );
+    } finally {
+      setStatusUpdating(false);
+    }
+  };
+
+  const handleToggleEmployeeBlacklist = async (employee: EmployeeMock) => {
+    setBlacklistUpdatingId(employee.id);
+    try {
+      await apiRequest(`/employees/${employee.id}/blacklist`, {
+        method: "PATCH",
+        body: JSON.stringify({ isBlacklisted: !employee.isBlacklisted }),
+      });
+
+      const nextValue = !employee.isBlacklisted;
+
+      setSelectedOrg((prev) =>
+        prev
+          ? {
+              ...prev,
+              employees: prev.employees.map((currentEmployee) =>
+                currentEmployee.id === employee.id
+                  ? { ...currentEmployee, isBlacklisted: nextValue }
+                  : currentEmployee,
+              ),
+            }
+          : prev,
+      );
+
+      setSelectedEmployee((prev) =>
+        prev && prev.id === employee.id
+          ? { ...prev, isBlacklisted: nextValue }
+          : prev,
+      );
+
+      showToast(
+        "success",
+        isAm
+          ? nextValue
+            ? "ሰራተኛው በጥቁር ዝርዝር ውስጥ ተመዝግቧል"
+            : "የጥቁር ዝርዝር ምልክት ተወግዷል"
+          : nextValue
+            ? "Employee was added to the blacklist."
+            : "Employee blacklist flag was removed.",
+      );
+    } catch (error: any) {
+      showToast(
+        "error",
+        error?.message ||
+          (isAm
+            ? "የጥቁር ዝርዝር ማሻሻል አልተሳካም"
+            : "Failed to update employee blacklist status."),
+      );
+    } finally {
+      setBlacklistUpdatingId(null);
+    }
   };
 
   // Fetch detailed data for selected organization
@@ -646,6 +762,15 @@ export function AgenciesManagement({
   );
   const [personnelSearch, setPersonnelSearch] = useState("");
   const [personnelFilter, setPersonnelFilter] = useState("ALL");
+  const [statusEditEmployee, setStatusEditEmployee] =
+    useState<EmployeeMock | null>(null);
+  const [statusEditValue, setStatusEditValue] = useState<
+    "Resigned" | "Terminated"
+  >("Resigned");
+  const [statusUpdating, setStatusUpdating] = useState(false);
+  const [blacklistUpdatingId, setBlacklistUpdatingId] = useState<number | null>(
+    null,
+  );
   const [addressDetails, setAddressDetails] = useState<AddressMock | null>(
     null,
   );
@@ -1915,18 +2040,20 @@ export function AgenciesManagement({
                     ? "ንቁ የሰራተኞች ዳይሬክተሪ"
                     : "Active Operational Personnel Directory"}
                 </span>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  type="button"
-                  onClick={() =>
-                    navigate("/org-hr-manager/employee-registration")
-                  }
-                  className="px-3 py-1.5 bg-[#FFD700] text-[#003366] hover:bg-[#FFD700]/90 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm"
-                >
-                  <UserPlus size={14} />{" "}
-                  {isAm ? "ሰራተኛ ይመዝገቡ" : "Register Employee"}
-                </motion.button>
+                {isOrgHrManager && (
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    type="button"
+                    onClick={() =>
+                      navigate("/org-hr-manager/employee-registration")
+                    }
+                    className="px-3 py-1.5 bg-[#FFD700] text-[#003366] hover:bg-[#FFD700]/90 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm"
+                  >
+                    <UserPlus size={14} />{" "}
+                    {isAm ? "ሰራተኛ ይመዝገቡ" : "Register Employee"}
+                  </motion.button>
+                )}
               </div>
             </div>
             <div className="p-4 border-b border-gray-200 bg-gray-50/50 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
@@ -2076,15 +2203,60 @@ export function AgenciesManagement({
                           </div>
                         </td>
                         <td className="p-4 text-right">
-                          <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            type="button"
-                            onClick={() => setSelectedEmployee(emp)}
-                            className="px-3 py-1.5 bg-[#003366] text-[#FFD700] rounded-lg text-xs font-bold hover:shadow-md transition-shadow"
-                          >
-                            {isAm ? "ዝርዝር እይታ" : "Detail View"}
-                          </motion.button>
+                          <div className="flex flex-col sm:flex-row gap-2 justify-end">
+                            {isOrgHrManager &&
+                              (["active", "terminated"].includes(
+                                (emp.employmentStatus || "")
+                                  .trim()
+                                  .toLowerCase(),
+                              ) ||
+                                false) && (
+                                <motion.button
+                                  whileHover={{ scale: 1.02 }}
+                                  whileTap={{ scale: 0.98 }}
+                                  type="button"
+                                  onClick={() => handleOpenStatusEditor(emp)}
+                                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#003366]/20 bg-white px-3 py-1.5 text-xs font-bold text-[#003366] transition hover:border-[#003366]/40 hover:bg-[#003366]/5"
+                                >
+                                  <Pencil size={13} />
+                                  {isAm ? "አስተካክል" : "Edit"}
+                                </motion.button>
+                              )}
+                            {isAdminOrSuperAdmin && (
+                              <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                type="button"
+                                onClick={() =>
+                                  handleToggleEmployeeBlacklist(emp)
+                                }
+                                disabled={blacklistUpdatingId === emp.id}
+                                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 transition hover:border-amber-400 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                <ShieldAlert size={13} />
+                                {blacklistUpdatingId === emp.id
+                                  ? isAm
+                                    ? "በማዘመን ላይ..."
+                                    : "Updating..."
+                                  : emp.isBlacklisted
+                                    ? isAm
+                                      ? "ከጥቁር ዝርዝር አስወግድ"
+                                      : "Remove Blacklist"
+                                    : isAm
+                                      ? "ጥቁር ዝርዝር አክል"
+                                      : "Blacklist"}
+                              </motion.button>
+                            )}
+                            <motion.button
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              type="button"
+                              onClick={() => setSelectedEmployee(emp)}
+                              className="px-3 py-1.5 bg-[#003366] text-[#FFD700] rounded-lg text-xs font-bold hover:shadow-md transition-shadow"
+                            >
+                              {isAm ? "ዝርዝር እይታ" : "Detail View"}
+                            </motion.button>
+                          </div>
                         </td>
                       </motion.tr>
                     ));
@@ -3468,17 +3640,6 @@ export function AgenciesManagement({
                         setKebeleSearch("");
                       }}
                       onSelect={(val) => {
-                        const normalizeVal = (v: string) =>
-                          (v || "").trim().toLowerCase();
-                        const selectedKebele = contractKebeles.find(
-                          (k: any) => {
-                            const kName = k.nameEnglish || k.name || "";
-                            return (
-                              normalizeVal(kName) === normalizeVal(val) ||
-                              String(k.id) === val
-                            );
-                          },
-                        );
                         setNewContract((prev: any) => ({
                           ...prev,
                           kebele: val,
@@ -4209,6 +4370,74 @@ export function AgenciesManagement({
               report={buildIncidentDetailReport(selectedIncident)}
               onClose={() => setSelectedIncident(null)}
             />
+          </div>
+        </div>
+      )}
+
+      {statusEditEmployee && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4 py-6 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-bold text-[#003366]">
+                  {isAm ? "የሰራተኛ ሁኔታ አስተካክል" : "Update employee status"}
+                </h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  {statusEditEmployee.fullName}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setStatusEditEmployee(null)}
+                className="rounded-full border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-100"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              <label className="block text-sm font-semibold text-slate-700">
+                {isAm ? "አዲስ ሁኔታ" : "New status"}
+              </label>
+              <select
+                value={statusEditValue}
+                onChange={(e) =>
+                  setStatusEditValue(
+                    e.target.value as "Resigned" | "Terminated",
+                  )
+                }
+                className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-[#003366] focus:outline-none focus:ring-2 focus:ring-[#003366]/20"
+              >
+                <option value="Resigned">{isAm ? "ተሰናበተ" : "Resigned"}</option>
+                <option value="Terminated">
+                  {isAm ? "ተቋርጧል" : "Terminated"}
+                </option>
+              </select>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => setStatusEditEmployee(null)}
+                className="flex-1 rounded-2xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+              >
+                {isAm ? "ይቅር" : "Cancel"}
+              </button>
+              <button
+                type="button"
+                onClick={handleUpdateEmployeeStatus}
+                disabled={statusUpdating}
+                className="flex-1 rounded-2xl bg-[#003366] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#003366]/90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {statusUpdating
+                  ? isAm
+                    ? "በማዘመን ላይ..."
+                    : "Updating..."
+                  : isAm
+                    ? "አስተካክል"
+                    : "Update"}
+              </button>
+            </div>
           </div>
         </div>
       )}

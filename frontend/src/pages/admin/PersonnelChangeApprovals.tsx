@@ -1,3 +1,4 @@
+//filepath: frontend/src/pages/admin/PersonnelChangeApprovals.tsx
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import {
@@ -90,7 +91,7 @@ const documentLabels = [
     labelEn: "Support Letter (Kebele)",
     labelAm: "የድጋፍ ደብዳቤ (ቀበሌ)",
   },
-  { key: "collateral", labelEn: "Proof of Collateral", labelAm: "የማስረጃ ማስረጃ" },
+  { key: "guarantee", labelEn: "Proof of Guarantee", labelAm: "የማስረጃ ማስረጃ" },
   { key: "work_exp", labelEn: "Work Experience", labelAm: "የስራ ልምድ" },
   { key: "resignation", labelEn: "Resignation Record", labelAm: "የመልቀቂያ መዝገብ" },
   {
@@ -131,14 +132,14 @@ const normalizeDocumentTypeKey = (documentType: string): string => {
     "training certificate": "training",
     "support letter": "support_letter",
     "support letter (kebele)": "support_letter",
-    collateral: "collateral",
-    "collateral document": "collateral",
+    // guarantee: "guarantee",
+    "proof of guarantee": "guarantee",
     "work experience": "work_exp",
     experience: "work_exp",
     resignation: "resignation",
     "resignation record": "resignation",
     education: "education",
-    "educational certificate": "education",
+    "education certificate": "education",
     "national id": "national_id",
     "kebele or passport document": "kebele_id",
     "renewed kebele id/passport": "kebele_id",
@@ -197,7 +198,7 @@ const mapPersonnelChangeRequest = (req: any): ChangeRequest => {
     requestType: String(req.requestType || "Personnel Change"),
     positionType:
       req.targetPositionName || targetEmployee.position?.name || "Unassigned",
-    newPersonName: user.fullName || targetEmployee.fullName || "N/A",
+    newPersonName: user.fullName || targetEmployee.fullName || "---",
     previousPersonName: req.previousPersonName || "",
     reason: req.reason || "Personnel Change",
     status:
@@ -417,15 +418,37 @@ export const PersonnelChangeApprovals = () => {
 
       setPreviewRequest((prev) => {
         if (!prev) return prev;
+        const nextDocuments = prev.documents.map((doc) =>
+          doc.documentId === uploadedDoc.documentId
+            ? { ...doc, isVerified: !doc.isVerified }
+            : doc,
+        );
         return {
           ...prev,
-          documents: prev.documents.map((doc) =>
+          documents: nextDocuments,
+          docsVerified:
+            nextDocuments.length > 0 &&
+            nextDocuments.every((doc) => doc.isVerified === true),
+        };
+      });
+
+      setRequests((prev) =>
+        prev.map((req) => {
+          if (req.id !== previewRequest.id) return req;
+          const nextDocuments = req.documents.map((doc) =>
             doc.documentId === uploadedDoc.documentId
               ? { ...doc, isVerified: !doc.isVerified }
               : doc,
-          ),
-        };
-      });
+          );
+          return {
+            ...req,
+            documents: nextDocuments,
+            docsVerified:
+              nextDocuments.length > 0 &&
+              nextDocuments.every((doc) => doc.isVerified === true),
+          };
+        }),
+      );
     } catch (err: any) {
       console.error(`Failed to ${action} personnel change document:`, err);
       setToastType("error");

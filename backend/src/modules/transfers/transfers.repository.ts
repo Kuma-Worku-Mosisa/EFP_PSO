@@ -27,7 +27,51 @@ export class TransfersRepository {
   async findEmployeeWithCurrentOrg(employeeId: number) {
     return prisma.employee.findUnique({
       where: { id: employeeId },
-      select: { id: true, organizationId: true, positionId: true },
+      select: {
+        id: true,
+        organizationId: true,
+        positionId: true,
+        isBlacklisted: true,
+        employmentStatus: true,
+        position: {
+          select: { id: true, name: true },
+        },
+      },
+    });
+  }
+
+  async createDirectTransferRequestAndUpdateEmployee(data: {
+    employeeId: number;
+    sourceOrganizationId: number;
+    targetOrganizationId: number;
+    requestedPositionId?: number;
+    reason: string;
+    initiatedById: number;
+  }) {
+    return prisma.$transaction(async (tx) => {
+      const transferRequest = await tx.transferRequest.create({
+        data: {
+          employeeId: data.employeeId,
+          sourceOrganizationId: data.sourceOrganizationId,
+          targetOrganizationId: data.targetOrganizationId,
+          requestedPositionId: data.requestedPositionId || null,
+          reason: data.reason,
+          initiatedById: data.initiatedById,
+          status: "FULLY_APPROVED",
+          actionedById: data.initiatedById,
+          actionedAt: new Date(),
+        },
+      });
+
+      const updatedEmployee = await tx.employee.update({
+        where: { id: data.employeeId },
+        data: {
+          organizationId: data.targetOrganizationId,
+          employmentStatus: "ACTIVE",
+        },
+      });
+
+      return { transferRequest, updatedEmployee };
     });
   }
 
@@ -43,6 +87,8 @@ export class TransfersRepository {
       },
       select: {
         id: true,
+        isBlacklisted: true,
+        employmentStatus: true,
         user: {
           select: {
             fullName: true,
@@ -71,6 +117,8 @@ export class TransfersRepository {
         },
         select: {
           id: true,
+          isBlacklisted: true,
+          employmentStatus: true,
           user: {
             select: {
               fullName: true,

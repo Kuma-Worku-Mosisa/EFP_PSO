@@ -144,6 +144,8 @@ export class TransfersController {
           ? Number(targetOrganizationId)
           : initiatorOrganizationId;
 
+      const uploadedFiles = req.body?.uploadedFiles || null;
+
       const result = await this.service.initiateTransfer({
         employeeId: Number(employeeId),
         targetOrganizationId: Number(resolvedTargetOrganizationId),
@@ -152,7 +154,7 @@ export class TransfersController {
           : undefined,
         reason,
         initiatedById,
-      });
+      }, uploadedFiles);
 
       res.status(201).json({ success: true, data: result });
     } catch (error: any) {

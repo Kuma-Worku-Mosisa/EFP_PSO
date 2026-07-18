@@ -11,7 +11,6 @@ import {
   FileText,
   User,
   Building2,
-  Clock,
   Hash,
   AlertTriangle,
   Users,
@@ -25,8 +24,11 @@ import {
   Eye,
   Image,
   Plus,
+  Check,
+  X,
 } from "lucide-react";
 import EthiopianDatePicker from "../../components/EthiopianDatePicker";
+import EthiopianTimePicker from "../../components/EthiopianTimePicker";
 import { AutoDismissToast } from "../../components/AutoDismissToast";
 import { LoadingSpinner } from "../../components/LoadingSpinner";
 
@@ -87,6 +89,8 @@ export default function CriminalReport() {
   const t = (en: string, am: string) => (isAm ? am : en);
 
   const [form, setForm] = useState<CriminalReportForm>(initialForm);
+  const [prevIncidentTime, setPrevIncidentTime] = useState("");
+  const [incidentTimeConfirmed, setIncidentTimeConfirmed] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [toastOpen, setToastOpen] = useState(false);
   const [toastType, setToastType] = useState<"success" | "error">("success");
@@ -610,984 +614,1088 @@ export default function CriminalReport() {
   );
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="space-y-6"
-    >
-      {/* Page Header */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-[#003366] to-[#001F3F] rounded-3xl p-6 border border-white/10">
-        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#FFD700] via-[#C5A022] to-[#FFD700]" />
-        <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full bg-[#FFD700]/5" />
-        <div className="absolute -bottom-6 -left-6 w-20 h-20 rounded-full bg-[#FFD700]/5" />
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
-              <ShieldAlert className="w-5 h-5 text-red-400" />
-            </div>
-            <div>
-              <h1 className="text-xl font-black text-white uppercase tracking-tight">
-                {t("Report of Criminal Form", "የወንጀል ሪፖርት ቅጽ")}
-              </h1>
-              <p className="text-xs text-white/50 font-medium mt-0.5">
-                {t(
-                  "In Ethiopia Available Personal Protection Institutions Service",
-                  "በኢትዮጵያ ውስጥ በሚገኙ የግል ጥበቃ ተቋማት አገልግሎት",
-                )}
-              </p>
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="criminal-report space-y-6"
+      >
+        {/* Page Header */}
+        <div className="relative overflow-hidden bg-gradient-to-r from-[#003366] to-[#001F3F] rounded-3xl p-6 border border-white/10">
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#FFD700] via-[#C5A022] to-[#FFD700]" />
+          <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full bg-[#FFD700]/5" />
+          <div className="absolute -bottom-6 -left-6 w-20 h-20 rounded-full bg-[#FFD700]/5" />
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
+                <ShieldAlert className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <h1 className="text-xl font-black text-white uppercase tracking-tight">
+                  {t("Report of Criminal Form", "የወንጀል ሪፖርት ቅጽ")}
+                </h1>
+                <p className="text-xs text-white/50 font-medium mt-0.5">
+                  {t(
+                    "In Ethiopia Available Personal Protection Institutions Service",
+                    "በኢትዮጵያ ውስጥ በሚገኙ የግል ጥበቃ ተቋማት አገልግሎት",
+                  )}
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <AutoDismissToast
-          isOpen={toastOpen}
-          type={toastType}
-          message={toastMessage}
-          onClose={() => setToastOpen(false)}
-          durationMs={5000}
-        />
-        {submitting && (
-          <LoadingSpinner
-            overlay
-            text={t("Submitting report...", "ሪፖርት በማስገባት ላይ...")}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <AutoDismissToast
+            isOpen={toastOpen}
+            type={toastType}
+            message={toastMessage}
+            onClose={() => setToastOpen(false)}
+            durationMs={5000}
           />
-        )}
+          {submitting && (
+            <LoadingSpinner
+              overlay
+              text={t("Submitting report...", "ሪፖርት በማስገባት ላይ...")}
+            />
+          )}
 
-        {/* Section 1: Basic Info */}
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className={sectionHeaderClass}>
-            {sectionHeaderContent(
-              <FileText className="w-4 h-4 text-[#FFD700]" />,
-              t("Record Information", "የመዝገብ መረጃ"),
-            )}
-          </div>
-          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
-              <label className={labelClass}>
-                {t("Record Number", "የመዝገብ ቁጥር")}{" "}
-                <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                
-                <input
-                  type="text"
-                  value={form.recordNumber}
-                  onChange={(e) => updateField("recordNumber", e.target.value)}
-                  placeholder={t("Enter record number...", "የመዝገብ ቁጥር ያስገቡ...")}
+          {/* Section 1: Basic Info */}
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className={sectionHeaderClass}>
+              {sectionHeaderContent(
+                <FileText className="w-4 h-4 text-[#FFD700]" />,
+                t("Record Information", "የመዝገብ መረጃ"),
+              )}
+            </div>
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className={labelClass}>
+                  {t("Record Number", "የመዝገብ ቁጥር")}{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={form.recordNumber}
+                    onChange={(e) =>
+                      updateField("recordNumber", e.target.value)
+                    }
+                    placeholder={t(
+                      "Enter record number...",
+                      "የመዝገብ ቁጥር ያስገቡ...",
+                    )}
+                    className={`${inputClass} pl-10`}
+                  />
+                </div>
+                {formErrors.recordNumber && (
+                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {formErrors.recordNumber}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className={labelClass}>
+                  {t("Date (A.D.)", "ቀን (እ.ኤ.አ.)")}{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <EthiopianDatePicker
+                  value={form.date}
+                  onChange={(v) => updateField("date", v)}
                   className={`${inputClass} pl-10`}
+                  placeholder={t("Select date...", "ቀን ይምረጡ...")}
+                  useEthiopian={isAm}
                 />
+                {formErrors.date && (
+                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {formErrors.date}
+                  </p>
+                )}
               </div>
-              {formErrors.recordNumber && (
-                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {formErrors.recordNumber}
-                </p>
+              <div>
+                <label className={labelClass}>
+                  {t(
+                    "Report The Provider Institution Name",
+                    "ሪፖርት አቅራቢ ተቋም ስም",
+                  )}{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={form.institutionName}
+                    readOnly
+                    className={`${inputClass} bg-gray-100/80 cursor-not-allowed pl-10`}
+                  />
+                </div>
+                {formErrors.institutionName && (
+                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {formErrors.institutionName}
+                  </p>
+                )}
+              </div>
+              <div className="md:col-span-2">
+                <label className={labelClass}>
+                  {t(
+                    "Stolen Service User Organization / Individual Name",
+                    "የተሰረቀ የአገልግሎት ተጠቃሚ ድርጅት / የግለሰብ ስም",
+                  )}{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={form.stolenServiceUser}
+                    onChange={(e) =>
+                      updateField(
+                        "stolenServiceUser",
+                        e.target.value.replace(/[0-9]/g, ""),
+                      )
+                    }
+                    placeholder={t(
+                      "Enter organization or individual name...",
+                      "የድርጅት ወይም የግል ስም ያስገቡ...",
+                    )}
+                    className={`${inputClass} pl-10`}
+                  />
+                </div>
+                {formErrors.stolenServiceUser && (
+                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {formErrors.stolenServiceUser}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Incident Details */}
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className={sectionHeaderClass}>
+              {sectionHeaderContent(
+                <AlertTriangle className="w-4 h-4 text-[#FFD700]" />,
+                t("Incident Details", "የክስተት ዝርዝሮች"),
               )}
             </div>
-            <div>
-              <label className={labelClass}>
-                {t("Date (A.D.)", "ቀን (እ.ኤ.አ.)")}{" "}
-                <span className="text-red-500">*</span>
-              </label>
-              <EthiopianDatePicker
-                value={form.date}
-                onChange={(v) => updateField("date", v)}
-                className={`${inputClass} pl-10`}
-                placeholder={t("Select date...", "ቀን ይምረጡ...")}
-                useEthiopian={isAm}
-              />
-              {formErrors.date && (
-                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {formErrors.date}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className={labelClass}>
-                {t("Report The Provider Institution Name", "ሪፖርት አቅራቢ ተቋም ስም")}{" "}
-                <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="md:col-span-2">
+                <label className={labelClass}>
+                  {t(
+                    "What happened? Criminal Action Type",
+                    "ምን ተከሰተ? የወንጀል ድርጊት አይነት",
+                  )}{" "}
+                  <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
-                  value={form.institutionName}
-                  readOnly
-                  className={`${inputClass} bg-gray-100/80 cursor-not-allowed pl-10`}
-                />
-              </div>
-              {formErrors.institutionName && (
-                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {formErrors.institutionName}
-                </p>
-              )}
-            </div>
-            <div className="md:col-span-2">
-              <label className={labelClass}>
-                {t(
-                  "Stolen Service User Organization / Individual Name",
-                  "የተሰረቀ የአገልግሎት ተጠቃሚ ድርጅት / የግለሰብ ስም",
-                )}{" "}
-                <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  value={form.stolenServiceUser}
+                  value={form.criminalActionType}
                   onChange={(e) =>
                     updateField(
-                      "stolenServiceUser",
+                      "criminalActionType",
                       e.target.value.replace(/[0-9]/g, ""),
                     )
                   }
                   placeholder={t(
-                    "Enter organization or individual name...",
-                    "የድርጅት ወይም የግል ስም ያስገቡ...",
+                    "Describe what happened...",
+                    "ምን እንደተከሰተ ይግለጹ...",
                   )}
-                  className={`${inputClass} pl-10`}
+                  className={inputClass}
                 />
-              </div>
-              {formErrors.stolenServiceUser && (
-                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {formErrors.stolenServiceUser}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Section 2: Incident Details */}
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className={sectionHeaderClass}>
-            {sectionHeaderContent(
-              <AlertTriangle className="w-4 h-4 text-[#FFD700]" />,
-              t("Incident Details", "የክስተት ዝርዝሮች"),
-            )}
-          </div>
-          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="md:col-span-2">
-              <label className={labelClass}>
-                {t(
-                  "What happened? Criminal Action Type",
-                  "ምን ተከሰተ? የወንጀል ድርጊት አይነት",
-                )}{" "}
-                <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={form.criminalActionType}
-                onChange={(e) =>
-                  updateField(
-                    "criminalActionType",
-                    e.target.value.replace(/[0-9]/g, ""),
-                  )
-                }
-                placeholder={t(
-                  "Describe what happened...",
-                  "ምን እንደተከሰተ ይግለጹ...",
+                {formErrors.criminalActionType && (
+                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {formErrors.criminalActionType}
+                  </p>
                 )}
-                className={inputClass}
-              />
-              {formErrors.criminalActionType && (
-                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {formErrors.criminalActionType}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className={labelClass}>
-                {t("Incident Date", "የክስተት ቀን")}{" "}
-                <span className="text-red-500">*</span>
-              </label>
-              <EthiopianDatePicker
-                value={form.incidentDate}
-                onChange={(v) => updateField("incidentDate", v)}
-                className={`${inputClass} pl-10`}
-                placeholder={t("Select date...", "ቀን ይምረጡ...")}
-                useEthiopian={isAm}
-              />
-              {formErrors.incidentDate && (
-                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {formErrors.incidentDate}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className={labelClass}>
-                {t("Incident Time", "የክስተት ሰዓት")}{" "}
-                <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="time"
+              </div>
+              <div>
+                <label className={labelClass}>
+                  {t("Incident Date", "የክስተት ቀን")}{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <EthiopianDatePicker
+                  value={form.incidentDate}
+                  onChange={(v) => updateField("incidentDate", v)}
+                  className={`${inputClass} pl-10`}
+                  placeholder={t("Select date...", "ቀን ይምረጡ...")}
+                  useEthiopian={isAm}
+                />
+                {formErrors.incidentDate && (
+                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {formErrors.incidentDate}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className={labelClass}>
+                  {t("Incident Time", "የክስተት ሰዓት")}{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <EthiopianTimePicker
                   value={form.incidentTime}
-                  onChange={(e) => updateField("incidentTime", e.target.value)}
+                  onChange={(v) => {
+                    updateField("incidentTime", v);
+                    setIncidentTimeConfirmed(false);
+                  }}
                   className={`${inputClass} pl-10`}
+                  useEthiopian={isAm}
                 />
+                {formErrors.incidentTime && (
+                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {formErrors.incidentTime}
+                  </p>
+                )}
+                {form.incidentTime && !incidentTimeConfirmed && (
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={() => {
+                        setPrevIncidentTime(form.incidentTime);
+                        setIncidentTimeConfirmed(true);
+                      }}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      {t("Confirm", "አረጋግጥ")}
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (prevIncidentTime)
+                          updateField("incidentTime", prevIncidentTime);
+                        setIncidentTimeConfirmed(true);
+                      }}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      {t("Cancel", "ሰርዝ")}
+                    </button>
+                  </div>
+                )}
               </div>
-              {formErrors.incidentTime && (
-                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {formErrors.incidentTime}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className={labelClass}>
-                {t("Criminal Quantity", "የወንጀለኞች ብዛት")}{" "}
-                <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="number"
-                  min="0"
-                  value={form.criminalQuantity}
-                  onChange={(e) =>
-                    updateField("criminalQuantity", e.target.value)
-                  }
-                  placeholder="0"
-                  className={`${inputClass} pl-10`}
-                />
+              <div>
+                <label className={labelClass}>
+                  {t("Criminal Quantity", "የወንጀለኞች ብዛት")}{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.criminalQuantity}
+                    onChange={(e) =>
+                      updateField("criminalQuantity", e.target.value)
+                    }
+                    placeholder="0"
+                    className={`${inputClass} pl-10`}
+                  />
+                </div>
+                {formErrors.criminalQuantity && (
+                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {formErrors.criminalQuantity}
+                  </p>
+                )}
               </div>
-              {formErrors.criminalQuantity && (
-                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {formErrors.criminalQuantity}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className={labelClass}>
-                {t("Damage Type", "የጉዳት አይነት")}{" "}
-                <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={form.damageType}
-                onChange={(e) =>
-                  updateField(
-                    "damageType",
-                    e.target.value.replace(/[0-9]/g, ""),
-                  )
-                }
-                placeholder={t("Describe damage type...", "የጉዳት አይነት ይግለጹ...")}
-                className={inputClass}
-              />
-              {formErrors.damageType && (
-                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {formErrors.damageType}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className={labelClass}>
-                {t("Crime Amount in Capital (ETB)", "በካፒታል የወንጀል መጠን (ኢቲቢ)")}{" "}
-                <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <div>
+                <label className={labelClass}>
+                  {t("Damage Type", "የጉዳት አይነት")}{" "}
+                  <span className="text-red-500">*</span>
+                </label>
                 <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={form.crimeInCapitalAmount}
-                  onChange={(e) =>
-                    updateField("crimeInCapitalAmount", e.target.value)
-                  }
-                  placeholder={t("Enter amount in ETB...", "በኢቲቢ ያስገቡ...")}
-                  className={`${inputClass} pl-10`}
-                />
-              </div>
-              {formErrors.crimeInCapitalAmount && (
-                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {formErrors.crimeInCapitalAmount}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className={labelClass}>
-                {t("Protection Worker Quantity", "የጥበቃ ሰራተኞች ብዛት")}{" "}
-                <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="number"
-                  min="0"
-                  value={form.protectionWorkerQuantity}
-                  onChange={(e) =>
-                    updateField("protectionWorkerQuantity", e.target.value)
-                  }
-                  placeholder="0"
-                  className={`${inputClass} pl-10`}
-                />
-              </div>
-              {formErrors.protectionWorkerQuantity && (
-                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {formErrors.protectionWorkerQuantity}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className={labelClass}>
-                {t("Customer Worker Quantity", "የደንበኛ ሰራተኞች ብዛት")}{" "}
-                <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="number"
-                  min="0"
-                  value={form.customerWorkerQuantity}
-                  onChange={(e) =>
-                    updateField("customerWorkerQuantity", e.target.value)
-                  }
-                  placeholder="0"
-                  className={`${inputClass} pl-10`}
-                />
-              </div>
-              {formErrors.customerWorkerQuantity && (
-                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {formErrors.customerWorkerQuantity}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className={labelClass}>
-                {t("Another Body Quantity", "የሌላ አካል ብዛት")}{" "}
-                <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="number"
-                  min="0"
-                  value={form.anotherBodyQuantity}
-                  onChange={(e) =>
-                    updateField("anotherBodyQuantity", e.target.value)
-                  }
-                  placeholder="0"
-                  className={`${inputClass} pl-10`}
-                />
-              </div>
-              {formErrors.anotherBodyQuantity && (
-                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {formErrors.anotherBodyQuantity}
-                </p>
-              )}
-            </div>
-            <div className="md:col-span-2">
-              <label className={labelClass}>
-                {t(
-                  "Security, Customer and Other Body Quantity",
-                  "ደህንነት፣ ደንበኛ እና ሌላ አካል በስምምነት",
-                )}{" "}
-                <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={form.securityCustomerOtherCount}
-                onChange={(e) =>
-                  updateField("securityCustomerOtherCount", e.target.value)
-                }
-                placeholder={t("Enter Count...", "ስምምነቱን ይግለጹ...")}
-                className={inputClass}
-              />
-              {formErrors.securityCustomerOtherCount && (
-                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {formErrors.securityCustomerOtherCount}
-                </p>
-              )}
-            </div>
-            <div className="md:col-span-2">
-              <label className={labelClass}>
-                {t("By Theft Suspected Bodies Quantity", "በስርቆት የተጠረጠሩ አካላት")}{" "}
-                <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="number"
-                  min="0"
-                  value={form.suspectedBodies}
+                  type="text"
+                  value={form.damageType}
                   onChange={(e) =>
                     updateField(
-                      "suspectedBodies",
-                      e.target.value === ""
-                        ? ""
-                        : String(Math.max(0, parseInt(e.target.value) || 0)),
+                      "damageType",
+                      e.target.value.replace(/[0-9]/g, ""),
                     )
                   }
                   placeholder={t(
-                    "Enter suspected bodies...",
-                    "የተጠረጠሩ አካላትን ያስገቡ...",
+                    "Describe damage type...",
+                    "የጉዳት አይነት ይግለጹ...",
                   )}
-                  className={`${inputClass} pl-10`}
+                  className={inputClass}
                 />
+                {formErrors.damageType && (
+                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {formErrors.damageType}
+                  </p>
+                )}
               </div>
-              {formErrors.suspectedBodies && (
-                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {formErrors.suspectedBodies}
-                </p>
+              <div>
+                <label className={labelClass}>
+                  {t("Crime Amount in Capital (ETB)", "በካፒታል የወንጀል መጠን (ኢቲቢ)")}{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={form.crimeInCapitalAmount}
+                    onChange={(e) =>
+                      updateField("crimeInCapitalAmount", e.target.value)
+                    }
+                    placeholder={t("Enter amount in ETB...", "በኢቲቢ ያስገቡ...")}
+                    className={`${inputClass} pl-10`}
+                  />
+                </div>
+                {formErrors.crimeInCapitalAmount && (
+                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {formErrors.crimeInCapitalAmount}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className={labelClass}>
+                  {t("Protection Worker Quantity", "የጥበቃ ሰራተኞች ብዛት")}{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.protectionWorkerQuantity}
+                    onChange={(e) =>
+                      updateField("protectionWorkerQuantity", e.target.value)
+                    }
+                    placeholder="0"
+                    className={`${inputClass} pl-10`}
+                  />
+                </div>
+                {formErrors.protectionWorkerQuantity && (
+                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {formErrors.protectionWorkerQuantity}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className={labelClass}>
+                  {t("Customer Worker Quantity", "የደንበኛ ሰራተኞች ብዛት")}{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.customerWorkerQuantity}
+                    onChange={(e) =>
+                      updateField("customerWorkerQuantity", e.target.value)
+                    }
+                    placeholder="0"
+                    className={`${inputClass} pl-10`}
+                  />
+                </div>
+                {formErrors.customerWorkerQuantity && (
+                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {formErrors.customerWorkerQuantity}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className={labelClass}>
+                  {t("Another Body Quantity", "የሌላ አካል ብዛት")}{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.anotherBodyQuantity}
+                    onChange={(e) =>
+                      updateField("anotherBodyQuantity", e.target.value)
+                    }
+                    placeholder="0"
+                    className={`${inputClass} pl-10`}
+                  />
+                </div>
+                {formErrors.anotherBodyQuantity && (
+                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {formErrors.anotherBodyQuantity}
+                  </p>
+                )}
+              </div>
+              <div className="md:col-span-2">
+                <label className={labelClass}>
+                  {t(
+                    "They have been taken into police custody.",
+                    "በፖሊስ ቁጥጥር ስር ውለዋል",
+                  )}{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.securityCustomerOtherCount}
+                  onChange={(e) =>
+                    updateField("securityCustomerOtherCount", e.target.value)
+                  }
+                  placeholder={t("Enter Count...", "ስምምነቱን ይግለጹ...")}
+                  className={inputClass}
+                />
+                {formErrors.securityCustomerOtherCount && (
+                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {formErrors.securityCustomerOtherCount}
+                  </p>
+                )}
+              </div>
+              <div className="md:col-span-2">
+                <label className={labelClass}>
+                  {t("By Theft Suspected Bodies Quantity", "በስርቆት የተጠረጠሩ አካላት")}{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.suspectedBodies}
+                    onChange={(e) =>
+                      updateField(
+                        "suspectedBodies",
+                        e.target.value === ""
+                          ? ""
+                          : String(Math.max(0, parseInt(e.target.value) || 0)),
+                      )
+                    }
+                    placeholder={t(
+                      "Enter suspected bodies...",
+                      "የተጠረጠሩ አካላትን ያስገቡ...",
+                    )}
+                    className={`${inputClass} pl-10`}
+                  />
+                </div>
+                {formErrors.suspectedBodies && (
+                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {formErrors.suspectedBodies}
+                  </p>
+                )}
+              </div>
+              <div className="md:col-span-2">
+                <label className={labelClass}>
+                  {t("Taken Action Where Status", "የተወሰደ እርምጃ እና ሁኔታ")}{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  value={form.takenActionStatus}
+                  onChange={(e) => {
+                    const lines = e.target.value.split("\n");
+                    if (lines.length > 3) return;
+                    updateField("takenActionStatus", e.target.value);
+                  }}
+                  placeholder={t(
+                    "Describe action taken and current status...",
+                    "የተወሰደውን እርምጃ እና አሁን ያለበትን ሁኔታ ይግለጹ...",
+                  )}
+                  className={inputClass}
+                />
+                {formErrors.takenActionStatus && (
+                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {formErrors.takenActionStatus}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: Explanation */}
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className={sectionHeaderClass}>
+              {sectionHeaderContent(
+                <Users className="w-4 h-4 text-[#FFD700]" />,
+                t("Suspect Details", "የተጠረጠሩ ዝርዝር"),
               )}
             </div>
-            <div className="md:col-span-2">
-              <label className={labelClass}>
-                {t("Taken Action Where Status", "የተወሰደ እርምጃ እና ሁኔታ")}{" "}
-                <span className="text-red-500">*</span>
-              </label>
+            <div className="p-6 space-y-5">
+              {suspects.map((suspect, index) => (
+                <div
+                  key={`suspect-${index}`}
+                  className="grid grid-cols-1 md:grid-cols-3 gap-5 rounded-3xl border border-gray-100 p-4"
+                >
+                  <div>
+                    <label className={labelClass}>
+                      {t("Suspect Full Name", "የተጠረጠረው ሙሉ ስም")}{" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={suspect.suspectName}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(
+                          /[^a-zA-Z\u1200-\u137F\s]/g,
+                          "",
+                        );
+                        updateSuspect(index, "suspectName", v);
+                      }}
+                      placeholder={t(
+                        "Enter suspect full name...",
+                        "የተጠረጠረውን ሙሉ ስም ያስገቡ...",
+                      )}
+                      className={inputClass}
+                      readOnly={Boolean(suspect.employeeName)}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>
+                      {t("Relation to Agency", "ግንኙነት ከድርጅቱ")}{" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={suspect.relationToAgency}
+                      onChange={(e) =>
+                        updateSuspect(index, "relationToAgency", e.target.value)
+                      }
+                      placeholder={t("Enter relation...", "ግንኙነት ያስገቡ...")}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>
+                      {t("Fayda number", "ፋይዳ ቁጥር")}
+                      <span className="ml-2 text-xs text-gray-500">
+                        {t("optional", "አማራጭ")}
+                      </span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={suspect.faydaNumber}
+                        onChange={(e) => {
+                          updateSuspect(
+                            index,
+                            "faydaNumber",
+                            e.target.value.replace(/\D/g, ""),
+                          );
+                          updateSuspect(index, "employeeId", "");
+                          updateSuspect(index, "employeeName", "");
+                          updateSuspect(index, "employeeOrganization", "");
+                          setLookupError(null);
+                        }}
+                        placeholder={t(
+                          "Enter Fayda number...",
+                          "ፋይዳ ቁጥር ያስገቡ...",
+                        )}
+                        className={inputClass}
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          lookupEmployeeWithFayda(index, suspect.faydaNumber)
+                        }
+                        disabled={lookupLoading || !suspect.faydaNumber.trim()}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-[#003366] text-white text-[11px] font-bold uppercase px-3 py-2 hover:bg-[#001f3f] disabled:opacity-60"
+                      >
+                        {lookupLoading
+                          ? t("Searching...", "በማስፈለጊያ...")
+                          : t("Resolve", "ያረጋግጡ")}
+                      </button>
+                    </div>
+                    {lookupError && (
+                      <p className="mt-2 text-xs text-red-600 font-medium">
+                        {lookupError}
+                      </p>
+                    )}
+                  </div>
+                  <div className="md:col-span-3 flex items-center justify-between gap-3">
+                    <p className="text-xs text-gray-500">
+                      {formErrors[`suspect_${index}`] || "\u00A0"}
+                    </p>
+                    <motion.button
+                      whileHover={{ y: -1 }}
+                      whileTap={{ scale: 0.97 }}
+                      type="button"
+                      onClick={() => removeSuspect(index)}
+                      className="inline-flex items-center gap-2 self-end rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs font-bold px-4 py-2 hover:bg-red-100 transition-all"
+                    >
+                      <XCircle className="w-3.5 h-3.5" />
+                      {t("Remove suspect", "ተጠረጠረ ሰውን አስወግድ")}
+                    </motion.button>
+                  </div>
+                </div>
+              ))}
+              <motion.button
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.97 }}
+                type="button"
+                onClick={addSuspect}
+                className="inline-flex items-center gap-2 rounded-xl bg-white border border-[#003366] text-[#003366] text-xs font-bold px-5 py-3 hover:bg-[#003366]/5 transition-all"
+              >
+                <Plus className="w-4 h-4" />
+                {t("Add suspect", "ተጠረጠረ ሰው አክሉ")}
+              </motion.button>
+            </div>
+          </div>
+
+          {/* Section 4: Explanation */}
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className={sectionHeaderClass}>
+              {sectionHeaderContent(
+                <PenTool className="w-4 h-4 text-[#FFD700]" />,
+                t("Explanation", "ማብራሪያ"),
+              )}
+            </div>
+            <div className="p-6">
               <textarea
-                rows={3}
-                value={form.takenActionStatus}
-                onChange={(e) => {
-                  const lines = e.target.value.split("\n");
-                  if (lines.length > 3) return;
-                  updateField("takenActionStatus", e.target.value);
-                }}
+                rows={4}
+                value={form.explanation}
+                onChange={(e) => updateField("explanation", e.target.value)}
                 placeholder={t(
-                  "Describe action taken and current status...",
-                  "የተወሰደውን እርምጃ እና አሁን ያለበትን ሁኔታ ይግለጹ...",
+                  "Provide additional explanation...",
+                  "ተጨማሪ ማብራሪያ ይስጡ...",
                 )}
                 className={inputClass}
               />
-              {formErrors.takenActionStatus && (
-                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {formErrors.takenActionStatus}
-                </p>
-              )}
             </div>
           </div>
-        </div>
 
-        {/* Section 3: Explanation */}
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className={sectionHeaderClass}>
-            {sectionHeaderContent(
-              <Users className="w-4 h-4 text-[#FFD700]" />,
-              t("Suspect Details", "የተጠረጠሩ ዝርዝር"),
-            )}
-          </div>
-          <div className="p-6 space-y-5">
-            {suspects.map((suspect, index) => (
-              <div
-                key={`suspect-${index}`}
-                className="grid grid-cols-1 md:grid-cols-3 gap-5 rounded-3xl border border-gray-100 p-4"
-              >
-                <div>
-                  <label className={labelClass}>
-                    {t("Suspect Full Name", "የተጠረጠረው ሙሉ ስም")}{" "}
-                    <span className="text-red-500">*</span>
-                  </label>
+          {/* Section: Report The Doer */}
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className={sectionHeaderClass}>
+              {sectionHeaderContent(
+                <User className="w-4 h-4 text-[#FFD700]" />,
+                t("Report The Doer", "ሪፖርት አድራጊ"),
+              )}
+            </div>
+            <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div>
+                <label className={labelClass}>
+                  {t("First Name", "ስም")}{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
-                    value={suspect.suspectName}
+                    value={reporterFirstName}
                     onChange={(e) =>
-                      updateSuspect(index, "suspectName", e.target.value)
+                      setReporterFirstName(
+                        e.target.value.replace(/[^A-Za-z\u1200-\u137F ]/g, ""),
+                      )
                     }
-                    placeholder={t(
-                      "Enter suspect full name...",
-                      "የተጠረጠረውን ሙሉ ስም ያስገቡ...",
-                    )}
-                    className={inputClass}
-                    readOnly={Boolean(suspect.employeeName)}
-                  />
-                </div>
-                <div>
-                  <label className={labelClass}>
-                    {t("Relation to Agency", "ግንኙነት ከድርጅቱ")}{" "}
-                    <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={suspect.relationToAgency}
-                    onChange={(e) =>
-                      updateSuspect(index, "relationToAgency", e.target.value)
-                    }
-                    placeholder={t("Enter relation...", "ግንኙነት ያስገቡ...")}
-                    className={inputClass}
-                  />
-                </div>
-                <div>
-                  <label className={labelClass}>
-                    {t("Fayda number", "ፋይዳ ቁጥር")}
-                    <span className="ml-2 text-xs text-gray-500">
-                      {t("optional", "አማራጭ")}
-                    </span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      value={suspect.faydaNumber}
-                      onChange={(e) => {
-                        updateSuspect(
-                          index,
-                          "faydaNumber",
-                          e.target.value.replace(/\D/g, ""),
-                        );
-                        updateSuspect(index, "employeeId", "");
-                        updateSuspect(index, "employeeName", "");
-                        updateSuspect(index, "employeeOrganization", "");
-                        setLookupError(null);
-                      }}
-                      placeholder={t(
-                        "Enter Fayda number...",
-                        "ፋይዳ ቁጥር ያስገቡ...",
-                      )}
-                      className={inputClass}
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        lookupEmployeeWithFayda(index, suspect.faydaNumber)
+                    onKeyDown={(e) => {
+                      const key = e.key;
+                      if (
+                        key.length === 1 &&
+                        !/^[A-Za-z\u1200-\u137F ]$/.test(key)
+                      ) {
+                        e.preventDefault();
                       }
-                      disabled={lookupLoading || !suspect.faydaNumber.trim()}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-[#003366] text-white text-[11px] font-bold uppercase px-3 py-2 hover:bg-[#001f3f] disabled:opacity-60"
-                    >
-                      {lookupLoading
-                        ? t("Searching...", "በማስፈለጊያ...")
-                        : t("Resolve", "ያረጋግጡ")}
-                    </button>
-                  </div>
-                  {lookupError && (
-                    <p className="mt-2 text-xs text-red-600 font-medium">
-                      {lookupError}
-                    </p>
-                  )}
+                    }}
+                    placeholder={t("First name...", "ስም...")}
+                    className={`${inputClass} pl-10`}
+                  />
                 </div>
-                <div className="md:col-span-3 flex items-center justify-between gap-3">
-                  <p className="text-xs text-gray-500">
-                    {formErrors[`suspect_${index}`] || "\u00A0"}
+                {formErrors.reporterFirstName && (
+                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {formErrors.reporterFirstName}
                   </p>
+                )}
+              </div>
+              <div>
+                <label className={labelClass}>
+                  {t("Middle Name", "የአባት ስም")}{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={reporterMiddleName}
+                    onChange={(e) =>
+                      setReporterMiddleName(
+                        e.target.value.replace(/[^A-Za-z\u1200-\u137F ]/g, ""),
+                      )
+                    }
+                    onKeyDown={(e) => {
+                      const key = e.key;
+                      if (
+                        key.length === 1 &&
+                        !/^[A-Za-z\u1200-\u137F ]$/.test(key)
+                      ) {
+                        e.preventDefault();
+                      }
+                    }}
+                    placeholder={t("Middle name...", "የአባት ስም...")}
+                    className={`${inputClass} pl-10`}
+                  />
+                </div>
+                {formErrors.reporterMiddleName && (
+                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {formErrors.reporterMiddleName}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className={labelClass}>
+                  {t("Last Name", "የአያት ስም")}{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={reporterLastName}
+                    onChange={(e) =>
+                      setReporterLastName(
+                        e.target.value.replace(/[^A-Za-z\u1200-\u137F ]/g, ""),
+                      )
+                    }
+                    onKeyDown={(e) => {
+                      const key = e.key;
+                      if (
+                        key.length === 1 &&
+                        !/^[A-Za-z\u1200-\u137F ]$/.test(key)
+                      ) {
+                        e.preventDefault();
+                      }
+                    }}
+                    placeholder={t("Last name...", "የአያት ስም...")}
+                    className={`${inputClass} pl-10`}
+                  />
+                </div>
+                {formErrors.reporterLastName && (
+                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {formErrors.reporterLastName}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className={labelClass}>
+                  {t("Title", "ማዕረግ")} <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={reporterTitle}
+                  onChange={(e) =>
+                    setReporterTitle(
+                      e.target.value.replace(/[^A-Za-z\u1200-\u137F ]/g, ""),
+                    )
+                  }
+                  onKeyDown={(e) => {
+                    const key = e.key;
+                    if (
+                      key.length === 1 &&
+                      !/^[A-Za-z\u1200-\u137F ]$/.test(key)
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
+                  placeholder={t("Enter title...", "ማዕረግ ያስገቡ...")}
+                  className={inputClass}
+                />
+                {formErrors.reporterTitle && (
+                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {formErrors.reporterTitle}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className={labelClass}>
+                  {t("Job Responsibility", "የስራ ሃላፊነት")}{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={reporterJobResponsibility}
+                  onChange={(e) =>
+                    setReporterJobResponsibility(
+                      e.target.value.replace(/[^A-Za-z\u1200-\u137F ]/g, ""),
+                    )
+                  }
+                  onKeyDown={(e) => {
+                    const key = e.key;
+                    if (
+                      key.length === 1 &&
+                      !/^[A-Za-z\u1200-\u137F ]$/.test(key)
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
+                  placeholder={t(
+                    "Enter job responsibility...",
+                    "የስራ ሃላፊነት ያስገቡ...",
+                  )}
+                  className={inputClass}
+                />
+                {formErrors.reporterJobResponsibility && (
+                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {formErrors.reporterJobResponsibility}
+                  </p>
+                )}
+              </div>
+              <div className="md:col-span-2">
+                <label className={labelClass}>
+                  {t("Upload Signature Image", "የፊርማ ምስል ይስቀሉ")}{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/webp"
+                  ref={(el) => {
+                    if (el) (window as any).__criminalSigInput = el;
+                  }}
+                  onChange={(e) => {
+                    setSignatureFileError(null);
+                    const file = e.target.files?.[0] || null;
+                    if (!file) {
+                      setReporterSignature("");
+                      return;
+                    }
+                    const validTypes = [
+                      "image/png",
+                      "image/jpeg",
+                      "image/jpg",
+                      "image/webp",
+                    ];
+                    if (!validTypes.includes(file.type)) {
+                      setSignatureFileError(
+                        t(
+                          "Only PNG, JPG, or WebP images are allowed.",
+                          "PNG፣ JPG ወይም WebP ምስሎች ብቻ ይፈቀዳሉ።",
+                        ),
+                      );
+                      return;
+                    }
+                    const maxSize = 2 * 1024 * 1024;
+                    if (file.size > maxSize) {
+                      setSignatureFileError(
+                        t(
+                          "File size must be under 2MB.",
+                          "የፋይል መጠን ከ 2MB በታች መሆን አለበት።",
+                        ),
+                      );
+                      return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                      setReporterSignature((ev.target?.result as string) || "");
+                    };
+                    reader.readAsDataURL(file);
+                  }}
+                  hidden
+                />
+                {!reporterSignature ? (
                   <motion.button
                     whileHover={{ y: -1 }}
                     whileTap={{ scale: 0.97 }}
                     type="button"
-                    onClick={() => removeSuspect(index)}
-                    className="inline-flex items-center gap-2 self-end rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs font-bold px-4 py-2 hover:bg-red-100 transition-all"
+                    onClick={() => {
+                      setSignatureFileError(null);
+                      (window as any).__criminalSigInput?.click();
+                    }}
+                    className={`w-full p-8 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center gap-2 ${
+                      signatureFileError
+                        ? "border-red-300 bg-red-50/50"
+                        : "border-gray-200 bg-gray-50/50 hover:border-[#003366]/40 hover:bg-[#003366]/5"
+                    }`}
                   >
-                    <XCircle className="w-3.5 h-3.5" />
-                    {t("Remove suspect", "ተጠረጠረ ሰውን አስወግድ")}
+                    <Upload className="w-8 h-8 text-gray-300" />
+                    <span className="text-sm font-semibold text-gray-500">
+                      {t(
+                        "Click to upload signature image",
+                        "የፊርማ ምስል ለመስቀል ይጫኑ",
+                      )}
+                    </span>
+                    <span className="text-[10px] text-gray-400 font-medium">
+                      {t(
+                        "PNG, JPG or WebP - Max 2MB",
+                        "PNG፣ JPG ወይም WebP - ከፍተኛ 2MB",
+                      )}
+                    </span>
                   </motion.button>
-                </div>
+                ) : (
+                  <>
+                    <div className="p-4 rounded-2xl border-2 border-green-200 bg-green-50/50">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-xl bg-green-100">
+                          <Image className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div className="flex-1">
+                          <img
+                            src={reporterSignature}
+                            alt={t("Signature preview", "የፊርማ ቅድመ እይታ")}
+                            className="max-h-16 object-contain"
+                          />
+                        </div>
+                        <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center gap-2">
+                      <motion.button
+                        whileHover={{ y: -1 }}
+                        whileTap={{ scale: 0.97 }}
+                        type="button"
+                        onClick={() => {
+                          setReporterSignature("");
+                          setSignatureFileError(null);
+                          const input = (window as any)
+                            .__criminalSigInput as HTMLInputElement | null;
+                          if (input) {
+                            input.value = "";
+                          }
+                        }}
+                        className="inline-flex items-center gap-1.5 bg-white border border-red-200 text-red-600 text-xs font-bold px-4 py-2 rounded-xl hover:bg-red-50 hover:border-red-300 transition-all"
+                      >
+                        <XCircle className="w-3.5 h-3.5" />
+                        {t("Cancel", "ሰርዝ")}
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ y: -1 }}
+                        whileTap={{ scale: 0.97 }}
+                        type="button"
+                        onClick={() => {
+                          setSignatureFileError(null);
+                          (window as any).__criminalSigInput?.click();
+                        }}
+                        className="inline-flex items-center gap-1.5 bg-white border border-orange-200 text-orange-600 text-xs font-bold px-4 py-2 rounded-xl hover:bg-orange-50 hover:border-orange-300 transition-all"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        {t("Reupload", "እንደገና ይስቀሉ")}
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ y: -1 }}
+                        whileTap={{ scale: 0.97 }}
+                        type="button"
+                        onClick={() => setShowSignaturePreview(true)}
+                        className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-[#003366] text-xs font-bold px-4 py-2 rounded-xl hover:bg-[#003366]/5 hover:border-[#003366]/30 transition-all"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        {t("Preview", "እይታ")}
+                      </motion.button>
+                    </div>
+                  </>
+                )}
+                {signatureFileError && (
+                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {signatureFileError}
+                  </p>
+                )}
+                {formErrors.reporterSignature && (
+                  <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {formErrors.reporterSignature}
+                  </p>
+                )}
               </div>
-            ))}
+            </div>
+          </div>
+
+          {/* Signature Preview Modal */}
+          {showSignaturePreview && reporterSignature && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+              onClick={() => setShowSignaturePreview(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-black text-[#003366] uppercase tracking-tight">
+                    {t("Signature Preview", "የፊርማ ቅድመ እይታ")}
+                  </h3>
+                  <button
+                    onClick={() => setShowSignaturePreview(false)}
+                    className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <XCircle className="w-5 h-5 text-gray-400" />
+                  </button>
+                </div>
+                <img
+                  src={reporterSignature}
+                  alt={t("Signature", "ፊርማ")}
+                  className="w-full max-h-80 object-contain rounded-xl border border-gray-200"
+                />
+              </motion.div>
+            </motion.div>
+          )}
+
+          <div className="rounded-2xl border border-gray-200 bg-[#f8fafc] p-4">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.agreement === "true"}
+                onChange={(e) =>
+                  updateField("agreement", e.target.checked ? "true" : "")
+                }
+                className="mt-1 h-4 w-4 rounded border-gray-300 text-[#003366] focus:ring-[#003366]"
+              />
+              <span className="text-sm text-gray-700">
+                {t(
+                  "I confirm that the report is accurate and I accept the legal declaration.",
+                  "ይህ ሪፖርት ትክክለኛ መሆኑን እና የህጋዊ መግለጫ ተቀብዬ እንደምቀበል አረጋግጣለሁ።",
+                )}
+              </span>
+            </label>
+            {formErrors.agreement && (
+              <p className="mt-2 text-xs text-red-600 font-medium flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                {formErrors.agreement}
+              </p>
+            )}
+          </div>
+
+          {/* Submit */}
+          {formErrors._submit && (
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-medium">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              {formErrors._submit}
+            </div>
+          )}
+          <div className="flex justify-end pt-2">
             <motion.button
               whileHover={{ y: -1 }}
               whileTap={{ scale: 0.97 }}
-              type="button"
-              onClick={addSuspect}
-              className="inline-flex items-center gap-2 rounded-xl bg-white border border-[#003366] text-[#003366] text-xs font-bold px-5 py-3 hover:bg-[#003366]/5 transition-all"
+              type="submit"
+              disabled={submitting}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-[#003366] to-[#001F3F] text-white text-xs font-bold tracking-wide px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <Plus className="w-4 h-4" />
-              {t("Add suspect", "ተጠረጠረ ሰው አክሉ")}
+              {submitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+              {submitting
+                ? t("Submitting...", "በማስገባት ላይ...")
+                : t("Submit Report", "ሪፖርት ያስገቡ")}
             </motion.button>
           </div>
-        </div>
-
-        {/* Section 4: Explanation */}
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className={sectionHeaderClass}>
-            {sectionHeaderContent(
-              <PenTool className="w-4 h-4 text-[#FFD700]" />,
-              t("Explanation", "ማብራሪያ"),
-            )}
-          </div>
-          <div className="p-6">
-            <textarea
-              rows={4}
-              value={form.explanation}
-              onChange={(e) => updateField("explanation", e.target.value)}
-              placeholder={t(
-                "Provide additional explanation...",
-                "ተጨማሪ ማብራሪያ ይስጡ...",
-              )}
-              className={inputClass}
-            />
-          </div>
-        </div>
-
-        {/* Section: Report The Doer */}
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className={sectionHeaderClass}>
-            {sectionHeaderContent(
-              <User className="w-4 h-4 text-[#FFD700]" />,
-              t("Report The Doer", "ሪፖርት አድራጊ"),
-            )}
-          </div>
-          <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div>
-              <label className={labelClass}>
-                {t("First Name", "ስም")} <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  value={reporterFirstName}
-                  onChange={(e) =>
-                    setReporterFirstName(e.target.value.replace(/[0-9]/g, ""))
-                  }
-                  placeholder={t("First name...", "ስም...")}
-                  className={`${inputClass} pl-10`}
-                />
-              </div>
-              {formErrors.reporterFirstName && (
-                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {formErrors.reporterFirstName}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className={labelClass}>
-                {t("Middle Name", "የአባት ስም")}{" "}
-                <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  value={reporterMiddleName}
-                  onChange={(e) =>
-                    setReporterMiddleName(e.target.value.replace(/[0-9]/g, ""))
-                  }
-                  placeholder={t("Middle name...", "የአባት ስም...")}
-                  className={`${inputClass} pl-10`}
-                />
-              </div>
-              {formErrors.reporterMiddleName && (
-                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {formErrors.reporterMiddleName}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className={labelClass}>
-                {t("Last Name", "የአያት ስም")}{" "}
-                <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  value={reporterLastName}
-                  onChange={(e) =>
-                    setReporterLastName(e.target.value.replace(/[0-9]/g, ""))
-                  }
-                  placeholder={t("Last name...", "የአያት ስም...")}
-                  className={`${inputClass} pl-10`}
-                />
-              </div>
-              {formErrors.reporterLastName && (
-                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {formErrors.reporterLastName}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className={labelClass}>
-                {t("Title", "ማዕረግ")} <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={reporterTitle}
-                onChange={(e) => setReporterTitle(e.target.value)}
-                placeholder={t("Enter title...", "ማዕረግ ያስገቡ...")}
-                className={inputClass}
-              />
-              {formErrors.reporterTitle && (
-                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {formErrors.reporterTitle}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className={labelClass}>
-                {t("Job Responsibility", "የስራ ሃላፊነት")}{" "}
-                <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={reporterJobResponsibility}
-                onChange={(e) => setReporterJobResponsibility(e.target.value)}
-                placeholder={t(
-                  "Enter job responsibility...",
-                  "የስራ ሃላፊነት ያስገቡ...",
-                )}
-                className={inputClass}
-              />
-              {formErrors.reporterJobResponsibility && (
-                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {formErrors.reporterJobResponsibility}
-                </p>
-              )}
-            </div>
-            <div className="md:col-span-2">
-              <label className={labelClass}>
-                {t("Upload Signature Image", "የፊርማ ምስል ይስቀሉ")}{" "}
-                <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/jpg,image/webp"
-                ref={(el) => {
-                  if (el) (window as any).__criminalSigInput = el;
-                }}
-                onChange={(e) => {
-                  setSignatureFileError(null);
-                  const file = e.target.files?.[0] || null;
-                  if (!file) {
-                    setReporterSignature("");
-                    return;
-                  }
-                  const validTypes = [
-                    "image/png",
-                    "image/jpeg",
-                    "image/jpg",
-                    "image/webp",
-                  ];
-                  if (!validTypes.includes(file.type)) {
-                    setSignatureFileError(
-                      t(
-                        "Only PNG, JPG, or WebP images are allowed.",
-                        "PNG፣ JPG ወይም WebP ምስሎች ብቻ ይፈቀዳሉ።",
-                      ),
-                    );
-                    return;
-                  }
-                  const maxSize = 2 * 1024 * 1024;
-                  if (file.size > maxSize) {
-                    setSignatureFileError(
-                      t(
-                        "File size must be under 2MB.",
-                        "የፋይል መጠን ከ 2MB በታች መሆን አለበት።",
-                      ),
-                    );
-                    return;
-                  }
-                  const reader = new FileReader();
-                  reader.onload = (ev) => {
-                    setReporterSignature((ev.target?.result as string) || "");
-                  };
-                  reader.readAsDataURL(file);
-                }}
-                hidden
-              />
-              {!reporterSignature ? (
-                <motion.button
-                  whileHover={{ y: -1 }}
-                  whileTap={{ scale: 0.97 }}
-                  type="button"
-                  onClick={() => {
-                    setSignatureFileError(null);
-                    (window as any).__criminalSigInput?.click();
-                  }}
-                  className={`w-full p-8 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center gap-2 ${
-                    signatureFileError
-                      ? "border-red-300 bg-red-50/50"
-                      : "border-gray-200 bg-gray-50/50 hover:border-[#003366]/40 hover:bg-[#003366]/5"
-                  }`}
-                >
-                  <Upload className="w-8 h-8 text-gray-300" />
-                  <span className="text-sm font-semibold text-gray-500">
-                    {t("Click to upload signature image", "የፊርማ ምስል ለመስቀል ይጫኑ")}
-                  </span>
-                  <span className="text-[10px] text-gray-400 font-medium">
-                    {t(
-                      "PNG, JPG or WebP - Max 2MB",
-                      "PNG፣ JPG ወይም WebP - ከፍተኛ 2MB",
-                    )}
-                  </span>
-                </motion.button>
-              ) : (
-                <>
-                  <div className="p-4 rounded-2xl border-2 border-green-200 bg-green-50/50">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-green-100">
-                        <Image className="w-5 h-5 text-green-600" />
-                      </div>
-                      <div className="flex-1">
-                        <img
-                          src={reporterSignature}
-                          alt={t("Signature preview", "የፊርማ ቅድመ እይታ")}
-                          className="max-h-16 object-contain"
-                        />
-                      </div>
-                      <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
-                    </div>
-                  </div>
-                  <div className="mt-3 flex items-center gap-2">
-                    <motion.button
-                      whileHover={{ y: -1 }}
-                      whileTap={{ scale: 0.97 }}
-                      type="button"
-                      onClick={() => {
-                        setReporterSignature("");
-                        setSignatureFileError(null);
-                        const input = (window as any)
-                          .__criminalSigInput as HTMLInputElement | null;
-                        if (input) {
-                          input.value = "";
-                        }
-                      }}
-                      className="inline-flex items-center gap-1.5 bg-white border border-red-200 text-red-600 text-xs font-bold px-4 py-2 rounded-xl hover:bg-red-50 hover:border-red-300 transition-all"
-                    >
-                      <XCircle className="w-3.5 h-3.5" />
-                      {t("Cancel", "ሰርዝ")}
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ y: -1 }}
-                      whileTap={{ scale: 0.97 }}
-                      type="button"
-                      onClick={() => {
-                        setSignatureFileError(null);
-                        (window as any).__criminalSigInput?.click();
-                      }}
-                      className="inline-flex items-center gap-1.5 bg-white border border-orange-200 text-orange-600 text-xs font-bold px-4 py-2 rounded-xl hover:bg-orange-50 hover:border-orange-300 transition-all"
-                    >
-                      <Upload className="w-3.5 h-3.5" />
-                      {t("Reupload", "እንደገና ይስቀሉ")}
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ y: -1 }}
-                      whileTap={{ scale: 0.97 }}
-                      type="button"
-                      onClick={() => setShowSignaturePreview(true)}
-                      className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-[#003366] text-xs font-bold px-4 py-2 rounded-xl hover:bg-[#003366]/5 hover:border-[#003366]/30 transition-all"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      {t("Preview", "እይታ")}
-                    </motion.button>
-                  </div>
-                </>
-              )}
-              {signatureFileError && (
-                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {signatureFileError}
-                </p>
-              )}
-              {formErrors.reporterSignature && (
-                <p className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {formErrors.reporterSignature}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Signature Preview Modal */}
-        {showSignaturePreview && reporterSignature && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
-            onClick={() => setShowSignaturePreview(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-black text-[#003366] uppercase tracking-tight">
-                  {t("Signature Preview", "የፊርማ ቅድመ እይታ")}
-                </h3>
-                <button
-                  onClick={() => setShowSignaturePreview(false)}
-                  className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <XCircle className="w-5 h-5 text-gray-400" />
-                </button>
-              </div>
-              <img
-                src={reporterSignature}
-                alt={t("Signature", "ፊርማ")}
-                className="w-full max-h-80 object-contain rounded-xl border border-gray-200"
-              />
-            </motion.div>
-          </motion.div>
-        )}
-
-        <div className="rounded-2xl border border-gray-200 bg-[#f8fafc] p-4">
-          <label className="flex items-start gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.agreement === "true"}
-              onChange={(e) =>
-                updateField("agreement", e.target.checked ? "true" : "")
-              }
-              className="mt-1 h-4 w-4 rounded border-gray-300 text-[#003366] focus:ring-[#003366]"
-            />
-            <span className="text-sm text-gray-700">
-              {t(
-                "I confirm that the report is accurate and I accept the legal declaration.",
-                "ይህ ሪፖርት ትክክለኛ መሆኑን እና የህጋዊ መግለጫ ተቀብዬ እንደምቀበል አረጋግጣለሁ።",
-              )}
-            </span>
-          </label>
-          {formErrors.agreement && (
-            <p className="mt-2 text-xs text-red-600 font-medium flex items-center gap-1">
-              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-              {formErrors.agreement}
-            </p>
-          )}
-        </div>
-
-        {/* Submit */}
-        {formErrors._submit && (
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-medium">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            {formErrors._submit}
-          </div>
-        )}
-        <div className="flex justify-end pt-2">
-          <motion.button
-            whileHover={{ y: -1 }}
-            whileTap={{ scale: 0.97 }}
-            type="submit"
-            disabled={submitting}
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-[#003366] to-[#001F3F] text-white text-xs font-bold tracking-wide px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {submitting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-            {submitting
-              ? t("Submitting...", "በማስገባት ላይ...")
-              : t("Submit Report", "ሪፖርት ያስገቡ")}
-          </motion.button>
-        </div>
-      </form>
-    </motion.div>
+        </form>
+      </motion.div>
+    </>
   );
 }

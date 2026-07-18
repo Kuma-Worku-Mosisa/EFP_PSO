@@ -1,18 +1,37 @@
 import { useState, useEffect, useRef } from "react";
-import { Calendar } from "lucide-react";
+import { Calendar, Check, X } from "lucide-react";
 
 const ethMonthsAm = [
-  "መስከረም", "ጥቅምት", "ህዳር", "ታህሳስ", "ጥር", "የካቲት",
-  "መጋቢት", "ሚያዚያ", "ግንቦት", "ሰኔ", "ሐምሌ", "ነሀሴ", "ጳጉሜን",
+  "መስከረም",
+  "ጥቅምት",
+  "ህዳር",
+  "ታህሳስ",
+  "ጥር",
+  "የካቲት",
+  "መጋቢት",
+  "ሚያዚያ",
+  "ግንቦት",
+  "ሰኔ",
+  "ሐምሌ",
+  "ነሀሴ",
+  "ጳጉሜን",
 ];
 
-const JDN_EPOCH = 1723856;
+const JDN_EPOCH = 1724221;
 
 function gregorianToJDN(year: number, month: number, day: number): number {
   const a = Math.floor((14 - month) / 12);
   const y = year + 4800 - a;
   const m = month + 12 * a - 3;
-  return day + Math.floor((153 * m + 2) / 5) + 365 * y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 32045;
+  return (
+    day +
+    Math.floor((153 * m + 2) / 5) +
+    365 * y +
+    Math.floor(y / 4) -
+    Math.floor(y / 100) +
+    Math.floor(y / 400) -
+    32045
+  );
 }
 
 function gregorianToEthiopian(year: number, month: number, day: number) {
@@ -25,7 +44,14 @@ function gregorianToEthiopian(year: number, month: number, day: number) {
 }
 
 function ethiopianToJDN(year: number, month: number, day: number): number {
-  return JDN_EPOCH + 365 * (year - 1) + Math.floor(year / 4) + 30 * (month - 1) + day - 1;
+  return (
+    JDN_EPOCH +
+    365 * (year - 1) +
+    Math.floor(year / 4) +
+    30 * (month - 1) +
+    day -
+    1
+  );
 }
 
 function ethiopianToGregorian(year: number, month: number, day: number): Date {
@@ -44,30 +70,6 @@ function ethiopianToGregorian(year: number, month: number, day: number): Date {
 
 function pad(n: number): string {
   return n.toString().padStart(2, "0");
-}
-
-function getEthDisplay(isoDate: string): string {
-  if (!isoDate) return "";
-  const parts = isoDate.split("-");
-  if (parts.length !== 3) return isoDate;
-  const gy = parseInt(parts[0]), gm = parseInt(parts[1]), gd = parseInt(parts[2]);
-  const eth = gregorianToEthiopian(gy, gm, gd);
-  return `${eth.day} ${ethMonthsAm[eth.month - 1]} ${eth.year}`;
-}
-
-function parseEthInput(text: string): { year: number; month: number; day: number } | null {
-  const trimmed = text.trim();
-  const tokens = trimmed.split(/\s+/);
-  if (tokens.length !== 3) return null;
-  const day = parseInt(tokens[0]);
-  if (isNaN(day) || day < 1) return null;
-  const monthIdx = ethMonthsAm.findIndex((m) => m.startsWith(tokens[1]));
-  if (monthIdx === -1) return null;
-  const year = parseInt(tokens[2]);
-  if (isNaN(year) || year < 1900) return null;
-  const maxDays = monthIdx < 12 ? 30 : ((year + 1) % 4 === 0 ? 6 : 5);
-  if (day > maxDays) return null;
-  return { year, month: monthIdx + 1, day };
 }
 
 interface EthiopianDatePickerProps {
@@ -90,30 +92,52 @@ export default function EthiopianDatePicker({
   const [ethYear, setEthYear] = useState(currentEthYear);
   const [ethMonth, setEthMonth] = useState(1);
   const [ethDay, setEthDay] = useState(1);
-  const [textInput, setTextInput] = useState("");
+  const [tempYear, setTempYear] = useState(currentEthYear);
+  const [tempMonth, setTempMonth] = useState(1);
+  const [tempDay, setTempDay] = useState(1);
+  const [pendingDate, setPendingDate] = useState("");
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const prevValueRef = useRef(value);
+  const [localDate, setLocalDate] = useState(value);
+  const nativeDateRef = useRef<HTMLInputElement>(null);
+
+  const openNativeDatePicker = () => {
+    if (nativeDateRef.current) {
+      if (typeof nativeDateRef.current.showPicker === "function") {
+        nativeDateRef.current.showPicker();
+      } else {
+        nativeDateRef.current.click();
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (!useEthiopian && !showPicker) setLocalDate(value);
+  }, [value, useEthiopian, showPicker]);
 
   useEffect(() => {
     if (useEthiopian && value) {
-      const display = getEthDisplay(value);
-      setTextInput(display);
       const parts = value.split("-");
       if (parts.length === 3) {
-        const gy = parseInt(parts[0]), gm = parseInt(parts[1]), gd = parseInt(parts[2]);
+        const gy = parseInt(parts[0]),
+          gm = parseInt(parts[1]),
+          gd = parseInt(parts[2]);
         const eth = gregorianToEthiopian(gy, gm, gd);
         setEthYear(eth.year);
         setEthMonth(eth.month);
         setEthDay(eth.day);
       }
-    } else if (!useEthiopian) {
-      setTextInput("");
     }
   }, [useEthiopian, value]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(e.target as Node)
+      ) {
         setShowPicker(false);
+        setPendingDate("");
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -127,28 +151,54 @@ export default function EthiopianDatePicker({
     setEthYear(y);
     setEthMonth(m);
     setEthDay(d);
-    setTextInput(`${d} ${ethMonthsAm[m - 1]} ${y}`);
-  };
-
-  const handleTextChange = (newText: string) => {
-    const filtered = newText.replace(/[^0-9\/\u1200-\u137F\u1380-\u139F\u2D80-\u2DDF\uAB00-\uAB2F\s]/g, "");
-    setTextInput(filtered);
-    const parsed = parseEthInput(filtered);
-    if (parsed) {
-      commitEthDate(parsed.year, parsed.month, parsed.day);
-    }
   };
 
   if (!useEthiopian) {
     return (
-      <div className="relative">
-        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+      <div className="relative" ref={wrapperRef}>
+        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
         <input
+          ref={nativeDateRef}
           type="date"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className={className}
+          value={localDate}
+          onChange={(e) => {
+            prevValueRef.current = localDate;
+            setPendingDate(e.target.value);
+            setShowPicker(true);
+          }}
+          onClick={() => nativeDateRef.current?.showPicker?.()}
+          className={`${className} cursor-pointer focus:outline-none focus:ring-0`}
         />
+        {showPicker && pendingDate && (
+          <div className="absolute top-full mt-1 left-0 bg-white rounded-xl border border-gray-200 shadow-lg z-30 p-3 w-64 flex items-center justify-end gap-2">
+            <span className="text-xs text-gray-500 mr-auto">{pendingDate}</span>
+            <button
+              type="button"
+              onClick={() => {
+                setLocalDate(prevValueRef.current);
+                setShowPicker(false);
+                setPendingDate("");
+              }}
+              className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onChange(pendingDate);
+                setLocalDate(pendingDate);
+                setShowPicker(false);
+                setPendingDate("");
+              }}
+              className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-colors"
+            >
+              <Check className="w-3.5 h-3.5" />
+              Confirm
+            </button>
+          </div>
+        )}
       </div>
     );
   }
@@ -157,73 +207,109 @@ export default function EthiopianDatePicker({
   for (let i = currentEthYear; i <= currentEthYear + 5; i++) {
     yearOptions.push(i);
   }
-
-  const isLeap = (ethYear + 1) % 4 === 0;
-  const maxDays = ethMonth <= 12 ? 30 : (isLeap ? 6 : 5);
+  const isLeap = (tempYear + 1) % 4 === 0;
+  const maxDays = tempMonth <= 12 ? 30 : isLeap ? 6 : 5;
+  const todayEth = gregorianToEthiopian(
+    new Date().getFullYear(),
+    new Date().getMonth() + 1,
+    new Date().getDate(),
+  );
 
   return (
     <div className="relative" ref={wrapperRef}>
       <div className="relative">
         <Calendar
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 z-10 cursor-pointer"
+          className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 z-10 cursor-pointer"
           onClick={() => setShowPicker(!showPicker)}
         />
         <input
           type="text"
-          value={textInput}
-          onChange={(e) => handleTextChange(e.target.value)}
-          onFocus={() => setShowPicker(true)}
+          readOnly
+          value={
+            value ? `${ethDay} ${ethMonthsAm[ethMonth - 1]} ${ethYear}` : ""
+          }
+          onClick={() => setShowPicker(!showPicker)}
           placeholder={placeholder}
-          className={className}
+          className={`${className} pr-10 cursor-pointer`}
         />
       </div>
       {showPicker && (
         <div className="absolute top-full mt-1 left-0 bg-white rounded-xl border border-gray-200 shadow-lg z-30 p-4 w-72">
           <div className="grid grid-cols-3 gap-2 mb-3">
             <div>
-              <label className="text-[10px] font-bold text-gray-500 block mb-1">ቀን</label>
+              <label className="text-[10px] font-bold text-gray-500 block mb-1">
+                ቀን
+              </label>
               <select
-                value={ethDay}
-                onChange={(e) => {
-                  const d = parseInt(e.target.value);
-                  commitEthDate(ethYear, ethMonth, d);
-                }}
+                value={tempDay}
+                onChange={(e) => setTempDay(parseInt(e.target.value))}
                 className="w-full rounded-lg border border-gray-200 px-2 py-1.5 text-sm"
               >
                 {Array.from({ length: maxDays }, (_, i) => i + 1).map((d) => (
-                  <option key={d} value={d}>{d}</option>
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="text-[10px] font-bold text-gray-500 block mb-1">ወር</label>
+              <label className="text-[10px] font-bold text-gray-500 block mb-1">
+                ወር
+              </label>
               <select
-                value={ethMonth}
-                onChange={(e) => {
-                  const m = parseInt(e.target.value);
-                  commitEthDate(ethYear, m, ethDay);
-                }}
+                value={tempMonth}
+                onChange={(e) => setTempMonth(parseInt(e.target.value))}
                 className="w-full rounded-lg border border-gray-200 px-2 py-1.5 text-sm"
               >
                 {ethMonthsAm.map((name, i) => (
-                  <option key={i + 1} value={i + 1}>{name}</option>
+                  <option key={i + 1} value={i + 1}>
+                    {name}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="text-[10px] font-bold text-gray-500 block mb-1">ዓመት</label>
+              <label className="text-[10px] font-bold text-gray-500 block mb-1">
+                ዓመት
+              </label>
               <select
-                value={ethYear}
-                onChange={(e) => {
-                  const y = parseInt(e.target.value);
-                  commitEthDate(y, ethMonth, ethDay);
-                }}
+                value={tempYear}
+                onChange={(e) => setTempYear(parseInt(e.target.value))}
                 className="w-full rounded-lg border border-gray-200 px-2 py-1.5 text-sm"
               >
                 {yearOptions.map((y) => (
-                  <option key={y} value={y}>{y}</option>
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
                 ))}
               </select>
+            </div>
+          </div>
+          <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+            <div className="text-[10px] text-gray-400">
+              ዛሬ: {todayEth.day} {ethMonthsAm[todayEth.month - 1]}{" "}
+              {todayEth.year}
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowPicker(false)}
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+                ሰርዝ
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  commitEthDate(tempYear, tempMonth, tempDay);
+                  setShowPicker(false);
+                }}
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <Check className="w-3.5 h-3.5" />
+                አረጋግጥ
+              </button>
             </div>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Routes, Route, Link } from "react-router-dom";
 import { DashboardLayout } from "../components/DashboardLayout";
 import {
@@ -25,10 +25,9 @@ import { FormalLetter } from "./FormalLetter";
 import { Agreement } from "./Agreement";
 import { AgencyPayment } from "./AgencyPayment";
 import { Profile } from "./Profile";
-import { Notifications } from "./Notifications";
 
 const Overview = () => {
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
   const [summary, setSummary] = useState<{
     licenseStatus: string;
     expiryDate: string | null;
@@ -274,7 +273,6 @@ export const AgencyDashboard = () => {
         <Route path="payment" element={<AgencyPayment />} />
         <Route path="license/:certificateId?" element={<LicenseViewer />} />
         <Route path="profile" element={<Profile />} />
-        <Route path="notifications" element={<Notifications />} />
       </Routes>
     </DashboardLayout>
   );

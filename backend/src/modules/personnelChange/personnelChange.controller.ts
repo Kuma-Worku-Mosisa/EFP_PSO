@@ -38,12 +38,17 @@ export const createPersonnelChangeRequest = async (
 ) => {
   try {
     const payload = req.body || {};
-    // Expecting requestType === 'NEW_EMPLOYEE'
-    if (String(payload.requestType || "").toUpperCase() !== "NEW_EMPLOYEE") {
+    const normalizedRequestType = String(payload.requestType || "")
+      .trim()
+      .toUpperCase();
+
+    if (
+      normalizedRequestType !== "NEW_EMPLOYEE" &&
+      normalizedRequestType !== "EXISTING_EMPLOYEE"
+    ) {
       return res.status(400).json({
         success: false,
-        message:
-          "Only NEW_EMPLOYEE requestType supported by this endpoint for now",
+        message: "requestType must be either NEW_EMPLOYEE or EXISTING_EMPLOYEE",
       });
     }
 

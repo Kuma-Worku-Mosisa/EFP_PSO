@@ -53,7 +53,12 @@ interface Agreement {
   expiryDate: string;
   createdAt: string;
   updatedAt: string;
-  organization: { name: string; nameAmharic?: string; nameEnglish?: string; tinNumber: string };
+  organization: {
+    name: string;
+    nameAmharic?: string;
+    nameEnglish?: string;
+    tinNumber: string;
+  };
   signedBy: { fullName: string; email: string };
 }
 
@@ -62,7 +67,7 @@ export default function AdminAgreementManager() {
   const isAm = language === "am";
   const navigate = useNavigate();
   const safeText = (value?: string | null, fallback = "N/A") =>
-    value && value.trim().length > 0 ? value : (isAm ? fallback : fallback);
+    value && value.trim().length > 0 ? value : isAm ? fallback : fallback;
   const normalize = (value?: string | null) =>
     safeText(value, "").toLowerCase();
   // State Matrix
@@ -154,8 +159,9 @@ export default function AdminAgreementManager() {
         ? isAm
           ? "🚨 ማስጠንቀቂያ: ስምምነትን መሰረዝ የማይቀለበስ የቁጥጥር እርምጃ ነው። የኩባንያውን የመዳረሻ ፈቃዶች ወዲያውኑ ያቋርጣል። ይቀጥላሉ?"
           : `🚨 WARNING: Revoking an agreement is an un-doable regulatory action. It will instantly suspend company access licenses. Proceed?`
-        : isAm ? `የስምምነቱን የስራ ሁኔታ ወደ ${nextStatus} መቀየር ይፈልጋሉ?`
-        : `Are you sure you want to change the agreement operational lifecycle status to ${nextStatus}?`;
+        : isAm
+          ? `የስምምነቱን የስራ ሁኔታ ወደ ${nextStatus} መቀየር ይፈልጋሉ?`
+          : `Are you sure you want to change the agreement operational lifecycle status to ${nextStatus}?`;
 
     if (!window.confirm(confirmMessage)) return;
 
@@ -174,7 +180,11 @@ export default function AdminAgreementManager() {
         );
       }
     } catch (error) {
-      alert(isAm ? "የግብይት ሁኔታ ዝማኔን በማስኬድ ላይ ስህተት ተከስቷል።" : "Error processing transaction status updates.");
+      alert(
+        isAm
+          ? "የግብይት ሁኔታ ዝማኔን በማስኬድ ላይ ስህተት ተከስቷል።"
+          : "Error processing transaction status updates.",
+      );
     } finally {
       setActionProcessing(null);
     }
@@ -203,14 +213,18 @@ export default function AdminAgreementManager() {
         });
         fetchAdminRegistry();
       } else {
-        alert(result.message || (isAm ? "ስምምነት መፍጠር አልተሳካም።" : "Failed to generate agreement."));
+        alert(
+          result.message ||
+            (isAm ? "ስምምነት መፍጠር አልተሳካም።" : "Failed to generate agreement."),
+        );
       }
     } catch (error) {
       alert(
         error instanceof Error
           ? error.message
-          : isAm ? "ስምምነት መፍጠር አልተሳካም።"
-          : "Failed to generate agreement.",
+          : isAm
+            ? "ስምምነት መፍጠር አልተሳካም።"
+            : "Failed to generate agreement.",
       );
     } finally {
       setGenerateLoading(false);
@@ -269,10 +283,14 @@ export default function AdminAgreementManager() {
         <div>
           <h1 className="text-2xl font-black tracking-tight text-[#003366] flex items-center gap-2">
             <FileCheck className="text-[#003366] h-8 w-8" />
-            {isAm ? "ማዕከላዊ የቁጥጥር ስምምነት መዝገብ" : "Central Regulatory Agreements Registry"}
+            {isAm
+              ? "ማዕከላዊ የቁጥጥር ስምምነት መዝገብ"
+              : "Central Regulatory Agreements Registry"}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            {isAm ? "አጠቃላይ የአስተዳደር ቁጥጥር የስራ ቦታ። የኩባንያ ሜታዳታ ቅጽበታዊ ገጽታዎችን ይመርምሩ።" : "Global Administrative Control Workspace. Inspect company metadata snapshots, audit system operations, and modify license compliance timelines."}
+            {isAm
+              ? "አጠቃላይ የአስተዳደር ቁጥጥር የስራ ቦታ። የኩባንያ ሜታዳታ ቅጽበታዊ ገጽታዎችን ይመርምሩ።"
+              : "Global Administrative Control Workspace. Inspect company metadata snapshots, audit system operations, and modify license compliance timelines."}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -280,7 +298,8 @@ export default function AdminAgreementManager() {
             onClick={() => setGenerateOpen(true)}
             className="flex items-center gap-2 px-6 py-3 bg-[#003366] text-white rounded-2xl text-sm font-black shadow-lg shadow-[#003366]/30 hover:bg-[#002244] active:scale-95 transition-all"
           >
-            <PlusCircle className="h-4 w-4" /> {isAm ? "ስምምነት ፍጠር" : "Generate Agreement"}
+            <PlusCircle className="h-4 w-4" />{" "}
+            {isAm ? "ስምምነት ፍጠር" : "Generate Agreement"}
           </button>
           <button
             onClick={fetchAdminRegistry}
@@ -356,7 +375,11 @@ export default function AdminAgreementManager() {
           <Search className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
           <input
             type="text"
-            placeholder={isAm ? "በተከታታይ ኮድ፣ የኤጀንሲ ስም፣ ቲን ቁጥር፣ ፈራሚ ይፈልጉ..." : "Search matching items by Serial Code, Agency Name, TIN Number, Signee Representative..."}
+            placeholder={
+              isAm
+                ? "በተከታታይ ኮድ፣ የድርጅት ስም፣ ቲን ቁጥር፣ ፈራሚ ይፈልጉ..."
+                : "Search matching items by Serial Code, Organization Name, TIN Number, Signee Representative..."
+            }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#003366] transition-all"
@@ -384,7 +407,9 @@ export default function AdminAgreementManager() {
               onChange={(e) => setYearFilter(e.target.value)}
               className="bg-transparent text-sm font-medium focus:outline-none py-2 cursor-pointer text-gray-700"
             >
-              <option value="All">{isAm ? "ሁሉም አመታት" : "All Calendar Years"}</option>
+              <option value="All">
+                {isAm ? "ሁሉም አመታት" : "All Calendar Years"}
+              </option>
               {years.map((y) => (
                 <option key={y} value={y}>
                   {y}
@@ -405,11 +430,15 @@ export default function AdminAgreementManager() {
       {loading ? (
         <div className="flex items-center justify-center py-24 text-gray-400 text-sm font-medium">
           <RefreshCw className="h-5 w-5 animate-spin mr-2 text-[#003366]" />{" "}
-          {isAm ? "ከሰርቨር መዝገቦች ጋር በመገናኘት ላይ..." : "Connecting to server registries..."}
+          {isAm
+            ? "ከሰርቨር መዝገቦች ጋር በመገናኘት ላይ..."
+            : "Connecting to server registries..."}
         </div>
       ) : filteredAgreements.length === 0 ? (
         <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-16 text-center text-gray-400 font-medium">
-          {isAm ? "ምንም የአስተዳደር ስምምነት ከፍልፋዮችዎ ጋር አልተገናኘም።" : "No administrative agreement rows match your active search filters."}
+          {isAm
+            ? "ምንም የአስተዳደር ስምምነት ከፍልፋዮችዎ ጋር አልተገናኘም።"
+            : "No administrative agreement rows match your active search filters."}
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -417,10 +446,18 @@ export default function AdminAgreementManager() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gradient-to-r from-[#003366] to-[#001F3F] text-white text-xs font-bold uppercase tracking-wider">
-                  <th className="p-4 pl-6">{isAm ? "ተከታታይ ቁጥር" : "Serial Number"}</th>
-                  <th className="p-4">{isAm ? "የኤጀንሲ መረጃ" : "Agency Information"}</th>
-                  <th className="p-4">{isAm ? "የኃላፊ ፊርማ መረጃ" : "Officer Signature Context"}</th>
-                  <th className="p-4">{isAm ? "ንቁ የውል ቀናት" : "Active Contract Windows"}</th>
+                  <th className="p-4 pl-6">
+                    {isAm ? "ተከታታይ ቁጥር" : "Serial Number"}
+                  </th>
+                  <th className="p-4">
+                    {isAm ? "የድርጅት መረጃ" : "Organization Information"}
+                  </th>
+                  <th className="p-4">
+                    {isAm ? "የኃላፊ ፊርማ መረጃ" : "Officer Signature Context"}
+                  </th>
+                  <th className="p-4">
+                    {isAm ? "ንቁ የውል ቀናት" : "Active Contract Windows"}
+                  </th>
                   <th className="p-4">{isAm ? "ሁኔታ" : "Status"}</th>
                   <th className="p-4 text-right pr-6">
                     {isAm ? "የአስተዳደር እርምጃዎች" : "Administrative Actions"}
@@ -462,18 +499,25 @@ export default function AdminAgreementManager() {
                         {safeText(agreement.snapshotData?.signedByFullName)}
                       </div>
                       <div className="text-xs text-gray-400">
-                        {isAm ? "የዳታቤዝ ተጠቃሚ አካውንት አገናኝ: #" : "Database User Account Link: #"}{agreement.signedById}
+                        {isAm
+                          ? "የዳታቤዝ ተጠቃሚ አካውንት አገናኝ: #"
+                          : "Database User Account Link: #"}
+                        {agreement.signedById}
                       </div>
                     </td>
                     <td className="p-4 text-xs font-semibold text-gray-600">
                       <div>
-                        <span className="text-gray-400">{isAm ? "የሚጀምርበት:" : "Commence:"}</span>{" "}
+                        <span className="text-gray-400">
+                          {isAm ? "የሚጀምርበት:" : "Commence:"}
+                        </span>{" "}
                         {new Date(agreement.issuedDate).toLocaleDateString(
                           isAm ? "en-GB" : "en-GB",
                         )}
                       </div>
                       <div className="mt-0.5">
-                        <span className="text-gray-400">{isAm ? "የሚያበቃበት:" : "Terminates:"}</span>{" "}
+                        <span className="text-gray-400">
+                          {isAm ? "የሚያበቃበት:" : "Terminates:"}
+                        </span>{" "}
                         {new Date(agreement.expiryDate).toLocaleDateString(
                           isAm ? "en-GB" : "en-GB",
                         )}
@@ -492,7 +536,8 @@ export default function AdminAgreementManager() {
                           }
                           className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold bg-gray-100 hover:bg-[#003366]/10 hover:text-[#003366] text-gray-600 rounded-xl border border-gray-200 transition-colors"
                         >
-                          <Eye className="h-3.5 w-3.5" /> {isAm ? "መረጃ ይመልከቱ" : "Inspect Context"}
+                          <Eye className="h-3.5 w-3.5" />{" "}
+                          {isAm ? "መረጃ ይመልከቱ" : "Inspect Context"}
                         </button>
 
                         {agreement.status === "Active" && (
@@ -513,7 +558,8 @@ export default function AdminAgreementManager() {
                               }
                               className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl border border-rose-100 transition-all disabled:opacity-50"
                             >
-                              <ShieldAlert className="h-3.5 w-3.5" /> {isAm ? "ፈቃድ ይሰርዙ" : "Revoke License"}
+                              <ShieldAlert className="h-3.5 w-3.5" />{" "}
+                              {isAm ? "ፈቃድ ይሰርዙ" : "Revoke License"}
                             </button>
                           </>
                         )}
@@ -531,7 +577,10 @@ export default function AdminAgreementManager() {
       {!loading && filteredAgreements.length > 0 && (
         <div className="flex items-center justify-between mt-6 text-sm text-gray-600">
           <div>
-            {(isAm ? "እያሳየ " : "Showing ")}{(page - 1) * limit + 1}-{Math.min(page * limit, totalCount)} {isAm ? " ከ" : " of "}{totalCount}
+            {isAm ? "እያሳየ " : "Showing "}
+            {(page - 1) * limit + 1}-{Math.min(page * limit, totalCount)}{" "}
+            {isAm ? " ከ" : " of "}
+            {totalCount}
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -645,8 +694,12 @@ export default function AdminAgreementManager() {
                 className="px-5 py-2.5 rounded-xl bg-[#003366] text-white text-sm font-bold disabled:opacity-50 hover:bg-[#002244] transition-colors"
               >
                 {generateLoading
-                  ? isAm ? "በመፍጠር ላይ..." : "Generating..."
-                  : isAm ? "ፍጠር" : "Generate"}
+                  ? isAm
+                    ? "በመፍጠር ላይ..."
+                    : "Generating..."
+                  : isAm
+                    ? "ፍጠር"
+                    : "Generate"}
               </button>
             </div>
           </div>

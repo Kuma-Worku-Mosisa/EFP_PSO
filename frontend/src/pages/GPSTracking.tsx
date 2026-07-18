@@ -64,9 +64,9 @@ export const GPSTracking = () => {
 
   const t = {
     title: isAm ? "የጂፒኤስ ክትትል" : "GPS Tracking Portal",
-    bureaus: isAm ? "የኤጀንሲ ቢሮዎች" : "Agency Bureaus",
-    managers: isAm ? "ሥራ አስኪያጆች" : "Agency Managers",
-    search: isAm ? "ኤጀንሲ ይፈልጉ..." : "Search live database...",
+    bureaus: isAm ? "የድርጅት ቢሮዎች" : "organization Bureaus",
+    managers: isAm ? "ሥራ አስኪያጆች" : "organization Managers",
+    search: isAm ? "ድርጅት ይፈልጉ..." : "Search organization...",
     active: isAm ? "ንቁ" : "Active",
     inactive: isAm ? "ቦዝኗል" : "Inactive",
     suspended: isAm ? "የታገደ" : "Suspended",
@@ -76,7 +76,7 @@ export const GPSTracking = () => {
     viewProfile: isAm ? "ለይተህ ተመልከት" : "Focus Location",
     location: isAm ? "ቦታ" : "Coordinates",
     satellite: isAm ? "ሳተላይት" : "Satellite View",
-    standard: isAm ? "መደበኛ" : "Standard View"
+    standard: isAm ? "መደበኛ" : "Standard View",
   };
 
   const getTranslatedName = (name: string) => {

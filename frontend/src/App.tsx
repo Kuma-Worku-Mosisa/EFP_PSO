@@ -15,7 +15,7 @@ import { AdminDashboard } from "./pages/AdminDashboard";
 import { FieldReviewerDashboard } from "./pages/FieldReviewerDashboard";
 import { LicensingAuthorityDashboard } from "./pages/LicensingAuthorityDashboard";
 import SystemAdminDashboard from "./pages/systemAdmin/SystemAdminDashboard";
-import { OrgHrManagerDashboard } from "./pages/OrgHrManagerDashboard";
+import { OrgHrManagerDashboard } from "./pages/HRmanagement/OrgHrManagerDashboard";
 import { Requirements } from "./pages/Requirements";
 import { Services } from "./pages/Services";
 import { FAQ } from "./pages/FAQ";

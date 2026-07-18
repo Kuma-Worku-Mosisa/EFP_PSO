@@ -1,3 +1,4 @@
+//filepath: frontend/src/pages/HRmanagement/PersonnelChangeRequest.tsx
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
@@ -232,8 +233,8 @@ export default function PersonnelChangeRequest() {
                 </h3>
                 <p className="text-[10px] text-white/50 font-medium">
                   {t(
-                    "View previous personnel change requests",
-                    "የቀድሞ የሰራተኞች ለውጥ ጥያቄዎችን ይመልከቱ",
+                    "View previous Leaders change requests",
+                    "የቀድሞ የአመራሮች ለውጥ ጥያቄዎችን ይመልከቱ",
                   )}
                 </p>
               </div>

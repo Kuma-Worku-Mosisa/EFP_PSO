@@ -1,4 +1,5 @@
 // filepath: src/modules/application/application.service.ts
+import { Prisma } from "@prisma/client";
 import prisma from "../../lib/prisma";
 import { NotificationService } from "../notification/notification.service";
 import {
@@ -290,6 +291,14 @@ export class ApplicationService {
 
       try {
         const result = await prisma.$transaction(async (tx) => {
+          // All persistent application submission writes are run inside one
+          // atomic transaction. This ensures ACID behavior for organization,
+          // personnel, application, training, documents, and tracking history.
+          // Using SERIALIZABLE isolation reduces race conditions for this
+          // submission flow, while commit/rollback guarantees atomicity.
+          // Note: audit log failures are intentionally non-fatal to avoid
+          // blocking the main application submission flow.
+
           // 1. Create Organization Address
           console.log(
             "[DEBUG] Creating organization address for kebele:",
@@ -498,7 +507,7 @@ export class ApplicationService {
               { key: "medical_doc", type: "Medical Certificate" },
               { key: "training_doc", type: "Training Certificate" },
               { key: "support_doc", type: "Supporting Document" },
-              { key: "collateral_doc", type: "Collateral Document" },
+              { key: "guarantee_doc", type: "Proof of Guarantee" },
               { key: "experience_doc", type: "Experience Certificate" },
               { key: "resignation_letter_doc", type: "Resignation Letter" },
               { key: "organization_Id_doc", type: "Organization ID Document" },
@@ -627,10 +636,7 @@ export class ApplicationService {
           console.log("[DEBUG] Creating training details...");
           await tx.organizationTrainingDetail.create({
             data: {
-              // Use the relation name 'application' and 'connect' the ID
-              application: {
-                connect: { id: application.id },
-              },
+              applicationId: application.id,
               trainingBodyName: formData.trainingProvider,
               trainingAddress: formData.trainingAddress,
               trainingStartDate: formData.trainingStartDate
@@ -640,9 +646,17 @@ export class ApplicationService {
                 ? new Date(formData.trainingEndDate)
                 : new Date(),
               trainingDurationDays: Number(formData.trainingDays || 0),
-              // FIX: Add default 0 to prevent the NaN error seen in your log
               totalTraineesMale: Number(formData.totalTraineesMale) || 0,
               totalTraineesFemale: Number(formData.totalTraineesFemale) || 0,
+              totalNotTraineesMale:
+                Number(
+                  formData.totalMaleUntrained ?? formData.totalNotTraineesMale,
+                ) || 0,
+              totalNotTraineesFemale:
+                Number(
+                  formData.totalFemaleUntrained ??
+                    formData.totalNotTraineesFemale,
+                ) || 0,
             },
           });
           // 7. Process General Organization Documents
@@ -1431,7 +1445,7 @@ export class ApplicationService {
           address: employee.address,
           // Derive education documents from general documents by filtering types
           educationDocs: toFileList(
-            (employee.documents || []).filter((d) =>
+            (employee.documents || []).filter((d: { documentType?: string }) =>
               String(d.documentType || "")
                 .toLowerCase()
                 .includes("education"),
@@ -1716,21 +1730,22 @@ export class ApplicationService {
       }
 
       if (scope === "education") {
-        const updated = await prisma.employeeEducationDocument.update({
+        const updated = await prisma.employeeDocument.update({
           where: { id: documentId },
-          data: { isVerified: true },
+          data: { isVerified: true, verifiedAt },
         });
 
         try {
           await createAuditLog(prisma, {
             userId,
             action: "UPDATE",
-            entityName: "EmployeeEducationDocument",
+            entityName: "EmployeeDocument",
             entityId: updated.id,
             oldValue: null,
             newValue: JSON.stringify({
               id: updated.id,
               isVerified: updated.isVerified,
+              verifiedAt: updated.verifiedAt,
             }),
             ipAddress: null,
             userAgent: null,
@@ -1815,6 +1830,37 @@ export class ApplicationService {
         } catch (auditError) {
           console.warn(
             "[WARN] Audit log failed for employee document unverify",
+            auditError,
+          );
+        }
+
+        return updated;
+      }
+
+      if (scope === "education") {
+        const updated = await prisma.employeeDocument.update({
+          where: { id: documentId },
+          data: { isVerified: false, verifiedAt },
+        });
+
+        try {
+          await createAuditLog(prisma, {
+            userId,
+            action: "UPDATE",
+            entityName: "EmployeeDocument",
+            entityId: updated.id,
+            oldValue: null,
+            newValue: JSON.stringify({
+              id: updated.id,
+              isVerified: updated.isVerified,
+              verifiedAt: updated.verifiedAt,
+            }),
+            ipAddress: null,
+            userAgent: null,
+          });
+        } catch (auditError) {
+          console.warn(
+            "[WARN] Audit log failed for education document unverify",
             auditError,
           );
         }

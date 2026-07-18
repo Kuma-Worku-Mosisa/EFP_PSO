@@ -3,6 +3,8 @@ import { authenticate, authorize } from "../../middleware/auth";
 import {
   getMyOrganizationHandler,
   registerEmployeeHandler,
+  updateEmployeeBlacklistHandler,
+  updateEmployeeStatusHandler,
 } from "./employee.controller";
 
 const router = Router();
@@ -16,6 +18,20 @@ router.post(
   authenticate,
   authorize(["admin", "system_admin", "super_admin", "org_hr_manager"]),
   registerEmployeeHandler,
+);
+
+router.patch(
+  "/:employeeId/status",
+  authenticate,
+  authorize(["admin", "system_admin", "super_admin", "org_hr_manager"]),
+  updateEmployeeStatusHandler,
+);
+
+router.patch(
+  "/:employeeId/blacklist",
+  authenticate,
+  authorize(["admin", "system_admin", "super_admin"]),
+  updateEmployeeBlacklistHandler,
 );
 
 /**

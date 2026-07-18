@@ -5,13 +5,17 @@
 
 // filepath: frontend/src/lib/api.ts
 
-// 1. Point to your backend port 5000 explicitly
+// // 1. Point to your backend port 5000 explicitly
 export const API_BASE = import.meta.env.DEV
   ? "http://localhost:5000/api"
   : "/api"; // Keep /api for production (where frontend/backend are served together)
 
 // export const API_BASE = import.meta.env.DEV
-//   ? "http://192.168.0.103:5000/api"
+//   ? "http://192.168.0.104:5000/api"
+//   : "/api";
+
+// export const API_BASE = import.meta.env.DEV
+//   ? "http://10.30.96.193:5000/api"
 //   : "/api";
 
 const IS_DEV = import.meta.env.DEV;
@@ -74,8 +78,8 @@ function logDevError(
 ): void {
   if (!IS_DEV) return;
 
-  console.group(`🔴 API Error: ${endpoint}`);
-  console.error("Error:", error);
+  console.group(`🔴 API Error: ${endpoint}`);  console.error("Error:", error);
+
   if (details) {
     console.table(details);
   }

@@ -87,6 +87,7 @@ const moveEmployeeFilesToPersonFolder = (
 
   // Track source dirs that may need cleanup (plain full-name folders created during upload)
   const candidateSourceDirs = new Set<string>();
+  const processedSourcePaths = new Map<string, string>();
 
   // Valid role prefixes that will be moved
   const validRoles = [
@@ -114,6 +115,17 @@ const moveEmployeeFilesToPersonFolder = (
     const normalized = relativePath.replace(/\\/g, "/");
     const parts = normalized.split("/").filter(Boolean);
     const roleIndex = parts.findIndex((part) => part === rolePrefix);
+    const unprefixedFieldName = fieldName.slice(rolePrefix.length + 1);
+
+    if (processedSourcePaths.has(relativePath)) {
+      const existingTargetPath = processedSourcePaths.get(relativePath)!;
+      const existingUrl = getDocumentUrl(existingTargetPath);
+      uploadedFiles[fieldName] = existingUrl;
+      if (uploadedFiles[unprefixedFieldName]) {
+        uploadedFiles[unprefixedFieldName] = existingUrl;
+      }
+      continue;
+    }
 
     const expectedAfterRole = positionFolder
       ? [positionFolder, userFolder]
@@ -175,9 +187,6 @@ const moveEmployeeFilesToPersonFolder = (
 
     let filename = parts[parts.length - 1];
 
-    // Determine unprefixed document key (e.g., 'education', 'fingerprint')
-    const unprefixedFieldName = fieldName.slice(rolePrefix.length + 1);
-
     // Strip the role prefix from the filename when present
     const prefixWithUnderscore = `${rolePrefix}_`;
     if (filename.startsWith(prefixWithUnderscore)) {
@@ -218,6 +227,7 @@ const moveEmployeeFilesToPersonFolder = (
     }
 
     movedFiles.push({ from: relativePath, to: targetRelativePath });
+    processedSourcePaths.set(relativePath, targetRelativePath);
 
     // If the source path included the plain fullName folder (not userId-prefixed), mark it for cleanup
     const sourceParent = parts.slice(0, parts.length - 1);
@@ -244,6 +254,105 @@ const moveEmployeeFilesToPersonFolder = (
   }
 
   return movedFiles;
+};
+
+export const updateEmployeeEmploymentStatus = async (
+  employeeId: number,
+  newStatus: string,
+  actorUserId: number | null,
+) => {
+  const normalizedStatus = String(newStatus || "").trim();
+  const allowedStatuses = new Set(["Resigned", "Terminated"]);
+
+  if (!normalizedStatus || !allowedStatuses.has(normalizedStatus)) {
+    throw new ServiceError(
+      "Employee status must be either Resigned or Terminated",
+      "INVALID_EMPLOYEE_STATUS",
+    );
+  }
+
+  const employee = await prisma.employee.findUnique({
+    where: { id: employeeId },
+    include: { user: true },
+  });
+
+  if (!employee) {
+    throw new ServiceError("Employee not found", "EMPLOYEE_NOT_FOUND");
+  }
+
+  const currentStatus = String(employee.employmentStatus || "").trim();
+  const currentNormalized = currentStatus.toLowerCase();
+  const requestedNormalized = normalizedStatus.toLowerCase();
+
+  if (!["active", "terminated"].includes(currentNormalized)) {
+    throw new ServiceError(
+      "Only active or terminated employees can be updated to Resigned or Terminated",
+      "INVALID_EMPLOYEE_STATUS_TRANSITION",
+    );
+  }
+
+  if (currentNormalized === requestedNormalized) {
+    return employee;
+  }
+
+  const updatedEmployee = await prisma.employee.update({
+    where: { id: employeeId },
+    data: {
+      employmentStatus: normalizedStatus,
+    },
+  });
+
+  await createAuditLog(prisma, {
+    userId: actorUserId,
+    action: "UPDATE",
+    entityName: "Employee",
+    entityId: employeeId,
+    oldValue: JSON.stringify(employee),
+    newValue: JSON.stringify(updatedEmployee),
+    ipAddress: null,
+    userAgent: null,
+  });
+
+  return updatedEmployee;
+};
+
+export const updateEmployeeBlacklistStatus = async (
+  employeeId: number,
+  isBlacklisted: boolean,
+  actorUserId: number | null,
+) => {
+  const employee = await prisma.employee.findUnique({
+    where: { id: employeeId },
+  });
+
+  if (!employee) {
+    throw new ServiceError("Employee not found", "EMPLOYEE_NOT_FOUND");
+  }
+
+  const nextValue = Boolean(isBlacklisted);
+  if (employee.isBlacklisted === nextValue) {
+    return employee;
+  }
+
+  const updatedEmployee = await prisma.employee.update({
+    where: { id: employeeId },
+    data: {
+      isBlacklisted: nextValue,
+    },
+  });
+
+  await createAuditLog(prisma, {
+    userId: actorUserId,
+    action: "UPDATE",
+    entityName: "Employee",
+    entityId: employeeId,
+    oldValue: JSON.stringify(employee),
+    newValue: JSON.stringify(updatedEmployee),
+    ipAddress: null,
+    userAgent: null,
+  });
+
+  return updatedEmployee;
 };
 
 export const registerEmployee = async (
@@ -319,6 +428,7 @@ export const registerEmployee = async (
           phone: input.phone,
           password: hashedPassword,
           faydaId: input.faydaId,
+          status: "ACTIVE",
           user_roles: {
             create: [{ role_id: employeeRole.role_id }],
           },
@@ -372,7 +482,7 @@ export const registerEmployee = async (
         { key: "medical", type: "Medical Result" },
         { key: "training", type: "Training Certificate" },
         { key: "support_letter", type: "Support Letter" },
-        { key: "collateral", type: "Collateral Document" },
+        { key: "guarantee", type: "Proof of Guarantee" },
         { key: "experience", type: "Work Experience" },
         { key: "resignation", type: "Resignation Record" },
         { key: "kebele_or_passport", type: "Kebele or Passport Document" },

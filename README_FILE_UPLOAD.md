@@ -106,7 +106,7 @@ http://localhost:5000/uploads/My%20Agency/manager/{filename}
 ## 📋 Supported Documents
 
 - **Personnel (4 roles):** Manager, Operations, Administrator, Security Guard
-- **Per role (10 types):** Education, ID, Fingerprint, Medical, Training, Support, Collateral, Experience, Resignation, Organization ID
+- **Per role (10 types):** Education, ID, Fingerprint, Medical, Training, Support, Guarantee, Experience, Resignation, Organization ID
 - **Organization (5):** Logo, Uniform Sample, ID Sample, Training Manual, Training Certificate
 
 **Total:** 45 document types

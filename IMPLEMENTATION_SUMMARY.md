@@ -258,7 +258,7 @@ http://localhost:5000/uploads/My%20Agency/manager/1715520000000-education.pdf
 4. Medical Certificate
 5. Training Certificate
 6. Supporting Document
-7. Collateral Document
+7. guarantee Document
 8. Experience Certificate
 9. Resignation Letter
 10. Organization ID Document

@@ -535,6 +535,7 @@ const SearchableLocationSelect = ({
   value,
   options,
   disabled = false,
+  required = true,
   onChange,
   onOpen,
   onClear,
@@ -545,6 +546,7 @@ const SearchableLocationSelect = ({
   value: string;
   options: LocationOption[];
   disabled?: boolean;
+  required?: boolean;
   onChange: (value: string) => void;
   onOpen?: () => void;
   onClear?: () => void;
@@ -589,7 +591,8 @@ const SearchableLocationSelect = ({
       <label
         className={`${language === "am" ? "text-sm" : "text-[11px]"} font-black text-primary uppercase tracking-widest`}
       >
-        {label}
+        <span>{label}</span>
+        {required && <span className="ml-1 text-red-500">*</span>}
       </label>
       <button
         type="button"
@@ -1157,6 +1160,7 @@ function LocationFields({
         searchPlaceholder={isAm ? "ክልል ፈልግ" : "Search region"}
         value={selectedRegion}
         options={regions}
+        required
         onChange={(val) => {
           setValue?.("region", val);
           setValue?.("zone", "");
@@ -1178,6 +1182,7 @@ function LocationFields({
         value={selectedZone}
         options={zonesByRegion[String(selectedRegion)] || []}
         disabled={!selectedRegion}
+        required
         onChange={(val) => {
           setValue?.("zone", val);
           setValue?.("woreda", "");
@@ -1200,6 +1205,7 @@ function LocationFields({
         value={selectedWoreda}
         options={woredasByZone[String(selectedZone)] || []}
         disabled={!selectedZone}
+        required
         onChange={(val) => {
           setValue?.("woreda", val);
           setValue?.("kebele", "");
@@ -1220,6 +1226,7 @@ function LocationFields({
         value={selectedKebele}
         options={kebelesByWoreda[String(selectedWoreda)] || []}
         disabled={!selectedWoreda}
+        required
         onChange={(val) => setValue?.("kebele", val)}
         onClear={() => setValue?.("kebele", "")}
         onOpen={() => {
@@ -1371,8 +1378,8 @@ function BranchAddressRow({
                 ? "የቤት ቁጥር"
                 : "የቤት ቁጥር (አማራጭ)"
               : isRequired
-                ? "House No."
-                : "House No. (Optional)"
+                ? "House Number."
+                : "House Number. (Optional)"
           }
           name={`branchAddresses.${index}.houseNumber`}
           register={register}
@@ -1460,7 +1467,7 @@ const PersonnelSection = ({
     },
     { label: curT.trainingDoc, key: "training_doc", required: false },
     { label: curT.supportDoc, key: "support_doc", required: false },
-    { label: curT.collateralDoc, key: "collateral_doc", required: true },
+    { label: curT.guaranteeDoc, key: "guarantee_doc", required: true },
     { label: curT.experienceDoc, key: "experience_doc", required: hasWorkExp },
     {
       label: curT.resignationDoc,
@@ -1635,7 +1642,7 @@ const PersonnelSection = ({
                 };
               })()}
               disabled={isFormLocked || isManagerSection}
-              placeholder="FAYDA-XXXXX"
+              placeholder="XXXX-XXXX-XXXX-XXXX"
               className="flex-1 p-4 bg-white border-2 border-gray-100 rounded-2xl outline-none focus:border-primary text-sm font-bold text-primary shadow-sm"
             />
             <div className="flex items-center space-x-2 px-3 bg-primary/5 rounded-2xl border border-primary/10 w-32">
@@ -1707,7 +1714,7 @@ const PersonnelSection = ({
                 onPositionChange?.(nextPositionId);
               }
             }}
-            required={false}
+            required={true}
             disabled={isFormLocked}
             placeholder={curT.selectPosition}
           />
@@ -1738,7 +1745,7 @@ const PersonnelSection = ({
               }));
             })()}
             onChange={(val) => setValue?.(`${prefix}.educationLevel`, val)}
-            required={false}
+            required={true}
             disabled={isFormLocked || !selectedPositionId}
             placeholder={
               selectedPositionId
@@ -1754,7 +1761,7 @@ const PersonnelSection = ({
             register={register}
             value={watch?.(`${prefix}.workExpYears`)}
             error={personnelErrors.workExpYears}
-            required={false}
+            required={true}
             disabled={isFormLocked}
             min={0}
             onInput={(e) => {
@@ -1773,7 +1780,7 @@ const PersonnelSection = ({
             register={register}
             value={watch?.(`${prefix}.TotalExpYears`)}
             error={personnelErrors.TotalExpYears}
-            required={false}
+            required={true}
             disabled={isFormLocked}
             min={0}
             onInput={(e) => {
@@ -2041,6 +2048,9 @@ export const NewApplication = () => {
       submittedDesc:
         "Your application for a new private security agency license has been successfully submitted. The Federal Police will review your documents and contact you for the next steps.",
       step1Title: "Agency & Office Information",
+      orgTypeLabel: "Organization type suffix",
+      orgTypeHint:
+        "Select one suffix. It will be appended to the organization name in both languages.",
       orgName: "Organization Name (English)",
       orgNameAmharic: "Organization Name (Amharic)",
       headOfficeAddress: "Head Office Address",
@@ -2050,7 +2060,7 @@ export const NewApplication = () => {
       zone: "Zone",
       woreda: "Woreda",
       kebele: "Kebele",
-      houseNo: "House No.",
+      houseNo: "House Number.",
       agencyphone: "Phone Number",
       tinNumber: "TIN Number",
       email: "Email Address",
@@ -2148,7 +2158,7 @@ export const NewApplication = () => {
       medicalDoc: "Medical Result",
       trainingDoc: "Training Certificate",
       supportDoc: "Support Letter (Kebele)",
-      collateralDoc: "Proof of Collateral",
+      guaranteeDoc: "Proof of Guarantee",
       experienceDoc: "Work Experience",
       resignationDoc: "Resignation Record",
       educationDoc: "Educational Certificate",
@@ -2167,6 +2177,8 @@ export const NewApplication = () => {
       submittedDesc:
         "ለአዲስ የግል ጥበቃ ተቋም ፈቃድ ያቀረቡት ማመልከቻ በተሳካ ሁኔታ ገብቷል። ፌዴራል ፖሊስ ሰነዶችዎን ገምግሞ ለቀጣይ እርምጃዎች ያገኝዎታል።",
       step1Title: "የተቋም እና የቢሮ መረጃ",
+      orgTypeLabel: "የድርጅት አይነት ቅጥያ",
+      orgTypeHint: "አንድ ቅጥያ ይምረጡ። ይህ በሁለቱም ቋንቋዎች የድርጅት ስም ላይ ይታከላል።",
       orgName: "የተቋሙ ስም (ኢንጊሊዘኛ)",
       orgNameAmharic: "የተቋሙ ስም (አማርኛ)",
       headOfficeAddress: "የዋና መስሪያ ቤት አድራሻ",
@@ -2271,7 +2283,7 @@ export const NewApplication = () => {
       medicalDoc: "የሕክምና ውጤት",
       trainingDoc: "የስልጠና ምስክር ወረቀት",
       supportDoc: "የድጋፍ ደብዳቤ ከቀበሌ",
-      collateralDoc: "የዋስትና ማስረጃ",
+      guaranteeDoc: "የዋስትና ማስረጃ",
       experienceDoc: "የሥራ ልምድ",
       resignationDoc: "ከሥራ የመልቀቂያ ማስረጃ",
       educationDoc: "የትምህርት ማስረጃ",
@@ -2372,6 +2384,123 @@ export const NewApplication = () => {
       vehiclesCount: undefined,
     },
   });
+
+  const agencyNameSuffixOptions = React.useMemo(
+    () => [
+      {
+        id: "plc",
+        amLabel: "የግል ጥበቃ አገልግሎት ሰጪ ድርጅት ኃላፊነቱ የተወሰነ የግል ማህበር",
+        enLabel:
+          "Private Security Service Providers Organization Private Limited Company",
+        amValue: "የግ/ጥበ/አገ/ሰ/ድር/ኃላ/ የተ/የግ/ማ",
+        enValue: "Priv/ Sec/ Serv/ Prov/ Org P.L.C",
+      },
+      {
+        id: "psc",
+        amLabel: "የግል ጥበቃ አገልግሎት ሰጪ ድርጅት አክሲዮን ማህበር",
+        enLabel:
+          "Private Security Service Providers Organization Share Company",
+        amValue: "የግ/ጥበ/አገ/ሰ/ድር/አ/ማ",
+        enValue: "Priv/ Sec/ Serv/ Prov/ Org S.C",
+      },
+      {
+        id: "pslp",
+        amLabel: "የግል ጥበቃ አገልግሎት ሰጪ ድርጅት የሽርክና ማህበር",
+        enLabel:
+          "Private Security Service Providers Organization Limited Partnership",
+        amValue: "የግ/ጥበ/አገ/ሰ/ድር/ የሽርክና ማ.",
+        enValue: "Priv/ Sec/ Serv/ Prov/ Org L.P",
+      },
+      {
+        id: "psgp",
+        amLabel: "የግል ጥበቃ አገልግሎት ሰጪ ድርጅት የህብረት የሽርክና ማህበር",
+        enLabel:
+          "Private Security Service Providers Organization General Partnership",
+        amValue: "የግ/ጥበ/አገ/ሰ/ድር/ የህብ/ የሽር/ማ.",
+        enValue: "Priv/ Sec/ Serv/ Prov/ Org G. P",
+      },
+    ],
+    [],
+  );
+  const [selectedAgencySuffixId, setSelectedAgencySuffixId] =
+    React.useState("");
+  const selectedAgencySuffixOption =
+    agencyNameSuffixOptions.find(
+      (option) => option.id === selectedAgencySuffixId,
+    ) ?? null;
+
+  const normalizeAgencyNameValue = (value: unknown) => {
+    if (typeof value !== "string") return "";
+    return value.trim();
+  };
+
+  const stripAgencySuffixes = (value: unknown, suffixes: string[]) => {
+    let base = normalizeAgencyNameValue(value);
+
+    if (!base) return base;
+
+    for (const suffix of suffixes) {
+      const suffixText = suffix.trim();
+      if (!suffixText) continue;
+
+      while (base.toLowerCase().endsWith(suffixText.toLowerCase())) {
+        base = base.slice(0, base.length - suffixText.length).trimEnd();
+      }
+    }
+
+    return base.trim();
+  };
+
+  const buildAgencyNameWithSuffix = (value: unknown, suffix: string) => {
+    const suffixText = suffix.trim();
+    if (!suffixText) return normalizeAgencyNameValue(value);
+
+    const knownSuffixes = agencyNameSuffixOptions.flatMap((option) => [
+      option.enValue.trim(),
+      option.amValue.trim(),
+    ]);
+    const base = stripAgencySuffixes(value, knownSuffixes);
+
+    return base ? `${base} ${suffixText}` : suffixText;
+  };
+
+  const agencyNameValue = watch("agencyName");
+  const agencyNameAmharicValue = watch("agencyNameAmharic");
+  const isSuffixEnabled =
+    normalizeAgencyNameValue(agencyNameValue).length > 0 &&
+    normalizeAgencyNameValue(agencyNameAmharicValue).length > 0;
+
+  React.useEffect(() => {
+    if (!selectedAgencySuffixOption) return;
+
+    const nextEnglishName = buildAgencyNameWithSuffix(
+      agencyNameValue,
+      selectedAgencySuffixOption.enValue,
+    );
+    const nextAmharicName = buildAgencyNameWithSuffix(
+      agencyNameAmharicValue,
+      selectedAgencySuffixOption.amValue,
+    );
+
+    if (nextEnglishName !== agencyNameValue) {
+      setValue("agencyName", nextEnglishName, {
+        shouldDirty: false,
+        shouldTouch: false,
+      });
+    }
+
+    if (nextAmharicName !== agencyNameAmharicValue) {
+      setValue("agencyNameAmharic", nextAmharicName, {
+        shouldDirty: false,
+        shouldTouch: false,
+      });
+    }
+  }, [
+    agencyNameAmharicValue,
+    agencyNameValue,
+    selectedAgencySuffixOption,
+    setValue,
+  ]);
 
   const watchedRegion = watch("region");
   const watchedZone = watch("zone");
@@ -2942,10 +3071,10 @@ export const NewApplication = () => {
         trainingAddress: data.trainingAddress,
         trainingDays: Number(data.trainingDays || 0),
         trainingProvider: data.trainingProvider,
-        totalTraineesMale: Number(data.totalTraineesMale || 0),
-        totalTraineesFemale: Number(data.totalTraineesFemale || 0),
-        totalMaleUntrained: Number(data.totalMaleUntrained || 0),
-        totalFemaleUntrained: Number(data.totalFemaleUntrained || 0),
+        totalTraineesMale: Number(data.totalTraineesMale ?? 0),
+        totalTraineesFemale: Number(data.totalTraineesFemale ?? 0),
+        totalMaleUntrained: Number(data.totalMaleUntrained ?? 0),
+        totalFemaleUntrained: Number(data.totalFemaleUntrained ?? 0),
         manager: data.manager,
         ops: data.ops,
         admin: data.admin,
@@ -3268,7 +3397,7 @@ export const NewApplication = () => {
               exit={{ opacity: 0, x: -20 }}
               className="space-y-8"
             >
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <h3 className="text-2xl font-bold text-primary">
                   {curT.step1Title}
                 </h3>
@@ -3308,6 +3437,64 @@ export const NewApplication = () => {
                   />
                 </div>
 
+                <div
+                  className={cn(
+                    "md:col-span-2 rounded-[24px] border bg-primary/5 p-4 shadow-sm",
+                    isSuffixEnabled
+                      ? "border-primary/10"
+                      : "border-gray-200 bg-gray-100/80 opacity-80",
+                  )}
+                >
+                  <p className="text-[11px] font-black uppercase tracking-widest text-primary">
+                    <span>{curT.orgTypeLabel}</span>
+                    <span className="ml-1 text-red-500">*</span>
+                  </p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    {curT.orgTypeHint}
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    {agencyNameSuffixOptions.map((option) => {
+                      const isSelected = selectedAgencySuffixId === option.id;
+                      const label =
+                        language === "am" ? option.amLabel : option.enLabel;
+
+                      return (
+                        <label
+                          key={option.id}
+                          className={cn(
+                            "flex items-center gap-2 rounded-2xl border px-3 py-2 text-sm transition-all",
+                            isSelected
+                              ? "border-primary bg-white text-primary shadow-sm"
+                              : "border-gray-200 bg-white/70 text-gray-600 hover:border-primary/40",
+                            !isSuffixEnabled &&
+                              "cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200",
+                          )}
+                        >
+                          <input
+                            type="radio"
+                            name="agency-name-suffix"
+                            checked={isSelected}
+                            disabled={!isSuffixEnabled}
+                            onChange={() => {
+                              if (!isSuffixEnabled) return;
+                              setSelectedAgencySuffixId(option.id);
+                            }}
+                            className="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
+                          />
+                          <span className="font-semibold">{label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {!isSuffixEnabled && (
+                    <p className="mt-3 text-[11px] text-gray-500">
+                      {language === "am"
+                        ? "ከዚህ በፊት የድርጅት ስም በአማርኛና በእንግሊዝኛ ሙሉ እንዲሁም ያስገቡ።"
+                        : "Please fill both Organization Name fields before selecting a suffix."}
+                    </p>
+                  )}
+                </div>
+
                 <section className="md:col-span-2 rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm space-y-5">
                   <div className="space-y-1">
                     <h4 className="text-sm font-black text-primary uppercase tracking-widest">
@@ -3317,7 +3504,6 @@ export const NewApplication = () => {
                       Primary office location used for the application record.
                     </p>
                   </div>
-
                   <LocationFields
                     register={register}
                     errors={errors}
@@ -3831,7 +4017,7 @@ export const NewApplication = () => {
                     {...register("trainingDays")}
                     disabled={formLocked}
                     min={1}
-                    max={99}
+                    max={999}
                     placeholder={
                       isAm ? "የቀናት ብዛት ያስገቡ" : "Enter number of days"
                     }
@@ -3843,7 +4029,7 @@ export const NewApplication = () => {
                         el.value = "";
                         return;
                       }
-                      if (val > 99) el.value = "99";
+                      if (val > 999) el.value = "999";
                     }}
                   />
                 </div>
@@ -3862,7 +4048,7 @@ export const NewApplication = () => {
                     {...register("totalTraineesMale")}
                     disabled={formLocked}
                     min={1}
-                    max={99}
+                    max={9999}
                     placeholder={
                       isAm ? "የወንዶች ብዛት ያስገቡ" : "Enter number of males"
                     }
@@ -3874,7 +4060,7 @@ export const NewApplication = () => {
                         el.value = "";
                         return;
                       }
-                      if (val > 99) el.value = "99";
+                      if (val > 9999) el.value = "9999";
                     }}
                   />
                 </div>
@@ -3893,7 +4079,7 @@ export const NewApplication = () => {
                     {...register("totalTraineesFemale")}
                     disabled={formLocked}
                     min={0}
-                    max={999}
+                    max={9999}
                     placeholder={
                       isAm ? "የሴቶች ብዛት ያስገቡ" : "Enter number of females"
                     }
@@ -3905,7 +4091,7 @@ export const NewApplication = () => {
                         el.value = "";
                         return;
                       }
-                      if (val > 999) el.value = "999";
+                      if (val > 9999) el.value = "9999";
                     }}
                   />
                 </div>
@@ -3925,6 +4111,7 @@ export const NewApplication = () => {
                     {...register("totalMaleUntrained")}
                     disabled={formLocked}
                     min={0}
+                    max={9999}
                     placeholder={
                       isAm ? "ያልሰለጠኑ ወንዶች ብዛት ያስገቡ" : "Enter males not trained"
                     }
@@ -3935,6 +4122,7 @@ export const NewApplication = () => {
                       if (el.value !== "" && (isNaN(val) || val < 0)) {
                         el.value = "";
                       }
+                      if (val > 9999) el.value = "9999";
                     }}
                   />
                 </div>
@@ -3954,6 +4142,7 @@ export const NewApplication = () => {
                     {...register("totalFemaleUntrained")}
                     disabled={formLocked}
                     min={0}
+                    max={9999}
                     placeholder={
                       isAm ? "ያልሰለጠኑ ሴቶች ብዛት ያስገቡ" : "Enter females not trained"
                     }
@@ -3964,6 +4153,7 @@ export const NewApplication = () => {
                       if (el.value !== "" && (isNaN(val) || val < 0)) {
                         el.value = "";
                       }
+                      if (val > 9999) el.value = "9999";
                     }}
                   />
                 </div>
@@ -4659,7 +4849,7 @@ export const NewApplication = () => {
                                   `${prefix}_medical_doc`,
                                   `${prefix}_training_doc`,
                                   `${prefix}_support_doc`,
-                                  `${prefix}_collateral_doc`,
+                                  `${prefix}_guarantee_doc`,
                                   `${prefix}_experience_doc`,
                                   `${prefix}_resignation_letter_doc`,
                                   `${prefix}_education_doc`,

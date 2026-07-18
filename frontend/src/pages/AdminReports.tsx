@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Download, Loader2, FileText } from 'lucide-react';
-import { useLanguage } from '../context/LanguageContext';
-import { apiRequest } from '../lib/api';
+import { useState, useEffect } from "react";
+import { Download, Loader2, FileText } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
+import { apiRequest } from "../lib/api";
 import { jsPDF } from "jspdf";
-import html2canvas from 'html2canvas';
+import html2canvas from "html2canvas";
 import { AutoDismissToast, ToastType } from "../components/AutoDismissToast";
 
 type Period = "weekly" | "monthly" | "yearly";
@@ -25,16 +25,27 @@ function periodDate(period: Period): string {
   return d.toISOString();
 }
 
-function countBy<T>(items: T[], key: keyof T | ((item: T) => string)): Record<string, number> {
+function countBy<T>(
+  items: T[],
+  key: keyof T | ((item: T) => string),
+): Record<string, number> {
   const counts: Record<string, number> = {};
   items.forEach((item) => {
-    const k = typeof key === "function" ? key(item) : String(item[key] ?? "Unknown");
+    const k =
+      typeof key === "function" ? key(item) : String(item[key] ?? "Unknown");
     counts[k] = (counts[k] || 0) + 1;
   });
   return counts;
 }
 
-function wrapText(doc: jsPDF, text: string, x: number, y: number, maxW: number, lineH: number): number {
+function wrapText(
+  doc: jsPDF,
+  text: string,
+  x: number,
+  y: number,
+  maxW: number,
+  lineH: number,
+): number {
   const words = text.split(" ");
   let line = "";
   for (const w of words) {
@@ -56,7 +67,11 @@ export const AdminReports = () => {
   const isAm = language === "am";
   const [period, setPeriod] = useState<Period>("monthly");
   const [generating, setGenerating] = useState(false);
-  const [toast, setToast] = useState<{ isOpen: boolean; type: ToastType; message: string }>({ isOpen: false, type: "success", message: "" });
+  const [toast, setToast] = useState<{
+    isOpen: boolean;
+    type: ToastType;
+    message: string;
+  }>({ isOpen: false, type: "success", message: "" });
 
   const [applications, setApplications] = useState<any[]>([]);
   const [licenses, setLicenses] = useState<any[]>([]);
@@ -71,13 +86,14 @@ export const AdminReports = () => {
       try {
         const since = periodDate(period);
         const filterParam = `?since=${encodeURIComponent(since)}`;
-        const [appsRes, licRes, inspRes, agrRes, sumRes] = await Promise.allSettled([
-          apiRequest(`/applications${filterParam}`),
-          apiRequest(`/certifications${filterParam}`),
-          apiRequest(`/inspections${filterParam}`),
-          apiRequest(`/agreements${filterParam}&limit=999`),
-          apiRequest("/admin/summary"),
-        ]);
+        const [appsRes, licRes, inspRes, agrRes, sumRes] =
+          await Promise.allSettled([
+            apiRequest(`/applications${filterParam}`),
+            apiRequest(`/certifications${filterParam}`),
+            apiRequest(`/inspections${filterParam}`),
+            apiRequest(`/agreements${filterParam}&limit=999`),
+            apiRequest("/admin/summary"),
+          ]);
         if (!active) return;
         if (appsRes.status === "fulfilled") {
           const d = appsRes.value?.data || appsRes.value || [];
@@ -99,57 +115,113 @@ export const AdminReports = () => {
           setSummary(sumRes.value?.data || sumRes.value);
         } else setSummary(null);
         setDataLoaded(true);
-      } catch { /* silent */ }
+      } catch {
+        /* silent */
+      }
     };
     load();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [period]);
 
   const periodLabel = isAm
-    ? (period === "weekly" ? "ሳምንታዊ" : period === "monthly" ? "ወርሃዊ" : "ዓመታዊ")
-    : (period === "weekly" ? "Weekly" : period === "monthly" ? "Monthly" : "Yearly");
+    ? period === "weekly"
+      ? "ሳምንታዊ"
+      : period === "monthly"
+        ? "ወርሃዊ"
+        : "ዓመታዊ"
+    : period === "weekly"
+      ? "Weekly"
+      : period === "monthly"
+        ? "Monthly"
+        : "Yearly";
 
   const toEth = (dateStr?: string) => {
     try {
       const d = dateStr ? new Date(dateStr) : new Date();
       if (isNaN(d.getTime())) return "-";
-      return d.toLocaleDateString("am-ET", { calendar: "ethiopic", year: "numeric", month: "long", day: "numeric" });
-    } catch { return "-"; }
+      return d.toLocaleDateString("am-ET", {
+        calendar: "ethiopic",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    } catch {
+      return "-";
+    }
   };
 
   const amVal = (v: string | undefined | null, def = "-") => {
     if (!v) return def;
     const map: Record<string, string> = {
-      "Pending": "በመጠባበቅ ላይ", "Approved": "ጸድቋል", "Rejected": "ውድቅ ተደርጓል",
-      "Active": "ንቁ", "Expired": "ጊዜው ያለፈበት", "Suspended": "የታገደ",
-      "New": "አዲስ", "Renewal": "እድሳት",
-      "active": "ንቁ", "inactive": "እንቅስቃሴ የሌለው", "expired": "ጊዜው ያለፈ",
-      "pending": "በመጠባበቅ ላይ", "approved": "ጸድቋል", "rejected": "ውድቅ ተደርጓል",
-      "draft": "ረቂቅ", "submitted": "ቀርቧል", "completed": "ተጠናቋል",
-      "True": "አዎ", "False": "አይ",
-      "true": "አዎ", "false": "አይ",
-      "Scheduled": "በታቀደ ላይ", "In Progress": "በመካሄድ ላይ", "Cancelled": "ተሰርዟል",
-      "scheduled": "በታቀደ ላይ", "in progress": "በመካሄድ ላይ", "cancelled": "ተሰርዟል",
-      "Passed": "አልፏል", "Failed": "ወድቋል", "Under Review": "በመገምገም ላይ",
-      "passed": "አልፏል", "failed": "ወድቋል", "under review": "በመገምገም ላይ",
-      "Amendment": "ማሻሻያ", "Transfer": "ዝውውር", "Replacement": "መተካት",
-      "Correction": "እርማት", "amendment": "ማሻሻያ", "transfer": "ዝውውር",
-      "replacement": "መተካት", "correction": "እርማት",
-      "Renew": "አድስ", "renew": "አድስ",
+      Pending: "በመጠባበቅ ላይ",
+      Approved: "ጸድቋል",
+      Rejected: "ውድቅ ተደርጓል",
+      Active: "ንቁ",
+      Expired: "ጊዜው ያለፈበት",
+      Suspended: "የታገደ",
+      New: "አዲስ",
+      Renewal: "እድሳት",
+      active: "ንቁ",
+      inactive: "እንቅስቃሴ የሌለው",
+      expired: "ጊዜው ያለፈ",
+      pending: "በመጠባበቅ ላይ",
+      approved: "ጸድቋል",
+      rejected: "ውድቅ ተደርጓል",
+      draft: "ረቂቅ",
+      submitted: "ቀርቧል",
+      completed: "ተጠናቋል",
+      True: "አዎ",
+      False: "አይ",
+      true: "አዎ",
+      false: "አይ",
+      Scheduled: "በታቀደ ላይ",
+      "In Progress": "በመካሄድ ላይ",
+      Cancelled: "ተሰርዟል",
+      scheduled: "በታቀደ ላይ",
+      "in progress": "በመካሄድ ላይ",
+      cancelled: "ተሰርዟል",
+      Passed: "አልፏል",
+      Failed: "ወድቋል",
+      "Under Review": "በመገምገም ላይ",
+      passed: "አልፏል",
+      failed: "ወድቋል",
+      "under review": "በመገምገም ላይ",
+      Amendment: "ማሻሻያ",
+      Transfer: "ዝውውር",
+      Replacement: "መተካት",
+      Correction: "እርማት",
+      amendment: "ማሻሻያ",
+      transfer: "ዝውውር",
+      replacement: "መተካት",
+      correction: "እርማት",
+      Renew: "አድስ",
+      renew: "አድስ",
     };
     return map[v] || v;
   };
 
   const amKey = (k: string) => {
     const map: Record<string, string> = {
-      totalAgencies: "ጠቅላላ ኤጀንሲዎች", activeAgencies: "ንቁ ኤጀንሲዎች", inactiveAgencies: "እንቅስቃሴ የሌላቸው ኤጀንሲዎች",
-      totalLicenses: "ጠቅላላ ፈቃዶች", activeLicenses: "ንቁ ፈቃዶች", expiredLicenses: "ጊዜያቸው ያለፈ ፈቃዶች",
-      totalApplications: "ጠቅላላ ማመልከቻዎች", pendingApplications: "በመጠባበቅ ላይ ያሉ ማመልከቻዎች",
-      totalPersonnel: "ጠቅላላ ሰራተኞች", totalRevenue: "ጠቅላላ ገቢ",
-      totalOrganizations: "ጠቅላላ ድርጅቶች", totalUsers: "ጠቅላላ ተጠቃሚዎች",
-      totalInspections: "ጠቅላላ ምርመራዎች", totalAgreements: "ጠቅላላ ስምምነቶች",
-      regions: "ክልሎች", agencies: "ኤጀንሲዎች",
-      organizations: "ድርጅቶች", users: "ተጠቃሚዎች",
+      totalAgencies: "ጠቅላላ ድርጅቶች",
+      activeAgencies: "ንቁ ድርጅቶች",
+      inactiveAgencies: "እንቅስቃሴ የሌላቸው ድርጅቶች",
+      totalLicenses: "ጠቅላላ ፈቃዶች",
+      activeLicenses: "ንቁ ፈቃዶች",
+      expiredLicenses: "ጊዜያቸው ያለፈ ፈቃዶች",
+      totalApplications: "ጠቅላላ ማመልከቻዎች",
+      pendingApplications: "በመጠባበቅ ላይ ያሉ ማመልከቻዎች",
+      totalPersonnel: "ጠቅላላ ሰራተኞች",
+      totalRevenue: "ጠቅላላ ገቢ",
+      totalOrganizations: "ጠቅላላ ድርጅቶች",
+      totalUsers: "ጠቅላላ ተጠቃሚዎች",
+      totalInspections: "ጠቅላላ ምርመራዎች",
+      totalAgreements: "ጠቅላላ ስምምነቶች",
+      regions: "ክልሎች",
+      agencies: "ድርጅቶች",
+      organizations: "ድርጅቶች",
+      users: "ተጠቃሚዎች",
     };
     return map[k] || k;
   };
@@ -163,7 +235,13 @@ export const AdminReports = () => {
       const pageW = doc.internal.pageSize.getWidth();
       const margin = 16;
       const maxW = pageW - 2 * margin;
-      const now = isAm ? nowAm : new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+      const now = isAm
+        ? nowAm
+        : new Date().toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          });
 
       if (isAm) {
         const appCounts = countBy(applications, "status");
@@ -177,22 +255,37 @@ export const AdminReports = () => {
   <hr class="hline">
   <h2>1. የማመልከቻ ሪፖርት</h2><hr class="sline">
   <p><strong>ጠቅላላ ማመልከቻዎች:</strong> ${applications.length}</p>
-  ${Object.entries(appCounts).map(([s, c]) => `<p class="ind"><strong>${amVal(s)}:</strong> ${c}</p>`).join("")}
+  ${Object.entries(appCounts)
+    .map(([s, c]) => `<p class="ind"><strong>${amVal(s)}:</strong> ${c}</p>`)
+    .join("")}
   <h2>2. የፈቃድ ሪፖርት</h2><hr class="sline">
   <p><strong>ጠቅላላ ፈቃዶች:</strong> ${licenses.length}</p>
-  ${Object.entries(licCounts).map(([s, c]) => `<p class="ind"><strong>${amVal(s)}:</strong> ${c}</p>`).join("")}
+  ${Object.entries(licCounts)
+    .map(([s, c]) => `<p class="ind"><strong>${amVal(s)}:</strong> ${c}</p>`)
+    .join("")}
   <h2>3. የምርመራ ሪፖርት</h2><hr class="sline">
   <p><strong>ጠቅላላ ምርመራዎች:</strong> ${inspections.length}</p>
-  ${Object.entries(inspCounts).map(([s, c]) => `<p class="ind"><strong>${amVal(s)}:</strong> ${c}</p>`).join("")}
+  ${Object.entries(inspCounts)
+    .map(([s, c]) => `<p class="ind"><strong>${amVal(s)}:</strong> ${c}</p>`)
+    .join("")}
   <h2>4. የስምምነት ሪፖርት</h2><hr class="sline">
   <p><strong>ጠቅላላ ስምምነቶች:</strong> ${agreements.length}</p>
-  ${Object.entries(agrCounts).map(([s, c]) => `<p class="ind"><strong>${amVal(s)}:</strong> ${c}</p>`).join("")}
-  ${summary ? `<h2>5. የኤጀንሲ ማጠቃለያ</h2><hr class="sline">${Object.entries(summary).filter(([, v]) => typeof v === "number" || typeof v === "string").map(([k, v]) => `<p><strong>${amKey(k)}:</strong> ${v}</p>`).join("")}` : ""}`;
+  ${Object.entries(agrCounts)
+    .map(([s, c]) => `<p class="ind"><strong>${amVal(s)}:</strong> ${c}</p>`)
+    .join("")}
+  ${
+    summary
+      ? `<h2>5. የድርጅት ማጠቃለያ</h2><hr class="sline">${Object.entries(summary)
+          .filter(([, v]) => typeof v === "number" || typeof v === "string")
+          .map(([k, v]) => `<p><strong>${amKey(k)}:</strong> ${v}</p>`)
+          .join("")}`
+      : ""
+  }`;
 
-        const wrapper = document.createElement('div');
-        wrapper.style.position = 'absolute';
-        wrapper.style.left = '-9999px';
-        wrapper.style.top = '0';
+        const wrapper = document.createElement("div");
+        wrapper.style.position = "absolute";
+        wrapper.style.left = "-9999px";
+        wrapper.style.top = "0";
         wrapper.innerHTML = `<style>
   * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Ebrima', 'Segoe UI', Tahoma, sans-serif; }
   .page { width: 210mm; background: #fff; padding: 16mm; }
@@ -210,19 +303,27 @@ export const AdminReports = () => {
         document.body.appendChild(wrapper);
         await document.fonts.ready;
         await new Promise((r) => setTimeout(r, 500));
-        const canvas = await html2canvas(wrapper, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff', logging: false });
+        const canvas = await html2canvas(wrapper, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: "#ffffff",
+          logging: false,
+        });
         document.body.removeChild(wrapper);
-        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const imgData = canvas.toDataURL("image/jpeg", 0.95);
         const pdfH = (canvas.height * 210) / canvas.width;
         let pos = 0;
-        doc.addImage(imgData, 'JPEG', 0, pos, 210, pdfH);
+        doc.addImage(imgData, "JPEG", 0, pos, 210, pdfH);
         pos -= 297;
         while (-pos < pdfH) {
           doc.addPage();
-          doc.addImage(imgData, 'JPEG', 0, pos, 210, pdfH);
+          doc.addImage(imgData, "JPEG", 0, pos, 210, pdfH);
           pos -= 297;
         }
-        doc.save(`federal-police-report-${period}-${new Date().toISOString().slice(0, 10)}.pdf`);
+        doc.save(
+          `federal-police-report-${period}-${new Date().toISOString().slice(0, 10)}.pdf`,
+        );
       } else {
         let y = margin;
         const header = () => {
@@ -242,7 +343,11 @@ export const AdminReports = () => {
           y += 8;
         };
         const section = (title: string) => {
-          if (y > 250) { doc.addPage(); y = margin; header(); }
+          if (y > 250) {
+            doc.addPage();
+            y = margin;
+            header();
+          }
           doc.setFontSize(13);
           doc.setFont("helvetica", "bold");
           doc.setTextColor(0, 51, 102);
@@ -254,7 +359,11 @@ export const AdminReports = () => {
           y += 7;
         };
         const kv = (label: string, value: string) => {
-          if (y > 260) { doc.addPage(); y = margin; header(); }
+          if (y > 260) {
+            doc.addPage();
+            y = margin;
+            header();
+          }
           doc.setFontSize(9);
           doc.setFont("helvetica", "bold");
           doc.setTextColor(60);
@@ -287,7 +396,11 @@ export const AdminReports = () => {
         Object.entries(agrCounts).forEach(([s, c]) => kv(`  ${s}`, String(c)));
 
         if (summary) {
-          if (y > 230) { doc.addPage(); y = margin; header(); }
+          if (y > 230) {
+            doc.addPage();
+            y = margin;
+            header();
+          }
           section("5. Agency Summary");
           Object.entries(summary).forEach(([k, v]) => {
             if (typeof v === "number" || typeof v === "string") {
@@ -296,12 +409,18 @@ export const AdminReports = () => {
           });
         }
 
-        doc.save(`federal-police-report-${period}-${new Date().toISOString().slice(0, 10)}.pdf`);
+        doc.save(
+          `federal-police-report-${period}-${new Date().toISOString().slice(0, 10)}.pdf`,
+        );
       }
       setToast({ isOpen: true, type: "success", message: t.reports.success });
     } catch (err) {
       console.error("PDF generation failed", err);
-      setToast({ isOpen: true, type: "error", message: "Failed to generate report" });
+      setToast({
+        isOpen: true,
+        type: "error",
+        message: "Failed to generate report",
+      });
     } finally {
       setGenerating(false);
     }
@@ -324,7 +443,9 @@ export const AdminReports = () => {
 
       <div className="flex justify-between items-center">
         <div className="space-y-1">
-          <h2 className="text-2xl font-bold text-[#003366]">{t.reports.title}</h2>
+          <h2 className="text-2xl font-bold text-[#003366]">
+            {t.reports.title}
+          </h2>
           <p className="text-sm text-gray-500">{t.reports.subtitle}</p>
         </div>
 
@@ -355,7 +476,9 @@ export const AdminReports = () => {
             ) : (
               <Download className="w-5 h-5" />
             )}
-            <span>{generating ? t.reports.loading : t.reports.generatePdf}</span>
+            <span>
+              {generating ? t.reports.loading : t.reports.generatePdf}
+            </span>
           </button>
         </div>
       </div>
@@ -373,7 +496,9 @@ export const AdminReports = () => {
           </div>
           <div>
             <h3 className="text-base font-bold text-[#003366] mb-2">
-              {isAm ? "የፌዴራል ፖሊስ አስተዳደር ሪፖርት ያመንጩ" : "Generate Federal Police Admin Report"}
+              {isAm
+                ? "የፌዴራል ፖሊስ አስተዳደር ሪፖርት ያመንጩ"
+                : "Generate Federal Police Admin Report"}
             </h3>
             <p className="text-sm text-gray-600 leading-relaxed">
               {isAm

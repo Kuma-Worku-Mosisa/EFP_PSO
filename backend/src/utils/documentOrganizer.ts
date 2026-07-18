@@ -14,6 +14,105 @@ export interface DocumentMapping {
   filePath?: string; // relative path in database
 }
 
+const DOCUMENT_TYPE_ALIASES: Record<string, string> = {
+  fingerprint: "Fingerprint",
+  fingerprint_doc: "Fingerprint",
+  medical: "Medical Result",
+  medical_doc: "Medical Result",
+  medical_certificate: "Medical Result",
+  medical_result: "Medical Result",
+  guarantee: "Proof of Guarantee",
+  guarantee_doc: "Proof of Guarantee",
+  resignation: "Resignation Record",
+  resignation_doc: "Resignation Record",
+  resignation_letter: "Resignation Record",
+  resignation_record: "Resignation Record",
+  resignation_record_doc: "Resignation Record",
+  support_letter: "Support Letter",
+  support_letter_doc: "Support Letter",
+  support: "Support Letter",
+  support_doc: "Support Letter",
+  supporting_document: "Support Letter",
+  training: "Training Certificate",
+  training_doc: "Training Certificate",
+  education: "Education Certificate",
+  education_doc: "Education Certificate",
+  national_id: "National ID",
+  national_id_doc: "National ID",
+  national_id_passport: "National ID",
+  national_id_passport_doc: "National ID",
+  kebele_or_passport: "Kebele or Passport Document",
+  kebele_or_passport_doc: "Kebele or Passport Document",
+  organizational_id: "Organizational Identification",
+  organizational_id_doc: "Organizational Identification",
+  organization_id: "Organizational Identification",
+  organization_id_doc: "Organizational Identification",
+  experience: "Work Experience",
+  experience_doc: "Work Experience",
+  work_experience: "Work Experience",
+  work_exp: "Work Experience",
+};
+
+const normalizeDocumentToken = (value: string): string => {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[_\s]+/g, "_")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+};
+
+export const normalizeDocumentType = (documentType: string): string => {
+  const trimmed = String(documentType || "").trim();
+  if (!trimmed) {
+    return trimmed;
+  }
+
+  const normalizedKey = normalizeDocumentToken(trimmed);
+  return DOCUMENT_TYPE_ALIASES[normalizedKey] || trimmed;
+};
+
+export const getDocumentTypeVariants = (documentType: string): string[] => {
+  const trimmedType = String(documentType || "").trim();
+  const canonicalType = normalizeDocumentType(trimmedType);
+  const variants = new Set<string>([
+    trimmedType,
+    canonicalType,
+    normalizeDocumentToken(trimmedType),
+    normalizeDocumentToken(canonicalType),
+  ]);
+
+  const legacyAliases: Record<string, string[]> = {
+    "Medical Result": ["Medical Result", "Medical Certificate"],
+    "Resignation Record": ["Resignation Record", "Resignation Letter"],
+    "Support Letter": ["Support Letter", "Supporting Document"],
+    "National ID": ["National ID", "National ID/Passport", "ID/Passport"],
+    "Organizational Identification": [
+      "Organizational Identification",
+      "Organization ID Document",
+    ],
+    "Work Experience": ["Work Experience", "Experience Certificate"],
+    "Proof of Guarantee": ["Proof of Guarantee", "Proof of Guarantee Document"],
+  };
+
+  for (const alias of legacyAliases[canonicalType] || []) {
+    variants.add(alias);
+    variants.add(normalizeDocumentToken(alias));
+  }
+
+  return Array.from(variants);
+};
+
+export const isDocumentTypeMatch = (
+  existingDocumentType: string,
+  incomingDocumentType: string,
+): boolean => {
+  const incomingVariants = getDocumentTypeVariants(incomingDocumentType);
+  const existingVariants = getDocumentTypeVariants(existingDocumentType);
+
+  return incomingVariants.some((variant) => existingVariants.includes(variant));
+};
+
 /**
  * Parse field name to extract role and document type
  * Format: {role}_{documentType}
@@ -139,7 +238,18 @@ export const moveDocumentFile = (
     const fromFull = path.join(process.cwd(), fromRelative);
     const toFull = path.join(process.cwd(), toRelative);
 
+    if (path.resolve(fromFull) === path.resolve(toFull)) {
+      return true;
+    }
+
     if (!fs.existsSync(fromFull)) {
+      if (fs.existsSync(toFull)) {
+        console.warn(
+          `[WARN] Source file already moved; destination exists: ${toFull}`,
+        );
+        return true;
+      }
+
       console.warn(`[WARN] Source file for move not found: ${fromFull}`);
       return false;
     }
@@ -147,6 +257,22 @@ export const moveDocumentFile = (
     const toDir = path.dirname(toFull);
     if (!fs.existsSync(toDir)) {
       fs.mkdirSync(toDir, { recursive: true });
+    }
+
+    if (fs.existsSync(toFull)) {
+      try {
+        fs.unlinkSync(fromFull);
+        console.warn(
+          `[WARN] Destination already existed; removed duplicate source file: ${fromFull}`,
+        );
+        return true;
+      } catch (cleanupErr) {
+        console.warn(
+          `[WARN] Could not remove duplicate source file after destination already existed: ${fromFull}`,
+          cleanupErr,
+        );
+        return true;
+      }
     }
 
     fs.renameSync(fromFull, toFull);

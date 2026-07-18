@@ -5,9 +5,7 @@ import {
   Search,
   ArrowLeftRight,
   UserCheck,
-  FileCheck,
   Check,
-  X,
   AlertCircle,
   Send,
   History,
@@ -20,12 +18,20 @@ import {
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { AutoDismissToast } from "../../components/AutoDismissToast";
 import { apiRequest } from "../../lib/api";
+import {
+  uploadOrganizationDocuments,
+  validateFile,
+  formatFileSize,
+  getDocumentTypeName,
+} from "../../lib/fileUploadHelper";
 import { useLanguage } from "../../context/LanguageContext";
 
 // Expected TypeScript interface for an employee returned from lookups
 interface EmployeeProfile {
   id: number;
   faydaId: string;
+  isBlacklisted: boolean;
+  employmentStatus: string;
   user: {
     fullName: string;
     email: string;
@@ -64,20 +70,35 @@ interface TransferHistoryResponse {
 export default function EmployeeTransferManager() {
   const { language } = useLanguage();
   const isAm = language === "am";
-  const [activeTab, setActiveTab] = useState<
-    "initiate" | "incoming" | "history"
-  >("initiate");
+  const [activeTab, setActiveTab] = useState<"initiate" | "history">(
+    "initiate",
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [globalSuccess, setGlobalSuccess] = useState<string | null>(null);
+
+  const [transferDocumentFiles, setTransferDocumentFiles] = useState<
+    Record<string, File | null>
+  >({
+    fingerprint_doc: null,
+    organization_id_doc: null,
+    medical_doc: null,
+    guarantee_doc: null,
+    resignation_record_doc: null,
+  });
+  const [documentUploadError, setDocumentUploadError] = useState<string | null>(
+    null,
+  );
+
+  const [lookupBlockedMessage, setLookupBlockedMessage] = useState<
+    string | null
+  >(null);
   // Confirm dialog state
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmType, setConfirmType] = useState<
-    "approve" | "reject" | "default"
-  >("default");
-  const [confirmTargetId, setConfirmTargetId] = useState<number | null>(null);
-  const [confirmTitle, setConfirmTitle] = useState("");
-  const [confirmMessage, setConfirmMessage] = useState("");
+  const [confirmType] = useState<"approve" | "reject" | "default">("default");
+  const [confirmTargetId] = useState<number | null>(null);
+  const [confirmTitle] = useState("");
+  const [confirmMessage] = useState("");
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   // Toast handled by AutoDismissToast
@@ -93,12 +114,6 @@ export default function EmployeeTransferManager() {
     transferReason: "",
   });
 
-  // Tab 2: Incoming Requests State
-  const [pendingRequests, setPendingRequests] = useState<TransferRequestItem[]>(
-    [],
-  );
-  const [incomingSearch, setIncomingSearch] = useState("");
-  const [incomingFilter, setIncomingFilter] = useState<string>("ALL");
   const [historySearch, setHistorySearch] = useState("");
   const [historyFilter, setHistoryFilter] = useState<string>("ALL");
   const [transferHistory, setTransferHistory] =
@@ -106,9 +121,6 @@ export default function EmployeeTransferManager() {
 
   // Automatically fetch pending items or history when changing tabs
   useEffect(() => {
-    if (activeTab === "incoming") {
-      fetchPendingRequests();
-    }
     if (activeTab === "history") {
       fetchTransferHistory();
     }
@@ -130,13 +142,41 @@ export default function EmployeeTransferManager() {
     if (!searchQuery.trim()) return;
     setIsLoading(true);
     setGlobalError(null);
+    setLookupBlockedMessage(null);
     setSearchedEmployee(null);
 
     try {
       const result = await apiRequest(
         `/transfers/employee-lookup?query=${encodeURIComponent(searchQuery.trim())}`,
       );
-      setSearchedEmployee(result.data);
+      const employee: EmployeeProfile = result.data;
+      const normalizedEmploymentStatus = String(employee.employmentStatus ?? "")
+        .trim()
+        .toLowerCase();
+
+      if (employee.isBlacklisted) {
+        setLookupBlockedMessage(
+          t(
+            "This employee is blacklisted and cannot be processed until the blacklist status is cleared. Please contact EFP to resolve the blacklist record before proceeding.",
+            "ይህ ሰራተኛ በጥርስ ዝርዝር ላይ ነው፣ እስካሁን ድረስ ማንኛውም ሂደት ሊከናወን አይችልም። እባክዎ ጥርስ ሁኔታውን ከEFP ጋር ያከናውኑ።",
+          ),
+        );
+        return;
+      }
+
+      const isResigned = normalizedEmploymentStatus === "resigned";
+      if (!isResigned) {
+        setLookupBlockedMessage(
+          t(
+            "This employee is not marked as 'Resigned'. Transfer verification documents can only be submitted for resigned employees.",
+            "ይህ ሰራተኛ 'የተቀረ' እንደማይሆን ተመልከቱ። የዝውውር ማረጋገጫ ሰነዶች ለየተቀረ ሰራተኞች ብቻ ናቸው።",
+          ),
+        );
+        setSearchedEmployee(employee);
+        return;
+      }
+
+      setSearchedEmployee(employee);
     } catch (err: any) {
       setGlobalError(
         err.message || "No active employee found matching identity parameters.",
@@ -147,54 +187,133 @@ export default function EmployeeTransferManager() {
   };
 
   // Action B: Push a new pending routing record downstream to target organization
+  const handleTransferDocSelect = (fieldName: string, file: File | null) => {
+    setDocumentUploadError(null);
+
+    if (!file) {
+      setTransferDocumentFiles((prev) => ({
+        ...prev,
+        [fieldName]: null,
+      }));
+      return;
+    }
+
+    const validation = validateFile(file);
+    if (!validation.valid) {
+      setDocumentUploadError(validation.error || "Invalid file selection.");
+      setTransferDocumentFiles((prev) => ({
+        ...prev,
+        [fieldName]: null,
+      }));
+      return;
+    }
+
+    setTransferDocumentFiles((prev) => ({
+      ...prev,
+      [fieldName]: file,
+    }));
+  };
+
   const handleInitiateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchedEmployee) return;
 
+    const requiredDocumentFields = [
+      "fingerprint_doc",
+      "organization_id_doc",
+      "medical_doc",
+      "guarantee_doc",
+      "resignation_record_doc",
+    ];
+
+    const missingDocs = requiredDocumentFields.filter(
+      (fieldName) => !transferDocumentFiles[fieldName],
+    );
+
+    if (missingDocs.length > 0) {
+      setDocumentUploadError(
+        t(
+          "Please attach all required resigned employee documents before submitting.",
+          "የተቀረ ሰራተኛ ሰነዶችን ከማስገባት በፊት እባክዎ ያገኙ።",
+        ),
+      );
+      return;
+    }
+
+    // Build the upload payload using role-prefixed field names so the backend
+    // middleware accepts the form fields as valid `{role}_{documentType}` entries.
+    const filesToUpload: Record<string, File> = {};
+
+    requiredDocumentFields.forEach((fieldName) => {
+      const file = transferDocumentFiles[fieldName];
+      if (file) filesToUpload[fieldName] = file;
+    });
+
     setIsLoading(true);
     setGlobalError(null);
+    setDocumentUploadError(null);
 
     try {
+      const uploadResult = await uploadOrganizationDocuments(
+        searchedEmployee.organization.name,
+        filesToUpload,
+        {
+          employeeId: String(searchedEmployee.id),
+          employeeFullName: searchedEmployee.user.fullName,
+          employeePositionName: searchedEmployee.position.name,
+        },
+      );
+
+      if (!uploadResult.success || !uploadResult.data?.uploadedFiles) {
+        throw new Error(
+          uploadResult.error ||
+            uploadResult.message ||
+            "Document upload failed",
+        );
+      }
+
+      const uploadedFiles = uploadResult.data.uploadedFiles || {};
+
       await apiRequest("/transfers", {
         method: "POST",
         body: JSON.stringify({
           employeeId: searchedEmployee.id,
-          // targetOrganizationId intentionally omitted; backend will default to initiator org
-          // requestedPositionId intentionally omitted (use current position if required)
           reason: transferPayload.transferReason,
+          uploadedFiles,
         }),
       });
 
       setGlobalSuccess(
-        `Transfer record for ${searchedEmployee.user.fullName} dispatched safely!`,
+        `Change record for ${searchedEmployee.user.fullName} Done safely!`,
       );
+      setToastType("success");
+      setToastMessage(
+        t(
+          "Leader Change request submitted successfully.",
+          "የአመራር ለውጥ ጥያቄ በተሳካ ሁኔታ ተላከ።",
+        ),
+      );
+      setToastOpen(true);
 
-      // Clear initiate forms state
       setSearchedEmployee(null);
       setSearchQuery("");
       setTransferPayload({ transferReason: "" });
+      setTransferDocumentFiles({
+        fingerprint_doc: null,
+        organization_id_doc: null,
+        medical_doc: null,
+        guarantee_doc: null,
+        resignation_record_doc: null,
+      });
     } catch (err: any) {
-      setGlobalError(err.message);
+      setDocumentUploadError(err.message || null);
+      setGlobalError(err.message || "Failed to submit transfer request.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Action C: Get live unapproved inbound transfer records for current organization context
-  const fetchPendingRequests = async () => {
-    setIsLoading(true);
-    setGlobalError(null);
-    try {
-      const result = await apiRequest("/transfers/incoming-pending");
-      if (result?.data && result.data.length > 0) {
-        setPendingRequests(result.data);
-      }
-    } catch (err: any) {
-      setGlobalError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // (Incoming requests removed)
 
   const fetchTransferHistory = async () => {
     setIsLoading(true);
@@ -214,10 +333,10 @@ export default function EmployeeTransferManager() {
     }
   };
 
-  // Action D: Execute transactional workflow actions (RELEASE or REJECT)
+  // Action D: Execute transactional workflow actions (REJECT only)
   const handleApprovalDecision = async (
     id: number,
-    decision: "RELEASE" | "FINALIZE_APPROVE" | "REJECT",
+    decision: "REJECT",
     rejectionReason?: string,
   ) => {
     setIsLoading(true);
@@ -237,8 +356,7 @@ export default function EmployeeTransferManager() {
       setToastType("success");
       setToastMessage(successMsg);
       setToastOpen(true);
-      // Atomically filter out items from frontend layout display matrix
-      setPendingRequests((prev) => prev.filter((req) => req.id !== id));
+      // No incoming list maintained on this UI; frontend history will refresh separately
     } catch (err: any) {
       const msg = err.message || "Failed to route transfer tracking record.";
       setGlobalError(msg);
@@ -250,34 +368,11 @@ export default function EmployeeTransferManager() {
     }
   };
 
-  const openApproveDialog = (id: number, employeeName?: string) => {
-    setConfirmTargetId(id);
-    setConfirmType("approve");
-    setConfirmTitle("Release Employee for Transfer");
-    setConfirmMessage(
-      `Are you sure you want to release ${employeeName || "this employee"} for transfer? This action will mark the request as SOURCE_RELEASED and notify the destination organization.`,
-    );
-    setConfirmOpen(true);
-  };
-
-  const openRejectDialog = (id: number, employeeName?: string) => {
-    setConfirmTargetId(id);
-    setConfirmType("reject");
-    setConfirmTitle("Decline Transfer Request");
-    setConfirmMessage(
-      `Provide a short justification for rejecting the transfer request for ${employeeName || "this employee"}. This reason will be included in notifications.`,
-    );
-    setRejectionReason("");
-    setConfirmOpen(true);
-  };
-
   const handleDialogConfirm = async () => {
     if (!confirmTargetId) return;
     setConfirmLoading(true);
     try {
-      if (confirmType === "approve") {
-        await handleApprovalDecision(confirmTargetId, "RELEASE");
-      } else if (confirmType === "reject") {
+      if (confirmType === "reject") {
         if (!rejectionReason.trim()) {
           // show inline error via toast
           setToastType("error");
@@ -411,13 +506,8 @@ export default function EmployeeTransferManager() {
             icon: <Send className="w-4 h-4" />,
           },
           {
-            key: "incoming",
-            label: t("Incoming Requests", "ገቢ ጥያቄዎች"),
-            icon: <UserCheck className="w-4 h-4" />,
-          },
-          {
             key: "history",
-            label: t("Transfer History", "የዝውውር ታሪክ"),
+            label: t("Transfer  and Received History", "የዝውውር ታሪክ"),
             icon: <History className="w-4 h-4" />,
           },
         ].map((tab) => (
@@ -435,11 +525,6 @@ export default function EmployeeTransferManager() {
           >
             {tab.icon}
             {tab.label}
-            {tab.key === "incoming" && pendingRequests.length > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white w-5 h-5 rounded-full text-[9px] flex items-center justify-center font-bold shadow-md">
-                {pendingRequests.length}
-              </span>
-            )}
           </motion.button>
         ))}
       </div>
@@ -491,7 +576,20 @@ export default function EmployeeTransferManager() {
             </div>
           </div>
 
-          {searchedEmployee && (
+          {lookupBlockedMessage && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-3xl border border-red-200 bg-red-50 p-5 text-sm text-red-700"
+            >
+              <div className="font-bold mb-2">
+                {t("Verification blocked", "ማረጋገጫ ተከልክሏል")}
+              </div>
+              <p>{lookupBlockedMessage}</p>
+            </motion.div>
+          )}
+
+          {searchedEmployee && !lookupBlockedMessage && (
             <motion.form
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -566,7 +664,7 @@ export default function EmployeeTransferManager() {
                     <ArrowLeftRight className="w-4 h-4" />
                   </div>
                   <h3 className="text-sm font-bold text-[#003366]">
-                    {t("Step 2: Transfer Details", "ደረጃ 2፡ የዝውውር ዝርዝሮች")}
+                    {t("Step 2: Recieved Details", "ደረጃ 2፡ የተቀበሉ ዝርዝሮች")}
                   </h3>
                 </div>
 
@@ -584,29 +682,92 @@ export default function EmployeeTransferManager() {
                   </p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-bold text-[#003366] mb-1.5 flex items-center gap-1">
-                    {t("Reason for Transfer", "የዝውውር ምክንያት")}
-                    <span className="text-orange-500">*</span>
-                  </label>
-                  <textarea
-                    required
-                    disabled={isLoading}
-                    rows={3}
-                    value={transferPayload.transferReason}
-                    onChange={(e) =>
-                      setTransferPayload({
-                        ...transferPayload,
-                        transferReason: e.target.value,
-                      })
-                    }
-                    placeholder={t(
-                      "State the official justification for reassignment...",
-                      "የዝውውሩን ይፋዊ ማረጋገጫ ያስገቡ...",
-                    )}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] resize-none"
-                  />
-                </div>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 mb-6"
+                >
+                  <div className="flex items-start justify-between gap-4 mb-5">
+                    <div>
+                      <h4 className="text-lg font-bold text-[#003366]">
+                        {t("Upload required documents", "የሚያስፈልጉ ሰነዶችን ይስቀሉ")}
+                      </h4>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {t(
+                          "Add the resigned employee documents below before submitting the transfer request.",
+                          "የተቀረው ሰራተኛ ሰነዶችን የዝውውር ጥያቄ ከማስገባት በፊት ያስጨምሩ።",
+                        )}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {[
+                      {
+                        fieldName: "fingerprint_doc",
+                        label: t("Fingerprint from Police", "ከፖሊስ የጣት አሻራ"),
+                      },
+                      {
+                        fieldName: "organization_id_doc",
+                        label: t(
+                          "Organizational Identification",
+                          "የድርጅት መታወቂያ",
+                        ),
+                      },
+                      {
+                        fieldName: "medical_doc",
+                        label: t("Medical Result", "የህክምና ውጤት"),
+                      },
+                      {
+                        fieldName: "guarantee_doc",
+                        label: t("Proof of Guarantee", "የማስረጃ ማስረጃ"),
+                      },
+                      {
+                        fieldName: "resignation_record_doc",
+                        label: t("Resignation Record", "የመልቀቂያ መዝገብ"),
+                      },
+                    ].map((docItem) => {
+                      const selectedFile =
+                        transferDocumentFiles[docItem.fieldName];
+                      const docLabel =
+                        docItem.label || getDocumentTypeName(docItem.fieldName);
+                      return (
+                        <label
+                          key={docItem.fieldName}
+                          className="flex flex-col gap-2 rounded-2xl border border-gray-200 bg-gray-50 p-3"
+                        >
+                          <span className="text-sm font-semibold text-gray-700">
+                            {docLabel}
+                          </span>
+                          <input
+                            type="file"
+                            accept=".pdf"
+                            onChange={(e) =>
+                              handleTransferDocSelect(
+                                docItem.fieldName,
+                                e.target.files?.[0] || null,
+                              )
+                            }
+                            className="text-sm text-gray-600 file:mr-4 file:rounded-full file:border-0 file:bg-[#003366] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white hover:file:bg-[#001F3F]"
+                          />
+                          {selectedFile && (
+                            <span className="text-xs text-gray-500">
+                              {t("Selected", "ተመርጧል")}: {selectedFile.name} (
+                              {formatFileSize(selectedFile.size)})
+                            </span>
+                          )}
+                        </label>
+                      );
+                    })}
+                  </div>
+
+                  {documentUploadError && (
+                    <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                      {documentUploadError}
+                    </div>
+                  )}
+                </motion.div>
 
                 <div className="pt-4 border-t border-gray-100 mt-4 flex justify-end">
                   <motion.button
@@ -619,201 +780,11 @@ export default function EmployeeTransferManager() {
                     <Send className="w-4 h-4" />
                     {isLoading
                       ? t("Processing...", "በማስኬድ ላይ...")
-                      : t("Submit Transfer Request", "የዝውውር ጥያቄ ያስገቡ")}
+                      : t("Submit Change Request", "የለውጥ ጥያቄ ያስገቡ")}
                   </motion.button>
                 </div>
               </div>
             </motion.form>
-          )}
-        </motion.div>
-      )}
-
-      {/* TAB 2: INCOMING */}
-      {activeTab === "incoming" && (
-        <motion.div
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.3 }}
-          className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden"
-        >
-          <div className="relative overflow-hidden bg-gradient-to-r from-[#003366] to-[#001F3F] p-5">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#FFD700] via-[#C5A022] to-[#FFD700]" />
-            <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full bg-[#FFD700]/5" />
-            <div className="relative z-10 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-[#FFD700]/20 flex items-center justify-center">
-                <UserCheck className="w-4 h-4 text-[#FFD700]" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-white">
-                  {t("Pending Transfer Requests", "በመጠባበቅ ላይ ያሉ የዝውውር ጥያቄዎች")}
-                </h3>
-                <p className="text-[10px] text-white/50 font-medium">
-                  {t(
-                    "Review and decide on incoming transfer requests",
-                    "የገቡ የዝውውር ጥያቄዎችን ይገምግሙ እና ይወስኑ",
-                  )}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4 border-b border-gray-100">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  value={incomingSearch}
-                  onChange={(e) => setIncomingSearch(e.target.value)}
-                  placeholder={t(
-                    "Search by name, Fayda ID, or organization...",
-                    "በስም፣ በፋይዳ መታወቂያ ወይም በድርጅት ይፈልጉ...",
-                  )}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] transition-all"
-                />
-              </div>
-              <select
-                value={incomingFilter}
-                onChange={(e) => setIncomingFilter(e.target.value)}
-                className="px-4 py-2.5 border border-gray-200 rounded-xl text-xs font-bold text-gray-500 bg-gray-50 outline-none focus:ring-2 focus:ring-[#003366]/20"
-              >
-                <option value="ALL">{t("All Status", "ሁሉም ሁኔታ")}</option>
-                <option value="PENDING">{t("Pending", "በመጠባበቅ ላይ")}</option>
-              </select>
-            </div>
-          </div>
-
-          {pendingRequests.length === 0 ? (
-            <div className="p-12 text-center">
-              <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                <FileCheck className="w-6 h-6 text-gray-400" />
-              </div>
-              <p className="text-sm font-medium text-gray-400">
-                {t(
-                  "No incoming transfer requests pending.",
-                  "ምንም የገባ የዝውውር ጥያቄ የለም።",
-                )}
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1100px] text-left border-collapse text-sm">
-                <thead>
-                  <tr className="bg-[#003366] text-white text-[11px] uppercase tracking-[0.2em]">
-                    <th className="p-4">{t("Employee Name", "የሰራተኛ ስም")}</th>
-                    <th className="p-4">{t("Fayda ID", "የፋይዳ መታወቂያ")}</th>
-                    <th className="p-4">{t("From", "ከ")}</th>
-                    <th className="p-4">{t("To", "ወደ")}</th>
-                    <th className="p-4">{t("Position", "ሹመት")}</th>
-                    <th className="p-4">{t("Reason", "ምክንያት")}</th>
-                    <th className="p-4">{t("Status", "ሁኔታ")}</th>
-                    <th className="p-4">{t("Action", "ድርጊት")}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 text-gray-700">
-                  {(() => {
-                    const filtered = pendingRequests.filter((r) => {
-                      const q = incomingSearch.toLowerCase();
-                      const matchesSearch =
-                        !incomingSearch ||
-                        r.employee?.user?.fullName.toLowerCase().includes(q) ||
-                        r.employee?.user?.faydaId.toLowerCase().includes(q) ||
-                        r.sourceOrganization?.name.toLowerCase().includes(q) ||
-                        r.targetOrganization?.name.toLowerCase().includes(q);
-                      const matchesFilter =
-                        incomingFilter === "ALL" || r.status === incomingFilter;
-                      return matchesSearch && matchesFilter;
-                    });
-                    if (filtered.length === 0) {
-                      return (
-                        <tr>
-                          <td colSpan={8} className="p-12 text-center">
-                            <Search className="w-8 h-8 text-gray-300 mx-auto mb-3" />
-                            <p className="text-sm text-gray-400 font-medium">
-                              {t(
-                                "No matching requests found",
-                                "ምንም የሚዛመድ ጥያቄ አልተገኘም",
-                              )}
-                            </p>
-                          </td>
-                        </tr>
-                      );
-                    }
-                    return filtered.map((request, idx) => (
-                      <motion.tr
-                        key={request.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.3, delay: idx * 0.05 }}
-                        whileHover={{ backgroundColor: "rgba(0,51,102,0.02)" }}
-                        className="transition-colors"
-                      >
-                        <td className="p-4 font-bold text-[#003366]">
-                          {request.employee?.user?.fullName}
-                        </td>
-                        <td className="p-4 text-xs text-gray-500">
-                          {request.employee?.user?.faydaId}
-                        </td>
-                        <td className="p-4">
-                          {request.sourceOrganization?.name}
-                        </td>
-                        <td className="p-4">
-                          {request.targetOrganization?.name}
-                        </td>
-                        <td className="p-4">
-                          {request.position?.name ||
-                            request.employee?.position?.name ||
-                            "-"}
-                        </td>
-                        <td className="p-4 max-w-[160px] truncate">
-                          {request.reason}
-                        </td>
-                        <td className="p-4">
-                          <span className="text-[10px] bg-[#FFD700]/15 text-[#C5A022] font-bold px-2.5 py-1 rounded-full">
-                            {t("Pending Review", "በግምገማ ላይ")}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-2">
-                            <motion.button
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.97 }}
-                              type="button"
-                              disabled={isLoading}
-                              onClick={() =>
-                                openApproveDialog(
-                                  request.id,
-                                  request.employee?.user?.fullName,
-                                )
-                              }
-                              className="px-3 py-1.5 bg-gradient-to-r from-[#003366] to-[#001F3F] text-white rounded-lg text-xs font-bold hover:shadow-md transition-all disabled:opacity-50 inline-flex items-center gap-1"
-                            >
-                              <Check className="w-3 h-3" />{" "}
-                              {t("Release", "ልቀቅ")}
-                            </motion.button>
-                            <motion.button
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.97 }}
-                              type="button"
-                              disabled={isLoading}
-                              onClick={() =>
-                                openRejectDialog(
-                                  request.id,
-                                  request.employee?.user?.fullName,
-                                )
-                              }
-                              className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-lg text-xs font-bold hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all disabled:opacity-50 inline-flex items-center gap-1"
-                            >
-                              <X className="w-3 h-3" /> {t("Decline", "አይቀበል")}
-                            </motion.button>
-                          </div>
-                        </td>
-                      </motion.tr>
-                    ));
-                  })()}
-                </tbody>
-              </table>
-            </div>
           )}
         </motion.div>
       )}

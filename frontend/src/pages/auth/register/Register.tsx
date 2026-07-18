@@ -31,8 +31,8 @@ const registerSchema = z
     lastName: z.string().min(2, "Last name is required"),
     username: z.string().min(3, "Username must be at least 3 characters"),
     email: z.string().email("Invalid email address"),
-    phone: z.string().min(10, "Invalid phone number"),
-    faydaId: z.string().min(10, "Fayda ID is required"),
+    phone: z.string().min(13, "Enter a valid 9‑digit phone number"),
+    faydaId: z.string().length(16, "Fayda ID must be exactly 16 digits"),
     otpCode: z.string().optional(),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string(),
@@ -100,12 +100,16 @@ export const Register = () => {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
   });
 
-  const faydaIdValue = watch("faydaId");
+  const [phoneInput, setPhoneInput] = React.useState("+251");
+  const [faydaIdInput, setFaydaIdInput] = React.useState("");
+
+  const faydaIdValue = faydaIdInput;
   const otpCodeValue = watch("otpCode");
   const passwordValue = watch("password") || "";
   const confirmPasswordValue = watch("confirmPassword") || "";
@@ -156,7 +160,7 @@ export const Register = () => {
   };
 
   const handleSendOtp = async () => {
-    if (!faydaIdValue || faydaIdValue.length < 5) return;
+    if (!faydaIdValue || faydaIdValue.length < 16) return;
     setIsOtpSent(true);
     setShowOtpField(true);
     showToast(
@@ -285,7 +289,23 @@ export const Register = () => {
                 </label>
                 <input
                   {...register("firstName")}
-                  placeholder="First"
+                  placeholder={t.register.firstNamePlaceholder}
+                  onKeyDown={(e) => {
+                    const key = e.key;
+                    if (
+                      key === "Backspace" ||
+                      key === "Delete" ||
+                      key === "Tab" ||
+                      key === "Enter" ||
+                      key === "ArrowLeft" ||
+                      key === "ArrowRight" ||
+                      key === "Home" ||
+                      key === "End"
+                    )
+                      return;
+                    if (!/^[a-zA-Z\u1200-\u137F]$/.test(key))
+                      e.preventDefault();
+                  }}
                   className={`w-full px-4 py-4 bg-gray-50 border rounded-2xl outline-none focus:ring-2 focus:ring-primary transition-all ${
                     errors.firstName ? "border-red-500" : "border-gray-200"
                   }`}
@@ -302,7 +322,23 @@ export const Register = () => {
                 </label>
                 <input
                   {...register("middleName")}
-                  placeholder="Middle"
+                  placeholder={t.register.middleNamePlaceholder}
+                  onKeyDown={(e) => {
+                    const key = e.key;
+                    if (
+                      key === "Backspace" ||
+                      key === "Delete" ||
+                      key === "Tab" ||
+                      key === "Enter" ||
+                      key === "ArrowLeft" ||
+                      key === "ArrowRight" ||
+                      key === "Home" ||
+                      key === "End"
+                    )
+                      return;
+                    if (!/^[a-zA-Z\u1200-\u137F]$/.test(key))
+                      e.preventDefault();
+                  }}
                   className={`w-full px-4 py-4 bg-gray-50 border rounded-2xl outline-none focus:ring-2 focus:ring-primary transition-all ${
                     errors.middleName ? "border-red-500" : "border-gray-200"
                   }`}
@@ -319,7 +355,23 @@ export const Register = () => {
                 </label>
                 <input
                   {...register("lastName")}
-                  placeholder="Last"
+                  placeholder={t.register.lastNamePlaceholder}
+                  onKeyDown={(e) => {
+                    const key = e.key;
+                    if (
+                      key === "Backspace" ||
+                      key === "Delete" ||
+                      key === "Tab" ||
+                      key === "Enter" ||
+                      key === "ArrowLeft" ||
+                      key === "ArrowRight" ||
+                      key === "Home" ||
+                      key === "End"
+                    )
+                      return;
+                    if (!/^[a-zA-Z\u1200-\u137F]$/.test(key))
+                      e.preventDefault();
+                  }}
                   className={`w-full px-4 py-4 bg-gray-50 border rounded-2xl outline-none focus:ring-2 focus:ring-primary transition-all ${
                     errors.lastName ? "border-red-500" : "border-gray-200"
                   }`}
@@ -337,10 +389,22 @@ export const Register = () => {
                 {t.register.phone}
               </label>
               <div className="relative">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 z-10" />
                 <input
-                  {...register("phone")}
-                  placeholder="+251 9XX XXX XXX"
+                  type="tel"
+                  value={phoneInput}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (!raw.startsWith("+251")) {
+                      setPhoneInput("+251");
+                      return;
+                    }
+                    const suffix = raw.slice(4).replace(/\D/g, "").slice(0, 9);
+                    const newVal = "+251" + suffix;
+                    setPhoneInput(newVal);
+                    setValue("phone", newVal);
+                  }}
+                  placeholder={t.register.phonePlaceholder}
                   className={`w-full pl-12 pr-4 py-4 bg-gray-50 border rounded-2xl outline-none focus:ring-2 focus:ring-primary transition-all ${
                     errors.phone ? "border-red-500" : "border-gray-200"
                   }`}
@@ -362,9 +426,17 @@ export const Register = () => {
                   <div className="relative flex-1">
                     <Fingerprint className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
-                      {...register("faydaId")}
+                      type="text"
+                      value={faydaIdInput}
+                      onChange={(e) => {
+                        const digits = e.target.value
+                          .replace(/\D/g, "")
+                          .slice(0, 16);
+                        setFaydaIdInput(digits);
+                        setValue("faydaId", digits);
+                      }}
                       disabled={isOtpVerified}
-                      placeholder="ET-XXXX-XXXX-XXXX"
+                      placeholder={t.register.faydaPlaceholder}
                       className={`w-full pl-12 pr-4 py-4 bg-white border rounded-2xl outline-none focus:ring-2 focus:ring-primary transition-all ${
                         errors.faydaId ? "border-red-500" : "border-gray-200"
                       } ${isOtpVerified ? "bg-green-50" : ""}`}
@@ -430,7 +502,7 @@ export const Register = () => {
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     {...register("username")}
-                    placeholder="Enter  username"
+                    placeholder={t.register.usernamePlaceholder}
                     className={`w-full pl-12 pr-4 py-4 bg-gray-50 border rounded-2xl outline-none focus:ring-2 focus:ring-primary transition-all ${
                       errors.username ? "border-red-500" : "border-gray-200"
                     }`}
@@ -452,7 +524,7 @@ export const Register = () => {
                   <input
                     {...register("email")}
                     type="email"
-                    placeholder="email@example.com"
+                    placeholder={t.register.emailPlaceholder}
                     className={`w-full pl-12 pr-4 py-4 bg-gray-50 border rounded-2xl outline-none focus:ring-2 focus:ring-primary transition-all ${
                       errors.email ? "border-red-500" : "border-gray-200"
                     }`}

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { validationResult } from "express-validator";
 import * as UserService from "./user.service";
+import { ServiceError } from "./user.service";
 import prisma from "../../lib/prisma";
 import { ApiResponse } from "../../utils/apiResponse";
 import * as bcrypt from "bcryptjs";
@@ -297,6 +298,12 @@ export const loginHandler = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error("Login Error:", error);
+
+    if (error instanceof ServiceError) {
+      const statusCode = error.code === "DB_UNAVAILABLE" ? 503 : 400;
+      return ApiResponse.error(res, error.message, statusCode, error.code);
+    }
+
     return ApiResponse.error(res, "Internal server error", 500, error.message);
   }
 };

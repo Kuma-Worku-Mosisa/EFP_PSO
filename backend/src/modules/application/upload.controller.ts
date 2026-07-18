@@ -3,8 +3,11 @@ import { ApiResponse } from "../../utils/apiResponse";
 import {
   organizeUploadedFiles,
   getDocumentUrl,
+  parseFieldName,
+  normalizeDocumentType,
+  isDocumentTypeMatch,
 } from "../../utils/documentOrganizer";
-import { ensureOrganizationFolders } from "../../middleware/fileUpload";
+import prisma from "../../lib/prisma";
 
 /**
  * Handle file uploads for organization documents
@@ -47,9 +50,84 @@ export const uploadDocuments = async (req: Request, res: Response) => {
       fileUrlMap[key] = getDocumentUrl(path);
     });
 
-    console.log(
-      `[DEBUG] Successfully organized ${Object.keys(filePathMap).length} files`,
-    );
+    const employeeId = Number(req.body.employeeId ?? 0);
+    if (employeeId > 0) {
+      const employeeExists = await prisma.employee.findUnique({
+        where: { id: employeeId },
+        select: { id: true },
+      });
+
+      if (!employeeExists) {
+        return ApiResponse.error(
+          res,
+          "Employee not found for provided employeeId",
+          400,
+        );
+      }
+
+      const documentUpdates = Object.entries(fileUrlMap)
+        .map(([fieldName, fileUrl]) => {
+          const mapping = parseFieldName(fieldName);
+          if (!mapping) {
+            return null;
+          }
+          return {
+            documentType: normalizeDocumentType(mapping.documentType),
+            fileUrl,
+          };
+        })
+        .filter(Boolean) as Array<{ documentType: string; fileUrl: string }>;
+
+      if (documentUpdates.length > 0) {
+        await prisma.$transaction(async (tx) => {
+          for (const { documentType, fileUrl } of documentUpdates) {
+            console.log(
+              `[DEBUG] Persisting document for employee=${employeeId} type=${documentType} url=${fileUrl}`,
+            );
+
+            const existingDocuments = await tx.employeeDocument.findMany({
+              where: { employeeId },
+            });
+            const matchingExistingDocuments = existingDocuments.filter(
+              (existingDocument) =>
+                isDocumentTypeMatch(
+                  existingDocument.documentType,
+                  documentType,
+                ),
+            );
+
+            if (matchingExistingDocuments.length > 0) {
+              for (const existingDocument of matchingExistingDocuments) {
+                const updated = await tx.employeeDocument.update({
+                  where: { id: existingDocument.id },
+                  data: {
+                    documentType,
+                    fileUrl,
+                    uploadedAt: new Date(),
+                    isVerified: false,
+                    verifiedAt: null,
+                  },
+                });
+                console.log(
+                  `[DEBUG] Updated EmployeeDocument id=${updated.id} employee=${updated.employeeId} type=${updated.documentType}`,
+                );
+              }
+            } else {
+              const created = await tx.employeeDocument.create({
+                data: {
+                  employeeId,
+                  documentType,
+                  fileUrl,
+                },
+              });
+              console.log(
+                `[DEBUG] Created EmployeeDocument id=${created.id} employee=${created.employeeId} type=${created.documentType}`,
+              );
+            }
+          }
+        });
+      }
+    }
 
     return ApiResponse.success(
       res,

@@ -346,8 +346,8 @@ export default function SystemSettings() {
                 </p>
                 <p className="text-xs text-gray-400 mt-1 uppercase tracking-widest font-medium">
                   {isAm
-                    ? "የይፋዊ የደህንነት ኤጀንሲ የምስክር ወረቀት"
-                    : "Official Security Agency Certificate"}
+                    ? "የይፋዊ የደህንነት ድርጅት የምስክር ወረቀት"
+                    : "Official Security Organization Certificate"}
                 </p>
               </div>
             </div>

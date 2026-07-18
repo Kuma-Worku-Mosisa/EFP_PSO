@@ -4,13 +4,30 @@ import * as bcrypt from "bcryptjs";
 import { createAuditLog } from "../../utils/auditLogger";
 
 // Custom error class to pass readable error codes to controllers
-class ServiceError extends Error {
+export class ServiceError extends Error {
   code: string;
   constructor(message: string, code: string) {
     super(message);
     this.code = code;
   }
 }
+
+const isTransientDatabaseError = (error: unknown) => {
+  if (!error || typeof error !== "object") return false;
+
+  const message = String((error as Error).message || "");
+  const code = String((error as { code?: string }).code || "");
+
+  return (
+    code === "P1001" ||
+    code === "P2024" ||
+    message.includes("Failed to connect") ||
+    message.includes("ECONNREFUSED") ||
+    message.includes("getaddrinfo") ||
+    message.includes("timed out") ||
+    message.includes("connect ECONNREFUSED")
+  );
+};
 
 // Helper to normalize the ID field safely
 const parseUserId = (id: number | string): number => {
@@ -219,27 +236,48 @@ export const getUsersByRole = async (roleName: string) => {
  */
 export const getUserById = async (userId: number | string) => {
   const id = parseUserId(userId);
-  const user = await prisma.user.findUnique({
-    where: { id },
-    select: userSelection,
-  });
 
-  if (!user)
-    throw new ServiceError("User profile does not exist.", "NOT_FOUND");
-  return user;
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: userSelection,
+    });
+
+    if (!user)
+      throw new ServiceError("User profile does not exist.", "NOT_FOUND");
+    return user;
+  } catch (error) {
+    if (isTransientDatabaseError(error)) {
+      throw new ServiceError(
+        "Database temporarily unavailable. Please try again shortly.",
+        "DB_UNAVAILABLE",
+      );
+    }
+    throw error;
+  }
 };
 
 /**
  * Finds a single user by their unique username string (Useful during Authentication workflows).
  */
 export const findUserByUsername = async (username: string) => {
-  return await prisma.user.findUnique({
-    where: { username },
-    select: {
-      ...userSelection,
-      password: true, // Keep explicit for validation checks inside login handlers
-    },
-  });
+  try {
+    return await prisma.user.findUnique({
+      where: { username },
+      select: {
+        ...userSelection,
+        password: true, // Keep explicit for validation checks inside login handlers
+      },
+    });
+  } catch (error) {
+    if (isTransientDatabaseError(error)) {
+      throw new ServiceError(
+        "Database temporarily unavailable. Please try again shortly.",
+        "DB_UNAVAILABLE",
+      );
+    }
+    throw error;
+  }
 };
 
 export const findUserByUniqueField = async (

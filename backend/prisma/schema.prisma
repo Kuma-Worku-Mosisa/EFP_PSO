@@ -12,8 +12,8 @@ model Region {
   id Int @id(map: "PK__regions__01146BAEBE221DD1") @default(autoincrement()) @map("region_id")
 
   // Dual language support with NVarChar
-  nameAmharic String @unique @map("region_name_am") @db.NVarChar(150)
-  nameEnglish String @unique @map("region_name_en") @db.VarChar(150) // English characters stay safe in standard VarChar
+  nameAmharic String  @map("region_name_am") @db.NVarChar(150)
+  nameEnglish String  @map("region_name_en") @db.VarChar(150) 
 
   zones Zone[]
 
@@ -882,8 +882,6 @@ model Contact {
 model RegularPeriodReport {
   id          Int    @id @default(autoincrement()) @map("period_report_id")
   reportTitle String @map("report_title") @db.NVarChar(255)
-
-  // CHANGED: Replaced reportYear with a robust tracking Date
   reportDate DateTime @map("report_date") @db.Date
 
   // 1. Regular Reporting Period 

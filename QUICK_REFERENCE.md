@@ -45,7 +45,7 @@ uploads/{OrganizationName}/{role}/{timestamp}-{filename}
 - `manager_medical_doc`
 - `manager_training_doc`
 - `manager_support_doc`
-- `manager_collateral_doc`
+- `manager_guarantee_doc`
 - `manager_experience_doc`
 - `manager_resignation_letter_doc`
 - `manager_organization_Id_doc`

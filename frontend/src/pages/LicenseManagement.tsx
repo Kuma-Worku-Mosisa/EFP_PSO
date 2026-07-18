@@ -156,6 +156,8 @@ export const LicenseManagement = () => {
   };
 
   const openEditModal = (cert: any) => {
+    if (isLicensingAuthority) return;
+
     const source = cert?.source || cert;
     setEditCert(source);
     setEditForm({
@@ -276,10 +278,10 @@ export const LicenseManagement = () => {
 
   const t = {
     title: isAm ? "የፈቃድ አስተዳደር" : "License Management",
-    search: isAm ? "ኤጀንሲ ይፈልጉ..." : "Search agency...",
+    search: isAm ? "ድርጅት ይፈልጉ..." : "Search Organization...",
     filter: isAm ? "አጣራ" : "Filter",
     table: {
-      agency: isAm ? "የኤጀንሲ ስም" : "Agency Name",
+      agency: isAm ? "የድርጅት ስም" : "Organization Name",
       ownership: isAm ? "ባለቤትነት" : "Ownership",
       licenseNo: isAm ? "የፈቃድ ቁጥር" : "License No",
       status: isAm ? "ሁኔታ" : "Status",
@@ -331,7 +333,7 @@ export const LicenseManagement = () => {
               record.application?.userId ||
               record.application?.user?.id ||
               null,
-            agency: record.organization?.name || "Unknown Agency",
+            agency: record.organization?.name || "Unknown Organization",
             ownership:
               record.application?.user?.fullName ||
               record.application?.user?.username ||
@@ -667,15 +669,17 @@ export const LicenseManagement = () => {
                           </td>
                           <td className="px-8 py-6 text-right">
                             <div className="flex justify-end gap-3 items-center">
-                              <button
-                                onClick={() => openEditModal(selected)}
-                                className="flex items-center space-x-2 px-3 py-2 bg-gray-50 text-gray-600 rounded-xl hover:bg-gray-600 hover:text-white transition-all shadow-sm group/btn"
-                              >
-                                <Edit className="w-3.5 h-3.5" />
-                                <span className="text-[10px] font-black uppercase tracking-wider">
-                                  {t.actions.edit}
-                                </span>
-                              </button>
+                              {!isLicensingAuthority && (
+                                <button
+                                  onClick={() => openEditModal(selected)}
+                                  className="flex items-center space-x-2 px-3 py-2 bg-gray-50 text-gray-600 rounded-xl hover:bg-gray-600 hover:text-white transition-all shadow-sm group/btn"
+                                >
+                                  <Edit className="w-3.5 h-3.5" />
+                                  <span className="text-[10px] font-black uppercase tracking-wider">
+                                    {t.actions.edit}
+                                  </span>
+                                </button>
+                              )}
                               <Link
                                 to={`${licenseBasePath}/${selected.id}`}
                                 state={{ certificate: selected.source }}
@@ -757,15 +761,17 @@ export const LicenseManagement = () => {
                       </td>
                       <td className="px-8 py-6 text-right">
                         <div className="flex justify-end gap-3 items-center">
-                          <button
-                            onClick={() => openEditModal(lic)}
-                            className="flex items-center space-x-2 px-3 py-2 bg-gray-50 text-gray-600 rounded-xl hover:bg-gray-600 hover:text-white transition-all shadow-sm group/btn"
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                            <span className="text-[10px] font-black uppercase tracking-wider">
-                              {t.actions.edit}
-                            </span>
-                          </button>
+                          {!isLicensingAuthority && (
+                            <button
+                              onClick={() => openEditModal(lic)}
+                              className="flex items-center space-x-2 px-3 py-2 bg-gray-50 text-gray-600 rounded-xl hover:bg-gray-600 hover:text-white transition-all shadow-sm group/btn"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                              <span className="text-[10px] font-black uppercase tracking-wider">
+                                {t.actions.edit}
+                              </span>
+                            </button>
+                          )}
                           <Link
                             to={`${licenseBasePath}/${lic.id}`}
                             state={{ certificate: lic.source }}
@@ -1217,7 +1223,7 @@ export const LicenseManagement = () => {
                               የግል የጥበቃ ተቋማት የብቃት ማረጋገጫ የምስክር ወረቀት
                             </h6>
                             <h6 className="text-xs font-bold text-[#C5A022] italic">
-                              Private Security Agencies Quality Assurance
+                              Private Security Organization Quality Assurance
                               Certificate
                             </h6>
                           </div>

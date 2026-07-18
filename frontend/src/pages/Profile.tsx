@@ -66,7 +66,6 @@ export const Profile = () => {
       try {
         const fd = new FormData();
         fd.append("photo", file);
-
         const resp = await apiRequest<{
           success: boolean;
           message: string;
@@ -149,243 +148,244 @@ export const Profile = () => {
     `${formData.firstName} ${formData.middleName} ${formData.lastName}`.trim();
 
   return (
-    <div className="max-w-4xl space-y-8 pb-12">
-      <AutoDismissToast
-        isOpen={toast.isOpen}
-        type={toast.type}
-        message={toast.message}
-        onClose={() => setToast({ ...toast, isOpen: false })}
-      />
-      <ChangePasswordModal
-        isOpen={isChangeOpen}
-        onClose={() => setIsChangeOpen(false)}
-        onSuccess={() =>
-          setToast({
-            isOpen: true,
-            type: "success",
-            message: isAm
-              ? "የይለፍ ቃል ቀይር ተደርጓል"
-              : "Password changed successfully",
-          })
-        }
-      />
-      <div className="relative h-72 bg-primary rounded-[50px]">
-        <div className="absolute inset-0 opacity-10 overflow-hidden rounded-[50px]">
-          <Shield className="w-[500px] h-[500px] absolute -right-20 -top-20 animate-pulse" />
-        </div>
-        <div className="absolute -bottom-40 left-1/2 -translate-x-1/2 flex flex-col items-center">
-          <div className="relative group">
-            <div className="w-80 h-80 bg-white rounded-full p-3 shadow-2xl ring-[16px] ring-white/40 group-hover:ring-white/60 transition-all duration-500">
-              <div className="w-full h-full bg-gray-50 rounded-full flex items-center justify-center text-8xl font-black text-primary border-8 border-secondary overflow-hidden shadow-inner ring-4 ring-primary/5">
-                {user?.avatar ? (
-                  <img
-                    src={resolveBackendAssetUrl(user.avatar)}
-                    alt="Profile"
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-                ) : (
-                  <div className="flex flex-col items-center animate-in fade-in zoom-in duration-700">
-                    <span className="leading-none text-9xl">
-                      {user?.initials}
-                    </span>
-                    <span className="text-[10px] font-black text-gray-400 mt-6 uppercase tracking-[0.4em] opacity-60">
-                      Verified Admin
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-            <label className="absolute bottom-4 right-4 p-6 bg-secondary text-primary rounded-full shadow-2xl hover:scale-110 hover:rotate-12 transition-all cursor-pointer border-[8px] border-white group-hover:shadow-secondary/50">
-              <Camera className="w-12 h-12 group-hover:scale-110 transition-transform" />
-              <input
-                type="file"
-                className="hidden"
-                accept="image/*"
-                onChange={handleImageUpload}
-              />
-            </label>
+    <div className="w-full flex justify-center px-4 sm:px-6 lg:px-8 pb-12">
+      <div className="w-full max-w-7xl space-y-8">
+        <AutoDismissToast
+          isOpen={toast.isOpen}
+          type={toast.type}
+          message={toast.message}
+          onClose={() => setToast({ ...toast, isOpen: false })}
+        />
+        <ChangePasswordModal
+          isOpen={isChangeOpen}
+          onClose={() => setIsChangeOpen(false)}
+          onSuccess={() =>
+            setToast({
+              isOpen: true,
+              type: "success",
+              message: isAm
+                ? "የይለፍ ቃል ቀይር ተደርጓል"
+                : "Password changed successfully",
+            })
+          }
+        />
+        <div className="relative h-72 bg-primary rounded-[50px]">
+          <div className="absolute inset-0 opacity-10 overflow-hidden rounded-[50px]">
+            <Shield className="w-[500px] h-[500px] absolute -right-20 -top-20 animate-pulse" />
           </div>
-        </div>
-      </div>
-
-      <div className="pt-48 text-center space-y-2">
-        <h2 className="text-4xl font-black text-primary tracking-tight uppercase">
-          {fullName || (isAm ? "ተጠቃሚ" : "User")}
-        </h2>
-        <div className="flex items-center justify-center space-x-3">
-          <span className="h-[2px] w-8 bg-secondary rounded-full" />
-          <p className="text-gray-500 font-black uppercase text-xs tracking-widest flex items-center">
-            <Briefcase className="w-4 h-4 mr-2 text-secondary" />
-            {user?.role === "agency"
-              ? isAm
-                ? "የኤጀንሲ ስራ አስኪያጅ"
-                : "Agency Manager"
-              : isAm
-                ? "ፖሊስ አስተዳዳሪ"
-                : "Police Admin"}
-          </p>
-          <span className="h-[2px] w-8 bg-secondary rounded-full" />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-4">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 space-y-8">
-            <h3 className="text-lg font-bold text-primary border-b pb-4">
-              {isAm ? "የግል መረጃ" : "Personal Information"}
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
-                  {isAm ? "መጀመሪያ ስም" : "First Name"}
-                </label>
-                <input
-                  type="text"
-                  value={formData.firstName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, firstName: e.target.value })
-                  }
-                  className="w-full px-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-medium"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
-                  {isAm ? "የአባት ስም" : "Middle Name"}
-                </label>
-                <input
-                  type="text"
-                  value={formData.middleName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, middleName: e.target.value })
-                  }
-                  className="w-full px-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-medium"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
-                  {isAm ? "የአያት ስም" : "Last Name"}
-                </label>
-                <input
-                  type="text"
-                  value={formData.lastName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, lastName: e.target.value })
-                  }
-                  className="w-full px-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-medium"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
-                  {isAm ? "የተጠቃሚ ስም" : "Username"}
-                </label>
-                <input
-                  type="text"
-                  value={formData.username}
-                  readOnly
-                  className="w-full px-5 py-4 bg-gray-100 border border-gray-200 rounded-2xl outline-none transition-all font-medium cursor-not-allowed"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
-                  {isAm ? "ኢሜል" : "Email Address"}
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="email"
-                    value={formData.email}
-                    readOnly
-                    className="w-full pl-11 pr-4 py-4 bg-gray-100 border border-gray-200 rounded-2xl outline-none transition-all font-medium cursor-not-allowed"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="h-[1px] bg-gray-50" />
-
-            {/* Removed inline password fields — use Change Password modal in profile dropdown */}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
-                  {isAm ? "ስልክ ቁጥር" : "Phone Number"}
-                </label>
-                <input
-                  type="text"
-                  value={formData.phone}
-                  readOnly
-                  className="w-full px-5 py-4 bg-gray-100 border border-gray-200 rounded-2xl outline-none transition-all font-medium cursor-not-allowed"
-                />
-              </div>
-            </div>
-
-            <div className="pt-4 flex justify-between items-center">
-              <div>
-                {saveSuccess && (
-                  <motion.p
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="text-green-600 font-bold text-sm"
-                  >
-                    ✓ {isAm ? "በተሳካ ሁኔታ ተቀምጧል" : "Profile updated successfully"}
-                  </motion.p>
-                )}
-              </div>
-              <div className="flex items-center">
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="blue-gradient text-white px-10 py-4 rounded-2xl font-bold shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all flex items-center space-x-3 disabled:opacity-50"
-                >
-                  {isSaving ? (
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          <div className="absolute -bottom-40 left-1/2 -translate-x-1/2 flex flex-col items-center">
+            <div className="relative group">
+              <div className="w-80 h-80 bg-white rounded-full p-3 shadow-2xl ring-[16px] ring-white/40 group-hover:ring-white/60 transition-all duration-500">
+                <div className="w-full h-full bg-gray-50 rounded-full flex items-center justify-center text-8xl font-black text-primary border-8 border-secondary overflow-hidden shadow-inner ring-4 ring-primary/5">
+                  {user?.avatar ? (
+                    <img
+                      src={resolveBackendAssetUrl(user.avatar)}
+                      alt="Profile"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
                   ) : (
-                    <>
-                      <Save className="w-5 h-5" />
-                      <span>{isAm ? "አዘምን" : "Update Profile"}</span>
-                    </>
+                    <div className="flex flex-col items-center animate-in fade-in zoom-in duration-700">
+                      <span className="leading-none text-9xl">
+                        {user?.initials}
+                      </span>
+                      <span className="text-[10px] font-black text-gray-400 mt-6 uppercase tracking-[0.4em] opacity-60">
+                        Verified Admin
+                      </span>
+                    </div>
                   )}
-                </button>
-                {/* Change Password moved to profile dropdown */}
+                </div>
               </div>
+              <label className="absolute bottom-4 right-4 p-6 bg-secondary text-primary rounded-full shadow-2xl hover:scale-110 hover:rotate-12 transition-all cursor-pointer border-[8px] border-white group-hover:shadow-secondary/50">
+                <Camera className="w-12 h-12 group-hover:scale-110 transition-transform" />
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                />
+              </label>
             </div>
           </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 space-y-6">
-            <h3 className="text-lg font-bold text-primary">
-              {isAm ? "የደህንነት ሁኔታ" : "Security Status"}
-            </h3>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-4 p-4 bg-green-50 rounded-2xl border border-green-100">
-                <div className="p-2 bg-white rounded-lg shadow-sm">
-                  <Fingerprint className="w-5 h-5 text-green-600" />
+        <div className="pt-48 text-center space-y-2">
+          <h2 className="text-4xl font-black text-primary tracking-tight uppercase">
+            {fullName || (isAm ? "ተጠቃሚ" : "User")}
+          </h2>
+          <div className="flex items-center justify-center space-x-3">
+            <span className="h-[2px] w-8 bg-secondary rounded-full" />
+            <p className="text-gray-500 font-black uppercase text-xs tracking-widest flex items-center">
+              <Briefcase className="w-4 h-4 mr-2 text-secondary" />
+              {user?.role === "agency"
+                ? isAm
+                  ? "የድርጅት ስራ አስኪያጅ"
+                  : "Organizanion Manager"
+                : isAm
+                  ? "ፖሊስ አስተዳዳሪ"
+                  : "Police Admin"}
+            </p>
+            <span className="h-[2px] w-8 bg-secondary rounded-full" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-4">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 space-y-8">
+              <h3 className="text-lg font-bold text-primary border-b pb-4">
+                {isAm ? "የግል መረጃ" : "Personal Information"}
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+                    {isAm ? "መጀመሪያ ስም" : "First Name"}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.firstName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, firstName: e.target.value })
+                    }
+                    className="w-full px-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-medium"
+                  />
                 </div>
-                <div>
-                  <p className="text-xs font-bold text-green-900">
-                    {isAm ? "ፋይዳ ተረጋግጧል" : "Fayda ID Verified"}
-                  </p>
-                  <p className="text-[10px] text-green-700">ET-092-2234-5561</p>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+                    {isAm ? "የአባት ስም" : "Middle Name"}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.middleName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, middleName: e.target.value })
+                    }
+                    className="w-full px-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-medium"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+                    {isAm ? "የአያት ስም" : "Last Name"}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.lastName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, lastName: e.target.value })
+                    }
+                    className="w-full px-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-medium"
+                  />
                 </div>
               </div>
-              <div className="flex items-center space-x-4 p-4 bg-primary text-white rounded-2xl shadow-xl">
-                <div className="p-2 bg-white/10 rounded-lg">
-                  <Shield className="w-5 h-5 text-secondary" />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+                    {isAm ? "የተጠቃሚ ስም" : "Username"}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.username}
+                    readOnly
+                    className="w-full px-5 py-4 bg-gray-100 border border-gray-200 rounded-2xl outline-none transition-all font-medium cursor-not-allowed"
+                  />
                 </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+                    {isAm ? "ኢሜል" : "Email Address"}
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="email"
+                      value={formData.email}
+                      readOnly
+                      className="w-full pl-11 pr-4 py-4 bg-gray-100 border border-gray-200 rounded-2xl outline-none transition-all font-medium cursor-not-allowed"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="h-[1px] bg-gray-50" />
+              {/* Removed inline password fields — use Change Password modal in profile dropdown */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+                    {isAm ? "ስልክ ቁጥር" : "Phone Number"}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.phone}
+                    readOnly
+                    className="w-full px-5 py-4 bg-gray-100 border border-gray-200 rounded-2xl outline-none transition-all font-medium cursor-not-allowed"
+                  />
+                </div>
+              </div>
+              <div className="pt-4 flex justify-between items-center">
                 <div>
-                  <p className="text-xs font-bold">
-                    {isAm ? "የመለያ ደረጃ" : "Account Level"}
-                  </p>
-                  <p className="text-[10px] opacity-80 uppercase tracking-widest">
-                    {user?.role === "super_admin"
-                      ? "Root Administrator"
-                      : "Authorized Personnel"}
-                  </p>
+                  {saveSuccess && (
+                    <motion.p
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="text-green-600 font-bold text-sm"
+                    >
+                      ✓{" "}
+                      {isAm ? "በተሳካ ሁኔታ ተቀምጧል" : "Profile updated successfully"}
+                    </motion.p>
+                  )}
+                </div>
+                <div className="flex items-center">
+                  <button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="blue-gradient text-white px-10 py-4 rounded-2xl font-bold shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all flex items-center space-x-3 disabled:opacity-50"
+                  >
+                    {isSaving ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <Save className="w-5 h-5" />
+                        <span>{isAm ? "አዘምን" : "Update Profile"}</span>
+                      </>
+                    )}
+                  </button>
+                  {/* Change Password moved to profile dropdown */}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 space-y-6">
+              <h3 className="text-lg font-bold text-primary">
+                {isAm ? "የደህንነት ሁኔታ" : "Security Status"}
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-4 p-4 bg-green-50 rounded-2xl border border-green-100">
+                  <div className="p-2 bg-white rounded-lg shadow-sm">
+                    <Fingerprint className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-green-900">
+                      {isAm ? "ፋይዳ ተረጋግጧል" : "Fayda ID Verified"}
+                    </p>
+                    <p className="text-[10px] text-green-700">
+                      ET-092-2234-5561
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-4 p-4 bg-primary text-white rounded-2xl shadow-xl">
+                  <div className="p-2 bg-white/10 rounded-lg">
+                    <Shield className="w-5 h-5 text-secondary" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold">
+                      {isAm ? "የመለያ ደረጃ" : "Account Level"}
+                    </p>
+                    <p className="text-[10px] opacity-80 uppercase tracking-widest">
+                      {user?.role === "super_admin"
+                        ? "Root Administrator"
+                        : "Authorized Personnel"}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

@@ -747,13 +747,7 @@ export const LicenseViewer = () => {
   };
 
   if (loadingCert) {
-    return (
-      <LoadingSpinner
-        size="lg"
-        text="Loading certificate..."
-        fullPage
-      />
-    );
+    return <LoadingSpinner size="lg" text="Loading certificate..." fullPage />;
   }
 
   if (loadError) {
@@ -1052,7 +1046,7 @@ export const LicenseViewer = () => {
                     {cert?.applicantPhotoUrl ? (
                       <img
                         src={resolveBackendAssetUrl(cert.applicantPhotoUrl)}
-                        alt={language === "am" ? "የተቋሙ ፎቶ" : "Applicant Photo"}
+                        alt={language === "am" ? "የድርጅት ፎቶ" : "Applicant Photo"}
                         className="w-full h-full object-cover rounded-sm"
                         referrerPolicy="no-referrer"
                         crossOrigin="anonymous"
@@ -1087,10 +1081,11 @@ export const LicenseViewer = () => {
 
                   <div className="py-3 border-y-2 border-[var(--safe-secondary-20)]">
                     <h5 className="text-xl font-black text-primary mb-1">
-                      የግል ጥበቃ ተቋማት የብቃት ማረጋገጫ ምስክር ወረቀት
+                      የግል ጥበቃ ድርጅት የብቃት ማረጋገጫ ምስክር ወረቀት
                     </h5>
                     <h5 className="text-lg font-bold text-[#C5A022] italic font-serif">
-                      Private Security Agencies Quality Assurance Certificate
+                      Private Security Organization Quality Assurance
+                      Certificate
                     </h5>
                   </div>
                 </div>
@@ -1100,18 +1095,24 @@ export const LicenseViewer = () => {
                   <div className="grid grid-cols-2 gap-8">
                     {/* Amharic Column (Left) */}
                     <div className="space-y-4">
-                      <div className="border-b border-[var(--safe-secondary-10)] pb-1.5">
-                        <span className={labelClass}>የተቋሙ ስም:</span>
+                      <div
+                        className="border-b border-[var(--safe-secondary-10)] pb-
+                      "
+                      >
+                        <span className={labelClass}>የድርጅት ስም:</span>{" "}
                         <span
                           className={`${valueClass} uppercase font-black break-words`}
                         >
                           {cert?.organization?.nameAmharic ||
                             cert?.organization?.name ||
-                            "Unknown Agency"}
+                            "Unknown Organization"}
                         </span>
                       </div>
 
-                      <div className="border-b border-[var(--safe-secondary-10)] pb-1.5">
+                      <div
+                        className="border-b border-[var(--safe-secondary-10)] pb-
+                      "
+                      >
                         <span className={labelClass}>አድራሻ: </span>
                         <span className={valueClass}>
                           {formatAddress(cert?.organization, "am") ||
@@ -1119,42 +1120,60 @@ export const LicenseViewer = () => {
                         </span>
                       </div>
 
-                      <div className="border-b border-[var(--safe-secondary-10)] pb-1.5">
+                      <div
+                        className="border-b border-[var(--safe-secondary-10)] pb-
+                      "
+                      >
                         <span className={labelClass}>ልዩ ቦታ: </span>
                         <span className={valueClass}>
                           {getSpecialLocation(cert?.organization) || "-"}
                         </span>
                       </div>
 
-                      <div className="border-b border-[var(--safe-secondary-10)] pb-1.5">
+                      <div
+                        className="border-b border-[var(--safe-secondary-10)] pb-
+                      "
+                      >
                         <span className={labelClass}>የቤት ቁጥር: </span>
                         <span className={valueClass}>
                           {cert?.organization?.address?.houseNumber || "-"}
                         </span>
                       </div>
 
-                      <div className="border-b border-[var(--safe-secondary-10)] pb-1.5">
+                      <div
+                        className="border-b border-[var(--safe-secondary-10)] pb-
+                      "
+                      >
                         <span className={labelClass}>የብቃት ደረጃ: </span>
                         <span className={`${valueClass} uppercase`}>
                           {formatLevel(cert?.level, "am")}
                         </span>
                       </div>
 
-                      <div className="border-b border-[var(--safe-secondary-10)] pb-1.5">
+                      <div
+                        className="border-b border-[var(--safe-secondary-10)] pb-
+                      "
+                      >
                         <span className={labelClass}>የተሰጠበት ቀን: </span>
                         <span className={valueClass}>
                           {formatDate(cert?.issueDate, "am")}
                         </span>
                       </div>
 
-                      <div className="border-b border-[var(--safe-secondary-10)] pb-1.5">
+                      <div
+                        className="border-b border-[var(--safe-secondary-10)] pb-
+                      "
+                      >
                         <span className={labelClass}>የሚያበቃበት ቀን: </span>
                         <span className={valueClass}>
                           {formatDate(cert?.expiryDate, "am")}
                         </span>
                       </div>
 
-                      <div className="border-b border-[var(--safe-secondary-10)] pb-1.5">
+                      <div
+                        className="border-b border-[var(--safe-secondary-10)] pb-
+                      "
+                      >
                         <span className={labelClass}>የፈቃድ ቁጥር: </span>
                         <span
                           className={`${valueClass} font-black text-[#C5A022] tracking-widest uppercase`}
@@ -1169,18 +1188,21 @@ export const LicenseViewer = () => {
 
                     {/* English Column (Right) */}
                     <div className="space-y-4">
-                      <div className="border-b border-[var(--safe-secondary-10)] pb-1.5">
-                        <span className={labelClass}>Name of the Agency: </span>
+                      <div className="border-b border-[var(--safe-secondary-10)] pb-1.0">
+                        <span className={labelClass}>Name Of Org/ : </span>
                         <span
                           className={`${valueClass} uppercase font-black break-words`}
                         >
                           {cert?.organization?.nameEnglish ||
                             cert?.organization?.name ||
-                            "Unknown Agency"}
+                            "Unknown Organization"}
                         </span>
                       </div>
 
-                      <div className="border-b border-[var(--safe-secondary-10)] pb-1.5">
+                      <div
+                        className="border-b border-[var(--safe-secondary-10)] pb-
+                      "
+                      >
                         <span className={labelClass}>Address: </span>
                         <span className={valueClass}>
                           {formatAddress(cert?.organization, "en") ||
@@ -1188,28 +1210,40 @@ export const LicenseViewer = () => {
                         </span>
                       </div>
 
-                      <div className="border-b border-[var(--safe-secondary-10)] pb-1.5">
+                      <div
+                        className="border-b border-[var(--safe-secondary-10)] pb-
+                      "
+                      >
                         <span className={labelClass}>Special Location:</span>
                         <span className={valueClass}>
                           {getSpecialLocation(cert?.organization) || "-"}
                         </span>
                       </div>
 
-                      <div className="border-b border-[var(--safe-secondary-10)] pb-1.5">
+                      <div
+                        className="border-b border-[var(--safe-secondary-10)] pb-
+                      "
+                      >
                         <span className={labelClass}>House No: </span>
                         <span className={valueClass}>
                           {cert?.organization?.address?.houseNumber || "-"}
                         </span>
                       </div>
 
-                      <div className="border-b border-[var(--safe-secondary-10)] pb-1.5">
+                      <div
+                        className="border-b border-[var(--safe-secondary-10)] pb-
+                      "
+                      >
                         <span className={labelClass}>Level: </span>
                         <span className={`${valueClass} uppercase`}>
                           {formatLevel(cert?.level, "en")}
                         </span>
                       </div>
 
-                      <div className="border-b border-[var(--safe-secondary-10)] pb-1.5">
+                      <div
+                        className="border-b border-[var(--safe-secondary-10)] pb-
+                      "
+                      >
                         <span className={labelClass}>Date of Issued: </span>
                         <span className={valueClass}>
                           {cert?.expiryDate
@@ -1218,7 +1252,10 @@ export const LicenseViewer = () => {
                         </span>
                       </div>
 
-                      <div className="border-b border-[var(--safe-secondary-10)] pb-1.5">
+                      <div
+                        className="border-b border-[var(--safe-secondary-10)] pb-
+                      "
+                      >
                         <span className={labelClass}>Date of Expired: </span>
                         <span className={valueClass}>
                           {cert?.expiryDate
@@ -1227,7 +1264,10 @@ export const LicenseViewer = () => {
                         </span>
                       </div>
 
-                      <div className="border-b border-[var(--safe-secondary-10)] pb-1.5">
+                      <div
+                        className="border-b border-[var(--safe-secondary-10)] pb-
+                      "
+                      >
                         <span className={labelClass}>License No: </span>
                         <span
                           className={`${valueClass} font-black text-[#C5A022] tracking-widest uppercase`}
@@ -1240,11 +1280,12 @@ export const LicenseViewer = () => {
 
                   <p className="text-[9.5px] text-[var(--safe-gray-400)] italic mt-5 leading-relaxed">
                     ይህ የብቃት ማረጋገጫ ምስክር ወረቀት በፌዴራል ፖሊስ ኮሚሽን መመሪያ ቁጥር 01/2003 መሠረት
-                    የተሰጠ ነው። ተቋሙ በመመሪያ በተጠቀሱት ውሎችና ግዴታዎች መሠረት የግል ጥበቃ አገልግሎት
+                    የተሰጠ ነው። ድርጅቱ በመመሪያ በተጠቀሱት ውሎችና ግዴታዎች መሠረት የግል ጥበቃ አገልግሎት
                     ለመስጠት ፈቃድ ተሰጥቶታል። / This Certificate is issued pursuant to
                     directive No. 01/2003 of the Federal Police Commission. The
-                    agency is authorized to provide private security services as
-                    per the terms and conditions specified in the directive.
+                    Organization is authorized to provide private security
+                    services as per the terms and conditions specified in the
+                    directive.
                   </p>
                 </div>
 

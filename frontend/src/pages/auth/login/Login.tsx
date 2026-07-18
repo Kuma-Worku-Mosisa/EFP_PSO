@@ -1,3 +1,4 @@
+//filepath: frontend/src/pages/auth/login/Login.tsx
 import { useState } from "react";
 import { useLanguage } from "../../../context/LanguageContext";
 import { useAuth } from "../../../context/AuthContext";
@@ -38,7 +39,7 @@ const normalizeStatusFromApi = (raw?: string) => {
 };
 
 export const Login = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { login } = useAuth();
   const navigate = useNavigate();
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -128,7 +129,9 @@ export const Login = () => {
           <div className="absolute inset-0 bg-primary/80 backdrop-blur-sm flex flex-col justify-center p-12 text-white space-y-8">
             <Shield className="w-16 h-16 text-secondary" />
             <h2 className="text-4xl font-bold leading-tight">
-              Secure Access Portal
+              {language === "am"
+                ? "ደህንነት የተጠበቀ መግቢያ ፖርታል"
+                : "Secure Access Portal"}
             </h2>
             <p className="text-gray-300 text-lg">{t.footer.desc}</p>
           </div>
@@ -138,7 +141,7 @@ export const Login = () => {
         <div className="p-8 md:p-16 space-y-8">
           <div className="flex flex-col items-center space-y-6">
             <img
-              src="https://upload.wikimedia.org/wikipedia/commons/3/30/Federal_Police_Commission_of_Ethiopia_Coat_of_Arms_and_Logo.png"
+              src="../../../../public/images/efp-logo.png"
               alt="Logo"
               className="w-20 h-20 object-contain"
             />
@@ -183,7 +186,7 @@ export const Login = () => {
                   to="/forgot-password"
                   className="text-[10px] text-accent hover:underline"
                 >
-                  Forgot Password?
+                  {language === "am" ? "የይለፍ ቃል ረሳሁ?" : "Forgot Password?"}
                 </Link>
               </div>
               <div className="relative">
@@ -244,12 +247,16 @@ export const Login = () => {
                   onClick={handleSendOtp}
                   className="w-full py-3 bg-gray-100 text-primary font-bold rounded-xl hover:bg-gray-200"
                 >
-                  {otpLoading ? "Sending..." : t.auth.sendOtp}
+                  {otpLoading
+                    ? language === "am"
+                      ? "በመላክ ላይ..."
+                      : "Sending..."
+                    : t.auth.sendOtp}
                 </button>
               ) : (
                 <input
                   {...register("otpCode")}
-                  placeholder="OTP Code"
+                  placeholder={language === "am" ? "የማረጋገጫ ኮድ" : "OTP Code"}
                   className="w-full py-4 bg-primary/5 border border-primary/20 rounded-2xl text-center font-bold tracking-[0.5em]"
                 />
               )}
@@ -264,7 +271,13 @@ export const Login = () => {
                   : "hover:shadow-lg active:scale-95"
               }`}
             >
-              <span>{isSubmitting ? "Logging in..." : t.auth.signIn}</span>
+              <span>
+                {isSubmitting
+                  ? language === "am"
+                    ? "በመግባት ላይ..."
+                    : "Logging in..."
+                  : t.auth.signIn}
+              </span>
               <ArrowRight className="w-5 h-5" />
             </button>
           </form>

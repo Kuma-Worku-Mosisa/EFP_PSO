@@ -610,7 +610,7 @@ export default function OrganizationDashboard() {
                         onClick={() => setSelectedOrgId(org.id)}
                         className="inline-flex items-center gap-1.5 text-[10px] font-black text-secondary hover:text-primary uppercase tracking-widest transition-colors cursor-pointer group/btn px-3 py-1 rounded-lg border border-gray-100 bg-white"
                       >
-                        {t("Agencies", "ኤጀንሲዎች")}
+                        {t("Organizations", "ድርጅቶች ")}
                         <ArrowRight className="h-3 w-3 transition-transform duration-150 group-hover/btn:translate-x-0.5" />
                       </button>
 

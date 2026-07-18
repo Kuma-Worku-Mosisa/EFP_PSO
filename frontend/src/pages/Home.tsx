@@ -18,6 +18,33 @@ import { motion, AnimatePresence } from "motion/react";
 import { Link } from "react-router-dom";
 import { apiRequest, API_BASE } from "../lib/api";
 
+/* ── Desktop-responsive overrides ─────────────────────────────── */
+/* These classes scale up the layout on very wide (≥1536px) screens */
+const c = {
+  wrapper:
+    "max-w-7xl desktop:max-w-none mx-auto desktop:mx-0 px-4 sm:px-6 lg:px-8 desktop:px-16",
+  heroTitle:
+    "block text-4xl md:text-[60px] md:leading-[72px] desktop:text-[72px] desktop:leading-[84px] font-sans",
+  heroSubtitle: "text-3xl md:text-[52px] desktop:text-[64px]",
+  heroDesc: "text-lg md:text-[20px] desktop:text-[22px]",
+  cardIcon: "w-12 h-12 desktop:w-14 desktop:h-14",
+  cardText:
+    "text-white font-black text-lg desktop:text-xl uppercase tracking-tight",
+  newsTitle:
+    "text-4xl desktop:text-5xl font-black text-primary uppercase tracking-tighter leading-none",
+  trustTitle:
+    "text-5xl md:text-7xl desktop:text-8xl font-black text-primary uppercase tracking-tighter leading-[0.8]",
+  trustDesc: "text-xl desktop:text-2xl",
+  shieldCircle:
+    "w-80 desktop:w-96 h-80 desktop:h-96 border-2 border-dashed border-primary/5 rounded-full flex items-center justify-center",
+  shieldIcon:
+    "w-32 h-32 desktop:w-40 desktop:h-40 text-primary opacity-60 group-hover/logo:opacity-100 transition-opacity duration-500 animate-pulse",
+  downloadsTitle:
+    "text-4xl desktop:text-5xl font-black text-primary uppercase tracking-tighter",
+  downloadsDesc: "text-lg desktop:text-xl",
+  sectionGap: "space-y-32 desktop:space-y-40 pb-32",
+};
+
 type PublicNewsItem = {
   id: number;
   title: string;
@@ -71,7 +98,10 @@ export const Home = () => {
         id: item.id,
         title: isAm && item.titleAm ? item.titleAm : item.title,
         desc: isAm
-          ? item.summaryAm || item.contentAm || item.summary || item.content.slice(0, 120)
+          ? item.summaryAm ||
+            item.contentAm ||
+            item.summary ||
+            item.content.slice(0, 120)
           : item.summary || item.content.slice(0, 120),
         date: new Date(item.publishedAt).toLocaleDateString(
           isAm ? "am-ET" : "en-US",
@@ -111,9 +141,9 @@ export const Home = () => {
   const displayedNews = showArchive ? news : news.slice(0, 3);
 
   return (
-    <div className="space-y-32 pb-32">
+    <div className={c.sectionGap}>
       {/* Hero Section */}
-      <section className="relative h-[90vh] flex items-center overflow-hidden">
+      <section className="relative h-[90vh] desktop:h-[85vh] flex items-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <motion.img
             initial={{ scale: 1.1 }}
@@ -131,8 +161,8 @@ export const Home = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/80 to-transparent" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div className={`${c.wrapper} relative z-10 w-full`}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 desktop:gap-20 gap-12 items-center">
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               animate={{ opacity: 1, x: 0 }}
@@ -152,15 +182,15 @@ export const Home = () => {
               </motion.div>
 
               <h1 className="font-extrabold tracking-tight text-center lg:text-left">
-                <span className="block text-4xl md:text-[60px] md:leading-[72px] font-sans">
-                  {t.hero.titleLine1}
-                </span>
-                <span className="block text-secondary text-3xl md:text-[52px]">
+                <span className={c.heroTitle}>{t.hero.titleLine1}</span>
+                <span className={`text-secondary ${c.heroSubtitle}`}>
                   {t.hero.titleLine2}
                 </span>
               </h1>
 
-              <p className="text-gray-300 font-medium leading-relaxed max-w-2xl text-center lg:text-left text-lg md:text-[20px]">
+              <p
+                className={`text-gray-300 font-medium leading-relaxed max-w-2xl text-center lg:text-left ${c.heroDesc}`}
+              >
                 {t.hero.subtitle}
               </p>
 
@@ -205,11 +235,13 @@ export const Home = () => {
                   <div className="space-y-6">
                     <div className="p-6 bg-white/5 rounded-3xl border border-white/10 backdrop-blur-sm group-hover:bg-white/10 transition-all">
                       <div className="flex items-center space-x-4">
-                        <div className="w-12 h-12 bg-secondary/20 rounded-2xl flex items-center justify-center">
+                        <div
+                          className={`${c.cardIcon} bg-secondary/20 rounded-2xl flex items-center justify-center`}
+                        >
                           <Shield className="w-6 h-6 text-secondary" />
                         </div>
                         <div>
-                          <p className="text-white font-black text-lg uppercase tracking-tight">
+                          <p className={c.cardText}>
                             {t.hero.card.commandCenter}
                           </p>
                           <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mt-0.5">
@@ -263,16 +295,14 @@ export const Home = () => {
       {/* Stats Section Mobile Removed */}
 
       {/* Latest News & Announcements */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className={c.wrapper}>
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
           <div className="space-y-4">
             <div className="inline-flex items-center space-x-2 bg-blue-50 text-primary px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-primary/10">
               <Newspaper className="w-3 h-3" />
               <span>{t.services.items[2].title}</span>
             </div>
-            <h3 className="text-4xl font-black text-primary uppercase tracking-tighter leading-none">
-              {t.services.newsTitle}
-            </h3>
+            <h3 className={c.newsTitle}>{t.services.newsTitle}</h3>
           </div>
         </div>
 
@@ -324,7 +354,7 @@ export const Home = () => {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 desktop:grid-cols-4">
               {displayedNews.map((item, i) => (
                 <motion.div
                   key={i}
@@ -339,7 +369,7 @@ export const Home = () => {
                   viewport={{ once: true }}
                   className="group bg-white rounded-[32px] border border-gray-100 shadow-sm hover:shadow-2xl transition-all overflow-hidden"
                 >
-                  <div className="h-72 relative overflow-hidden bg-gray-50 group-hover:bg-gray-100 transition-colors duration-700">
+                  <div className="h-72 desktop:h-80 relative overflow-hidden bg-gray-50 group-hover:bg-gray-100 transition-colors duration-700">
                     <img
                       src={item.image}
                       alt={item.title}
@@ -449,11 +479,11 @@ export const Home = () => {
                     <p>
                       {isAm
                         ? "ይህ መመሪያ ከዛሬ ጀምሮ ተግባራዊ የሚደረግ ሲሆን፣ ሁሉም የሚመለከታቸው አካላት ተገቢውን ዝግጅት እንዲያደርጉ እናበረታታለን። ተጨማሪ መረጃ ለማግኘት የፌዴራል ፖሊስ ኮሚሽን ድረ-ገጽን መከታተል ይቻላል።"
-                        : "This initiative represents a major step forward in our national security framework. All stakeholders are advised to review the full technical documentation available in the resources section. Our team is working around the clock to ensure a smooth transition for all registered agencies."}
+                        : "This initiative represents a major step forward in our national security framework. All stakeholders are advised to review the full technical documentation available in the resources section. Our team is working around the clock to ensure a smooth transition for all registered Organizations."}
                     </p>
                     <p>
                       {isAm
-                        ? "የደህንነት ኤጀንሲዎች ስራቸውን በብቃት እና በሃላፊነት እንዲወጡ የሚያግዙ አዳዲስ አሰራሮች በየጊዜው ይፋ ይደረጋሉ።"
+                        ? " የግል ጥበቃ ድርጅቶች ስራቸውን በብቃት እና በሃላፊነት እንዲወጡ የሚያግዙ አዳዲስ አሰራሮች በየጊዜው ይፋ ይደረጋሉ።"
                         : "Continuous monitoring and evaluation will follow to guarantee compliance and operational safety across all regional sectors."}
                     </p>
                   </div>
@@ -486,8 +516,8 @@ export const Home = () => {
           <div className="absolute top-0 left-0 w-full h-full bg-[linear-gradient(30deg,#0a192f_1px,transparent_1px),linear-gradient(150deg,#0a192f_1px,transparent_1px)] bg-[size:40px_40px]" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+        <div className={`${c.wrapper} relative z-10`}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 desktop:gap-28 gap-20 items-center">
             <div className="space-y-10">
               <motion.div
                 initial={{ opacity: 0, x: -30 }}
@@ -512,7 +542,7 @@ export const Home = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ type: "spring", stiffness: 50, delay: 0.1 }}
                   viewport={{ once: true }}
-                  className="text-5xl md:text-7xl font-black text-primary uppercase tracking-tighter leading-[0.8] max-w-xl"
+                  className={c.trustTitle}
                 >
                   {t.trust.title}
                 </motion.h3>
@@ -521,7 +551,7 @@ export const Home = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ type: "spring", stiffness: 50, delay: 0.2 }}
                   viewport={{ once: true }}
-                  className="text-gray-600 text-xl font-medium leading-relaxed max-w-lg italic"
+                  className={`text-gray-600 ${c.trustDesc} font-medium leading-relaxed max-w-lg italic`}
                 >
                   {t.trust.desc}
                 </motion.p>
@@ -592,7 +622,7 @@ export const Home = () => {
                       repeat: Infinity,
                       ease: "linear",
                     }}
-                    className="relative w-80 h-80 border-2 border-dashed border-primary/5 rounded-full flex items-center justify-center p-8"
+                    className={c.shieldCircle}
                   >
                     <div className="absolute inset-0 border border-accent/20 rounded-full animate-[ping_4s_ease-in-out_infinite]" />
                     <div className="w-full h-full bg-white rounded-full flex items-center justify-center p-8 shadow-2xl border border-gray-100 relative group/logo overflow-hidden">
@@ -622,7 +652,7 @@ export const Home = () => {
                         className="absolute inset-16 border-2 border-accent/40 rounded-full"
                       />
                       <div className="relative z-10">
-                        <Shield className="w-32 h-32 text-primary opacity-60 group-hover/logo:opacity-100 transition-opacity duration-500 animate-pulse" />
+                        <Shield className={c.shieldIcon} />
                       </div>
                     </div>
                   </motion.div>
@@ -659,12 +689,12 @@ export const Home = () => {
 
       {/* Requirement Highlight */}
       <section className="bg-dark-blue py-24 overflow-hidden relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className={`${c.wrapper} relative z-10`}>
           <div className="max-w-3xl mx-auto text-center space-y-8">
             <h2 className="text-secondary font-bold tracking-widest uppercase text-sm">
               {t.fayda.badge}
             </h2>
-            <h3 className="text-4xl md:text-5xl font-bold text-white leading-tight">
+            <h3 className="text-4xl md:text-5xl desktop:text-6xl font-bold text-white leading-tight">
               {t.fayda.title}
             </h3>
             <p className="text-gray-300 text-lg leading-relaxed">
@@ -695,17 +725,17 @@ export const Home = () => {
       </section>
 
       {/* Downloads Section Only */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gray-50 rounded-[64px] p-12 md:p-20 relative overflow-hidden">
+      <section className={`${c.wrapper}`}>
+        <div className="bg-gray-50 rounded-[64px] p-12 md:p-20 desktop:p-24 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-secondary/5 rounded-full -mr-32 -mt-32" />
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 desktop:gap-20 gap-16 items-center">
             <div className="space-y-6">
-              <h3 className="text-4xl font-black text-primary uppercase tracking-tighter">
-                {t.rules.title}
-              </h3>
-              <p className="text-gray-500 font-medium text-lg leading-relaxed italic max-w-lg">
+              <h3 className={c.downloadsTitle}>{t.rules.title}</h3>
+              <p
+                className={`text-gray-500 font-medium ${c.downloadsDesc} leading-relaxed italic max-w-lg`}
+              >
                 {isAm
-                  ? "ሁሉንም የፌዴራል ፖሊስ ደንቦች እና መመሪያዎች እዚህ ያግኙ። እነዚህም ሰነዶች ለኤጀንሲዎች ስራ መሰረት ናቸው።"
+                  ? "ሁሉንም የፌዴራል ፖሊስ ደንቦች እና መመሪያዎች እዚህ ያግኙ። እነዚህም ሰነዶች ለድርጅቶች ስራ መሰረት ናቸው።"
                   : "Access the complete library of federal security mandates and procedural frameworks required for operational legitimacy."}
               </p>
               <Link

@@ -136,11 +136,24 @@ app.use(
     res: express.Response,
     next: express.NextFunction,
   ) => {
-    console.error(err.stack);
-    res.status(500).json({
-      error: "Internal Server Error",
-      message:
-        process.env.NODE_ENV === "development"
+    console.error(err?.stack || err);
+
+    const message = String(err?.message || "");
+    const code = String(err?.code || "");
+    const isDatabaseUnavailable =
+      code === "DB_UNAVAILABLE" ||
+      code === "P1001" ||
+      message.includes("Failed to connect") ||
+      message.includes("ECONNREFUSED") ||
+      message.includes("timed out");
+
+    res.status(isDatabaseUnavailable ? 503 : 500).json({
+      error: isDatabaseUnavailable
+        ? "Service Unavailable"
+        : "Internal Server Error",
+      message: isDatabaseUnavailable
+        ? "The database is temporarily unavailable. Please try again shortly."
+        : process.env.NODE_ENV === "development"
           ? err.message
           : "Something went wrong",
     });

@@ -337,6 +337,12 @@ export const getOrganizationDetailsHandler = async (
       },
     });
 
+    // Fetch regular period reports for this organization
+    const regularPeriodReports = await prisma.regularPeriodReport.findMany({
+      where: { organizationId: id },
+      select: { id: true },
+    });
+
     // Fetch service contracts
     const serviceContracts = await prisma.serviceContract.findMany({
       where: { organizationId: id },
@@ -567,6 +573,7 @@ export const getOrganizationDetailsHandler = async (
         createdAt: inc.createdAt.toISOString(),
         updatedAt: inc.updatedAt.toISOString(),
       })),
+      regularPeriodReportsCount: regularPeriodReports.length,
       educationStats: educationStats
         ? {
             id: educationStats.id,
@@ -1564,22 +1571,38 @@ export const getAddressChangeRequestsHandler = async (
         currentAddress: {
           regionName:
             currentRegion?.nameEnglish || currentRegion?.nameAmharic || "",
+          regionNameEnglish: currentRegion?.nameEnglish || "",
+          regionNameAmharic: currentRegion?.nameAmharic || "",
           zoneName: currentZone?.nameEnglish || currentZone?.nameAmharic || "",
+          zoneNameEnglish: currentZone?.nameEnglish || "",
+          zoneNameAmharic: currentZone?.nameAmharic || "",
           woredaName:
             currentWoreda?.nameEnglish || currentWoreda?.nameAmharic || "",
+          woredaNameEnglish: currentWoreda?.nameEnglish || "",
+          woredaNameAmharic: currentWoreda?.nameAmharic || "",
           kebeleName:
             currentKebele?.nameEnglish || currentKebele?.nameAmharic || "",
+          kebeleNameEnglish: currentKebele?.nameEnglish || "",
+          kebeleNameAmharic: currentKebele?.nameAmharic || "",
           specialLocation: currentAddress?.specialLocation ?? null,
           houseNumber: currentAddress?.houseNumber ?? null,
         },
         requestedAddress: {
           regionName:
             requestedRegion?.nameEnglish || requestedRegion?.nameAmharic || "",
+          regionNameEnglish: requestedRegion?.nameEnglish || "",
+          regionNameAmharic: requestedRegion?.nameAmharic || "",
           zoneName:
             requestedZone?.nameEnglish || requestedZone?.nameAmharic || "",
+          zoneNameEnglish: requestedZone?.nameEnglish || "",
+          zoneNameAmharic: requestedZone?.nameAmharic || "",
           woredaName:
             requestedWoreda?.nameEnglish || requestedWoreda?.nameAmharic || "",
+          woredaNameEnglish: requestedWoreda?.nameEnglish || "",
+          woredaNameAmharic: requestedWoreda?.nameAmharic || "",
           kebeleName: kebele?.nameEnglish || kebele?.nameAmharic || "",
+          kebeleNameEnglish: kebele?.nameEnglish || "",
+          kebeleNameAmharic: kebele?.nameAmharic || "",
           specialLocation: r.requestedSpecialLocation ?? null,
           houseNumber: r.requestedHouseNumber ?? null,
         },

@@ -336,8 +336,8 @@ const getCorrectionUploadFieldKey = (
   ) {
     return `${rolePrefix}_support_doc`;
   }
-  if (normalizedLabel.includes("collateral"))
-    return `${rolePrefix}_collateral_doc`;
+  if (normalizedLabel.includes("guarantee"))
+    return `${rolePrefix}_guarantee_doc`;
   if (normalizedLabel.includes("experience"))
     return `${rolePrefix}_experience_doc`;
   if (normalizedLabel.includes("resignation"))
@@ -619,8 +619,8 @@ export const ApplicationsReview = () => {
   const t = {
     title: isAm ? "የማመልከቻዎች ግምገማ" : "Applications Review",
     subtitle: isAm
-      ? "የኤጀንሲዎችን የፈቃድ ማመልከቻዎች ይገምግሙ እና ያጽድቁ/ውድቅ ያድርጉ።"
-      : "Review and approve/reject agency license applications.",
+      ? "የድርጅቶችን የፈቃድ ማመልከቻዎች ይገምግሙ እና ያጽድቁ/ውድቅ ያድርጉ።"
+      : "Review and approve/reject Organization license applications.",
     tabs: {
       all: isAm ? "ሁሉም" : "All",
       pending: isAm ? "በመጠባበቅ ላይ" : "Pending",
@@ -630,7 +630,7 @@ export const ApplicationsReview = () => {
     table: {
       appId: isAm ? "የማመልከቻ መለያ" : "App ID",
       applicant: isAm ? "አመልካች" : "Applicant",
-      agency: isAm ? "ኤጀንሲ" : "Agency",
+      agency: isAm ? "የድርጅት" : "Organization",
       type: isAm ? "ዓይነት" : "Type",
       date: isAm ? "ቀን" : "Date",
       status: isAm ? "ሁኔታ" : "Status",
@@ -2100,17 +2100,17 @@ export const ApplicationsReview = () => {
                 }
               />
               <ReviewItem
-                label="Proof of Collateral"
+                label="Proof of Guarantee"
                 value={
                   getFileName(
-                    findEmployeeDoc(selectedApp.manager, ["collateral"])
+                    findEmployeeDoc(selectedApp.manager, ["guarantee"])
                       ?.fileUrl,
                   ) || "-"
                 }
-                id="new_mgr_collateral"
+                id="new_mgr_guarantee"
                 isFile
                 fileUrl={
-                  findEmployeeDoc(selectedApp.manager, ["collateral"])?.fileUrl
+                  findEmployeeDoc(selectedApp.manager, ["guarantee"])?.fileUrl
                 }
               />
               <ReviewItem
@@ -2422,17 +2422,17 @@ export const ApplicationsReview = () => {
                 }
               />
               <ReviewItem
-                label="Proof of Collateral"
-                id="new_ops_collateral"
+                label="Proof of Guarantee"
+                id="new_ops_guarantee"
                 value={
                   getFileName(
-                    findEmployeeDoc(selectedApp.operationsHead, ["collateral"])
+                    findEmployeeDoc(selectedApp.operationsHead, ["guarantee"])
                       ?.fileUrl,
                   ) || "-"
                 }
                 isFile
                 fileUrl={
-                  findEmployeeDoc(selectedApp.operationsHead, ["collateral"])
+                  findEmployeeDoc(selectedApp.operationsHead, ["guarantee"])
                     ?.fileUrl
                 }
               />
@@ -2721,18 +2721,17 @@ export const ApplicationsReview = () => {
                 }
               />
               <ReviewItem
-                label="proof of collateral"
-                id="new_admin_collateral"
+                label="proof of Guarantee"
+                id="new_admin_guarantee"
                 value={
                   getFileName(
-                    findEmployeeDoc(selectedApp.adminHead, ["collateral"])
+                    findEmployeeDoc(selectedApp.adminHead, ["guarantee"])
                       ?.fileUrl,
                   ) || "-"
                 }
                 isFile
                 fileUrl={
-                  findEmployeeDoc(selectedApp.adminHead, ["collateral"])
-                    ?.fileUrl
+                  findEmployeeDoc(selectedApp.adminHead, ["guarantee"])?.fileUrl
                 }
               />
               <ReviewItem

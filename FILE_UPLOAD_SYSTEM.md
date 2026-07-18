@@ -42,7 +42,7 @@ Files are automatically renamed to prevent conflicts:
 - `manager_medical_doc` - Medical Certificate
 - `manager_training_doc` - Training Certificate
 - `manager_support_doc` - Supporting Document
-- `manager_collateral_doc` - Collateral Document
+- `manager_guarantee_doc` - guarantee Document
 - `manager_experience_doc` - Experience Certificate
 - `manager_resignation_letter_doc` - Resignation Letter
 - `manager_organization_Id_doc` - Organization ID Document
@@ -55,7 +55,7 @@ Files are automatically renamed to prevent conflicts:
 - `operations_medical_doc` - Medical Certificate
 - `operations_training_doc` - Training Certificate
 - `operations_support_doc` - Supporting Document
-- `operations_collateral_doc` - Collateral Document
+- `operations_guarantee_doc` - guarantee Document
 - `operations_experience_doc` - Experience Certificate
 - `operations_resignation_letter_doc` - Resignation Letter
 - `operations_organization_Id_doc` - Organization ID Document
@@ -68,7 +68,7 @@ Files are automatically renamed to prevent conflicts:
 - `administrator_medical_doc` - Medical Certificate
 - `administrator_training_doc` - Training Certificate
 - `administrator_support_doc` - Supporting Document
-- `administrator_collateral_doc` - Collateral Document
+- `administrator_guarantee_doc` - guarantee Document
 - `administrator_experience_doc` - Experience Certificate
 - `administrator_resignation_letter_doc` - Resignation Letter
 - `administrator_organization_Id_doc` - Organization ID Document
@@ -81,7 +81,7 @@ Files are automatically renamed to prevent conflicts:
 - `security_guard_medical_doc` - Medical Certificate
 - `security_guard_training_doc` - Training Certificate
 - `security_guard_support_doc` - Supporting Document
-- `security_guard_collateral_doc` - Collateral Document
+- `security_guard_guarantee_doc` - guarantee Document
 - `security_guard_experience_doc` - Experience Certificate
 - `security_guard_resignation_letter_doc` - Resignation Letter
 - `security_guard_organization_Id_doc` - Organization ID Document

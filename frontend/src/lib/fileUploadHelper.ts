@@ -1,3 +1,4 @@
+//filepath: frontend/src/lib/fileUploadHelper.ts
 import { API_BASE } from "./api";
 
 /**
@@ -32,19 +33,6 @@ async function safeReadResponse(response: Response): Promise<any> {
   }
 }
 
-/**
- * Upload documents for an organization
- * Files should be organized by role: {role}_{documentType}
- *
- * Example usage:
- * const files = new Map([
- *   ['manager_education_doc', fileObject1],
- *   ['manager_medical_doc', fileObject2],
- *   ['operations_education_doc', fileObject3],
- * ]);
- *
- * const result = await uploadOrganizationDocuments('My Agency', files);
- */
 export async function uploadOrganizationDocuments(
   organizationName: string,
   filesMap: Map<string, File> | Record<string, File>,
@@ -165,7 +153,7 @@ export function getDocumentTypeName(fieldName: string): string {
     medical_doc: "Medical Certificate",
     training_doc: "Training Certificate",
     support_doc: "Supporting Document",
-    collateral_doc: "Collateral Document",
+    guarantee_doc: "Proof of Guarantee",
     experience_doc: "Experience Certificate",
     resignation_letter_doc: "Resignation Letter",
     organization_Id_doc: "Organization ID Document",

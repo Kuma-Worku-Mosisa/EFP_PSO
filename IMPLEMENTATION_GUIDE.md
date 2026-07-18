@@ -144,7 +144,7 @@ Reference implementation showing:
 - `medical_doc` - Medical Certificate
 - `training_doc` - Training Certificate
 - `support_doc` - Supporting Document
-- `collateral_doc` - Collateral Document
+- `guarantee_doc` - guarantee Document
 - `experience_doc` - Experience Certificate
 - `resignation_letter_doc` - Resignation Letter
 - `organization_Id_doc` - Organization ID Document

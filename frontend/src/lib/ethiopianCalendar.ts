@@ -1,4 +1,5 @@
 /** Format dates for inspection PDFs (Gregorian or Ethiopian calendar). */
+// filspath: frontend/src/lib/ethiopianCalendar.ts
 export function formatInspectionPdfDate(
   value?: string | null,
   options?: { ethiopian?: boolean; includeTime?: boolean },
@@ -40,6 +41,21 @@ export function formatInspectionPdfDate(
     day: "2-digit",
     ...(includeTime ? { hour: "2-digit", minute: "2-digit" } : {}),
   }).format(date);
+}
+
+export function convertGregorianToEthiopianDateTime(
+  value?: string | Date | null,
+  options?: { includeTime?: boolean },
+): string {
+  if (value === undefined || value === null) return "-";
+
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (!date || Number.isNaN(date.getTime())) return String(value);
+
+  return formatInspectionPdfDate(date.toISOString(), {
+    ethiopian: true,
+    includeTime: options?.includeTime,
+  });
 }
 
 const ETHIOPIAN_MONTHS = [
@@ -84,9 +100,7 @@ function jdnToEthiopian(jdn: number): {
   const r = offset % 1461;
   const n = (r % 365) + 365 * Math.floor(r / 1460);
   const year =
-    4 * Math.floor(offset / 1461) +
-    Math.floor(r / 365) -
-    Math.floor(r / 1460);
+    4 * Math.floor(offset / 1461) + Math.floor(r / 365) - Math.floor(r / 1460);
   const month = Math.floor(n / 30) + 1;
   const day = (n % 30) + 1;
   return { year, month, day };

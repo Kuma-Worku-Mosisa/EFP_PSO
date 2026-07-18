@@ -1,3 +1,4 @@
+//filepath: backend/src/middleware/fileUpload.ts
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -60,6 +61,17 @@ export const resolveOrganizationUploadDir = (organizationName: string) =>
     ORGANIZATION_ROOT_FOLDER,
     resolveOrganizationFolderName(organizationName),
   );
+
+export const resolveCustomDocumentFolderSegments = (folderPath: string) => {
+  const trimmed = String(folderPath || "").trim();
+  if (!trimmed) return [];
+
+  const withoutUploadsPrefix = trimmed.replace(/^uploads[\\/]+/i, "");
+  return withoutUploadsPrefix
+    .split(/[\\/]+/)
+    .map((segment) => sanitizeFolderSegment(segment))
+    .filter(Boolean);
+};
 
 export const buildPrefixedFilename = (
   prefix: string,
@@ -186,6 +198,7 @@ export const createOrgDocumentUploader = (
  */
 export const buildEmployeeFilename = (originalName: string) => {
   const timestamp = Date.now();
+  const uniqueSuffix = crypto.randomUUID().replace(/-/g, "");
   const sanitizedName =
     String(originalName)
       .replace(/[^a-zA-Z0-9.\-_]/g, "_")
@@ -193,7 +206,7 @@ export const buildEmployeeFilename = (originalName: string) => {
       .replace(/^_+|_+$/g, "")
       .toLowerCase() || "file";
 
-  return `${timestamp}-${sanitizedName}`;
+  return `${timestamp}-${uniqueSuffix}-${sanitizedName}`;
 };
 
 export const createOrganizationDocumentsUploader = () => {
@@ -224,6 +237,9 @@ export const createOrganizationDocumentsUploader = () => {
       const employeeFullName = String(
         req.body?.employeeFullName || req.body?.fullName || "",
       ).trim();
+      const documentFolderPath = String(
+        req.body?.documentFolderPath || req.body?.folderPath || "",
+      ).trim();
 
       let uploadDir = path.join(
         resolveOrganizationUploadDir(organizationName),
@@ -244,6 +260,12 @@ export const createOrganizationDocumentsUploader = () => {
         );
       }
 
+      const customFolderSegments =
+        resolveCustomDocumentFolderSegments(documentFolderPath);
+      customFolderSegments.forEach((segment) => {
+        uploadDir = path.join(uploadDir, segment);
+      });
+
       if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });
       }
@@ -255,12 +277,16 @@ export const createOrganizationDocumentsUploader = () => {
         req.body?.employeeFullName || req.body?.fullName || "",
       ).trim();
 
-      if (employeeFullName) {
+      // Always prefix the stored filename with the document field name (document type)
+      // This ensures files like `operations_resignation_record_doc-...-original.pdf`
+      // even when employeeFullName is provided and used for folder segmentation.
+      try {
+        const prefix = String(file.fieldname || "file");
+        cb(null, buildPrefixedFilename(prefix, file.originalname));
+      } catch (err) {
+        // Fallback to a generic unique filename
         cb(null, buildEmployeeFilename(file.originalname));
-        return;
       }
-
-      cb(null, buildPrefixedFilename(file.fieldname, file.originalname));
     },
   });
 

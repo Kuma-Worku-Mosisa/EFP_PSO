@@ -28,6 +28,7 @@ import {
 import { apiRequest } from "../../lib/api";
 import { uploadOrganizationDocuments } from "../../lib/fileUploadHelper";
 import { useLanguage } from "../../context/LanguageContext";
+import { AutoDismissToast } from "../../components/AutoDismissToast";
 
 export default function EmployeeRegistration() {
   const { language } = useLanguage();
@@ -51,10 +52,14 @@ export default function EmployeeRegistration() {
   // Close dropdowns on outside click
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (regionRef.current && !regionRef.current.contains(e.target as Node)) setRegionOpen(false);
-      if (zoneRef.current && !zoneRef.current.contains(e.target as Node)) setZoneOpen(false);
-      if (woredaRef.current && !woredaRef.current.contains(e.target as Node)) setWoredaOpen(false);
-      if (kebeleRef.current && !kebeleRef.current.contains(e.target as Node)) setKebeleOpen(false);
+      if (regionRef.current && !regionRef.current.contains(e.target as Node))
+        setRegionOpen(false);
+      if (zoneRef.current && !zoneRef.current.contains(e.target as Node))
+        setZoneOpen(false);
+      if (woredaRef.current && !woredaRef.current.contains(e.target as Node))
+        setWoredaOpen(false);
+      if (kebeleRef.current && !kebeleRef.current.contains(e.target as Node))
+        setKebeleOpen(false);
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
@@ -183,7 +188,29 @@ export default function EmployeeRegistration() {
     string | null
   >(null);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [toastOpen, setToastOpen] = useState(false);
+  const [toastType, setToastType] = useState<"success" | "error">("success");
+  const [toastMessage, setToastMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const hiddenPositionNames = [
+    "Manager of Organization",
+    "Operation of Organization",
+    "Administrative and Finance of Organization",
+  ];
+
+  const isHiddenPosition = (position: any) => {
+    const name = String(position?.name || "")
+      .trim()
+      .toLowerCase();
+    return hiddenPositionNames.some(
+      (hiddenName) => name === hiddenName.toLowerCase(),
+    );
+  };
+
+  const visiblePositions = positions.filter(
+    (position: any) => !isHiddenPosition(position),
+  );
 
   useEffect(() => {
     // Fetch positions and regions on mount
@@ -208,7 +235,9 @@ export default function EmployeeRegistration() {
         const orgId =
           payload?.organizationId || payload?.id || payload?.organization?.id;
         if (!payload || !orgId) {
-          throw new Error(isAm ? "የድርጅት መረጃ አይገኝም" : "Organization information not available");
+          throw new Error(
+            isAm ? "የድርጅት መረጃ አይገኝም" : "Organization information not available",
+          );
         }
 
         setOrganizationId(Number(orgId));
@@ -224,7 +253,9 @@ export default function EmployeeRegistration() {
         console.error("Failed to load organization info", error);
         setOrganizationLoadError(
           error?.message ||
-            (isAm ? "ለምዝገባ ድርጅትዎን መለየት አልተቻለም።" : "Unable to determine your organization for registration."),
+            (isAm
+              ? "ለምዝገባ ድርጅትዎን መለየት አልተቻለም።"
+              : "Unable to determine your organization for registration."),
         );
       }
     };
@@ -291,12 +322,23 @@ export default function EmployeeRegistration() {
   };
 
   // Mock validation handler
+  const showToast = (type: "success" | "error", message: string) => {
+    setToastType(type);
+    setToastMessage(message);
+    setToastOpen(true);
+  };
+
   const handleValidate = (field: string) => {
     const value = formData[field as keyof typeof formData] as string;
     const normalizedField = field === "faydaId" ? "faydaId" : field;
 
     if (!value || typeof value !== "string") {
-      alert(isAm ? "እባክዎ ከማረጋገጥዎ በፊት እሴት ያስገቡ።" : "Please enter a value before validating.");
+      showToast(
+        "error",
+        isAm
+          ? "እባክዎ ከማረጋገጥዎ በፊት እሴት ያስገቡ።"
+          : "Please enter a value before validating.",
+      );
       return;
     }
 
@@ -313,18 +355,28 @@ export default function EmployeeRegistration() {
         }
         const { data } = payload;
         if (data.validFormat === false) {
-          alert(data.message);
+          showToast("error", data.message);
           return;
         }
-        alert(
+        showToast(
+          data.exists ? "error" : "success",
           data.exists
-            ? (isAm ? `${field} አስቀድሞ ተመዝግቧል፣ እባክዎ የተለየ እሴት ይምረጡ።` : `${field} is already registered, please choose a different value.`)
-            : (isAm ? `${field} ይገኛል።` : `${field} is available.`),
+            ? isAm
+              ? `${field} አስቀድሞ ተመዝግቧል፣ እባክዎ የተለየ እሴት ይምረጡ።`
+              : `${field} is already registered, please choose a different value.`
+            : isAm
+              ? `${field} ይገኛል።`
+              : `${field} is available.`,
         );
       })
       .catch((error) => {
         console.error("Validation error:", error);
-        alert(isAm ? (error.message || "ማረጋገጥ አልተሳካም።") : (error.message || "Validation failed."));
+        showToast(
+          "error",
+          isAm
+            ? error.message || "ማረጋገጥ አልተሳካም።"
+            : error.message || "Validation failed.",
+        );
       });
   };
 
@@ -333,7 +385,11 @@ export default function EmployeeRegistration() {
 
   const steps = [
     { number: 1, title: isAm ? "መለያ ማዋቀር" : "Account Setup", icon: User },
-    { number: 2, title: isAm ? "የሰው ኃይል እና አድራሻ" : "HR & Location", icon: Briefcase },
+    {
+      number: 2,
+      title: isAm ? "የሰው ኃይል እና አድራሻ" : "HR & Location",
+      icon: Briefcase,
+    },
     { number: 3, title: isAm ? "ሰነዶች" : "Documents", icon: FileText },
   ];
 
@@ -404,9 +460,11 @@ export default function EmployeeRegistration() {
     setSubmissionError(null);
 
     if (!organizationId || !organizationName) {
-      setSubmissionError(
-        isAm ? "ያለ ድርጅት አውድ ሰራተኛ መመዝገብ አይቻልም። እባክዎ ያድሱ ወይም ድጋፍ ያግኙ።" : "Cannot register employee without organization context. Please refresh or contact support.",
-      );
+      const message = isAm
+        ? "ያለ ድርጅት አውድ ሰራተኛ መመዝገብ አይቻልም። እባክዎ ያድሱ ወይም ድጋፍ ያግኙ።"
+        : "Cannot register employee without organization context. Please refresh or contact support.";
+      setSubmissionError(message);
+      showToast("error", message);
       return;
     }
 
@@ -416,22 +474,30 @@ export default function EmployeeRegistration() {
       !formData.woreda ||
       !formData.kebele
     ) {
-      setSubmissionError(
-        isAm ? "እባክዎ የአድራሻ ምርጫን ያጠናቅቁ፦ ክልል፣ ዞን/ከተማ፣ ወረዳ እና ቀበሌ ያስፈልጋሉ።" : "Please complete the address selection: Region, Zone/Subcity, Woreda, and Kebele are required.",
-      );
+      const message = isAm
+        ? "እባክዎ የአድራሻ ምርጫን ያጠናቅቁ፦ ክልል፣ ዞን/ከተማ፣ ወረዳ እና ቀበሌ ያስፈልጋሉ።"
+        : "Please complete the address selection: Region, Zone/Subcity, Woreda, and Kebele are required.";
+      setSubmissionError(message);
+      showToast("error", message);
       return;
     }
 
     const kebeleIdValue = Number(formData.kebele);
     if (!Number.isInteger(kebeleIdValue) || kebeleIdValue <= 0) {
-      setSubmissionError(
-        isAm ? "የተመረጠው ቀበሌ ልክ አይደለም። እባክዎ ከማስገባትዎ በፊት ልክ የሆነ ቀበሌ ይምረጡ።" : "Selected Kebele is invalid. Please choose a valid kebele before submitting.",
-      );
+      const message = isAm
+        ? "የተመረጠው ቀበሌ ልክ አይደለም። እባክዎ ከማስገባትዎ በፊት ልክ የሆነ ቀበሌ ይምረጡ።"
+        : "Selected Kebele is invalid. Please choose a valid kebele before submitting.";
+      setSubmissionError(message);
+      showToast("error", message);
       return;
     }
 
     if (!formData.password || formData.password !== formData.confirmPassword) {
-      setSubmissionError(isAm ? "የይለፍ ቃል እና የይለፍ ቃል ማረጋገጫ መመሳሰል አለባቸው።" : "Password and confirm password must match.");
+      const message = isAm
+        ? "የይለፍ ቃል እና የይለፍ ቃል ማረጋገጫ መመሳሰል አለባቸው።"
+        : "Password and confirm password must match.";
+      setSubmissionError(message);
+      showToast("error", message);
       return;
     }
 
@@ -440,19 +506,21 @@ export default function EmployeeRegistration() {
     );
 
     if (missingRequiredDocs.length > 0) {
-      setSubmissionError(
-        `${isAm ? "መጀመሪያ አስፈላጊ ሰነዶችን ይስቀሉ፦ " : "Upload required documents first: "}${missingRequiredDocs
-          .map((doc) => doc.label)
-          .join(", ")}`,
-      );
+      const message = `${isAm ? "መጀመሪያ አስፈላጊ ሰነዶችን ይስቀሉ፦ " : "Upload required documents first: "}${missingRequiredDocs
+        .map((doc) => doc.label)
+        .join(", ")}`;
+      setSubmissionError(message);
+      showToast("error", message);
       return;
     }
 
     const filesToUpload = buildUploadFilesPayload();
     if (Object.keys(filesToUpload).length === 0) {
-      setSubmissionError(
-        isAm ? "ምዝገባውን ከማጠናቀቅዎ በፊት ቢያንስ አንድ የሰራተኛ ሰነድ ያያይዙ።" : "Please attach at least one employee document before completing registration.",
-      );
+      const message = isAm
+        ? "ምዝገባውን ከማጠናቀቅዎ በፊት ቢያንስ አንድ የሰራተኛ ሰነድ ያያይዙ።"
+        : "Please attach at least one employee document before completing registration.";
+      setSubmissionError(message);
+      showToast("error", message);
       return;
     }
 
@@ -472,7 +540,9 @@ export default function EmployeeRegistration() {
 
       if (!uploadResult.success || !uploadResult.data?.uploadedFiles) {
         throw new Error(
-          uploadResult.error || uploadResult.message || (isAm ? "መስቀል አልተሳካም" : "Upload failed"),
+          uploadResult.error ||
+            uploadResult.message ||
+            (isAm ? "መስቀል አልተሳካም" : "Upload failed"),
         );
       }
 
@@ -508,12 +578,21 @@ export default function EmployeeRegistration() {
         body: JSON.stringify(payload),
       });
 
+      setSubmissionError(null);
+      showToast(
+        "success",
+        isAm ? "ምዝገባ በተሳካ ሁኔታ ተጠናቋል" : "Registration completed successfully.",
+      );
       setCurrentStep(4);
     } catch (error: any) {
       console.error("Employee registration failed:", error);
-      setSubmissionError(
-        error?.message || (isAm ? "ምዝገባ አልተሳካም። እባክዎ እንደገና ይሞክሩ።" : "Registration failed. Please try again."),
-      );
+      const message =
+        error?.message ||
+        (isAm
+          ? "ምዝገባ አልተሳካም። እባክዎ እንደገና ይሞክሩ።"
+          : "Registration failed. Please try again.");
+      setSubmissionError(message);
+      showToast("error", message);
     } finally {
       setIsSubmitting(false);
     }
@@ -526,7 +605,7 @@ export default function EmployeeRegistration() {
       medical: <Heart className="h-4 w-4 text-[#FFD700]" />,
       training: <Award className="h-4 w-4 text-[#FFD700]" />,
       support_letter: <FileText className="h-4 w-4 text-[#FFD700]" />,
-      collateral: <Shield className="h-4 w-4 text-[#FFD700]" />,
+      guarantee: <Shield className="h-4 w-4 text-[#FFD700]" />,
       experience: <Briefcase className="h-4 w-4 text-[#FFD700]" />,
       resignation: <File className="h-4 w-4 text-[#FFD700]" />,
       education: <GraduationCap className="h-4 w-4 text-[#FFD700]" />,
@@ -540,15 +619,31 @@ export default function EmployeeRegistration() {
   // Document Configuration Array for clean mapping
   const getRequiredDocuments = () => {
     const baseDocuments = [
-      { key: "fingerprint", label: isAm ? "ከፖሊስ የጣት አሻራ" : "Fingerprint from Police", required: true },
-      { key: "medical", label: isAm ? "የህክምና ውጤት" : "Medical Result", required: true },
-      { key: "training", label: isAm ? "የስልጠና የምስክር ወረቀት" : "Training Certificate", required: false },
+      {
+        key: "fingerprint",
+        label: isAm ? "ከፖሊስ የጣት አሻራ" : "Fingerprint from Police",
+        required: true,
+      },
+      {
+        key: "medical",
+        label: isAm ? "የህክምና ውጤት" : "Medical Result",
+        required: true,
+      },
+      {
+        key: "training",
+        label: isAm ? "የስልጠና የምስክር ወረቀት" : "Training Certificate",
+        required: false,
+      },
       {
         key: "support_letter",
         label: isAm ? "የድጋፍ ደብዳቤ (ቀበሌ)" : "Support Letter (Kebele)",
         required: false,
       },
-      { key: "collateral", label: isAm ? "የዋስትና ማረጋገጫ" : "Proof of Collateral", required: true },
+      {
+        key: "guarantee",
+        label: isAm ? "የዋስትና ማረጋገጫ" : "Proof of Guarantee",
+        required: true,
+      },
       {
         key: "experience",
         label: isAm ? "የስራ ልምድ" : "Work Experience",
@@ -561,8 +656,16 @@ export default function EmployeeRegistration() {
         // Required if TotalExpYears >= 1, optional if 0
         required: formData.TotalExpYears >= 1,
       },
-      { key: "education", label: isAm ? "የትምህርት የምስክር ወረቀት (ዲግሪ)" : "Educational Cert (Degree)", required: true },
-      { key: "national_id", label: isAm ? "ብሔራዊ መታወቂያ" : "National ID", required: true },
+      {
+        key: "education",
+        label: isAm ? "የትምህርት የምስክር ወረቀት (ዲግሪ)" : "Educational Cert (Degree)",
+        required: true,
+      },
+      {
+        key: "national_id",
+        label: isAm ? "ብሔራዊ መታወቂያ" : "National ID",
+        required: true,
+      },
       {
         key: "kebele_or_passport",
         label: isAm ? "የታደሰ የቀበሌ መታወቂያ/ፓስፖርት" : "Renewed Kebele ID/Passport",
@@ -584,6 +687,12 @@ export default function EmployeeRegistration() {
         background: "linear-gradient(135deg, #f8f9fc 0%, #e8eff9 100%)",
       }}
     >
+      <AutoDismissToast
+        isOpen={toastOpen}
+        type={toastType}
+        message={toastMessage}
+        onClose={() => setToastOpen(false)}
+      />
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -592,7 +701,9 @@ export default function EmployeeRegistration() {
           </h1>
           <div className="mt-3 h-1 w-20 rounded-full bg-[#FFD700] shadow-sm" />
           <p className="text-sm text-slate-500 mt-4">
-            {isAm ? "ሰራተኞችን ወደ ድርጅቱ ስርዓት ያስገቡ።" : "Onboard personnel into the organization system."}
+            {isAm
+              ? "ሰራተኞችን ወደ ድርጅቱ ስርዓት ያስገቡ።"
+              : "Onboard personnel into the organization system."}
           </p>
         </div>
 
@@ -656,7 +767,9 @@ export default function EmployeeRegistration() {
                   <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#003366] to-[#001F3F] flex items-center justify-center">
                     <User className="h-4 w-4 text-[#FFD700]" />
                   </div>
-                  <span className="text-[#003366]">{isAm ? "የስርዓት መለያ" : "System Account Identity"}</span>
+                  <span className="text-[#003366]">
+                    {isAm ? "የስርዓት መለያ" : "System Account Identity"}
+                  </span>
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* SEPARATED NAME FIELDS */}
@@ -749,7 +862,9 @@ export default function EmployeeRegistration() {
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-[#003366] mb-1">
-                      {isAm ? "የፋይዳ መለያ (ብሔራዊ መታወቂያ)" : "Fayda ID (National ID)"}
+                      {isAm
+                        ? "የፋይዳ መለያ (ብሔራዊ መታወቂያ)"
+                        : "Fayda ID (National ID)"}
                     </label>
                     <input
                       type="text"
@@ -832,7 +947,9 @@ export default function EmployeeRegistration() {
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#003366] to-[#001F3F] flex items-center justify-center">
                       <Briefcase className="h-4 w-4 text-[#FFD700]" />
                     </div>
-                    <span className="text-[#003366]">{isAm ? "የሰው ኃይል መገለጫ" : "Human Resources Profile"}</span>
+                    <span className="text-[#003366]">
+                      {isAm ? "የሰው ኃይል መገለጫ" : "Human Resources Profile"}
+                    </span>
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* Position and Education Level - First Row */}
@@ -846,8 +963,10 @@ export default function EmployeeRegistration() {
                         onChange={handleInputChange}
                         className="w-full rounded-lg border border-slate-300 p-2.5 focus:ring-2 focus:ring-[#003366]/30 focus:border-[#003366] outline-none text-sm bg-white hover:border-[#003366]/50 transition-all shadow-sm cursor-pointer"
                       >
-                        <option value="">{isAm ? "ሹመት ይምረጡ" : "Select Position"}</option>
-                        {positions.map((p: any) => (
+                        <option value="">
+                          {isAm ? "ሹመት ይምረጡ" : "Select Position"}
+                        </option>
+                        {visiblePositions.map((p: any) => (
                           <option key={p.id} value={String(p.id)}>
                             {p.name}
                           </option>
@@ -864,7 +983,9 @@ export default function EmployeeRegistration() {
                         onChange={handleInputChange}
                         className="w-full rounded-lg border border-slate-300 p-2.5 focus:ring-2 focus:ring-[#003366]/30 focus:border-[#003366] outline-none text-sm bg-white hover:border-[#003366]/50 transition-all shadow-sm cursor-pointer"
                       >
-                        <option value="">{isAm ? "ደረጃ ይምረጡ" : "Select Level"}</option>
+                        <option value="">
+                          {isAm ? "ደረጃ ይምረጡ" : "Select Level"}
+                        </option>
                         {educationOptions.length > 0 ? (
                           educationOptions.map((option: string) => (
                             <option key={option} value={option}>
@@ -876,8 +997,12 @@ export default function EmployeeRegistration() {
                             <option value="High School">
                               {isAm ? "የሁለተኛ ደረጃ ዲፕሎማ" : "High School Diploma"}
                             </option>
-                            <option value="Bachelors">{isAm ? "የመጀመሪያ ዲግሪ" : "Bachelor's Degree"}</option>
-                            <option value="Masters">{isAm ? "የማስተርስ ዲግሪ" : "Master's Degree"}</option>
+                            <option value="Bachelors">
+                              {isAm ? "የመጀመሪያ ዲግሪ" : "Bachelor's Degree"}
+                            </option>
+                            <option value="Masters">
+                              {isAm ? "የማስተርስ ዲግሪ" : "Master's Degree"}
+                            </option>
                           </>
                         )}
                       </select>
@@ -894,7 +1019,9 @@ export default function EmployeeRegistration() {
                         onChange={handleInputChange}
                         className="w-full rounded-lg border border-slate-300 p-2.5 focus:ring-2 focus:ring-[#003366]/30 focus:border-[#003366] outline-none text-sm bg-white hover:border-[#003366]/50 transition-all shadow-sm cursor-pointer"
                       >
-                        <option value="">{isAm ? "ጾታ ይምረጡ" : "Select Gender"}</option>
+                        <option value="">
+                          {isAm ? "ጾታ ይምረጡ" : "Select Gender"}
+                        </option>
                         <option value="Male">{isAm ? "ወንድ" : "Male"}</option>
                         <option value="Female">{isAm ? "ሴት" : "Female"}</option>
                       </select>
@@ -981,65 +1108,113 @@ export default function EmployeeRegistration() {
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#003366] to-[#001F3F] flex items-center justify-center">
                       <MapPin className="h-4 w-4 text-[#FFD700]" />
                     </div>
-                    <span className="text-[#003366]">{isAm ? "የመኖሪያ አድራሻ" : "Residential Address"}</span>
+                    <span className="text-[#003366]">
+                      {isAm ? "የመኖሪያ አድራሻ" : "Residential Address"}
+                    </span>
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {/* Region - Searchable */}
                     <div ref={regionRef} className="relative">
                       <label className="block text-sm font-bold text-[#003366] mb-1">
-                        {isAm ? "ክልል" : "Region"} <span className="text-red-500">*</span>
+                        {isAm ? "ክልል" : "Region"}{" "}
+                        <span className="text-red-500">*</span>
                       </label>
                       <div
-                        onClick={() => { setRegionOpen(!regionOpen); setRegionSearch(""); }}
+                        onClick={() => {
+                          setRegionOpen(!regionOpen);
+                          setRegionSearch("");
+                        }}
                         className="w-full rounded-lg border border-slate-300 p-2.5 text-sm bg-white cursor-pointer flex items-center justify-between hover:border-[#003366]/40 transition"
                       >
-                        <span className={formData.region ? "text-slate-800" : "text-slate-400"}>
+                        <span
+                          className={
+                            formData.region
+                              ? "text-slate-800"
+                              : "text-slate-400"
+                          }
+                        >
                           {formData.region
-                            ? locName(regions.find((r: any) => String(r.id) === formData.region))
-                            : (isAm ? "ክልል ይምረጡ..." : "Select Region...")}
+                            ? locName(
+                                regions.find(
+                                  (r: any) => String(r.id) === formData.region,
+                                ),
+                              )
+                            : isAm
+                              ? "ክልል ይምረጡ..."
+                              : "Select Region..."}
                         </span>
-                        <ChevronDown size={16} className={`text-slate-400 transition ${regionOpen ? "rotate-180" : ""}`} />
+                        <ChevronDown
+                          size={16}
+                          className={`text-slate-400 transition ${regionOpen ? "rotate-180" : ""}`}
+                        />
                       </div>
                       {regionOpen && (
                         <div className="absolute z-20 mt-1 w-full bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden">
                           <div className="p-2 border-b border-slate-100">
                             <div className="relative">
-                              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                              <Search
+                                size={14}
+                                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                              />
                               <input
                                 type="text"
                                 value={regionSearch}
-                                onChange={(e) => setRegionSearch(e.target.value)}
-                                placeholder={isAm ? "ክልል ይፈልጉ..." : "Search region..."}
+                                onChange={(e) =>
+                                  setRegionSearch(e.target.value)
+                                }
+                                placeholder={
+                                  isAm ? "ክልል ይፈልጉ..." : "Search region..."
+                                }
                                 className="w-full pl-8 pr-8 py-2 rounded-lg border border-slate-100 bg-slate-50 text-sm focus:outline-none focus:ring-1 focus:ring-[#003366]/30"
                               />
                               {regionSearch && (
-                                <button onClick={() => setRegionSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                <button
+                                  onClick={() => setRegionSearch("")}
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                >
                                   <X size={14} />
                                 </button>
                               )}
                             </div>
                           </div>
                           <div className="max-h-40 overflow-y-auto">
-                            {regions.filter((r: any) => locName(r).toLowerCase().includes(regionSearch.toLowerCase())).map((r: any) => (
-                              <button
-                                key={r.id}
-                                type="button"
-                                onClick={() => {
-                                  handleInputChange({ target: { name: "region", value: String(r.id) } } as any);
-                                  setRegionOpen(false);
-                                  setZoneSearch("");
-                                  setWoredaSearch("");
-                                  setKebeleSearch("");
-                                }}
-                                className={`w-full text-left px-4 py-2.5 text-sm hover:bg-[#003366]/5 transition ${
-                                  formData.region === String(r.id) ? "bg-[#003366]/10 text-[#003366] font-bold" : "text-slate-700"
-                                }`}
-                              >
-                                {locName(r)}
-                              </button>
-                            ))}
+                            {regions
+                              .filter((r: any) =>
+                                locName(r)
+                                  .toLowerCase()
+                                  .includes(regionSearch.toLowerCase()),
+                              )
+                              .map((r: any) => (
+                                <button
+                                  key={r.id}
+                                  type="button"
+                                  onClick={() => {
+                                    handleInputChange({
+                                      target: {
+                                        name: "region",
+                                        value: String(r.id),
+                                      },
+                                    } as any);
+                                    setRegionOpen(false);
+                                    setZoneSearch("");
+                                    setWoredaSearch("");
+                                    setKebeleSearch("");
+                                  }}
+                                  className={`w-full text-left px-4 py-2.5 text-sm hover:bg-[#003366]/5 transition ${
+                                    formData.region === String(r.id)
+                                      ? "bg-[#003366]/10 text-[#003366] font-bold"
+                                      : "text-slate-700"
+                                  }`}
+                                >
+                                  {locName(r)}
+                                </button>
+                              ))}
                             {regions.length === 0 && (
-                              <p className="px-4 py-3 text-sm text-slate-400">{isAm ? "ክልሎች እየተጫኑ ነው..." : "Loading regions..."}</p>
+                              <p className="px-4 py-3 text-sm text-slate-400">
+                                {isAm
+                                  ? "ክልሎች እየተጫኑ ነው..."
+                                  : "Loading regions..."}
+                              </p>
                             )}
                           </div>
                         </div>
@@ -1049,62 +1224,108 @@ export default function EmployeeRegistration() {
                     {/* Zone / Subcity - Searchable */}
                     <div ref={zoneRef} className="relative">
                       <label className="block text-sm font-bold text-[#003366] mb-1">
-                        {isAm ? "ዞን / ክፍለ ከተማ" : "Zone / Subcity"} <span className="text-red-500">*</span>
+                        {isAm ? "ዞን / ክፍለ ከተማ" : "Zone / Subcity"}{" "}
+                        <span className="text-red-500">*</span>
                       </label>
                       <div
-                        onClick={() => { if (formData.region) { setZoneOpen(!zoneOpen); setZoneSearch(""); } }}
+                        onClick={() => {
+                          if (formData.region) {
+                            setZoneOpen(!zoneOpen);
+                            setZoneSearch("");
+                          }
+                        }}
                         className={`w-full rounded-lg border p-2.5 text-sm bg-white cursor-pointer flex items-center justify-between transition ${
-                          !formData.region ? "border-slate-200 bg-slate-50" : "border-slate-300 hover:border-[#003366]/40"
+                          !formData.region
+                            ? "border-slate-200 bg-slate-50"
+                            : "border-slate-300 hover:border-[#003366]/40"
                         }`}
                       >
-                        <span className={formData.zone ? "text-slate-800" : "text-slate-400"}>
+                        <span
+                          className={
+                            formData.zone ? "text-slate-800" : "text-slate-400"
+                          }
+                        >
                           {formData.zone
-                            ? locName(zones.find((z: any) => String(z.id) === formData.zone))
+                            ? locName(
+                                zones.find(
+                                  (z: any) => String(z.id) === formData.zone,
+                                ),
+                              )
                             : !formData.region
-                              ? (isAm ? "መጀመሪያ ክልል ይምረጡ" : "Select region first")
-                              : (isAm ? "ዞን ይምረጡ..." : "Select Zone...")}
+                              ? isAm
+                                ? "መጀመሪያ ክልል ይምረጡ"
+                                : "Select region first"
+                              : isAm
+                                ? "ዞን ይምረጡ..."
+                                : "Select Zone..."}
                         </span>
-                        <ChevronDown size={16} className={`text-slate-400 transition ${zoneOpen ? "rotate-180" : ""}`} />
+                        <ChevronDown
+                          size={16}
+                          className={`text-slate-400 transition ${zoneOpen ? "rotate-180" : ""}`}
+                        />
                       </div>
                       {zoneOpen && (
                         <div className="absolute z-20 mt-1 w-full bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden">
                           <div className="p-2 border-b border-slate-100">
                             <div className="relative">
-                              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                              <Search
+                                size={14}
+                                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                              />
                               <input
                                 type="text"
                                 value={zoneSearch}
                                 onChange={(e) => setZoneSearch(e.target.value)}
-                                placeholder={isAm ? "ዞን ይፈልጉ..." : "Search zone..."}
+                                placeholder={
+                                  isAm ? "ዞን ይፈልጉ..." : "Search zone..."
+                                }
                                 className="w-full pl-8 pr-8 py-2 rounded-lg border border-slate-100 bg-slate-50 text-sm focus:outline-none focus:ring-1 focus:ring-[#003366]/30"
                               />
                               {zoneSearch && (
-                                <button onClick={() => setZoneSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                <button
+                                  onClick={() => setZoneSearch("")}
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                >
                                   <X size={14} />
                                 </button>
                               )}
                             </div>
                           </div>
                           <div className="max-h-40 overflow-y-auto">
-                            {zones.filter((z: any) => locName(z).toLowerCase().includes(zoneSearch.toLowerCase())).map((z: any) => (
-                              <button
-                                key={z.id}
-                                type="button"
-                                onClick={() => {
-                                  handleInputChange({ target: { name: "zone", value: String(z.id) } } as any);
-                                  setZoneOpen(false);
-                                  setWoredaSearch("");
-                                  setKebeleSearch("");
-                                }}
-                                className={`w-full text-left px-4 py-2.5 text-sm hover:bg-[#003366]/5 transition ${
-                                  formData.zone === String(z.id) ? "bg-[#003366]/10 text-[#003366] font-bold" : "text-slate-700"
-                                }`}
-                              >
-                                {locName(z)}
-                              </button>
-                            ))}
+                            {zones
+                              .filter((z: any) =>
+                                locName(z)
+                                  .toLowerCase()
+                                  .includes(zoneSearch.toLowerCase()),
+                              )
+                              .map((z: any) => (
+                                <button
+                                  key={z.id}
+                                  type="button"
+                                  onClick={() => {
+                                    handleInputChange({
+                                      target: {
+                                        name: "zone",
+                                        value: String(z.id),
+                                      },
+                                    } as any);
+                                    setZoneOpen(false);
+                                    setWoredaSearch("");
+                                    setKebeleSearch("");
+                                  }}
+                                  className={`w-full text-left px-4 py-2.5 text-sm hover:bg-[#003366]/5 transition ${
+                                    formData.zone === String(z.id)
+                                      ? "bg-[#003366]/10 text-[#003366] font-bold"
+                                      : "text-slate-700"
+                                  }`}
+                                >
+                                  {locName(z)}
+                                </button>
+                              ))}
                             {zones.length === 0 && (
-                              <p className="px-4 py-3 text-sm text-slate-400">{isAm ? "ዞኖች እየተጫኑ ነው..." : "Loading zones..."}</p>
+                              <p className="px-4 py-3 text-sm text-slate-400">
+                                {isAm ? "ዞኖች እየተጫኑ ነው..." : "Loading zones..."}
+                              </p>
                             )}
                           </div>
                         </div>
@@ -1114,61 +1335,113 @@ export default function EmployeeRegistration() {
                     {/* Woreda - Searchable */}
                     <div ref={woredaRef} className="relative">
                       <label className="block text-sm font-bold text-[#003366] mb-1">
-                        {isAm ? "ወረዳ" : "Woreda"} <span className="text-red-500">*</span>
+                        {isAm ? "ወረዳ" : "Woreda"}{" "}
+                        <span className="text-red-500">*</span>
                       </label>
                       <div
-                        onClick={() => { if (formData.zone) { setWoredaOpen(!woredaOpen); setWoredaSearch(""); } }}
+                        onClick={() => {
+                          if (formData.zone) {
+                            setWoredaOpen(!woredaOpen);
+                            setWoredaSearch("");
+                          }
+                        }}
                         className={`w-full rounded-lg border p-2.5 text-sm bg-white cursor-pointer flex items-center justify-between transition ${
-                          !formData.zone ? "border-slate-200 bg-slate-50" : "border-slate-300 hover:border-[#003366]/40"
+                          !formData.zone
+                            ? "border-slate-200 bg-slate-50"
+                            : "border-slate-300 hover:border-[#003366]/40"
                         }`}
                       >
-                        <span className={formData.woreda ? "text-slate-800" : "text-slate-400"}>
+                        <span
+                          className={
+                            formData.woreda
+                              ? "text-slate-800"
+                              : "text-slate-400"
+                          }
+                        >
                           {formData.woreda
-                            ? locName(woredas.find((w: any) => String(w.id) === formData.woreda))
+                            ? locName(
+                                woredas.find(
+                                  (w: any) => String(w.id) === formData.woreda,
+                                ),
+                              )
                             : !formData.zone
-                              ? (isAm ? "መጀመሪያ ዞን ይምረጡ" : "Select zone first")
-                              : (isAm ? "ወረዳ ይምረጡ..." : "Select Woreda...")}
+                              ? isAm
+                                ? "መጀመሪያ ዞን ይምረጡ"
+                                : "Select zone first"
+                              : isAm
+                                ? "ወረዳ ይምረጡ..."
+                                : "Select Woreda..."}
                         </span>
-                        <ChevronDown size={16} className={`text-slate-400 transition ${woredaOpen ? "rotate-180" : ""}`} />
+                        <ChevronDown
+                          size={16}
+                          className={`text-slate-400 transition ${woredaOpen ? "rotate-180" : ""}`}
+                        />
                       </div>
                       {woredaOpen && (
                         <div className="absolute z-20 mt-1 w-full bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden">
                           <div className="p-2 border-b border-slate-100">
                             <div className="relative">
-                              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                              <Search
+                                size={14}
+                                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                              />
                               <input
                                 type="text"
                                 value={woredaSearch}
-                                onChange={(e) => setWoredaSearch(e.target.value)}
-                                placeholder={isAm ? "ወረዳ ይፈልጉ..." : "Search woreda..."}
+                                onChange={(e) =>
+                                  setWoredaSearch(e.target.value)
+                                }
+                                placeholder={
+                                  isAm ? "ወረዳ ይፈልጉ..." : "Search woreda..."
+                                }
                                 className="w-full pl-8 pr-8 py-2 rounded-lg border border-slate-100 bg-slate-50 text-sm focus:outline-none focus:ring-1 focus:ring-[#003366]/30"
                               />
                               {woredaSearch && (
-                                <button onClick={() => setWoredaSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                <button
+                                  onClick={() => setWoredaSearch("")}
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                >
                                   <X size={14} />
                                 </button>
                               )}
                             </div>
                           </div>
                           <div className="max-h-40 overflow-y-auto">
-                            {woredas.filter((w: any) => locName(w).toLowerCase().includes(woredaSearch.toLowerCase())).map((w: any) => (
-                              <button
-                                key={w.id}
-                                type="button"
-                                onClick={() => {
-                                  handleInputChange({ target: { name: "woreda", value: String(w.id) } } as any);
-                                  setWoredaOpen(false);
-                                  setKebeleSearch("");
-                                }}
-                                className={`w-full text-left px-4 py-2.5 text-sm hover:bg-[#003366]/5 transition ${
-                                  formData.woreda === String(w.id) ? "bg-[#003366]/10 text-[#003366] font-bold" : "text-slate-700"
-                                }`}
-                              >
-                                {locName(w)}
-                              </button>
-                            ))}
+                            {woredas
+                              .filter((w: any) =>
+                                locName(w)
+                                  .toLowerCase()
+                                  .includes(woredaSearch.toLowerCase()),
+                              )
+                              .map((w: any) => (
+                                <button
+                                  key={w.id}
+                                  type="button"
+                                  onClick={() => {
+                                    handleInputChange({
+                                      target: {
+                                        name: "woreda",
+                                        value: String(w.id),
+                                      },
+                                    } as any);
+                                    setWoredaOpen(false);
+                                    setKebeleSearch("");
+                                  }}
+                                  className={`w-full text-left px-4 py-2.5 text-sm hover:bg-[#003366]/5 transition ${
+                                    formData.woreda === String(w.id)
+                                      ? "bg-[#003366]/10 text-[#003366] font-bold"
+                                      : "text-slate-700"
+                                  }`}
+                                >
+                                  {locName(w)}
+                                </button>
+                              ))}
                             {woredas.length === 0 && (
-                              <p className="px-4 py-3 text-sm text-slate-400">{isAm ? "ወረዳዎች እየተጫኑ ነው..." : "Loading woredas..."}</p>
+                              <p className="px-4 py-3 text-sm text-slate-400">
+                                {isAm
+                                  ? "ወረዳዎች እየተጫኑ ነው..."
+                                  : "Loading woredas..."}
+                              </p>
                             )}
                           </div>
                         </div>
@@ -1178,60 +1451,112 @@ export default function EmployeeRegistration() {
                     {/* Kebele - Searchable */}
                     <div ref={kebeleRef} className="relative">
                       <label className="block text-sm font-bold text-[#003366] mb-1">
-                        {isAm ? "ቀበሌ" : "Kebele"} <span className="text-red-500">*</span>
+                        {isAm ? "ቀበሌ" : "Kebele"}{" "}
+                        <span className="text-red-500">*</span>
                       </label>
                       <div
-                        onClick={() => { if (formData.woreda) { setKebeleOpen(!kebeleOpen); setKebeleSearch(""); } }}
+                        onClick={() => {
+                          if (formData.woreda) {
+                            setKebeleOpen(!kebeleOpen);
+                            setKebeleSearch("");
+                          }
+                        }}
                         className={`w-full rounded-lg border p-2.5 text-sm bg-white cursor-pointer flex items-center justify-between transition ${
-                          !formData.woreda ? "border-slate-200 bg-slate-50" : "border-slate-300 hover:border-[#003366]/40"
+                          !formData.woreda
+                            ? "border-slate-200 bg-slate-50"
+                            : "border-slate-300 hover:border-[#003366]/40"
                         }`}
                       >
-                        <span className={formData.kebele ? "text-slate-800" : "text-slate-400"}>
+                        <span
+                          className={
+                            formData.kebele
+                              ? "text-slate-800"
+                              : "text-slate-400"
+                          }
+                        >
                           {formData.kebele
-                            ? locName(kebeles.find((k: any) => String(k.id) === formData.kebele))
+                            ? locName(
+                                kebeles.find(
+                                  (k: any) => String(k.id) === formData.kebele,
+                                ),
+                              )
                             : !formData.woreda
-                              ? (isAm ? "መጀመሪያ ወረዳ ይምረጡ" : "Select woreda first")
-                              : (isAm ? "ቀበሌ ይምረጡ..." : "Select Kebele...")}
+                              ? isAm
+                                ? "መጀመሪያ ወረዳ ይምረጡ"
+                                : "Select woreda first"
+                              : isAm
+                                ? "ቀበሌ ይምረጡ..."
+                                : "Select Kebele..."}
                         </span>
-                        <ChevronDown size={16} className={`text-slate-400 transition ${kebeleOpen ? "rotate-180" : ""}`} />
+                        <ChevronDown
+                          size={16}
+                          className={`text-slate-400 transition ${kebeleOpen ? "rotate-180" : ""}`}
+                        />
                       </div>
                       {kebeleOpen && (
                         <div className="absolute z-20 mt-1 w-full bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden">
                           <div className="p-2 border-b border-slate-100">
                             <div className="relative">
-                              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                              <Search
+                                size={14}
+                                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                              />
                               <input
                                 type="text"
                                 value={kebeleSearch}
-                                onChange={(e) => setKebeleSearch(e.target.value)}
-                                placeholder={isAm ? "ቀበሌ ይፈልጉ..." : "Search kebele..."}
+                                onChange={(e) =>
+                                  setKebeleSearch(e.target.value)
+                                }
+                                placeholder={
+                                  isAm ? "ቀበሌ ይፈልጉ..." : "Search kebele..."
+                                }
                                 className="w-full pl-8 pr-8 py-2 rounded-lg border border-slate-100 bg-slate-50 text-sm focus:outline-none focus:ring-1 focus:ring-[#003366]/30"
                               />
                               {kebeleSearch && (
-                                <button onClick={() => setKebeleSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                <button
+                                  onClick={() => setKebeleSearch("")}
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                >
                                   <X size={14} />
                                 </button>
                               )}
                             </div>
                           </div>
                           <div className="max-h-40 overflow-y-auto">
-                            {kebeles.filter((k: any) => locName(k).toLowerCase().includes(kebeleSearch.toLowerCase())).map((k: any) => (
-                              <button
-                                key={k.id}
-                                type="button"
-                                onClick={() => {
-                                  handleInputChange({ target: { name: "kebele", value: String(k.id) } } as any);
-                                  setKebeleOpen(false);
-                                }}
-                                className={`w-full text-left px-4 py-2.5 text-sm hover:bg-[#003366]/5 transition ${
-                                  formData.kebele === String(k.id) ? "bg-[#003366]/10 text-[#003366] font-bold" : "text-slate-700"
-                                }`}
-                              >
-                                {locName(k)}
-                              </button>
-                            ))}
+                            {kebeles
+                              .filter((k: any) =>
+                                locName(k)
+                                  .toLowerCase()
+                                  .includes(kebeleSearch.toLowerCase()),
+                              )
+                              .map((k: any) => (
+                                <button
+                                  key={k.id}
+                                  type="button"
+                                  onClick={() => {
+                                    handleInputChange({
+                                      target: {
+                                        name: "kebele",
+                                        value: String(k.id),
+                                      },
+                                    } as any);
+                                    setKebeleOpen(false);
+                                  }}
+                                  className={`w-full text-left px-4 py-2.5 text-sm hover:bg-[#003366]/5 transition ${
+                                    formData.kebele === String(k.id)
+                                      ? "bg-[#003366]/10 text-[#003366] font-bold"
+                                      : "text-slate-700"
+                                  }`}
+                                >
+                                  {locName(k)}
+                                </button>
+                              ))}
                             {kebeles.length === 0 && (
-                              <p className="px-4 py-3 text-sm text-slate-400">{isAm ? "ቀበሌዎች እየተጫኑ ነው..." : "Loading kebeles..."}</p>
+                              <p className="px-4 py-3 text-sm text-slate-400">
+                                {isAm
+                                  ? "ቀበሌዎች እየተጫኑ ነው..."
+                                  : "Loading kebeles..."}
+                              </p>
                             )}
                           </div>
                         </div>
@@ -1240,7 +1565,8 @@ export default function EmployeeRegistration() {
 
                     <div>
                       <label className="block text-sm font-bold text-[#003366] mb-1">
-                        {isAm ? "የቤት ቁጥር" : "House No."} <span className="text-red-500">*</span>
+                        {isAm ? "የቤት ቁጥር" : "House Number."}{" "}
+                        <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
@@ -1253,7 +1579,10 @@ export default function EmployeeRegistration() {
                     </div>
                     <div className="col-span-1 md:col-span-2 lg:col-span-3">
                       <label className="block text-sm font-bold text-[#003366] mb-1">
-                        {isAm ? "ልዩ ቦታ ስም" : "Special Location Name"} <span className="text-orange-500 font-bold">{isAm ? "(አማራጭ)" : "(OPTIONAL)"}</span>
+                        {isAm ? "ልዩ ቦታ ስም" : "Special Location Name"}{" "}
+                        <span className="text-orange-500 font-bold">
+                          {isAm ? "(አማራጭ)" : "(OPTIONAL)"}
+                        </span>
                       </label>
                       <input
                         type="text"
@@ -1261,7 +1590,11 @@ export default function EmployeeRegistration() {
                         value={formData.specialLocation}
                         onChange={handleInputChange}
                         className="w-full rounded-lg border border-slate-300 p-2.5 focus:ring-2 focus:ring-[#003366]/30 focus:border-[#003366] outline-none text-sm bg-white hover:border-[#003366]/50 transition-all shadow-sm"
-                        placeholder={isAm ? "ለምሳሌ ከዋናው ፖስታ ቤት ጀርባ" : "e.g. Behind the main post office"}
+                        placeholder={
+                          isAm
+                            ? "ለምሳሌ ከዋናው ፖስታ ቤት ጀርባ"
+                            : "e.g. Behind the main post office"
+                        }
                       />
                     </div>
                   </div>
@@ -1276,10 +1609,14 @@ export default function EmployeeRegistration() {
                   <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#003366] to-[#001F3F] flex items-center justify-center">
                     <FileText className="h-4 w-4 text-[#FFD700]" />
                   </div>
-                  <span className="text-[#003366]">{isAm ? "የሚፈለጉ ሰነዶች" : "Required Documents"}</span>
+                  <span className="text-[#003366]">
+                    {isAm ? "የሚፈለጉ ሰነዶች" : "Required Documents"}
+                  </span>
                 </h2>
                 <p className="text-sm text-slate-500 mb-6">
-                  {isAm ? "ሁሉንም አስፈላጊ ፋይሎች በPDF ቅርጸት ይስቀሉ (ከፍተኛ 5ሜባ በአንድ ፋይል)" : "Upload all mandatory files in PDF format (Max 5MB per file)."}
+                  {isAm
+                    ? "ሁሉንም አስፈላጊ ፋይሎች በPDF ቅርጸት ይስቀሉ (ከፍተኛ 5ሜባ በአንድ ፋይል)"
+                    : "Upload all mandatory files in PDF format (Max 5MB per file)."}
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1333,26 +1670,37 @@ export default function EmployeeRegistration() {
                                 {formData.documents[doc.key]?.name}
                               </span>
                               <span className="text-[10px] font-bold text-gray-400 shrink-0">
-                                {((formData.documents[doc.key]?.size || 0) / (1024 * 1024)).toFixed(2)} MB
+                                {(
+                                  (formData.documents[doc.key]?.size || 0) /
+                                  (1024 * 1024)
+                                ).toFixed(2)}{" "}
+                                MB
                               </span>
                             </div>
                             <div className="flex gap-1.5">
                               <button
                                 type="button"
                                 onClick={() => {
-                                  const url = URL.createObjectURL(formData.documents[doc.key]!);
+                                  const url = URL.createObjectURL(
+                                    formData.documents[doc.key]!,
+                                  );
                                   window.open(url, "_blank");
-                                  setTimeout(() => URL.revokeObjectURL(url), 60000);
+                                  setTimeout(
+                                    () => URL.revokeObjectURL(url),
+                                    60000,
+                                  );
                                 }}
                                 className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border border-[#003366]/20 text-[10px] font-bold text-[#003366] hover:bg-[#003366]/5 transition-colors"
                               >
-                                <Eye className="h-3.5 w-3.5" /> {isAm ? "ተመልከት" : "Preview"}
+                                <Eye className="h-3.5 w-3.5" />{" "}
+                                {isAm ? "ተመልከት" : "Preview"}
                               </button>
                               <label
                                 htmlFor={doc.key}
                                 className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border border-amber-200 text-[10px] font-bold text-amber-600 hover:bg-amber-50 cursor-pointer transition-colors"
                               >
-                                <UploadCloud className="h-3.5 w-3.5" /> {isAm ? "እንደገና ጫን" : "Reupload"}
+                                <UploadCloud className="h-3.5 w-3.5" />{" "}
+                                {isAm ? "እንደገና ጫን" : "Reupload"}
                               </label>
                               <button
                                 type="button"
@@ -1398,7 +1746,9 @@ export default function EmployeeRegistration() {
                   <strong className="text-slate-800">
                     {getCombinedName()}
                   </strong>{" "}
-                  {isAm ? "በስርዓቱ ውስጥ በተሳካ ሁኔታ ተመዝግቧል። የተጠቃሚ አካውንት እና የሰው ሃይል መገለጫ ተዘጋጅቷል።" : "has been successfully added to the system. User account and HR profile generated."}
+                  {isAm
+                    ? "በስርዓቱ ውስጥ በተሳካ ሁኔታ ተመዝግቧል። የተጠቃሚ አካውንት እና የሰው ሃይል መገለጫ ተዘጋጅቷል።"
+                    : "has been successfully added to the system. User account and HR profile generated."}
                 </p>
                 <motion.button
                   whileHover={{ y: -1 }}
@@ -1433,20 +1783,20 @@ export default function EmployeeRegistration() {
                 </div>
               )}
               <div className="px-8 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
-                  <motion.button
-                    type="button"
-                    onClick={prevStep}
-                    disabled={currentStep === 1}
-                    whileHover={currentStep > 1 ? { y: -1 } : {}}
-                    whileTap={currentStep > 1 ? { scale: 0.97 } : {}}
-                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                      currentStep === 1
-                        ? "text-slate-400 cursor-not-allowed"
-                        : "text-[#003366] hover:bg-[#003366]/10 bg-[#003366]/5 border border-[#003366]/10"
-                    }`}
-                  >
-                    <ArrowLeft className="h-4 w-4" /> {isAm ? "ተመለስ" : "Back"}
-                  </motion.button>
+                <motion.button
+                  type="button"
+                  onClick={prevStep}
+                  disabled={currentStep === 1}
+                  whileHover={currentStep > 1 ? { y: -1 } : {}}
+                  whileTap={currentStep > 1 ? { scale: 0.97 } : {}}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                    currentStep === 1
+                      ? "text-slate-400 cursor-not-allowed"
+                      : "text-[#003366] hover:bg-[#003366]/10 bg-[#003366]/5 border border-[#003366]/10"
+                  }`}
+                >
+                  <ArrowLeft className="h-4 w-4" /> {isAm ? "ተመለስ" : "Back"}
+                </motion.button>
 
                 {currentStep < 3 ? (
                   <motion.button
@@ -1456,15 +1806,22 @@ export default function EmployeeRegistration() {
                     whileTap={{ scale: 0.97 }}
                     className="inline-flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold text-[#003366] bg-gradient-to-r from-[#FFD700] to-[#C5A022] hover:from-[#e6c200] hover:to-[#b8921f] transition-all shadow-sm"
                   >
-                    {isAm ? "ቀጣይ" : "Continue"} <ArrowRight className="h-4 w-4" />
+                    {isAm ? "ቀጣይ" : "Continue"}{" "}
+                    <ArrowRight className="h-4 w-4" />
                   </motion.button>
                 ) : (
                   <motion.button
                     type="button"
                     onClick={handleSubmit}
                     disabled={isSubmitting || !!organizationLoadError}
-                    whileHover={!(isSubmitting || organizationLoadError) ? { y: -1 } : {}}
-                    whileTap={!(isSubmitting || organizationLoadError) ? { scale: 0.97 } : {}}
+                    whileHover={
+                      !(isSubmitting || organizationLoadError) ? { y: -1 } : {}
+                    }
+                    whileTap={
+                      !(isSubmitting || organizationLoadError)
+                        ? { scale: 0.97 }
+                        : {}
+                    }
                     className={`inline-flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all shadow-sm ${
                       isSubmitting || organizationLoadError
                         ? "bg-slate-300 text-slate-500 cursor-not-allowed"
@@ -1472,8 +1829,12 @@ export default function EmployeeRegistration() {
                     }`}
                   >
                     {isSubmitting
-                      ? (isAm ? "በመመዝገብ ላይ..." : "Submitting...")
-                      : (isAm ? "ምዝገባ ያጠናቅቁ" : "Complete Registration")}
+                      ? isAm
+                        ? "በመመዝገብ ላይ..."
+                        : "Submitting..."
+                      : isAm
+                        ? "ምዝገባ ያጠናቅቁ"
+                        : "Complete Registration"}
                     <CheckCircle2 className="h-4 w-4" />
                   </motion.button>
                 )}

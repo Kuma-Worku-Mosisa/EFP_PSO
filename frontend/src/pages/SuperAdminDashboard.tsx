@@ -59,7 +59,6 @@ import { ManageNews } from "./ManageNews";
 import { ManagePublicContent } from "./ManagePublicContent";
 import { ManageFAQ } from "./ManageFAQ";
 import { Communications } from "./Communications";
-import { Notifications } from "./Notifications";
 
 const SuperAdminAgenciesManagement = () => {
   const [searchParams] = useSearchParams();
@@ -115,7 +114,7 @@ const SuperOverview = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             {
-              label: isAm ? "የተመዘገቡ ኤጀንሲዎች" : "Registered Agencies",
+              label: isAm ? "የተመዘገቡ የድርጅቶች" : "Registered Agencies",
               value: "524",
               icon: <ShieldCheck className="w-5 h-5 text-primary" />,
               trend: "+2%",
@@ -499,8 +498,6 @@ export const SuperAdminDashboard = () => {
         <Route path="communications" element={<Communications />} />
         <Route path="permissions" element={<PermissionsManagement />} />
         <Route path="settings" element={<AdminSettings />} />
-        <Route path="notifications" element={<Notifications />} />
-
         <Route path="*" element={<SuperOverview />} />
       </Routes>
     </DashboardLayout>

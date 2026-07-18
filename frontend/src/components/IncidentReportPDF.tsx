@@ -29,6 +29,15 @@ const styles = StyleSheet.create({
     color: "#1f2937",
     lineHeight: 1.5,
   },
+  logoContainer: {
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  logo: {
+    width: 80,
+    height: 80,
+    objectFit: "contain",
+  },
   headerContainer: {
     borderBottom: "2px solid #0f172a",
     paddingBottom: 12,
@@ -44,6 +53,12 @@ const styles = StyleSheet.create({
   },
   subGovTitle: {
     fontSize: 11,
+    marginTop: 3,
+    color: "#4b5563",
+    textTransform: "uppercase",
+  },
+  subGovTitleSection: {
+    fontSize: 10,
     marginTop: 3,
     color: "#4b5563",
     textTransform: "uppercase",
@@ -186,6 +201,44 @@ const styles = StyleSheet.create({
     color: "#0f172a",
     textAlign: "center",
   },
+  signatureDetails: {
+    width: "100%",
+    marginTop: 10,
+    alignItems: "flex-start",
+  },
+  signatureDetailRow: {
+    width: "100%",
+    marginBottom: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+    borderRadius: 2,
+  },
+  signatureDetailLabel: {
+    fontSize: 8.5,
+    fontWeight: "bold",
+    color: "#334155",
+    marginRight: 4,
+    textTransform: "uppercase",
+    letterSpacing: 0.3,
+  },
+  signatureSectionTitle: {
+    fontSize: 8.5,
+    fontWeight: "bold",
+    color: "#1e3a8a",
+    marginBottom: 6,
+    textTransform: "uppercase",
+    letterSpacing: 0.3,
+    textAlign: "center",
+  },
+  signatureDetailValue: {
+    fontSize: 8.5,
+    color: "#0f172a",
+    flexShrink: 1,
+    flexGrow: 1,
+  },
 });
 
 interface Props {
@@ -236,13 +289,14 @@ export const IncidentReportPDF: React.FC<Props> = ({
   })();
 
   const labels = {
-    govTitle: isAmharic
-      ? "በኢትዮጵያ ፌደራል ፖሊስ ኮሚሽን"
-      : "Ethiopian Federal Police Commission",
+    govTitle: isAmharic ? "በኢትዮጵያ ፌደራል ፖሊስ" : "Ethiopian Federal Police",
     subGovTitle: isAmharic
       ? " የጦር  መሳሪያ እና  የጥበቃ ተቋማት  ቁጥጥር መምሪያ"
       : "Arms and Security Institutions Control Department",
-    docTitle: isAmharic ? "የወንጀል ክስተት  ሪፖርት" : "Crime incident report",
+    subGovTitleSection: isAmharic
+      ? " ለግል ጥበቃ  አገልግሎት ሰጪ  ድርጅቶች  ቁጥጥር ዋና  ክፍል"
+      : "Main Section for Supervision of Private Security Service Providers",
+    docTitle: isAmharic ? "የወንጀል ክስተት ሪፖርት" : "Crime incident report",
     fileNumber: isAmharic ? "የመዝገብ ቁጥር" : "Official File Number",
     filingDate: isAmharic ? "የተመዘገበበት ቀን" : "Filing Date",
     organizationLabel: isAmharic ? "የተቋሙ ስም" : "Organization Name",
@@ -255,6 +309,9 @@ export const IncidentReportPDF: React.FC<Props> = ({
     section3Title: isAmharic
       ? "3. የተጠርጣሪዎች እና የተቋሙ   ያለው ግንኙነት"
       : "3. The relationship between the suspects and the institution",
+    section4Title: isAmharic
+      ? "4. ሪፖርት አቅራቢ፣ተቀባይ እና ግብረ-መልስ ሰጪ"
+      : "4. Reporter, recipient, and provider of feedback",
     serviceReceiverLabel: isAmharic
       ? "የአገልግሎት  ተጠቃሚ  (ደንበኛ)"
       : "Service user (customer)",
@@ -275,21 +332,15 @@ export const IncidentReportPDF: React.FC<Props> = ({
       ? "ከድርጅቱ ጋር ያለው ግንኙነት"
       : "Relationship with the Institution",
     employeeIdLabel: isAmharic ? " የተቋሙ  መታወቂያ" : "Institution ID",
-    reviewerFeedbackLabel: isAmharic
-      ? "የገመጋው እርማት እና አስተያየት"
-      : "Reviewer Directives & Feedback",
-    submittingAgencyLabel: isAmharic ? "1. የሚልክ አካል" : "1. Submitting Agency",
-    auditingOfficerLabel: isAmharic
-      ? "2. የሚቆጣጠር ኤፍፒ ኦፊሰር"
-      : "2. Auditing EFP Officer",
-    endorsingSuperiorLabel: isAmharic
-      ? "3. የሚደግፍ ኤፍፒ ከፍተኛ ተቆጣጣሪ"
-      : "3. Endorsing EFP Superior",
+    reviewerFeedbackLabel: isAmharic ? "ግብረ-መልስ ሰጪ" : "Respondent Feedback",
+    submittingAgencyLabel: isAmharic ? "1.የሪፖርት አቅራቢ፡-" : "1. Reporter:",
+    auditingOfficerLabel: isAmharic ? "2.የሪፖርት ተቀባይ፡-" : "2. Report Recipient:",
+    endorsingSuperiorLabel: isAmharic ? "3.ግብረ-መልስ" : "3. Respondent:",
     pendingReviewLabel: isAmharic ? "በመጠበቅ ላይ" : "Pending Review",
     pendingApprovalLabel: isAmharic ? "በማረጋገጥ ላይ" : "Pending Approval",
     signedLabel: isAmharic ? "ተፈርመዋል:" : "Signed:",
     unknownValue: isAmharic ? "ያልታወቀ" : "Unknown",
-    naValue: isAmharic ? "የለም" : "N/A",
+    naValue: isAmharic ? "የለም" : "---",
     guardsLabel: isAmharic ? "ጥበቃዎች" : "Guards",
     clientStaffLabel: isAmharic ? "የደንበኛ ሰራተኞች" : "Customer staff",
     bystandersLabel: isAmharic ? "በሌላ አካል" : "In another body",
@@ -302,9 +353,19 @@ export const IncidentReportPDF: React.FC<Props> = ({
   return (
     <Document>
       <Page size="A4" style={styles.page}>
+        <View style={styles.logoContainer}>
+          <Image
+            style={styles.logo}
+            src={data.organizationLogo || "/images/efp-logo.png"}
+          />
+        </View>
+
         <View style={styles.headerContainer}>
           <Text style={styles.govTitle}>{labels.govTitle}</Text>
           <Text style={styles.subGovTitle}>{labels.subGovTitle}</Text>
+          <Text style={styles.subGovTitleSection}>
+            {labels.subGovTitleSection}
+          </Text>
         </View>
 
         <Text style={styles.docTitle}>{labels.docTitle}</Text>
@@ -468,6 +529,10 @@ export const IncidentReportPDF: React.FC<Props> = ({
           ))}
         </View>
 
+        <View style={styles.sectionTitle}>
+          <Text>{labels.section4Title}</Text>
+        </View>
+
         {data.superiorFeedback && (
           <View style={{ marginTop: 10 }}>
             <Text style={styles.fieldLabel}>
@@ -486,59 +551,102 @@ export const IncidentReportPDF: React.FC<Props> = ({
 
         <View style={styles.signaturesContainer}>
           <View style={styles.signatureBlock}>
-            <Text style={styles.metaLabel}>{labels.submittingAgencyLabel}</Text>
-            <View style={styles.signatureLine}>
-              {data.reporterSignatureUrl && (
-                <Image
-                  style={styles.signatureImg}
-                  src={data.reporterSignatureUrl}
-                />
-              )}
+            <Text style={styles.signatureSectionTitle}>
+              {labels.submittingAgencyLabel}
+            </Text>
+            <View style={styles.signatureDetails}>
+              <View style={styles.signatureDetailRow}>
+                <Text style={styles.signatureDetailLabel}>ሙሉ ስም :</Text>
+                <Text style={styles.signatureDetailValue}>
+                  {data.reporterName}
+                </Text>
+              </View>
+              <View style={styles.signatureDetailRow}>
+                <Text style={styles.signatureDetailLabel}>ኃላፊ :</Text>
+                <Text style={styles.signatureDetailValue}>
+                  {data.reporterTitle}
+                </Text>
+              </View>
+              <View style={styles.signatureDetailRow}>
+                <Text style={styles.signatureDetailLabel}>ፊርማ :</Text>
+                <View style={styles.signatureDetailValue}>
+                  <View style={styles.signatureLine}>
+                    {data.reporterSignatureUrl && (
+                      <Image
+                        style={styles.signatureImg}
+                        src={data.reporterSignatureUrl}
+                      />
+                    )}
+                  </View>
+                </View>
+              </View>
             </View>
-            <Text style={styles.signTitle}>{data.reporterName}</Text>
-            <Text style={styles.signText}>{data.reporterTitle}</Text>
           </View>
 
           <View style={styles.signatureBlock}>
-            <Text style={styles.metaLabel}>{labels.auditingOfficerLabel}</Text>
-            <View style={styles.signatureLine}>
-              {data.efpOfficerSignatureUrl && (
-                <Image
-                  style={styles.signatureImg}
-                  src={data.efpOfficerSignatureUrl}
-                />
-              )}
+            <Text style={styles.signatureSectionTitle}>
+              {labels.auditingOfficerLabel}
+            </Text>
+            <View style={styles.signatureDetails}>
+              <View style={styles.signatureDetailRow}>
+                <Text style={styles.signatureDetailLabel}>ሙሉ ስም :</Text>
+                <Text style={styles.signatureDetailValue}>
+                  {data.efpOfficerName}
+                </Text>
+              </View>
+              <View style={styles.signatureDetailRow}>
+                <Text style={styles.signatureDetailLabel}>ኃላፊነት :</Text>
+                <Text style={styles.signatureDetailValue}>
+                  {data.efpOfficerTitle}
+                </Text>
+              </View>
+              <View style={styles.signatureDetailRow}>
+                <Text style={styles.signatureDetailLabel}>ፊርማ :</Text>
+                <View style={styles.signatureDetailValue}>
+                  <View style={styles.signatureLine}>
+                    {data.efpOfficerSignatureUrl && (
+                      <Image
+                        style={styles.signatureImg}
+                        src={data.efpOfficerSignatureUrl}
+                      />
+                    )}
+                  </View>
+                </View>
+              </View>
             </View>
-            <Text style={styles.signTitle}>
-              {data.efpOfficerName || labels.pendingReviewLabel}
-            </Text>
-            <Text style={styles.signText}>
-              {data.efpSignDate
-                ? `${labels.signedLabel} ${data.efpSignDate.substring(0, 10)}`
-                : ""}
-            </Text>
           </View>
 
           <View style={styles.signatureBlock}>
-            <Text style={styles.metaLabel}>
+            <Text style={styles.signatureSectionTitle}>
               {labels.endorsingSuperiorLabel}
             </Text>
-            <View style={styles.signatureLine}>
-              {data.superiorSignatureUrl && (
-                <Image
-                  style={styles.signatureImg}
-                  src={data.superiorSignatureUrl}
-                />
-              )}
+            <View style={styles.signatureDetails}>
+              <View style={styles.signatureDetailRow}>
+                <Text style={styles.signatureDetailLabel}>ሙሉ ስም :</Text>
+                <Text style={styles.signatureDetailValue}>
+                  {data.superiorName}
+                </Text>
+              </View>
+              <View style={styles.signatureDetailRow}>
+                <Text style={styles.signatureDetailLabel}>ኃላፊነት :</Text>
+                <Text style={styles.signatureDetailValue}>
+                  {data.superiorTitle}
+                </Text>
+              </View>
+              <View style={styles.signatureDetailRow}>
+                <Text style={styles.signatureDetailLabel}>ፊርማ :</Text>
+                <View style={styles.signatureDetailValue}>
+                  <View style={styles.signatureLine}>
+                    {data.superiorSignatureUrl && (
+                      <Image
+                        style={styles.signatureImg}
+                        src={data.superiorSignatureUrl}
+                      />
+                    )}
+                  </View>
+                </View>
+              </View>
             </View>
-            <Text style={styles.signTitle}>
-              {data.superiorName || labels.pendingApprovalLabel}
-            </Text>
-            <Text style={styles.signText}>
-              {data.superiorSignDate
-                ? `${labels.signedLabel} ${data.superiorSignDate.substring(0, 10)}`
-                : ""}
-            </Text>
           </View>
         </View>
       </Page>

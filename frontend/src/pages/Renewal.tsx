@@ -172,13 +172,19 @@ const mapRenewalEligibilityError = (
       : "This certificate does not belong to your organization. Enter the serial number from your own license.";
   }
 
-  if (lower.includes("no certificate was found") || lower.includes("not found")) {
+  if (
+    lower.includes("no certificate was found") ||
+    lower.includes("not found")
+  ) {
     return language === "am"
       ? "በዚህ ተከታታይ ቁጥር ምስክር አልተገኘም። በፈቃድዎ ላይ ያለውን ቁጥር ያረጋግጡ።"
       : "No certificate was found with this serial number. Check the number on your license document.";
   }
 
-  if (lower.includes("already been submitted") || lower.includes("per calendar year")) {
+  if (
+    lower.includes("already been submitted") ||
+    lower.includes("per calendar year")
+  ) {
     return language === "am"
       ? "ለዚህ የቀን መቁጠሪያ ዓመት አስቀድመው የእድሳት ማመልከቻ አስገብተዋል።"
       : "You have already submitted a renewal application for this calendar year.";
@@ -390,7 +396,11 @@ const FileUpload = ({
             className="flex items-center space-x-1 text-[10px] font-black text-amber-700 uppercase tracking-wider hover:text-amber-800 transition-colors"
           >
             <span>{language === "am" ? "ተጨማሪ መረጃ" : "Learn more"}</span>
-            <span className={`transition-transform duration-200 ${showInfo ? "rotate-90" : ""}`}>→</span>
+            <span
+              className={`transition-transform duration-200 ${showInfo ? "rotate-90" : ""}`}
+            >
+              →
+            </span>
           </button>
           {showInfo && (
             <p className="mt-1 text-[10px] text-amber-700 bg-amber-50 rounded-xl px-3 py-2 font-medium w-full">
@@ -551,7 +561,9 @@ const SearchableLocationSelect = ({
     <div ref={containerRef} className="space-y-2 text-left relative">
       <label className="text-[11px] font-black text-gray-500 flex items-center space-x-1.5">
         <span>{label}</span>
-        <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
+        <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+          *
+        </span>
       </label>
       <button
         type="button"
@@ -665,8 +677,7 @@ export const Renewal = () => {
     nameAmharic: string;
     status: string;
   } | null>(null);
-  const [, setRenewalPolicy] =
-    React.useState<RenewalPolicyInfo | null>(null);
+  const [, setRenewalPolicy] = React.useState<RenewalPolicyInfo | null>(null);
   const [appStatus] = React.useState<
     "draft" | "pending" | "reviewing" | "correction"
   >("draft");
@@ -689,13 +700,29 @@ export const Renewal = () => {
   ]);
 
   const [branchAddresses, setBranchAddresses] = React.useState<
-    { id: number; region: string; zone: string; woreda: string; kebele: string; houseNumber: string; specialLocation: string }[]
+    {
+      id: number;
+      region: string;
+      zone: string;
+      woreda: string;
+      kebele: string;
+      houseNumber: string;
+      specialLocation: string;
+    }[]
   >([]);
 
   const addBranchAddress = () => {
     setBranchAddresses((prev) => [
       ...prev,
-      { id: Date.now(), region: "", zone: "", woreda: "", kebele: "", houseNumber: "", specialLocation: "" },
+      {
+        id: Date.now(),
+        region: "",
+        zone: "",
+        woreda: "",
+        kebele: "",
+        houseNumber: "",
+        specialLocation: "",
+      },
     ]);
   };
 
@@ -1044,12 +1071,19 @@ export const Renewal = () => {
       // Notify admins about the renewal application submission
       try {
         console.log("[Renewal] Notifying admins about renewal submission");
-        console.log("[Renewal] Organization:", eligibleOrganization?.nameEnglish);
+        console.log(
+          "[Renewal] Organization:",
+          eligibleOrganization?.nameEnglish,
+        );
         await apiRequest("/notifications/notify-application-submission", {
           method: "POST",
           body: JSON.stringify({
-            organizationName: eligibleOrganization?.nameEnglish || "Unknown Organization",
-            organizationNameAm: eligibleOrganization?.nameAmharic || eligibleOrganization?.nameEnglish || "Unknown Organization",
+            organizationName:
+              eligibleOrganization?.nameEnglish || "Unknown Organization",
+            organizationNameAm:
+              eligibleOrganization?.nameAmharic ||
+              eligibleOrganization?.nameEnglish ||
+              "Unknown Organization",
             applicationType: "Renewal Application",
           }),
         });
@@ -1093,7 +1127,7 @@ export const Renewal = () => {
       zone: "ZONE",
       woreda: "WOREDA",
       kebele: "KEBELE",
-      houseNo: "House No.",
+      houseNo: "House Number.",
       specialLocation: "Special Location Name (Optional)",
       faydaId: "Fayda ID Number",
       otp: "OTP Code",
@@ -1355,7 +1389,9 @@ export const Renewal = () => {
               <div className="space-y-4 max-w-xl">
                 <label className="text-xs font-black text-gray-500 flex items-center space-x-1.5">
                   <span>{curT.certificateSerialNumber}</span>
-                  <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
+                  <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                    *
+                  </span>
                 </label>
                 <input
                   {...register("certificateSerialNumber")}
@@ -1373,14 +1409,18 @@ export const Renewal = () => {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-black text-primary uppercase tracking-widest">
-                      {language === "am" ? "የቅርንጫፍ አድራሻዎች (አማራጭ)" : "Branch Addresses (Optional)"}
+                      {language === "am"
+                        ? "የቅርንጫፍ አድራሻዎች (አማራጭ)"
+                        : "Branch Addresses (Optional)"}
                     </h4>
                     <button
                       type="button"
                       onClick={addBranchAddress}
                       className="inline-flex items-center space-x-2 rounded-xl bg-primary px-4 py-2 text-[11px] font-black uppercase tracking-widest text-white transition-all hover:shadow-lg"
                     >
-                      <span>{language === "am" ? "አድራሻ ያክሉ" : "Add Address"}</span>
+                      <span>
+                        {language === "am" ? "አድራሻ ያክሉ" : "Add Address"}
+                      </span>
                     </button>
                   </div>
                   <p className="text-xs text-gray-500">
@@ -1397,24 +1437,35 @@ export const Renewal = () => {
                   ) : (
                     <div className="space-y-4">
                       {branchAddresses.map((branch) => (
-                        <div key={branch.id} className="space-y-4 rounded-[28px] border border-dashed border-gray-200 p-5 bg-gray-50/50">
+                        <div
+                          key={branch.id}
+                          className="space-y-4 rounded-[28px] border border-dashed border-gray-200 p-5 bg-gray-50/50"
+                        >
                           <div className="flex items-center justify-between">
                             <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest">
-                              {language === "am" ? `የቅርንጫፍ አድራሻ #${branchAddresses.indexOf(branch) + 1}` : `Branch Address #${branchAddresses.indexOf(branch) + 1}`}
+                              {language === "am"
+                                ? `የቅርንጫፍ አድራሻ #${branchAddresses.indexOf(branch) + 1}`
+                                : `Branch Address #${branchAddresses.indexOf(branch) + 1}`}
                             </p>
                             <button
                               type="button"
                               onClick={() => removeBranchAddress(branch.id)}
                               className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all"
                             >
-                              <span>{language === "am" ? "አስወግድ" : "Remove"}</span>
+                              <span>
+                                {language === "am" ? "አስወግድ" : "Remove"}
+                              </span>
                             </button>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <SearchableLocationSelect
                               label={language === "am" ? "ክልል" : "REGION"}
-                              placeholder={language === "am" ? "ክልል ምረጥ" : "Select Region"}
-                              searchPlaceholder={language === "am" ? "ክልል ፈልግ" : "Search region"}
+                              placeholder={
+                                language === "am" ? "ክልል ምረጥ" : "Select Region"
+                              }
+                              searchPlaceholder={
+                                language === "am" ? "ክልል ፈልግ" : "Search region"
+                              }
                               value={branch.region}
                               options={regionsList}
                               onChange={(val) => {
@@ -1430,14 +1481,25 @@ export const Renewal = () => {
                                 updateBranchAddress(branch.id, "woreda", "");
                                 updateBranchAddress(branch.id, "kebele", "");
                               }}
-                              onOpen={() => { if (branch.region) void loadZonesForRegion(branch.region); }}
+                              onOpen={() => {
+                                if (branch.region)
+                                  void loadZonesForRegion(branch.region);
+                              }}
                             />
                             <SearchableLocationSelect
                               label={`${language === "am" ? "ዞን" : "ZONE"} / ${language === "am" ? "ክፍለ ከተማ" : "SUBCITY"}`}
-                              placeholder={language === "am" ? "ዞን/ክፍለ ከተማ ምረጥ" : "Select Zone / Subcity"}
-                              searchPlaceholder={language === "am" ? "ዞን ፈልግ" : "Search zone"}
+                              placeholder={
+                                language === "am"
+                                  ? "ዞን/ክፍለ ከተማ ምረጥ"
+                                  : "Select Zone / Subcity"
+                              }
+                              searchPlaceholder={
+                                language === "am" ? "ዞን ፈልግ" : "Search zone"
+                              }
                               value={branch.zone}
-                              options={zonesByRegion[String(branch.region)] || []}
+                              options={
+                                zonesByRegion[String(branch.region)] || []
+                              }
                               disabled={!branch.region}
                               onChange={(val) => {
                                 updateBranchAddress(branch.id, "zone", val);
@@ -1450,12 +1512,19 @@ export const Renewal = () => {
                                 updateBranchAddress(branch.id, "woreda", "");
                                 updateBranchAddress(branch.id, "kebele", "");
                               }}
-                              onOpen={() => { if (branch.region) void loadZonesForRegion(branch.region); }}
+                              onOpen={() => {
+                                if (branch.region)
+                                  void loadZonesForRegion(branch.region);
+                              }}
                             />
                             <SearchableLocationSelect
                               label={language === "am" ? "ወረዳ" : "WOREDA"}
-                              placeholder={language === "am" ? "ወረዳ ምረጥ" : "Select Woreda"}
-                              searchPlaceholder={language === "am" ? "ወረዳ ፈልግ" : "Search woreda"}
+                              placeholder={
+                                language === "am" ? "ወረዳ ምረጥ" : "Select Woreda"
+                              }
+                              searchPlaceholder={
+                                language === "am" ? "ወረዳ ፈልግ" : "Search woreda"
+                              }
                               value={branch.woreda}
                               options={woredasByZone[String(branch.zone)] || []}
                               disabled={!branch.zone}
@@ -1468,44 +1537,92 @@ export const Renewal = () => {
                                 updateBranchAddress(branch.id, "woreda", "");
                                 updateBranchAddress(branch.id, "kebele", "");
                               }}
-                              onOpen={() => { if (branch.zone) void loadWoredasForZone(branch.zone); }}
+                              onOpen={() => {
+                                if (branch.zone)
+                                  void loadWoredasForZone(branch.zone);
+                              }}
                             />
                             <SearchableLocationSelect
                               label={language === "am" ? "ቀበሌ" : "KEBELE"}
-                              placeholder={language === "am" ? "ቀበሌ ምረጥ" : "Select Kebele"}
-                              searchPlaceholder={language === "am" ? "ቀበሌ ፈልግ" : "Search kebele"}
+                              placeholder={
+                                language === "am" ? "ቀበሌ ምረጥ" : "Select Kebele"
+                              }
+                              searchPlaceholder={
+                                language === "am" ? "ቀበሌ ፈልግ" : "Search kebele"
+                              }
                               value={branch.kebele}
-                              options={kebelesByWoreda[String(branch.woreda)] || []}
+                              options={
+                                kebelesByWoreda[String(branch.woreda)] || []
+                              }
                               disabled={!branch.woreda}
-                              onChange={(val) => updateBranchAddress(branch.id, "kebele", val)}
-                              onClear={() => updateBranchAddress(branch.id, "kebele", "")}
-                              onOpen={() => { if (branch.woreda) void loadKebelesForWoreda(branch.woreda); }}
+                              onChange={(val) =>
+                                updateBranchAddress(branch.id, "kebele", val)
+                              }
+                              onClear={() =>
+                                updateBranchAddress(branch.id, "kebele", "")
+                              }
+                              onOpen={() => {
+                                if (branch.woreda)
+                                  void loadKebelesForWoreda(branch.woreda);
+                              }}
                             />
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                               <label className="text-[11px] font-black text-gray-400 flex items-center space-x-1.5">
-                                <span>{language === "am" ? "የቤት ቁጥር" : "HOUSE NO."}</span>
-                                <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
+                                <span>
+                                  {language === "am"
+                                    ? "የቤት ቁጥር"
+                                    : "HOUSE NUMBER."}
+                                </span>
+                                <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                                  *
+                                </span>
                               </label>
                               <input
                                 type="text"
                                 value={branch.houseNumber}
-                                onChange={(e) => updateBranchAddress(branch.id, "houseNumber", e.target.value)}
-                                placeholder={language === "am" ? "የቤት ቁጥር ያስገቡ" : "Enter house number"}
+                                onChange={(e) =>
+                                  updateBranchAddress(
+                                    branch.id,
+                                    "houseNumber",
+                                    e.target.value,
+                                  )
+                                }
+                                placeholder={
+                                  language === "am"
+                                    ? "የቤት ቁጥር ያስገቡ"
+                                    : "Enter house number"
+                                }
                                 className="w-full p-4 bg-white border-2 border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary text-primary font-bold text-sm"
                               />
                             </div>
                             <div className="space-y-2">
                               <label className="text-[11px] font-black text-gray-400 flex items-center space-x-1.5">
-                                <span>{language === "am" ? "ልዩ ቦታ (አማራጭ)" : "Special Location (Optional)"}</span>
-                                <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-amber-700 bg-amber-50">opt</span>
+                                <span>
+                                  {language === "am"
+                                    ? "ልዩ ቦታ (አማራጭ)"
+                                    : "Special Location (Optional)"}
+                                </span>
+                                <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-amber-700 bg-amber-50">
+                                  opt
+                                </span>
                               </label>
                               <input
                                 type="text"
                                 value={branch.specialLocation}
-                                onChange={(e) => updateBranchAddress(branch.id, "specialLocation", e.target.value)}
-                                placeholder={language === "am" ? "ልዩ ቦታ ያስገቡ" : "Enter special location"}
+                                onChange={(e) =>
+                                  updateBranchAddress(
+                                    branch.id,
+                                    "specialLocation",
+                                    e.target.value,
+                                  )
+                                }
+                                placeholder={
+                                  language === "am"
+                                    ? "ልዩ ቦታ ያስገቡ"
+                                    : "Enter special location"
+                                }
                                 className="w-full p-4 bg-white border-2 border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary text-primary font-bold text-sm"
                               />
                             </div>
@@ -1621,7 +1738,9 @@ export const Renewal = () => {
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
                     <span>{curT.offices}</span>
-                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                      *
+                    </span>
                   </label>
                   <input
                     type="number"
@@ -1636,7 +1755,9 @@ export const Renewal = () => {
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
                     <span>{curT.capitalAmount}</span>
-                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                      *
+                    </span>
                   </label>
                   <input
                     type="number"
@@ -1652,7 +1773,9 @@ export const Renewal = () => {
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
                     <span>{curT.storeHouse}</span>
-                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                      *
+                    </span>
                   </label>
                   <select
                     {...register("storeHouse")}
@@ -1666,7 +1789,9 @@ export const Renewal = () => {
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
                     <span>{curT.computers}</span>
-                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                      *
+                    </span>
                   </label>
                   <input
                     type="number"
@@ -1681,7 +1806,9 @@ export const Renewal = () => {
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
                     <span>{curT.vehicles}</span>
-                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                      *
+                    </span>
                   </label>
                   <input
                     type="number"
@@ -1707,7 +1834,9 @@ export const Renewal = () => {
                   onUpload={(file) => handleUpload("vehicle_rent", file)}
                   onDelete={() => handleDelete("vehicle_rent")}
                   onView={handleView}
-                  disabled={!watch("vehicles") || Number(watch("vehicles")) === 0}
+                  disabled={
+                    !watch("vehicles") || Number(watch("vehicles")) === 0
+                  }
                   infoText="If rented, upload a document showing 1 year paid rent. If owned, upload ownership documents."
                   infoTextAm="ተሽከርካሪ የተከራየ ከሆነ የ1 አመት ክፍያ የተከፈለበትን ሰነድ ይስቀሉ። የራስ ከሆነ የባለቤትነት ሰነድ ይስቀሉ።"
                   required={false}
@@ -1771,7 +1900,9 @@ export const Renewal = () => {
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700 flex items-center space-x-1.5">
                     <span>{curT.trainingPlace}</span>
-                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                      *
+                    </span>
                   </label>
                   <input
                     {...register("trainingPlace")}
@@ -1781,7 +1912,9 @@ export const Renewal = () => {
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700 flex items-center space-x-1.5">
                     <span>{curT.trainingProvider}</span>
-                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                      *
+                    </span>
                   </label>
                   <input
                     {...register("trainingProvider")}
@@ -1791,7 +1924,9 @@ export const Renewal = () => {
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700 flex items-center space-x-1.5">
                     <span>{curT.trainingDays}</span>
-                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
+                    <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                      *
+                    </span>
                   </label>
                   <input
                     type="number"
@@ -1803,8 +1938,12 @@ export const Renewal = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
-                      <span>{language === "am" ? "የተማሩ ወንዶች" : "Trained (Male)"}</span>
-                      <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
+                      <span>
+                        {language === "am" ? "የተማሩ ወንዶች" : "Trained (Male)"}
+                      </span>
+                      <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                        *
+                      </span>
                     </label>
                     <input
                       type="number"
@@ -1816,8 +1955,12 @@ export const Renewal = () => {
 
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
-                      <span>{language === "am" ? "የተማሩ ሴቶች" : "Trained (Female)"}</span>
-                      <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
+                      <span>
+                        {language === "am" ? "የተማሩ ሴቶች" : "Trained (Female)"}
+                      </span>
+                      <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                        *
+                      </span>
                     </label>
                     <input
                       type="number"
@@ -1829,8 +1972,14 @@ export const Renewal = () => {
 
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
-                      <span>{language === "am" ? "ያልተማሩ ወንዶች" : "Not Trained (Male)"}</span>
-                      <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
+                      <span>
+                        {language === "am"
+                          ? "ያልተማሩ ወንዶች"
+                          : "Not Trained (Male)"}
+                      </span>
+                      <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                        *
+                      </span>
                     </label>
                     <input
                       type="number"
@@ -1842,8 +1991,14 @@ export const Renewal = () => {
 
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
-                      <span>{language === "am" ? "ያልተማሩ ሴቶች" : "Not Trained (Female)"}</span>
-                      <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
+                      <span>
+                        {language === "am"
+                          ? "ያልተማሩ ሴቶች"
+                          : "Not Trained (Female)"}
+                      </span>
+                      <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                        *
+                      </span>
                     </label>
                     <input
                       type="number"
@@ -1910,7 +2065,9 @@ export const Renewal = () => {
                       <div className="space-y-2 text-left">
                         <label className="text-[11px] font-black text-gray-500 flex items-center space-x-1.5">
                           <span>{curT.nameServiceUser}</span>
-                          <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
+                          <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                            *
+                          </span>
                         </label>
                         <input
                           value={contract.serviceUserName}
@@ -1929,7 +2086,9 @@ export const Renewal = () => {
                       <div className="space-y-2 text-left">
                         <label className="text-[11px] font-black text-gray-500 flex items-center space-x-1.5">
                           <span>{curT.assignedPersonnelNumber}</span>
-                          <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
+                          <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                            *
+                          </span>
                         </label>
                         <input
                           value={contract.assignedPersonnelCount}
@@ -2113,7 +2272,9 @@ export const Renewal = () => {
                     <div key={i} className="space-y-2">
                       <label className="text-xs font-bold text-gray-500 flex items-center space-x-1.5">
                         <span>{level.label}</span>
-                        <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">*</span>
+                        <span className="text-[9px] font-black rounded-md px-1.5 py-0.5 text-red-600 bg-red-50">
+                          *
+                        </span>
                       </label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <input
@@ -2299,11 +2460,7 @@ export const Renewal = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {[
-                        "uniform_sample",
-                        "id_sample",
-                        "logo",
-                      ].map(
+                      {["uniform_sample", "id_sample", "logo"].map(
                         (key) =>
                           uploadedFiles[key] && (
                             <div
@@ -2487,7 +2644,9 @@ export const Renewal = () => {
                 </div>
                 <div className="space-y-2">
                   <h5 className="text-xl font-black text-primary uppercase tracking-tight">
-                    {language === "am" ? "ለፈቃድ እድሳት ዝግጁ ነዎት?" : "Ready for License Renewal?"}
+                    {language === "am"
+                      ? "ለፈቃድ እድሳት ዝግጁ ነዎት?"
+                      : "Ready for License Renewal?"}
                   </h5>
                   <p className="text-xs text-gray-500 max-w-lg mx-auto">
                     {language === "am"

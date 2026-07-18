@@ -1,3 +1,4 @@
+//filepath: frontend/src/pages/HRmanagement/PersonnelDetailsForm.tsx
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
@@ -20,6 +21,7 @@ import {
   Send,
   Loader2,
   X,
+  Search,
 } from "lucide-react";
 import { LoadingSpinner } from "../../components/LoadingSpinner";
 import { apiRequest } from "../../lib/api";
@@ -28,19 +30,27 @@ import { uploadOrganizationDocuments } from "../../lib/fileUploadHelper";
 interface LocationOption {
   id: number;
   name: string;
+  nameEnglish?: string;
+  nameAmharic?: string;
 }
-
-type PositionCategory = "manager" | "operations" | "administration" | "other";
 
 interface PositionOption {
   id: number;
   name: string;
+  nameEnglish?: string;
+  nameAmharic?: string;
+}
+
+interface EducationOption {
+  value: string;
+  labelEn: string;
+  labelAm: string;
 }
 
 const allowedPositionNames = [
-  "Manager of Institution",
-  "Operation of Institution",
-  "Administrative of Institution",
+  "Manager of Organization",
+  "Operation of Organization",
+  "Administrative and Finance of Organization",
 ];
 
 const isAllowedPosition = (name: string) => {
@@ -50,6 +60,18 @@ const isAllowedPosition = (name: string) => {
   return allowedPositionNames.some(
     (allowed) => normalized === allowed.toLowerCase(),
   );
+};
+
+const getLocalizedName = (
+  item:
+    | { name?: string; nameEnglish?: string; nameAmharic?: string }
+    | null
+    | undefined,
+  isAm: boolean,
+) => {
+  const english = String(item?.nameEnglish || item?.name || "").trim();
+  const amharic = String(item?.nameAmharic || "").trim();
+  return isAm ? amharic || english : english || amharic;
 };
 
 const documentTypes = [
@@ -78,8 +100,8 @@ const documentTypes = [
     required: false,
   },
   {
-    key: "collateral",
-    labelEn: "Proof of Collateral",
+    key: "guarantee",
+    labelEn: "Proof of Guarantee",
     labelAm: "የማስረጃ ማስረጃ",
     required: true,
   },
@@ -121,8 +143,167 @@ const documentTypes = [
   },
 ];
 
-const getPositionLabel = (position: PositionOption, isAm: boolean) =>
-  position.name || String(position.id);
+const SearchableLocationSelect = ({
+  label,
+  placeholder,
+  searchPlaceholder,
+  value,
+  options,
+  disabled = false,
+  required = false,
+  language,
+  onChange,
+  onClear,
+}: {
+  label: string;
+  placeholder: string;
+  searchPlaceholder: string;
+  value: string;
+  options: LocationOption[];
+  disabled?: boolean;
+  required?: boolean;
+  language: string;
+  onChange: (value: string) => void;
+  onClear: () => void;
+}) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const isAm = language === "am";
+
+  const selectedOption = options.find(
+    (option) => String(option.id) === String(value),
+  );
+  const getOptionLabel = (option: LocationOption) =>
+    getLocalizedName(option, isAm);
+
+  React.useEffect(() => {
+    if (!isOpen) setSearchTerm("");
+  }, [isOpen]);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredOptions = options.filter((option) => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return true;
+    return getOptionLabel(option).toLowerCase().includes(term);
+  });
+
+  return (
+    <div ref={containerRef} className="space-y-1.5 text-left relative">
+      <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
+        {label}
+        {required && <span className="text-orange-500"> *</span>}
+      </label>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => {
+          if (disabled) return;
+          setIsOpen((prev) => !prev);
+        }}
+        className={`w-full rounded-xl border px-4 py-2.5 text-sm text-left flex items-center justify-between gap-3 transition-all relative ${
+          disabled
+            ? "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed"
+            : "bg-white border-gray-200 hover:border-[#003366]/50"
+        }`}
+      >
+        <span
+          className={`truncate ${
+            selectedOption ? "text-gray-900 font-medium" : "text-gray-400"
+          }`}
+        >
+          {getOptionLabel(selectedOption as LocationOption) || placeholder}
+        </span>
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-gray-400">
+          {selectedOption ? (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onClear();
+              }}
+              className="p-0.5 rounded-full hover:bg-red-50 hover:text-red-600 transition-all"
+              aria-label={`Clear ${label}`}
+            >
+              <X className="w-4 h-4" />
+            </button>
+          ) : (
+            <ChevronDown className="w-4 h-4" />
+          )}
+        </span>
+      </button>
+
+      {isOpen && !disabled && (
+        <div className="absolute left-0 right-0 top-full z-20 mt-1.5 rounded-xl border border-gray-200 bg-white shadow-xl overflow-hidden">
+          <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-2.5 bg-gray-50">
+            <Search className="w-4 h-4 text-gray-400 shrink-0" />
+            <input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder={searchPlaceholder}
+              className="w-full bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-400"
+              autoFocus
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm("")}
+                className="shrink-0 p-1 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                aria-label="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="max-h-52 overflow-auto p-1.5">
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => {
+                    onChange(String(option.id));
+                    setIsOpen(false);
+                  }}
+                  className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all ${
+                    String(option.id) === String(value)
+                      ? "bg-[#003366] text-white font-bold"
+                      : "hover:bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  {getOptionLabel(option)}
+                </button>
+              ))
+            ) : (
+              <div className="px-3 py-4 text-sm text-gray-400 text-center">
+                {searchTerm
+                  ? isAm
+                    ? "ምንም አማራጭ አልተገኘም"
+                    : "No matching options"
+                  : isAm
+                    ? "ምንም አማራጭ የለም"
+                    : "No options available"}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function PersonnelDetailsForm() {
   const { language } = useLanguage();
@@ -142,7 +323,7 @@ export default function PersonnelDetailsForm() {
   const [age, setAge] = useState("");
   const [faydaId, setFaydaId] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState("+251");
   const [position, setPosition] = useState("");
   const [educationLevel, setEducationLevel] = useState("");
   const [workExpYears, setWorkExpYears] = useState("");
@@ -156,6 +337,7 @@ export default function PersonnelDetailsForm() {
   const [reason, setReason] = useState("");
   const [files, setFiles] = useState<Record<string, File>>({});
   const [activeDocKey, setActiveDocKey] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [openInfo, setOpenInfo] = useState<string | null>(null);
   const [openPosInfo, setOpenPosInfo] = useState<string | null>(null);
   const [positionOptions, setPositionOptions] = useState<PositionOption[]>([]);
@@ -165,14 +347,11 @@ export default function PersonnelDetailsForm() {
   const [kebeles, setKebeles] = useState<LocationOption[]>([]);
   const [positionLoading, setPositionLoading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
-  const [educationOptions, setEducationOptions] = useState<
-    Array<{ value: string; labelEn: string; labelAm: string }>
-  >([]);
+  const [educationOptions, setEducationOptions] = useState<EducationOption[]>(
+    [],
+  );
   const [organizationId, setOrganizationId] = useState<number | null>(null);
   const [organizationName, setOrganizationName] = useState<string>("");
-  const [organizationLoadError, setOrganizationLoadError] = useState<
-    string | null
-  >(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Validation UI state
@@ -339,10 +518,13 @@ export default function PersonnelDetailsForm() {
     }
   };
 
-  const selectedPosition = positionOptions.find(
+  const availableEducationOptions = educationOptions;
+  const selectedPositionOption = positionOptions.find(
     (pos) => String(pos.id) === position,
   );
-  const availableEducationOptions = educationOptions;
+  const shouldShowEducationLevel = Boolean(
+    selectedPositionOption && isAllowedPosition(selectedPositionOption.name),
+  );
 
   useEffect(() => {
     const fetchOrganization = async () => {
@@ -369,12 +551,6 @@ export default function PersonnelDetailsForm() {
         );
       } catch (error: any) {
         console.error("Failed to load organization info", error);
-        setOrganizationLoadError(
-          error?.message ||
-            (isAm
-              ? "ለምዝገባ ድርጅትዎን መለየት አልተቻለም።"
-              : "Unable to determine your organization for registration."),
-        );
       }
     };
 
@@ -392,11 +568,28 @@ export default function PersonnelDetailsForm() {
           : payload?.data || [];
         setPositionOptions(
           positions
-            .map((item: any) => ({
-              id: Number(item.id),
-              name: String(item.name || item.positionName || ""),
-            }))
-            .filter((position) => isAllowedPosition(position.name)),
+            .map((item: any) => {
+              const englishName = String(
+                item?.nameEnglish || item?.name || item?.positionName || "",
+              ).trim();
+              const amharicName = String(
+                item?.nameAmharic || item?.positionNameAm || "",
+              ).trim();
+              return {
+                id: Number(item?.id),
+                name: englishName || amharicName,
+                nameEnglish: englishName,
+                nameAmharic: amharicName,
+              };
+            })
+            .filter((position: PositionOption) =>
+              isAllowedPosition(
+                position.nameEnglish ||
+                  position.name ||
+                  position.nameAmharic ||
+                  "",
+              ),
+            ),
         );
       } catch (error) {
         console.error("Failed to load positions", error);
@@ -416,12 +609,27 @@ export default function PersonnelDetailsForm() {
           ? payload
           : payload?.data || [];
         setRegions(
-          regionList.map((item: any) => ({
-            id: Number(item.id),
-            name: String(
-              item.name || item.regionName || item.nameEnglish || "",
-            ),
-          })),
+          regionList.map((item: any) => {
+            const englishName = String(
+              item?.nameEnglish ||
+                item?.name ||
+                item?.regionName ||
+                item?.region_name_en ||
+                "",
+            ).trim();
+            const amharicName = String(
+              item?.nameAmharic ||
+                item?.regionNameAm ||
+                item?.region_name_am ||
+                englishName,
+            ).trim();
+            return {
+              id: Number(item?.id),
+              name: englishName || amharicName,
+              nameEnglish: englishName || amharicName,
+              nameAmharic: amharicName || englishName,
+            };
+          }),
         );
       } catch (error) {
         console.error("Failed to load regions", error);
@@ -454,10 +662,27 @@ export default function PersonnelDetailsForm() {
         const payload = response.data || response;
         const zoneList = Array.isArray(payload) ? payload : payload?.data || [];
         setZones(
-          zoneList.map((item: any) => ({
-            id: Number(item.id),
-            name: String(item.name || item.zoneName || item.nameEnglish || ""),
-          })),
+          zoneList.map((item: any) => {
+            const englishName = String(
+              item?.nameEnglish ||
+                item?.name ||
+                item?.zoneName ||
+                item?.zone_name_en ||
+                "",
+            ).trim();
+            const amharicName = String(
+              item?.nameAmharic ||
+                item?.zoneNameAm ||
+                item?.zone_name_am ||
+                englishName,
+            ).trim();
+            return {
+              id: Number(item?.id),
+              name: englishName || amharicName,
+              nameEnglish: englishName || amharicName,
+              nameAmharic: amharicName || englishName,
+            };
+          }),
         );
       } catch (error) {
         console.error("Failed to load zones", error);
@@ -490,12 +715,27 @@ export default function PersonnelDetailsForm() {
           ? payload
           : payload?.data || [];
         setWoredas(
-          woredaList.map((item: any) => ({
-            id: Number(item.id),
-            name: String(
-              item.name || item.woredaName || item.nameEnglish || "",
-            ),
-          })),
+          woredaList.map((item: any) => {
+            const englishName = String(
+              item?.nameEnglish ||
+                item?.name ||
+                item?.woredaName ||
+                item?.woreda_name_en ||
+                "",
+            ).trim();
+            const amharicName = String(
+              item?.nameAmharic ||
+                item?.woredaNameAm ||
+                item?.woreda_name_am ||
+                englishName,
+            ).trim();
+            return {
+              id: Number(item?.id),
+              name: englishName || amharicName,
+              nameEnglish: englishName || amharicName,
+              nameAmharic: amharicName || englishName,
+            };
+          }),
         );
       } catch (error) {
         console.error("Failed to load woredas", error);
@@ -526,12 +766,27 @@ export default function PersonnelDetailsForm() {
           ? payload
           : payload?.data || [];
         setKebeles(
-          kebeleList.map((item: any) => ({
-            id: Number(item.id),
-            name: String(
-              item.name || item.kebeleName || item.nameEnglish || "",
-            ),
-          })),
+          kebeleList.map((item: any) => {
+            const englishName = String(
+              item?.nameEnglish ||
+                item?.name ||
+                item?.kebeleName ||
+                item?.kebele_name_en ||
+                "",
+            ).trim();
+            const amharicName = String(
+              item?.nameAmharic ||
+                item?.kebeleNameAm ||
+                item?.kebele_name_am ||
+                englishName,
+            ).trim();
+            return {
+              id: Number(item?.id),
+              name: englishName || amharicName,
+              nameEnglish: englishName || amharicName,
+              nameAmharic: amharicName || englishName,
+            };
+          }),
         );
       } catch (error) {
         console.error("Failed to load kebeles", error);
@@ -546,6 +801,16 @@ export default function PersonnelDetailsForm() {
 
   useEffect(() => {
     if (!position) {
+      setEducationOptions([]);
+      setEducationLevel("");
+      return;
+    }
+
+    const selectedPosition = positionOptions.find(
+      (pos) => String(pos.id) === position,
+    );
+
+    if (!selectedPosition || !isAllowedPosition(selectedPosition.name)) {
       setEducationOptions([]);
       setEducationLevel("");
       return;
@@ -583,16 +848,16 @@ export default function PersonnelDetailsForm() {
           }
         }
 
-        const optionSets = Array.from(
-          new Map(
+        const optionSets: EducationOption[] = Array.from(
+          new Map<string, EducationOption>(
             (requirements || [])
               .filter(
-                (req: any) =>
+                (req: { requiredEducationLevel?: string | null }) =>
                   req?.requiredEducationLevel !== undefined &&
                   req?.requiredEducationLevel !== null &&
                   String(req.requiredEducationLevel).trim().length > 0,
               )
-              .map((req: any) => {
+              .map((req: { requiredEducationLevel?: string | null }) => {
                 const rawValue = String(req.requiredEducationLevel).trim();
                 return [
                   rawValue,
@@ -601,7 +866,7 @@ export default function PersonnelDetailsForm() {
                     labelEn: rawValue,
                     labelAm: rawValue,
                   },
-                ];
+                ] as const;
               }),
           ).values(),
         );
@@ -609,7 +874,7 @@ export default function PersonnelDetailsForm() {
         setEducationOptions(optionSets);
         setEducationLevel((prev) =>
           optionSets.length === 0 ||
-          !optionSets.some((opt) => opt.value === prev)
+          !optionSets.some((opt: EducationOption) => opt.value === prev)
             ? ""
             : prev,
         );
@@ -621,7 +886,7 @@ export default function PersonnelDetailsForm() {
     };
 
     loadPositionRequirements();
-  }, [position]);
+  }, [position, positionOptions]);
 
   const infoTexts: Record<string, { en: string; am: string }> = {
     fingerprint: {
@@ -759,7 +1024,8 @@ export default function PersonnelDetailsForm() {
         );
       }
 
-      // Build payload for personnel-change endpoint
+      // This form is for registering a new employee, so it should always
+      // submit as a new-personnel-change request regardless of position.
       const payload: any = {
         requestType: "NEW_EMPLOYEE",
         username:
@@ -873,10 +1139,14 @@ export default function PersonnelDetailsForm() {
               <input
                 type="text"
                 value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
+                onChange={(e) =>
+                  setFirstName(
+                    e.target.value.replace(/[^a-zA-Z\u1200-\u137F\s]/g, ""),
+                  )
+                }
                 required
                 placeholder={t("First name...", "ስም...")}
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
+                className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all ${firstName ? "border-gray-200" : "border-gray-200"}`}
               />
             </div>
             <div>
@@ -887,10 +1157,14 @@ export default function PersonnelDetailsForm() {
               <input
                 type="text"
                 value={middleName}
-                onChange={(e) => setMiddleName(e.target.value)}
+                onChange={(e) =>
+                  setMiddleName(
+                    e.target.value.replace(/[^a-zA-Z\u1200-\u137F\s]/g, ""),
+                  )
+                }
                 required
                 placeholder={t("Middle name...", "የአባት ስም...")}
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
+                className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all ${middleName ? "border-gray-200" : "border-gray-200"}`}
               />
             </div>
             <div>
@@ -901,10 +1175,14 @@ export default function PersonnelDetailsForm() {
               <input
                 type="text"
                 value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
+                onChange={(e) =>
+                  setLastName(
+                    e.target.value.replace(/[^a-zA-Z\u1200-\u137F\s]/g, ""),
+                  )
+                }
                 required
                 placeholder={t("Last name...", "የአያት ስም...")}
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
+                className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all ${lastName ? "border-gray-200" : "border-gray-200"}`}
               />
             </div>
           </div>
@@ -922,7 +1200,7 @@ export default function PersonnelDetailsForm() {
                 disabled={usernameLocked}
                 required
                 placeholder={t("Username...", "የተጠቃሚ ስም...")}
-                className={`w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all ${usernameLocked ? "bg-gray-50 text-gray-500 cursor-not-allowed" : ""}`}
+                className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all ${username ? "border-gray-200" : "border-gray-200"} ${usernameLocked ? "bg-gray-50 text-gray-500 cursor-not-allowed" : ""}`}
               />
               <div className="mt-2 flex items-center justify-end gap-2">
                 {usernameValid === "loading" && (
@@ -976,7 +1254,7 @@ export default function PersonnelDetailsForm() {
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
                 placeholder={t("New password...", "አዲስ የይለፍ ቃል...")}
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
+                className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all ${newPassword ? "border-gray-200" : "border-gray-200"}`}
               />
             </div>
             <div>
@@ -990,7 +1268,7 @@ export default function PersonnelDetailsForm() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 placeholder={t("Confirm password...", "የይለፍ ቃል ያረጋግጡ...")}
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
+                className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all ${confirmPassword ? "border-gray-200" : "border-gray-200"}`}
               />
             </div>
           </div>
@@ -1014,14 +1292,48 @@ export default function PersonnelDetailsForm() {
               <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
                 {t("Age", "እድሜ")}
               </label>
-              <input
-                type="number"
-                min="0"
-                value={age}
-                onChange={(e) => setAge(e.target.value)}
-                placeholder={t("Age", "እድሜ")}
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
-              />
+              <div className="flex items-center rounded-xl border border-gray-200 bg-white focus-within:ring-2 focus-within:ring-[#003366]/20 focus-within:border-[#003366] transition-all">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={age}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/\D/g, "");
+                    setAge(v);
+                  }}
+                  onBlur={() => {
+                    if (
+                      age !== "" &&
+                      (parseInt(age) < 18 || parseInt(age) > 80)
+                    )
+                      setAge("18");
+                  }}
+                  placeholder={t("Age", "እድሜ")}
+                  className="w-full px-4 py-2.5 text-sm outline-none bg-transparent"
+                />
+                <div className="flex flex-col border-l border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const n = age === "" ? 18 : parseInt(age, 10);
+                      if (n < 80) setAge(String(n + 1));
+                    }}
+                    className="px-2 py-0.5 text-gray-500 hover:text-[#003366] hover:bg-gray-50 transition-all text-xs leading-none border-b border-gray-200"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const n = age === "" ? 18 : parseInt(age, 10);
+                      if (n > 18) setAge(String(n - 1));
+                    }}
+                    className="px-2 py-0.5 text-gray-500 hover:text-[#003366] hover:bg-gray-50 transition-all text-xs leading-none"
+                  >
+                    ▼
+                  </button>
+                </div>
+              </div>
             </div>
             <div>
               <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
@@ -1031,7 +1343,7 @@ export default function PersonnelDetailsForm() {
                 type="text"
                 value={citizenship}
                 disabled
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm bg-gray-50 text-gray-500 outline-none cursor-not-allowed"
+                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none cursor-not-allowed bg-gray-50 text-gray-500"
               />
             </div>
           </div>
@@ -1058,11 +1370,14 @@ export default function PersonnelDetailsForm() {
               <input
                 type="text"
                 value={faydaId}
-                onChange={(e) => setFaydaId(e.target.value)}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 16);
+                  setFaydaId(digits);
+                }}
                 disabled={faydaLocked}
                 required
                 placeholder="FAN-XXXXX"
-                className={`w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all ${faydaLocked ? "bg-gray-50 text-gray-500 cursor-not-allowed" : ""}`}
+                className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all ${faydaId ? "border-gray-200" : "border-gray-200"} ${faydaLocked ? "bg-gray-50 text-gray-500 cursor-not-allowed" : ""}`}
               />
               <div className="mt-2 flex items-center justify-end gap-2">
                 {faydaValid === "loading" && (
@@ -1120,7 +1435,7 @@ export default function PersonnelDetailsForm() {
                 disabled={emailLocked}
                 required
                 placeholder="email@example.com"
-                className={`w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all ${emailLocked ? "bg-gray-50 text-gray-500 cursor-not-allowed" : ""}`}
+                className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all ${email ? "border-gray-200" : "border-gray-200"} ${emailLocked ? "bg-gray-50 text-gray-500 cursor-not-allowed" : ""}`}
               />
               <div className="mt-2 flex items-center justify-end gap-2">
                 {emailValid === "loading" && (
@@ -1174,11 +1489,19 @@ export default function PersonnelDetailsForm() {
               <input
                 type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (!raw.startsWith("+251")) {
+                    setPhone("+251");
+                    return;
+                  }
+                  const suffix = raw.slice(4).replace(/\D/g, "").slice(0, 9);
+                  setPhone("+251" + suffix);
+                }}
                 disabled={phoneLocked}
                 required
                 placeholder="+251..."
-                className={`w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all ${phoneLocked ? "bg-gray-50 text-gray-500 cursor-not-allowed" : ""}`}
+                className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all ${phone ? "border-gray-200" : "border-gray-200"} ${phoneLocked ? "bg-gray-50 text-gray-500 cursor-not-allowed" : ""}`}
               />
               <div className="mt-2 flex items-center justify-end gap-2">
                 {phoneValid === "loading" && (
@@ -1261,7 +1584,9 @@ export default function PersonnelDetailsForm() {
                 ) : positionOptions.length > 0 ? (
                   positionOptions.map((pos) => (
                     <option key={pos.id} value={pos.id}>
-                      {pos.name}
+                      {isAm
+                        ? pos.nameAmharic || pos.nameEnglish || pos.name
+                        : pos.nameEnglish || pos.nameAmharic || pos.name}
                     </option>
                   ))
                 ) : (
@@ -1274,34 +1599,43 @@ export default function PersonnelDetailsForm() {
                 )}
               </select>
             </div>
-            <div>
-              <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
-                <GraduationCap className="w-3.5 h-3.5 inline mr-1 text-[#FFD700]" />
-                {t("Education Level", "የትምህርት ደረጃ")}{" "}
-                <span className="text-orange-500">*</span>
-              </label>
-              <select
-                value={educationLevel}
-                onChange={(e) => setEducationLevel(e.target.value)}
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
-              >
-                <option value="">{t("Select...", "ይምረጡ...")}</option>
-                {availableEducationOptions.length > 0 ? (
-                  availableEducationOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {isAm ? option.labelAm : option.labelEn}
+            {shouldShowEducationLevel ? (
+              <div>
+                <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
+                  <GraduationCap className="w-3.5 h-3.5 inline mr-1 text-[#FFD700]" />
+                  {t("Education Level", "የትምህርት ደረጃ")}{" "}
+                  <span className="text-orange-500">*</span>
+                </label>
+                <select
+                  value={educationLevel}
+                  onChange={(e) => setEducationLevel(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
+                >
+                  <option value="">{t("Select...", "ይምረጡ...")}</option>
+                  {availableEducationOptions.length > 0 ? (
+                    availableEducationOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {isAm ? option.labelAm : option.labelEn}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="" disabled>
+                      {t(
+                        "No education options available for this position",
+                        "ለዚህ ሹመት የትምህርት ደረጃ አማራጮች የሉም",
+                      )}
                     </option>
-                  ))
-                ) : (
-                  <option value="" disabled>
-                    {t(
-                      "Choose a position to see level options",
-                      "እባክዎ የዲግሪ አማራጮችን ለማየት ሹመት ይምረጡ",
-                    )}
-                  </option>
+                  )}
+                </select>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-3 text-sm text-gray-500">
+                {t(
+                  "Education level will appear when an authorized position is selected.",
+                  "የትምህርት ደረጃ በተፈቀደ ሹመት ሲመረጥ ይታያል።",
                 )}
-              </select>
-            </div>
+              </div>
+            )}
             <div>
               <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
                 {t("Work Experience (Years)", "የስራ ልምድ (ዓመታት)")}{" "}
@@ -1357,7 +1691,7 @@ export default function PersonnelDetailsForm() {
                 value={workExpYears}
                 onChange={(e) => setWorkExpYears(e.target.value)}
                 placeholder="0"
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
+                className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all ${workExpYears ? "border-gray-200" : "border-gray-200"}`}
               />
             </div>
             <div>
@@ -1415,7 +1749,7 @@ export default function PersonnelDetailsForm() {
                 value={totalExpYears}
                 onChange={(e) => setTotalExpYears(e.target.value)}
                 placeholder="0"
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
+                className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all ${totalExpYears ? "border-gray-200" : "border-gray-200"}`}
               />
             </div>
           </div>
@@ -1433,105 +1767,78 @@ export default function PersonnelDetailsForm() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
-              <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
-                {t("Region", "ክልል")} <span className="text-orange-500">*</span>
-              </label>
-              <select
-                value={region}
-                onChange={(e) => setRegion(e.target.value)}
-                required
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
-              >
-                <option value="">{t("Select region...", "ክልል ይምረጡ...")}</option>
-                {locationLoading && regions.length === 0 ? (
-                  <option value="" disabled>
-                    {t("Loading regions...", "ክልሎች እየተጫኑ ናቸው...")}
-                  </option>
-                ) : (
-                  regions.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
-                {t("Zone", "ዞን")} <span className="text-orange-500">*</span>
-              </label>
-              <select
-                value={zone}
-                onChange={(e) => setZone(e.target.value)}
-                required
-                disabled={!region}
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
-              >
-                <option value="">{t("Select zone...", "ዞን ይምረጡ...")}</option>
-                {locationLoading && zones.length === 0 ? (
-                  <option value="" disabled>
-                    {t("Loading zones...", "ዞኖች እየተጫኑ ናቸው...")}
-                  </option>
-                ) : (
-                  zones.map((z) => (
-                    <option key={z.id} value={z.id}>
-                      {z.name}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
-                {t("Woreda", "ወረዳ")} <span className="text-orange-500">*</span>
-              </label>
-              <select
-                value={woreda}
-                onChange={(e) => setWoreda(e.target.value)}
-                required
-                disabled={!zone}
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
-              >
-                <option value="">{t("Select woreda...", "ወረዳ ይምረጡ...")}</option>
-                {locationLoading && woredas.length === 0 ? (
-                  <option value="" disabled>
-                    {t("Loading woredas...", "ወረዳዎች እየተጫኑ ናቸው...")}
-                  </option>
-                ) : (
-                  woredas.map((w) => (
-                    <option key={w.id} value={w.id}>
-                      {w.name}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
-                {t("Kebele", "ቀበሌ")} <span className="text-orange-500">*</span>
-              </label>
-              <select
-                value={kebele}
-                onChange={(e) => setKebele(e.target.value)}
-                required
-                disabled={!woreda}
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
-              >
-                <option value="">{t("Select kebele...", "ቀበሌ ይምረጡ...")}</option>
-                {locationLoading && kebeles.length === 0 ? (
-                  <option value="" disabled>
-                    {t("Loading kebeles...", "ቀበሌዎች እየተጫኑ ናቸው...")}
-                  </option>
-                ) : (
-                  kebeles.map((k) => (
-                    <option key={k.id} value={k.id}>
-                      {k.name}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
+            <SearchableLocationSelect
+              label={t("Region", "ክልል")}
+              placeholder={isAm ? "ክልል ይምረጡ" : "Select Region"}
+              searchPlaceholder={isAm ? "ክልል ፈልግ..." : "Search region..."}
+              value={region}
+              options={regions}
+              disabled={locationLoading && regions.length === 0}
+              required
+              language={language}
+              onChange={(val) => {
+                setRegion(val);
+                setZone("");
+                setWoreda("");
+                setKebele("");
+              }}
+              onClear={() => {
+                setRegion("");
+                setZone("");
+                setWoreda("");
+                setKebele("");
+              }}
+            />
+            <SearchableLocationSelect
+              label={t("Zone", "ዞን")}
+              placeholder={isAm ? "ዞን ይምረጡ" : "Select Zone"}
+              searchPlaceholder={isAm ? "ዞን ፈልግ..." : "Search zone..."}
+              value={zone}
+              options={zones}
+              disabled={!region || (locationLoading && zones.length === 0)}
+              required
+              language={language}
+              onChange={(val) => {
+                setZone(val);
+                setWoreda("");
+                setKebele("");
+              }}
+              onClear={() => {
+                setZone("");
+                setWoreda("");
+                setKebele("");
+              }}
+            />
+            <SearchableLocationSelect
+              label={t("Woreda", "ወረዳ")}
+              placeholder={isAm ? "ወረዳ ይምረጡ" : "Select Woreda"}
+              searchPlaceholder={isAm ? "ወረዳ ፈልግ..." : "Search woreda..."}
+              value={woreda}
+              options={woredas}
+              disabled={!zone || (locationLoading && woredas.length === 0)}
+              required
+              language={language}
+              onChange={(val) => {
+                setWoreda(val);
+                setKebele("");
+              }}
+              onClear={() => {
+                setWoreda("");
+                setKebele("");
+              }}
+            />
+            <SearchableLocationSelect
+              label={t("Kebele", "ቀበሌ")}
+              placeholder={isAm ? "ቀበሌ ይምረጡ" : "Select Kebele"}
+              searchPlaceholder={isAm ? "ቀበሌ ፈልግ..." : "Search kebele..."}
+              value={kebele}
+              options={kebeles}
+              disabled={!woreda || (locationLoading && kebeles.length === 0)}
+              required
+              language={language}
+              onChange={(val) => setKebele(val)}
+              onClear={() => setKebele("")}
+            />
             <div>
               <label className="block text-xs font-bold text-[#003366] uppercase tracking-wider mb-1.5">
                 {t("House Number", "የቤት ቁጥር")}{" "}
@@ -1543,7 +1850,7 @@ export default function PersonnelDetailsForm() {
                 onChange={(e) => setHouseNo(e.target.value)}
                 required
                 placeholder={t("e.g. House 123", "ለምሳሌ ቤት 123")}
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
+                className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all ${houseNo ? "border-gray-200" : "border-gray-200"}`}
               />
             </div>
             <div>
@@ -1558,7 +1865,7 @@ export default function PersonnelDetailsForm() {
                 value={specialLocation}
                 onChange={(e) => setSpecialLocation(e.target.value)}
                 placeholder={t("Near landmark...", "መስህር አጠገብ...")}
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all"
+                className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366] hover:border-[#003366]/30 transition-all ${specialLocation ? "border-gray-200" : "border-gray-200"}`}
               />
             </div>
           </div>
@@ -1742,9 +2049,7 @@ export default function PersonnelDetailsForm() {
                         <>
                           <button
                             type="button"
-                            onClick={() =>
-                              window.open(previewUrl || "", "_blank")
-                            }
+                            onClick={() => setPreviewUrl(previewUrl)}
                             className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
                           >
                             <Eye className="w-4 h-4" />
@@ -1797,6 +2102,37 @@ export default function PersonnelDetailsForm() {
           </div>
         </div>
       </motion.form>
+
+      {previewUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => {
+            setPreviewUrl(null);
+            URL.revokeObjectURL(previewUrl);
+          }}
+        >
+          <div
+            className="relative bg-white rounded-3xl shadow-2xl w-full max-w-4xl h-[85vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setPreviewUrl(null);
+                URL.revokeObjectURL(previewUrl);
+              }}
+              className="absolute top-4 right-4 z-10 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg flex items-center justify-center hover:bg-white transition-all"
+            >
+              <X className="w-5 h-5 text-gray-700" />
+            </button>
+            <iframe
+              src={previewUrl}
+              className="w-full h-full"
+              title="Document Preview"
+            />
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }

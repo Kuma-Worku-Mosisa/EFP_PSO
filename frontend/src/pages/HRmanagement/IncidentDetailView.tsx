@@ -14,8 +14,13 @@ import {
   ShieldCheck,
   CheckSquare,
   Download,
+  Upload,
+  Eye,
+  RefreshCw,
 } from "lucide-react";
 import { IncidentReportPDF } from "../../components/IncidentReportPDF";
+import { AutoDismissToast } from "../../components/AutoDismissToast";
+import type { ToastType } from "../../components/AutoDismissToast";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { apiRequest } from "../../lib/api";
@@ -106,12 +111,16 @@ export const IncidentReportDetail: React.FC<DetailProps> = ({ report }) => {
     explanationTitle: isAmharic
       ? "ተጨማሪ ማብራሪያ"
       : "Additional Agency Explanatory Context",
-    sceneSummaryTitle: isAmharic ? "የቦታ ስብስብ ማጠቃለያ" : "Scene Presence Summary",
+    sceneSummaryTitle: isAmharic
+      ? "የሳይት  ሰራተኞች ብዛት፡-"
+      : "Number of site employees:",
     onDutyGuardsLabel: isAmharic ? "በሥራ ላይ ያሉ ጠባቂዎች" : "On-Duty Guards",
-    clientStaffLabel: isAmharic ? "የደንበኛ ሰራተኞች" : "Client Staff",
-    bystandersLabel: isAmharic ? "ታዳሚዎች" : "Bystanders",
-    aggregateCountLabel: isAmharic ? "አጠቃላይ ብዛት" : "Aggregate Count",
-    suspectsTitle: isAmharic ? "የተጠርጣሪዎች ዝርዝር" : "Implicated Suspects",
+    clientStaffLabel: isAmharic ? "የደንበኛ ሰራተኞች" : "Customer Staff",
+    bystandersLabel: isAmharic ? "  በሌላ አካል" : "In an Other body",
+    aggregateCountLabel: isAmharic
+      ? "በፖሊስ  ቁጥጥር  ስር   ውለዋል "
+      : "They are under police control.",
+    suspectsTitle: isAmharic ? "የተጠርጣሪዎች ጠ/ድምር" : "Total number of suspects",
     suspectNameLabel: isAmharic ? "ሙሉ ስም" : "Suspect Full Name",
     relationLabel: isAmharic ? "ከተቋሙ ጋር ያለው ግንኙነት" : "Relation To Institution",
     typeLabel: isAmharic ? "አይነት" : "Type",
@@ -124,21 +133,15 @@ export const IncidentReportDetail: React.FC<DetailProps> = ({ report }) => {
       ? "የአስተዳደር ማረጋገጫ እና የከፍተኛ ተቆጣጣሪ አስተያየት"
       : "Administrative Signoff & Superior Feedback",
     efpOfficerSignoffTitle: isAmharic
-      ? "የኤፍፒ ኦፊሰር ማረጋገጫ"
-      : "EFP Officer Signoff",
-    superiorFeedbackTitle: isAmharic
-      ? "የከፍተኛ ተቆጣጣሪ አስተያየት እና ማረጋገጫ"
-      : "Superior Feedback & Sign-off",
-    officerNamePlaceholder: isAmharic ? "የኦፊሰር ሙሉ ስም" : "Officer full name",
-    officerTitlePlaceholder: isAmharic ? "የኦፊሰር ማዕረግ" : "Officer title",
+      ? "2. የሪፖርት ተቀባይ"
+      : "2. REPORT RECIPIENT Signoff",
+    superiorFeedbackTitle: isAmharic ? "3.ግብረ-መልስ" : "3. Feedback & Sign-off",
+    officerNamePlaceholder: isAmharic ? "ሙሉ ስም" : " Full Name",
+    officerTitlePlaceholder: isAmharic ? "ማዕረግ" : " title",
     officerJobPlaceholder: isAmharic ? "የሥራ ኃላፊነት" : "Job responsibility",
-    superiorNamePlaceholder: isAmharic
-      ? "የከፍተኛ ተቆጣጣሪ ሙሉ ስም"
-      : "Superior full name",
-    superiorTitlePlaceholder: isAmharic ? "የከፍተኛ ተቆጣጣሪ ማዕረግ" : "Superior title",
-    superiorFeedbackPlaceholder: isAmharic
-      ? "የአስተያየት / የመመሪያ ማስታወሻዎች"
-      : "Feedback / directive notes",
+    superiorNamePlaceholder: isAmharic ? "ሙሉ ስም" : "Full Name",
+    superiorTitlePlaceholder: isAmharic ? "ማዕረግ" : "title",
+    superiorFeedbackPlaceholder: isAmharic ? "ግብረ-መልስ ሰጪ" : "Feedback",
     recordedOffenseLabel: isAmharic ? "የተመዘገበ ወንጀል" : "Recorded Offense",
     recordedOffensesLabel: isAmharic ? "የተመዘገበ ወንጀል" : "Recorded Offenses",
     unspecifiedLabel: isAmharic ? "ያልተገለጸ" : "Unspecified",
@@ -164,23 +167,17 @@ export const IncidentReportDetail: React.FC<DetailProps> = ({ report }) => {
       : "Superior feedback saved.",
     uploadFailedMessage: isAmharic ? "መጫን አልተሳካም:" : "Upload failed:",
     saveFailedMessage: isAmharic ? "ማስቀመጥ አልተሳካም:" : "Failed to save:",
-    saveEfpLabel: isAmharic ? "የኤፍፒ ማረጋገጫ አስቀምጥ" : "Save EFP Sign-off",
+    saveEfpLabel: isAmharic ? "አስቀምጥ" : "Save EFP Sign-off",
     savingLabel: isAmharic ? "በማስቀመጥ ላይ..." : "Saving...",
-    saveSuperiorLabel: isAmharic
-      ? "የከፍተኛ ተቆጣጣሪ አስተያየት አስቀምጥ"
-      : "Save Superior Feedback",
+    saveSuperiorLabel: isAmharic ? "አስቀምጥ" : "Save  Feedback",
     authenticationTitle: isAmharic
       ? "የማረጋገጫ እና የግምገማ ሰንሰለት"
       : "Authentication & Chain of Review Verification",
-    submittingReporterLabel: isAmharic
-      ? "1. የማቅረቢያ አሳዳጊ"
-      : "1. Submitting Reporter",
+    submittingReporterLabel: isAmharic ? "1.የሪፖርት አቅራቢ" : "1.Reporter",
     federalPoliceAuditorLabel: isAmharic
-      ? "2. የፌዴራል ፖሊስ ተመራማሪ"
-      : "2. Federal Police Auditor",
-    highCommandDirectivesLabel: isAmharic
-      ? "3. የከፍተኛ ትዕዛዝ መመሪያ"
-      : "3. High Command Directives",
+      ? "2.የሪፖርት ተቀባይ"
+      : "2. REPORT RECIPIENT",
+    highCommandDirectivesLabel: isAmharic ? "3.ግብረ-መልስ ሰጪ" : "RESPONDENT",
     awaitingAllocationLabel: isAmharic
       ? "ወደ መስክ የመረመረ ባለሙያ በመጠበቅ ላይ"
       : "Awaiting allocation to field investigative professional.",
@@ -231,15 +228,22 @@ export const IncidentReportDetail: React.FC<DetailProps> = ({ report }) => {
   const [supFile, setSupFile] = useState<File | null>(null);
   const [supPreview, setSupPreview] = useState<string | null>(null);
   const [supUploading, setSupUploading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [toastOpen, setToastOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastType, setToastType] = useState<ToastType>("success");
+
+  const showToast = (msg: string, type: ToastType = "success") => {
+    setToastMessage(msg);
+    setToastType(type);
+    setToastOpen(true);
+  };
 
   const handleEfpSign = async () => {
     if (!isPrivileged) return;
     setEfpLoading(true);
-    setMessage(null);
     try {
       if (!efpName) {
-        setMessage(labels.pleaseProvideOfficerName);
+        showToast(labels.pleaseProvideOfficerName, "error");
         return;
       }
 
@@ -252,7 +256,7 @@ export const IncidentReportDetail: React.FC<DetailProps> = ({ report }) => {
           }
           signatureUrl = uploadedUrl;
         } else {
-          setMessage(labels.pleaseProvideOfficerAndSignature);
+          showToast(labels.pleaseProvideOfficerAndSignature, "error");
           return;
         }
       }
@@ -266,9 +270,12 @@ export const IncidentReportDetail: React.FC<DetailProps> = ({ report }) => {
           efpOfficerSignatureUrl: signatureUrl,
         }),
       });
-      setMessage(labels.efpSavedMessage);
+      showToast(labels.efpSavedMessage, "success");
     } catch (err: any) {
-      setMessage(`${labels.saveFailedMessage} ${err?.message || String(err)}`);
+      showToast(
+        `${labels.saveFailedMessage} ${err?.message || String(err)}`,
+        "error",
+      );
     } finally {
       setEfpLoading(false);
     }
@@ -277,11 +284,10 @@ export const IncidentReportDetail: React.FC<DetailProps> = ({ report }) => {
   const handleSuperiorSubmit = async () => {
     if (!isPrivileged) return;
     setSupLoading(true);
-    setMessage(null);
     try {
       // Client-side validation: backend requires feedback text and signature URL
       if (!supFeedback) {
-        setMessage(labels.pleaseProvideDirectiveNotes);
+        showToast(labels.pleaseProvideDirectiveNotes, "error");
         return;
       }
 
@@ -294,7 +300,7 @@ export const IncidentReportDetail: React.FC<DetailProps> = ({ report }) => {
           }
           signatureUrl = uploadedUrl;
         } else {
-          setMessage(labels.pleaseProvideDirectiveAndSignature);
+          showToast(labels.pleaseProvideDirectiveAndSignature, "error");
           return;
         }
       }
@@ -309,9 +315,12 @@ export const IncidentReportDetail: React.FC<DetailProps> = ({ report }) => {
           superiorSignatureUrl: signatureUrl,
         }),
       });
-      setMessage(labels.superiorSavedMessage);
+      showToast(labels.superiorSavedMessage, "success");
     } catch (err: any) {
-      setMessage(`${labels.saveFailedMessage} ${err?.message || String(err)}`);
+      showToast(
+        `${labels.saveFailedMessage} ${err?.message || String(err)}`,
+        "error",
+      );
     } finally {
       setSupLoading(false);
     }
@@ -327,7 +336,7 @@ export const IncidentReportDetail: React.FC<DetailProps> = ({ report }) => {
     if (!f) return;
     const valid = validateFile(f);
     if (!valid.valid) {
-      setMessage(valid.error ?? "Invalid file");
+      showToast(valid.error ?? "Invalid file", "error");
       return;
     }
     setEfpFile(f);
@@ -343,7 +352,6 @@ export const IncidentReportDetail: React.FC<DetailProps> = ({ report }) => {
   const uploadEfpSignature = async (): Promise<string | null> => {
     if (!efpFile) return null;
     setEfpUploading(true);
-    setMessage(null);
     try {
       const filesMap = { organization_efp_signature: efpFile } as Record<
         string,
@@ -368,7 +376,7 @@ export const IncidentReportDetail: React.FC<DetailProps> = ({ report }) => {
       removeEfpFile();
       return url;
     } catch (err: any) {
-      setMessage(`Upload failed: ${err?.message || String(err)}`);
+      showToast(`Upload failed: ${err?.message || String(err)}`, "error");
       return null;
     } finally {
       setEfpUploading(false);
@@ -379,7 +387,7 @@ export const IncidentReportDetail: React.FC<DetailProps> = ({ report }) => {
     if (!f) return;
     const valid = validateFile(f);
     if (!valid.valid) {
-      setMessage(valid.error ?? "Invalid file");
+      showToast(valid.error ?? "Invalid file", "error");
       return;
     }
     setSupFile(f);
@@ -395,7 +403,6 @@ export const IncidentReportDetail: React.FC<DetailProps> = ({ report }) => {
   const uploadSupSignature = async (): Promise<string | null> => {
     if (!supFile) return null;
     setSupUploading(true);
-    setMessage(null);
     try {
       const filesMap = { organization_superior_signature: supFile } as Record<
         string,
@@ -420,7 +427,7 @@ export const IncidentReportDetail: React.FC<DetailProps> = ({ report }) => {
       removeSupFile();
       return url;
     } catch (err: any) {
-      setMessage(`Upload failed: ${err?.message || String(err)}`);
+      showToast(`Upload failed: ${err?.message || String(err)}`, "error");
       return null;
     } finally {
       setSupUploading(false);
@@ -685,11 +692,6 @@ export const IncidentReportDetail: React.FC<DetailProps> = ({ report }) => {
           <h3 className="text-sm font-semibold text-slate-800 mb-4">
             {labels.adminSignoffTitle}
           </h3>
-          {message && (
-            <div className="mb-4 rounded-md bg-emerald-50 border border-emerald-100 p-3 text-sm text-emerald-800">
-              {message}
-            </div>
-          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* EFP Officer Signoff */}
             <div>
@@ -697,35 +699,60 @@ export const IncidentReportDetail: React.FC<DetailProps> = ({ report }) => {
                 {labels.efpOfficerSignoffTitle}
               </h4>
               <div className="space-y-3">
-                <input
-                  className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
-                  placeholder={labels.officerNamePlaceholder}
-                  value={efpName}
-                  onChange={(e) => setEfpName(e.target.value)}
-                />
-                <input
-                  className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
-                  placeholder={labels.officerTitlePlaceholder}
-                  value={efpTitle}
-                  onChange={(e) => setEfpTitle(e.target.value)}
-                />
-                <input
-                  className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
-                  placeholder={labels.officerJobPlaceholder}
-                  value={efpJob}
-                  onChange={(e) => setEfpJob(e.target.value)}
-                />
+                <div>
+                  <label className="block text-xs font-semibold text-indigo-700 mb-1.5 uppercase tracking-wider">
+                    {labels.officerNamePlaceholder}
+                  </label>
+                  <input
+                    className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    placeholder={labels.officerNamePlaceholder}
+                    value={efpName}
+                    onChange={(e) => setEfpName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-indigo-700 mb-1.5 uppercase tracking-wider">
+                    {labels.officerTitlePlaceholder}
+                  </label>
+                  <input
+                    className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    placeholder={labels.officerTitlePlaceholder}
+                    value={efpTitle}
+                    onChange={(e) => setEfpTitle(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-indigo-700 mb-1.5 uppercase tracking-wider">
+                    {labels.officerJobPlaceholder}
+                  </label>
+                  <input
+                    className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    placeholder={labels.officerJobPlaceholder}
+                    value={efpJob}
+                    onChange={(e) => setEfpJob(e.target.value)}
+                  />
+                </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-500 mb-2">
                     {labels.signatureImageLabel}
                   </label>
                   {efpPreview ? (
                     <div className="flex items-start gap-3">
-                      <img
-                        src={efpPreview}
-                        alt="Preview"
-                        className="h-20 w-32 object-contain rounded-md border"
-                      />
+                      <div className="relative group">
+                        <img
+                          src={efpPreview}
+                          alt="Preview"
+                          className="h-20 w-32 object-contain rounded-md border"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => window.open(efpPreview, "_blank")}
+                          className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition bg-black/40 rounded-md"
+                          title="Preview signature"
+                        >
+                          <Eye size={20} className="text-white" />
+                        </button>
+                      </div>
                       <div className="flex flex-col gap-2">
                         <div className="text-sm text-slate-600">
                           {efpFile?.name}
@@ -737,22 +764,47 @@ export const IncidentReportDetail: React.FC<DetailProps> = ({ report }) => {
                           <button
                             type="button"
                             onClick={removeEfpFile}
-                            className="rounded-md border px-2 py-1 text-sm"
+                            className="rounded-md border px-2 py-1 text-sm hover:bg-red-50 hover:border-red-300 transition"
                           >
                             {labels.removeLabel}
                           </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              document
+                                .getElementById("efp-sign-file-reupload")
+                                ?.click()
+                            }
+                            className="inline-flex items-center gap-1 rounded-md border border-indigo-300 bg-indigo-50 px-2 py-1 text-sm text-indigo-700 hover:bg-indigo-100 transition"
+                          >
+                            <RefreshCw size={14} />
+                            Reupload
+                          </button>
+                          <input
+                            id="efp-sign-file-reupload"
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) =>
+                              onEfpFileChange(e.target.files?.[0])
+                            }
+                            className="hidden"
+                          />
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 border border-slate-200 rounded-md px-3 py-2 bg-slate-50 hover:bg-slate-100 transition">
+                      <Upload
+                        size={18}
+                        className="text-slate-500 flex-shrink-0"
+                      />
                       <input
                         id="efp-sign-file"
                         type="file"
                         accept="image/*"
                         onChange={(e) => onEfpFileChange(e.target.files?.[0])}
                         disabled={efpUploading}
-                        className="w-full text-sm"
+                        className="w-full text-sm bg-transparent border-none outline-none cursor-pointer"
                       />
                     </div>
                   )}
@@ -777,41 +829,71 @@ export const IncidentReportDetail: React.FC<DetailProps> = ({ report }) => {
                 {labels.superiorFeedbackTitle}
               </h4>
               <div className="space-y-3">
-                <input
-                  className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
-                  placeholder={labels.superiorNamePlaceholder}
-                  value={supName}
-                  onChange={(e) => setSupName(e.target.value)}
-                />
-                <input
-                  className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
-                  placeholder={labels.superiorTitlePlaceholder}
-                  value={supTitle}
-                  onChange={(e) => setSupTitle(e.target.value)}
-                />
-                <input
-                  className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
-                  placeholder={labels.officerJobPlaceholder}
-                  value={supJob}
-                  onChange={(e) => setSupJob(e.target.value)}
-                />
-                <textarea
-                  className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm min-h-[92px]"
-                  placeholder={labels.superiorFeedbackPlaceholder}
-                  value={supFeedback}
-                  onChange={(e) => setSupFeedback(e.target.value)}
-                />
+                <div>
+                  <label className="block text-xs font-semibold text-emerald-700 mb-1.5 uppercase tracking-wider">
+                    {labels.superiorNamePlaceholder}
+                  </label>
+                  <input
+                    className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    placeholder={labels.superiorNamePlaceholder}
+                    value={supName}
+                    onChange={(e) => setSupName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-emerald-700 mb-1.5 uppercase tracking-wider">
+                    {labels.superiorTitlePlaceholder}
+                  </label>
+                  <input
+                    className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    placeholder={labels.superiorTitlePlaceholder}
+                    value={supTitle}
+                    onChange={(e) => setSupTitle(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-emerald-700 mb-1.5 uppercase tracking-wider">
+                    {labels.officerJobPlaceholder}
+                  </label>
+                  <input
+                    className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    placeholder={labels.officerJobPlaceholder}
+                    value={supJob}
+                    onChange={(e) => setSupJob(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-emerald-700 mb-1.5 uppercase tracking-wider">
+                    {labels.superiorFeedbackPlaceholder}
+                  </label>
+                  <textarea
+                    className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm min-h-[92px] focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    placeholder={labels.superiorFeedbackPlaceholder}
+                    value={supFeedback}
+                    onChange={(e) => setSupFeedback(e.target.value)}
+                  />
+                </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-500 mb-2">
                     {labels.signatureImageLabel}
                   </label>
                   {supPreview ? (
                     <div className="flex items-start gap-3">
-                      <img
-                        src={supPreview}
-                        alt="Preview"
-                        className="h-20 w-32 object-contain rounded-md border"
-                      />
+                      <div className="relative group">
+                        <img
+                          src={supPreview}
+                          alt="Preview"
+                          className="h-20 w-32 object-contain rounded-md border"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => window.open(supPreview, "_blank")}
+                          className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition bg-black/40 rounded-md"
+                          title="Preview signature"
+                        >
+                          <Eye size={20} className="text-white" />
+                        </button>
+                      </div>
                       <div className="flex flex-col gap-2">
                         <div className="text-sm text-slate-600">
                           {supFile?.name}
@@ -823,22 +905,47 @@ export const IncidentReportDetail: React.FC<DetailProps> = ({ report }) => {
                           <button
                             type="button"
                             onClick={removeSupFile}
-                            className="rounded-md border px-2 py-1 text-sm"
+                            className="rounded-md border px-2 py-1 text-sm hover:bg-red-50 hover:border-red-300 transition"
                           >
                             {labels.removeLabel}
                           </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              document
+                                .getElementById("sup-sign-file-reupload")
+                                ?.click()
+                            }
+                            className="inline-flex items-center gap-1 rounded-md border border-emerald-300 bg-emerald-50 px-2 py-1 text-sm text-emerald-700 hover:bg-emerald-100 transition"
+                          >
+                            <RefreshCw size={14} />
+                            Reupload
+                          </button>
+                          <input
+                            id="sup-sign-file-reupload"
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) =>
+                              onSupFileChange(e.target.files?.[0])
+                            }
+                            className="hidden"
+                          />
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 border border-slate-200 rounded-md px-3 py-2 bg-slate-50 hover:bg-slate-100 transition">
+                      <Upload
+                        size={18}
+                        className="text-slate-500 flex-shrink-0"
+                      />
                       <input
                         id="sup-sign-file"
                         type="file"
                         accept="image/*"
                         onChange={(e) => onSupFileChange(e.target.files?.[0])}
                         disabled={supUploading}
-                        className="w-full text-sm"
+                        className="w-full text-sm bg-transparent border-none outline-none cursor-pointer"
                       />
                     </div>
                   )}
@@ -999,6 +1106,15 @@ export const IncidentReportDetail: React.FC<DetailProps> = ({ report }) => {
           </div>
         </div>
       </div>
+
+      {/* Auto-dismiss toast notifications */}
+      <AutoDismissToast
+        isOpen={toastOpen}
+        type={toastType}
+        message={toastMessage}
+        onClose={() => setToastOpen(false)}
+        durationMs={5000}
+      />
     </div>
   );
 };

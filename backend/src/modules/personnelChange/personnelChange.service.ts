@@ -6,12 +6,238 @@ import {
 import { createAuditLog } from "../../utils/auditLogger";
 import { sendSystemEmail } from "../../utils/emailService";
 
+const SPECIAL_POSITION_NAMES = [
+  "Manager of Organization",
+  "Operation of Organization",
+  "Administrative and Finance of Organization",
+];
+
+const isSpecialPositionName = (name: string | null | undefined) => {
+  const normalized = String(name || "")
+    .trim()
+    .toLowerCase();
+  return SPECIAL_POSITION_NAMES.some(
+    (specialName) => normalized === specialName.toLowerCase(),
+  );
+};
+
+const normalizeRequestType = (value: unknown) =>
+  String(value || "")
+    .trim()
+    .toUpperCase();
+
+const resolveExistingEmployeeForRequest = async (payload: any) => {
+  const directEmployeeId = Number(
+    payload.targetEmployeeId || payload.employeeId || 0,
+  );
+  if (directEmployeeId > 0) {
+    const directEmployee = await prisma.employee.findUnique({
+      where: { id: directEmployeeId },
+      include: { user: true, organization: true, documents: true },
+    });
+    if (directEmployee) return directEmployee;
+  }
+
+  const searchTerms = [payload.faydaId, payload.email, payload.phone]
+    .filter((value): value is string => Boolean(String(value || "").trim()))
+    .map((value) => String(value).trim());
+
+  if (searchTerms.length > 0) {
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          ...(payload.faydaId
+            ? [{ faydaId: String(payload.faydaId).trim() }]
+            : []),
+          ...(payload.email ? [{ email: String(payload.email).trim() }] : []),
+          ...(payload.phone ? [{ phone: String(payload.phone).trim() }] : []),
+        ],
+      },
+      select: { id: true },
+    });
+
+    if (user?.id) {
+      return prisma.employee.findUnique({
+        where: { userId: user.id },
+        include: { user: true, organization: true, documents: true },
+      });
+    }
+  }
+
+  return null;
+};
+
+const notifyAdminsAboutPersonnelChangeRequest = async (
+  organizationNameEn: string,
+  organizationNameAm: string,
+  employeeName: string,
+  requestType: string,
+) => {
+  const adminUsers = await prisma.user.findMany({
+    where: {
+      status: "ACTIVE",
+      user_roles: {
+        some: {
+          roles: {
+            role_name: {
+              in: ["admin", "super_admin"],
+            },
+          },
+        },
+      },
+    },
+    select: { id: true, fullName: true, email: true },
+  });
+
+  const emailSubject =
+    requestType === "EXISTING_EMPLOYEE"
+      ? "Existing Employee Personnel Change Request / ነባር ሰራተኛ ለውጥ ጥያቄ"
+      : "New Personnel Change Request / አዲስ የሰራተኛ ለውጥ ጥያቄ";
+  const portalMessage =
+    requestType === "EXISTING_EMPLOYEE"
+      ? `A personnel change request was submitted for ${organizationNameEn} for employee ${employeeName}. \nለ${organizationNameAm} ለ${employeeName} የሰራተኛ ለውጥ ጥያቄ ተላከ።`
+      : `A new personnel change request was submitted for ${organizationNameEn} with employee ${employeeName}. \nለ${organizationNameAm} እና ${employeeName} አዲስ የሰራተኛ ለውጥ ጥያቄ ተላከ።`;
+  const emailBody =
+    requestType === "EXISTING_EMPLOYEE"
+      ? `A personnel change request has been submitted for review.\n\nOrganization: ${organizationNameEn}\nEmployee: ${employeeName}\n\nPlease review and proceed.\n\nድርጅት: ${organizationNameAm}\nሰራተኛ: ${employeeName}`
+      : `A new personnel change request has been submitted.\n\nOrganization: ${organizationNameEn}\nEmployee: ${employeeName}\n\nPlease review and proceed.\n\nድርጅት: ${organizationNameAm}\nሰራተኛ: ${employeeName}`;
+
+  for (const admin of adminUsers) {
+    await prisma.notification.create({
+      data: {
+        recipientUserId: admin.id,
+        notificationType: "NEW_REQUEST",
+        alertTitle: emailSubject,
+        alertMessage: portalMessage,
+        isReadByRecipient: false,
+      },
+    });
+
+    if (admin.email) {
+      try {
+        await sendSystemEmail(admin.email, emailSubject, emailBody);
+      } catch (emailError) {
+        console.error(
+          `[PersonnelChange] Failed to send request email to admin ${admin.id} (${admin.email}):`,
+          emailError,
+        );
+      }
+    }
+  }
+};
+
 export const PersonnelChangeService = {
   createNewEmployeeRequest: async (
     payload: any,
     actorUserId: number | null,
   ) => {
-    // Validate minimal required fields
+    if (!actorUserId) {
+      throw new Error(
+        "User authentication required to create personnel change request",
+      );
+    }
+
+    const normalizedRequestType = normalizeRequestType(payload.requestType);
+    const requestedPositionId = payload.positionId
+      ? Number(payload.positionId)
+      : null;
+
+    let positionName: string | null = null;
+    if (requestedPositionId) {
+      const position = await prisma.position.findUnique({
+        where: { id: requestedPositionId },
+        select: { name: true },
+      });
+      positionName = position?.name ?? null;
+    }
+
+    const explicitRequestType =
+      normalizedRequestType === "EXISTING_EMPLOYEE" ||
+      normalizedRequestType === "NEW_EMPLOYEE"
+        ? normalizedRequestType
+        : null;
+
+    const requestType =
+      explicitRequestType ??
+      (isSpecialPositionName(positionName || payload.positionName)
+        ? "EXISTING_EMPLOYEE"
+        : "NEW_EMPLOYEE");
+
+    if (requestType === "EXISTING_EMPLOYEE") {
+      const targetEmployee = await resolveExistingEmployeeForRequest(payload);
+      if (!targetEmployee) {
+        throw new Error(
+          "Existing employee was not found for this personnel change request.",
+        );
+      }
+
+      const targetOrganizationId = Number(
+        payload.targetOrganizationId ||
+          payload.organizationId ||
+          targetEmployee.organizationId ||
+          0,
+      );
+      const sourceOrganizationId = Number(
+        targetEmployee.organizationId || payload.organizationId || 0,
+      );
+
+      if (!requestedPositionId) {
+        throw new Error(
+          "Target position is required for personnel change request",
+        );
+      }
+
+      const pcr = await prisma.personnelChangeRequest.create({
+        data: {
+          initiatedByUserId: actorUserId,
+          targetEmployeeId: targetEmployee.id,
+          requestType: "EXISTING_EMPLOYEE",
+          sourceOrganizationId,
+          targetOrganizationId,
+          targetPositionId: requestedPositionId,
+          reason: payload.reason ?? null,
+          status: "PENDING",
+        },
+      });
+
+      await createAuditLog(prisma, {
+        userId: actorUserId,
+        action: "CREATE",
+        entityName: "PersonnelChangeRequest",
+        entityId: pcr.id,
+        oldValue: null,
+        newValue: JSON.stringify(pcr),
+        ipAddress: null,
+        userAgent: null,
+      });
+
+      const organization = await prisma.organization.findUnique({
+        where: { id: targetOrganizationId },
+        select: {
+          nameEnglish: true,
+          nameAmharic: true,
+        },
+      });
+
+      const employeeName = targetEmployee.user?.fullName || "an employee";
+      const orgNameEn = organization?.nameEnglish || "the organization";
+      const orgNameAm = organization?.nameAmharic || "ድርጅት";
+
+      await notifyAdminsAboutPersonnelChangeRequest(
+        orgNameEn,
+        orgNameAm,
+        employeeName,
+        "EXISTING_EMPLOYEE",
+      );
+
+      return {
+        personnelChangeRequest: pcr,
+        user: targetEmployee.user,
+        employee: targetEmployee,
+        documents: targetEmployee.documents || [],
+      };
+    }
+
     const required = [
       "username",
       "fullName",
@@ -25,7 +251,6 @@ export const PersonnelChangeService = {
       if (!payload[r]) throw new Error(`Missing required field: ${r}`);
     }
 
-    // Build registration input for existing registerEmployee service
     const registrationInput: EmployeeRegistrationInput = {
       username: String(payload.username),
       fullName: String(payload.fullName),
@@ -35,7 +260,7 @@ export const PersonnelChangeService = {
         payload.password || Math.random().toString(36).slice(2, 10),
       ),
       faydaId: String(payload.faydaId),
-      positionId: payload.positionId ?? null,
+      positionId: requestedPositionId ?? null,
       educationLevel: payload.educationLevel ?? null,
       workExpYears: payload.workExpYears ?? null,
       TotalExpYears: payload.TotalExpYears ?? null,
@@ -51,7 +276,6 @@ export const PersonnelChangeService = {
       uploadedFiles: payload.uploadedFiles ?? {},
     };
 
-    // Normalize uploadedFiles map: strip absolute origins, ensure both prefixed and unprefixed keys exist
     const normalizeUploadedFiles = (
       filesMap: Record<string, string> | undefined,
     ) => {
@@ -69,7 +293,6 @@ export const PersonnelChangeService = {
       for (const [key, rawUrl] of Object.entries(filesMap)) {
         if (!rawUrl) continue;
         let url = String(rawUrl || "").trim();
-        // If full URL provided, extract path portion
         try {
           if (/^https?:\/\//i.test(url)) {
             const u = new URL(url);
@@ -79,12 +302,10 @@ export const PersonnelChangeService = {
           // ignore and keep original
         }
 
-        // Normalize to remove leading slashes for consistent internal handling (registerEmployee will tolerate both)
         url = url.replace(/^\/+/, "");
 
         out[key] = url.startsWith("uploads/") ? url : `uploads/${url}`;
 
-        // If key is role-prefixed, also add unprefixed variant
         for (const role of validRoles) {
           const prefix = `${role}_`;
           if (key.startsWith(prefix)) {
@@ -102,23 +323,14 @@ export const PersonnelChangeService = {
       registrationInput.uploadedFiles as any,
     );
 
-    // Validate required fields for PersonnelChangeRequest
-    if (!actorUserId) {
-      throw new Error(
-        "User authentication required to create personnel change request",
-      );
-    }
-
     if (!registrationInput.positionId) {
       throw new Error(
         "Target position is required for personnel change request",
       );
     }
 
-    // Use registerEmployee which handles transaction, files moving, and documents
     const result = await registerEmployee(registrationInput, actorUserId);
 
-    // Create PersonnelChangeRequest record pointing to created employee
     const pcr = await prisma.personnelChangeRequest.create({
       data: {
         initiatedByUserId: actorUserId,
@@ -155,49 +367,12 @@ export const PersonnelChangeService = {
     const orgNameEn = organization?.nameEnglish || "the organization";
     const orgNameAm = organization?.nameAmharic || "ድርጅት";
 
-    // Notify all admins and super_admins with ACTIVE status
-    const adminUsers = await prisma.user.findMany({
-      where: {
-        status: "ACTIVE",
-        user_roles: {
-          some: {
-            roles: {
-              role_name: {
-                in: ["admin", "super_admin"],
-              },
-            },
-          },
-        },
-      },
-      select: { id: true, fullName: true, email: true },
-    });
-
-    const emailSubject = "New Personnel Change Request / አዲስ የሰራተኛ ለውጥ ጥያቄ";
-    const portalMessage = `A new personnel change request was submitted for ${orgNameEn} with employee ${employeeName}. \nለ${orgNameAm} እና ${employeeName} አዲስ የሰራተኛ ለውጥ ጥያቄ ተላከ።`;
-    const emailBody = `A new personnel change request has been submitted.\n\nOrganization: ${orgNameEn}\nEmployee: ${employeeName}\n\nእባክዎን ይገምግሙና ይቀጥሉ።\n\nOrganization: ${orgNameAm}\nEmployee: ${employeeName}`;
-
-    for (const admin of adminUsers) {
-      await prisma.notification.create({
-        data: {
-          recipientUserId: admin.id,
-          notificationType: "NEW_REQUEST",
-          alertTitle: emailSubject,
-          alertMessage: portalMessage,
-          isReadByRecipient: false,
-        },
-      });
-
-      if (admin.email) {
-        try {
-          await sendSystemEmail(admin.email, emailSubject, emailBody);
-        } catch (emailError) {
-          console.error(
-            `[PersonnelChange] Failed to send request email to admin ${admin.id} (${admin.email}):`,
-            emailError,
-          );
-        }
-      }
-    }
+    await notifyAdminsAboutPersonnelChangeRequest(
+      orgNameEn,
+      orgNameAm,
+      employeeName,
+      "NEW_EMPLOYEE",
+    );
 
     return {
       personnelChangeRequest: pcr,
@@ -405,6 +580,11 @@ export const PersonnelChangeService = {
       include: {
         targetEmployee: {
           include: {
+            user: {
+              select: {
+                fullName: true,
+              },
+            },
             documents: true,
           },
         },
@@ -436,6 +616,11 @@ export const PersonnelChangeService = {
     const targetPositionId = existing.targetPositionId;
     const targetOrganizationId = existing.targetOrganizationId;
 
+    const targetEmployee = await prisma.employee.findUnique({
+      where: { id: targetEmployeeId },
+      select: { userId: true },
+    });
+
     await prisma.employee.update({
       where: { id: targetEmployeeId },
       data: {
@@ -445,8 +630,26 @@ export const PersonnelChangeService = {
       },
     });
 
+    if (targetEmployee?.userId) {
+      await prisma.user.update({
+        where: { id: targetEmployee.userId },
+        data: { status: "ACTIVE" },
+      });
+    }
+
     // Terminate any previous ACTIVE employee with the same target position in the target organization.
+    let previousActiveEmployees: Array<{ id: number; userId: number }> = [];
     if (targetPositionId && targetOrganizationId) {
+      previousActiveEmployees = await prisma.employee.findMany({
+        where: {
+          positionId: targetPositionId,
+          organizationId: targetOrganizationId,
+          employmentStatus: "ACTIVE",
+          id: { not: targetEmployeeId },
+        },
+        select: { id: true, userId: true },
+      });
+
       await prisma.employee.updateMany({
         where: {
           positionId: targetPositionId,
@@ -455,8 +658,15 @@ export const PersonnelChangeService = {
           id: { not: targetEmployeeId },
         },
         data: {
-          employmentStatus: "TERMINATED",
+          employmentStatus: "Resigned",
         },
+      });
+    }
+
+    for (const previousEmployee of previousActiveEmployees) {
+      await prisma.user.update({
+        where: { id: previousEmployee.userId },
+        data: { status: "INACTIVE" },
       });
     }
 
@@ -520,6 +730,12 @@ export const PersonnelChangeService = {
       throw new Error("Personnel change request not found.");
     }
 
+    if (existing.status !== "PENDING") {
+      throw new Error(
+        `Cannot verify documents for a personnel change request with status ${existing.status}.`,
+      );
+    }
+
     const document = existing.targetEmployee.documents?.find(
       (doc) => doc.id === documentId,
     );
@@ -574,6 +790,12 @@ export const PersonnelChangeService = {
 
     if (!existing) {
       throw new Error("Personnel change request not found.");
+    }
+
+    if (existing.status !== "PENDING") {
+      throw new Error(
+        `Cannot unverify documents for a personnel change request with status ${existing.status}.`,
+      );
     }
 
     const document = existing.targetEmployee.documents?.find(

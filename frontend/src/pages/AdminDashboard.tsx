@@ -59,7 +59,6 @@ import { ManageNews } from "./ManageNews";
 import { ManagePublicContent } from "./ManagePublicContent";
 import { ManageFAQ } from "./ManageFAQ";
 import { Communications } from "./Communications";
-import { Notifications } from "./Notifications";
 import PositionManagement from "./PositionManagement";
 import FormalRequestManager from "../components/FormalRequestManager";
 import AdminAgreementManager from "./admin/AdminAgreementManager";
@@ -469,8 +468,8 @@ const Overview = () => {
           </h1>
           <p className="mt-2 text-sm text-white/70 max-w-2xl">
             {isAm
-              ? "የደህንነት ኤጀንሲዎችን ያስተዳድሩ፣ ማመልከቻዎችን ይከልሱ እና ሪፖርቶችን ይቆጣጠሩ"
-              : "Manage security agencies, review applications, and monitor reports"}
+              ? "የደህንነት ድርጅቶችን ያስተዳድሩ፣ ማመልከቻዎችን ይከልሱ እና ሪፖርቶችን ይቆጣጠሩ"
+              : "Manage security Organization, review applications, and monitor reports"}
           </p>
         </div>
       </motion.div>
@@ -478,13 +477,13 @@ const Overview = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
           {
-            label: isAm ? "የተመዘገቡ ኤጀንሲዎች" : "Registered Agencies",
+            label: isAm ? "የተመዘገቡ ድርጅቶች" : "Registered Organizations",
             value: summaryLoading ? "..." : (summary?.organizations ?? "—"),
             icon: <ShieldCheck className="w-6 h-6 text-primary" />,
             color: "bg-blue-50",
           },
           {
-            label: isAm ? "የደህንነት ሰራተኞች" : "Security Personnel",
+            label: isAm ? "የጥበቃ ሰራተኞች" : "Security Personnel",
             value: summaryLoading ? "..." : (summary?.users ?? "—"),
             icon: <Users className="w-6 h-6 text-amber-500" />,
             color: "bg-amber-50",
@@ -651,8 +650,11 @@ const Overview = () => {
                   nameKey="name"
                   paddingAngle={4}
                 >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  {pieData.map((_, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                    />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -764,7 +766,7 @@ const Overview = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white" />
                 <input
                   type="text"
-                  placeholder={isAm ? "ኤጀንሲ ይፈልጉ..." : "Search..."}
+                  placeholder={isAm ? "ድርጅት ይፈልጉ..." : "Search Organization..."}
                   className="pl-9 pr-4 py-2 bg-white/10 border border-white/20 rounded-xl text-xs font-medium text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all min-w-[200px]"
                 />
               </div>
@@ -777,7 +779,7 @@ const Overview = () => {
             <thead className="bg-gray-50 text-gray-500 text-[10px] uppercase tracking-widest">
               <tr>
                 <th className="px-8 py-4 font-black">
-                  {isAm ? "የኤጀንሲ ስም" : "Agency Name"}
+                  {isAm ? "የድርጅት ስም" : "Organization Name"}
                 </th>
                 <th className="px-8 py-4 font-black">
                   {isAm ? "ዓይነት" : "Type"}
@@ -1024,7 +1026,6 @@ export const AdminDashboard = () => {
         <Route path="formal-requests" element={<FormalRequestsPage />} />
         <Route path="faq-manage" element={<ManageFAQ />} />
         <Route path="communications" element={<Communications />} />
-        <Route path="notifications" element={<Notifications />} />
 
         {/* Strictly Super Admin internal tools */}
         {isSuperAdmin && (

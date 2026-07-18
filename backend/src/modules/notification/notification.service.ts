@@ -24,13 +24,18 @@ const smtpPort = isGmail ? 465 : Number(process.env.SMTP_PORT || 587);
 const smtpSecure = smtpPort === 465;
 const smtpUser = process.env.SMTP_USER;
 const smtpPass = process.env.SMTP_PASS;
-const SMTP_TIMEOUT_MS = 8000;
+const SMTP_TIMEOUT_MS = 15000;
+const SMTP_RETRY_DELAY_MS = 400;
+const SMTP_MAX_ATTEMPTS = 2;
 
 const makeTransportConfig = (host: string, port: number, secure: boolean) =>
   ({
     host,
     port,
     secure,
+    pool: true,
+    maxConnections: 5,
+    maxMessages: Infinity,
     dnsFamily: 4,
     connectionTimeout: SMTP_TIMEOUT_MS,
     greetingTimeout: SMTP_TIMEOUT_MS,
@@ -172,9 +177,6 @@ export class NotificationService {
           isReadByRecipient: false,
         },
       });
-      console.log(
-        ` [Database Saved]: Alert data feed record built (Notification ID: ${databaseLog.id})`,
-      );
 
       let descriptiveMetadataHTML = "";
       // 5. Build dynamic contextual block variations for the interactive email template
@@ -182,109 +184,17 @@ export class NotificationService {
       if (ctx.daysRemaining !== undefined)
         descriptiveMetadataHTML += `<li><strong>Days Remaining Until Breach:</strong> ${ctx.daysRemaining} Days</li>`;
 
-      // 6. Run active SMTP email engine delivery with retry/backoff
-      const smtpConfigured = Boolean(
-        smtpHost && smtpPort && smtpUser && smtpPass,
-      );
-
-      if (smtpConfigured && user.email && user.email.includes("@")) {
-        if (smtpAuthFailed) {
-          console.warn(
-            "[SMTP Mailer]: SMTP auth previously failed; skipping email delivery until valid SMTP credentials are provided.",
-          );
-        } else {
-          try {
-            await verifySmtpTransporter();
-          } catch {
-            console.warn(
-              "[SMTP Mailer]: SMTP transporter verification failed; skipping email delivery until valid SMTP credentials are provided.",
-            );
-          }
-        }
-
-        if (smtpAuthFailed) {
-          console.warn(
-            "[SMTP Mailer]: SMTP auth previously failed; skipping email delivery until valid SMTP credentials are provided.",
-          );
-        } else {
-          const mailOptions = {
-            from: `"EFP-PSO" <${smtpUser}>`,
-            to: user.email,
-            subject: `[EFP-PSO] ${template.titleEn}`,
-            text: plainTextFallback,
-            html: `
-              <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 25px; line-height: 1.6; max-width: 650px; border: 1px solid #e9ecef; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin: 0 auto; color: #333333;">
-                
-                <div style="background-color: ${layoutThemeColor}; color: #ffffff; padding: 20px; font-size: 20px; font-weight: bold; border-radius: 8px 8px 0 0; text-align: center; letter-spacing: 0.5px;">
-                  EFP-PSO Central Operations Alert Node
-                </div>
-                
-                <div style="padding: 20px 10px;">
-                  <h3 style="color: ${layoutThemeColor}; border-bottom: 2px solid #f1f3f5; padding-bottom: 8px; margin-top: 0; font-size: 17px;">
-                    ${template.titleEn}
-                  </h3>
-                  <p style="font-size: 15px; color: #2d3748; margin-bottom: 25px; background-color: #f8f9fa; padding: 15px; border-left: 4px solid ${layoutThemeColor}; border-radius: 4px;">
-                    ${template.msgEn}
-                  </p>
-
-                  <h3 style="color: ${layoutThemeColor}; border-bottom: 2px solid #f1f3f5; padding-bottom: 8px; font-size: 16px; margin-top: 25px;">
-                    ${template.titleAm}
-                  </h3>
-                  <p style="font-size: 15px; color: #2d3748; margin-bottom: 25px; background-color: #f8f9fa; padding: 15px; border-left: 4px solid ${layoutThemeColor}; border-radius: 4px; direction: ltr; text-align: left;">
-                    ${template.msgAm}
-                  </p>
-                </div>
-
-                <hr style="border: 0; border-top: 1px solid #dee2e6; margin: 25px 0;" />
-                <p style="font-size: 11px; color: #adb5bd; text-align: center; margin-bottom: 0;">
-                  This is a secure automated notification generated from your institutional administrative account profile on the EFP-PSO ERP Platform. Please do not reply directly to this mailer node.
-                </p>
-              </div>
-            `,
-          };
-
-          // attempt send with exponential backoff
-          try {
-            await NotificationService.attemptSendWithRetries(mailOptions);
-            console.log(
-              ` [SMTP Mailer]: Operational email alert successfully transmitted to ${user.email}`,
-            );
-          } catch (sendError: unknown) {
-            const smtpError = sendError as SmtpSendError;
-            if (smtpError.responseCode === 535 || smtpError.code === "EAUTH") {
-              smtpAuthFailed = true;
-              console.error(
-                ` [SMTP Mailer]: SMTP auth failed for ${user.email}. Disabling further retries until credentials are fixed.`,
-                sendError,
-              );
-            } else {
-              console.error(
-                ` [SMTP Mailer]: Failed to send after retries to ${user.email}, enqueueing for manual resend.`,
-                sendError,
-              );
-              // enqueue failure for admin re-send
-              await NotificationService.enqueueFailedEmail({
-                id: crypto.randomUUID(),
-                createdAt: new Date().toISOString(),
-                recipientUserId,
-                notificationType: type,
-                context: ctx,
-                mailOptions,
-                attempts: 0,
-                lastError: String(sendError),
-              });
-            }
-          }
-        }
-      } else if (!smtpConfigured) {
-        console.warn(
-          "⚠️ [SMTP Mailer Warning]: SMTP configuration is incomplete. Skipping email delivery.",
-        );
-      } else {
-        console.warn(
-          `⚠️ [SMTP Mailer Warning]: Recipient User ID ${recipientUserId} lacks a valid email string address.`,
-        );
-      }
+      // 6. Dispatch SMTP email delivery in the background so notification creation
+      // remains fast even when the mail server is slow or temporarily unavailable.
+      void NotificationService.dispatchEmailDelivery({
+        recipientUserId,
+        type,
+        ctx,
+        user,
+        template,
+        plainTextFallback,
+        layoutThemeColor,
+      });
     } catch (error) {
       console.error(
         " [Notification Service System Failure]: Critical exception encountered inside pipeline process loop:",
@@ -293,12 +203,131 @@ export class NotificationService {
     }
   }
 
+  private static async dispatchEmailDelivery(payload: {
+    recipientUserId: number;
+    type: NotificationType;
+    ctx: NotificationContext;
+    user: { email?: string | null };
+    template: ReturnType<typeof getBilingualTemplate>;
+    plainTextFallback: string;
+    layoutThemeColor: string;
+  }) {
+    const {
+      recipientUserId,
+      type,
+      ctx,
+      user,
+      template,
+      plainTextFallback,
+      layoutThemeColor,
+    } = payload;
+    const smtpConfigured = Boolean(
+      smtpHost && smtpPort && smtpUser && smtpPass,
+    );
+
+    if (!smtpConfigured) {
+      console.warn(
+        "⚠️ [SMTP Mailer Warning]: SMTP configuration is incomplete. Skipping email delivery.",
+      );
+      return;
+    }
+
+    if (!user.email || !user.email.includes("@")) {
+      console.warn(
+        `⚠️ [SMTP Mailer Warning]: Recipient User ID ${recipientUserId} lacks a valid email string address.`,
+      );
+      return;
+    }
+
+    if (smtpAuthFailed) {
+      console.warn(
+        "[SMTP Mailer]: SMTP auth previously failed; skipping email delivery until valid SMTP credentials are provided.",
+      );
+      return;
+    }
+
+    try {
+      await verifySmtpTransporter();
+    } catch {
+      console.warn(
+        "[SMTP Mailer]: SMTP transporter verification failed; skipping email delivery until valid SMTP credentials are provided.",
+      );
+      return;
+    }
+
+    if (smtpAuthFailed) {
+      console.warn(
+        "[SMTP Mailer]: SMTP auth previously failed; skipping email delivery until valid SMTP credentials are provided.",
+      );
+      return;
+    }
+
+    const mailOptions = {
+      from: `"EFP-PSO" <${smtpUser}>`,
+      to: user.email,
+      subject: `[EFP-PSO] ${template.titleEn}`,
+      text: plainTextFallback,
+      html: `
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 25px; line-height: 1.6; max-width: 650px; border: 1px solid #e9ecef; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin: 0 auto; color: #333333;">
+          <div style="background-color: ${layoutThemeColor}; color: #ffffff; padding: 20px; font-size: 20px; font-weight: bold; border-radius: 8px 8px 0 0; text-align: center; letter-spacing: 0.5px;">
+            EFP-PSO Central Operations Alert Node
+          </div>
+          <div style="padding: 20px 10px;">
+            <h3 style="color: ${layoutThemeColor}; border-bottom: 2px solid #f1f3f5; padding-bottom: 8px; margin-top: 0; font-size: 17px;">
+              ${template.titleEn}
+            </h3>
+            <p style="font-size: 15px; color: #2d3748; margin-bottom: 25px; background-color: #f8f9fa; padding: 15px; border-left: 4px solid ${layoutThemeColor}; border-radius: 4px;">
+              ${template.msgEn}
+            </p>
+            <h3 style="color: ${layoutThemeColor}; border-bottom: 2px solid #f1f3f5; padding-bottom: 8px; font-size: 16px; margin-top: 25px;">
+              ${template.titleAm}
+            </h3>
+            <p style="font-size: 15px; color: #2d3748; margin-bottom: 25px; background-color: #f8f9fa; padding: 15px; border-left: 4px solid ${layoutThemeColor}; border-radius: 4px; direction: ltr; text-align: left;">
+              ${template.msgAm}
+            </p>
+          </div>
+          <hr style="border: 0; border-top: 1px solid #dee2e6; margin: 25px 0;" />
+          <p style="font-size: 11px; color: #adb5bd; text-align: center; margin-bottom: 0;">
+            This is a secure automated notification generated from your institutional administrative account profile on the EFP-PSO ERP Platform. Please do not reply directly to this mailer node.
+          </p>
+        </div>
+      `,
+    };
+
+    try {
+      await NotificationService.attemptSendWithRetries(mailOptions);
+    } catch (sendError: unknown) {
+      const smtpError = sendError as SmtpSendError;
+      if (smtpError.responseCode === 535 || smtpError.code === "EAUTH") {
+        smtpAuthFailed = true;
+        console.error(
+          ` [SMTP Mailer]: SMTP auth failed for ${user.email}. Disabling further retries until credentials are fixed.`,
+          sendError,
+        );
+      } else {
+        console.error(
+          ` [SMTP Mailer]: Failed to send after retries to ${user.email}, enqueueing for manual resend.`,
+          sendError,
+        );
+        await NotificationService.enqueueFailedEmail({
+          id: crypto.randomUUID(),
+          createdAt: new Date().toISOString(),
+          recipientUserId,
+          notificationType: type,
+          context: ctx,
+          mailOptions,
+          attempts: 0,
+          lastError: String(sendError),
+        });
+      }
+    }
+  }
+
   private static async attemptSendWithRetries(mailOptions: any) {
-    const maxAttempts = isGmail ? 2 : 3;
     let attempt = 0;
     let lastError: any = null;
 
-    while (attempt < maxAttempts) {
+    while (attempt < SMTP_MAX_ATTEMPTS) {
       try {
         attempt += 1;
         await NotificationService.sendMailWithTimeout(
@@ -308,12 +337,11 @@ export class NotificationService {
         return;
       } catch (err) {
         lastError = err;
-        if (attempt >= maxAttempts) break;
-        const backoffMs = 500 * attempt;
+        if (attempt >= SMTP_MAX_ATTEMPTS) break;
         console.warn(
-          `[SMTP Retry] Attempt ${attempt}/${maxAttempts} for ${mailOptions.to} failed. Retrying in ${backoffMs}ms...`,
+          `[SMTP Retry] Attempt ${attempt}/${SMTP_MAX_ATTEMPTS} for ${mailOptions.to} failed. Retrying in ${SMTP_RETRY_DELAY_MS}ms...`,
         );
-        await new Promise((r) => setTimeout(r, backoffMs));
+        await new Promise((r) => setTimeout(r, SMTP_RETRY_DELAY_MS));
       }
     }
 

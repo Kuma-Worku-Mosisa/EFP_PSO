@@ -528,7 +528,7 @@ export const InspectionReportPdfTemplate: React.FC<Props> = ({
           <br />
           {isAm
             ? "የኢትዮጵያ ፌዴራል ፖሊስ ኮሚሽን — የግል ጥበቃ ድርጅት ፈቃድ ፖርታል"
-            : "Ethiopian Federal Police Commission — Private Security Agency Licensing Portal"}
+            : "Ethiopian Federal Police Commission — Private Security Organization Licensing Portal"}
         </div>
       </div>
     </div>

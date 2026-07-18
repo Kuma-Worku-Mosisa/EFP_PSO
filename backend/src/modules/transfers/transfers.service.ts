@@ -2,24 +2,32 @@ import { TransfersRepository } from "./transfers.repository";
 import { NotificationService } from "../notification/notification.service";
 import { getUsersByRole } from "../user/user.service";
 import prisma from "../../lib/prisma";
+import {
+  isDocumentTypeMatch,
+  normalizeDocumentType,
+} from "../../utils/documentOrganizer";
+import { sendSystemEmail } from "../../utils/emailService";
 
 const SPECIAL_POSITION_APPROVAL_ROLES = ["admin", "super_admin"];
 const SPECIAL_POSITIONS = [
-  "Manager of Institution",
-  "Operation of Institution",
-  "Administrative of Institution",
+  "Manager of Organization",
+  "Operation of Organization",
+  "Administrative and Finance of Organization",
 ];
 
 export class TransfersService {
   private repository = new TransfersRepository();
 
-  async initiateTransfer(payload: {
-    employeeId: number;
-    targetOrganizationId: number;
-    requestedPositionId?: number;
-    reason: string;
-    initiatedById: number;
-  }) {
+  async initiateTransfer(
+    payload: {
+      employeeId: number;
+      targetOrganizationId: number;
+      requestedPositionId?: number;
+      reason: string;
+      initiatedById: number;
+    },
+    uploadedFiles?: Record<string, string> | null,
+  ) {
     const employee = await this.repository.findEmployeeWithCurrentOrg(
       payload.employeeId,
     );
@@ -33,14 +41,100 @@ export class TransfersService {
       );
     }
 
-    const transferRequest = await this.repository.createTransferRequest({
-      employeeId: payload.employeeId,
-      sourceOrganizationId: employee.organizationId,
-      targetOrganizationId: payload.targetOrganizationId,
-      requestedPositionId:
-        payload.requestedPositionId ?? employee.positionId ?? undefined,
-      reason: payload.reason,
-      initiatedById: payload.initiatedById,
+    const normalizedEmploymentStatus = String(employee.employmentStatus || "")
+      .trim()
+      .toLowerCase();
+    if (normalizedEmploymentStatus !== "resigned") {
+      throw new Error(
+        "Only resigned employees may be processed through this transfer workflow.",
+      );
+    }
+
+    if (employee.isBlacklisted) {
+      throw new Error(
+        "This employee is blacklisted and cannot be transferred until the blacklist status is cleared.",
+      );
+    }
+
+    const requiredDocs = [
+      "fingerprint_doc",
+      "medical_doc",
+      "guarantee_doc",
+      "resignation_record_doc",
+    ];
+
+    const existingDocs = await prisma.employeeDocument.findMany({
+      where: { employeeId: payload.employeeId },
+      select: { documentType: true },
+    });
+
+    const existingTypes = existingDocs.map((d) => d.documentType);
+    const missingDocs = requiredDocs.filter(
+      (requiredDoc) =>
+        !existingTypes.some((existingType) =>
+          isDocumentTypeMatch(existingType, requiredDoc),
+        ),
+    );
+
+    if (
+      missingDocs.length > 0 &&
+      uploadedFiles &&
+      Object.keys(uploadedFiles).length > 0
+    ) {
+      const docsToCreate: Array<{
+        employeeId: number;
+        documentType: string;
+        fileUrl: string;
+      }> = [];
+
+      for (const reqDoc of missingDocs) {
+        const matchEntry = Object.entries(uploadedFiles).find(
+          ([k]) =>
+            k.endsWith(`_${reqDoc}`) || k === reqDoc || k.endsWith(reqDoc),
+        );
+        if (matchEntry) {
+          const [, fileUrl] = matchEntry;
+          docsToCreate.push({
+            employeeId: payload.employeeId,
+            documentType: normalizeDocumentType(reqDoc),
+            fileUrl,
+          });
+        }
+      }
+
+      if (docsToCreate.length > 0) {
+        await prisma.employeeDocument.createMany({ data: docsToCreate });
+      }
+    }
+
+    const uploadedDocCount = existingTypes.filter((existingType) =>
+      requiredDocs.some((requiredDoc) =>
+        isDocumentTypeMatch(existingType, requiredDoc),
+      ),
+    ).length;
+
+    if (uploadedDocCount < requiredDocs.length) {
+      throw new Error(
+        "Required resigned employee documents must be uploaded before the transfer request can be submitted.",
+      );
+    }
+
+    const targetPositionId = payload.requestedPositionId ?? employee.positionId;
+    if (!targetPositionId) {
+      throw new Error("Target position is required for this transfer request.");
+    }
+
+    const personnelChangeRequest = await prisma.personnelChangeRequest.create({
+      data: {
+        initiatedByUserId: payload.initiatedById,
+        targetEmployeeId: payload.employeeId,
+        requestType: "EXISTING_EMPLOYEE",
+        sourceOrganizationId: employee.organizationId,
+        targetOrganizationId: payload.targetOrganizationId,
+        targetPositionId: targetPositionId,
+        reason: payload.reason || "Transfer request",
+        status: "PENDING",
+      },
     });
 
     // Fetch employee details for notification context
@@ -92,9 +186,6 @@ export class TransfersService {
             "TRANSFER_REQUEST_INITIATED_SOURCE",
             notificationContext,
           );
-          console.log(
-            `[Transfer Service] Notification sent to source HR manager: ${manager.email}`,
-          );
         } catch (error) {
           console.error(
             `[Transfer Service] Failed to notify source HR manager ${manager.email}:`,
@@ -113,9 +204,6 @@ export class TransfersService {
             "TRANSFER_REQUEST_INITIATED_DESTINATION",
             notificationContext,
           );
-          console.log(
-            `[Transfer Service] Notification sent to destination HR manager: ${manager.email}`,
-          );
         } catch (error) {
           console.error(
             `[Transfer Service] Failed to notify destination HR manager ${manager.email}:`,
@@ -125,16 +213,106 @@ export class TransfersService {
       }
     }
 
-    return transferRequest;
+    await this.notifyActiveAdminsAboutPersonnelChangeRequest({
+      requestId: personnelChangeRequest.id,
+      organizationNameEn:
+        employeeDetail?.organization?.nameEnglish || "Unknown",
+      organizationNameAm:
+        employeeDetail?.organization?.nameAmharic || "Unknown",
+      employeeName: employeeDetail?.user?.fullName || "Unknown",
+    });
+
+    return personnelChangeRequest;
+  }
+
+  private async notifyActiveAdminsAboutPersonnelChangeRequest(payload: {
+    requestId: number;
+    organizationNameEn: string;
+    organizationNameAm: string;
+    employeeName: string;
+  }) {
+    const adminUsers = await prisma.user.findMany({
+      where: {
+        status: "ACTIVE",
+        user_roles: {
+          some: {
+            roles: {
+              role_name: {
+                in: ["admin", "super_admin"],
+              },
+            },
+          },
+        },
+      },
+      select: { id: true, fullName: true, email: true },
+    });
+
+    const subject = "Leader Change request submitted / የአመራር ለውጥ ጥያቄ ተላከ";
+    const portalMessage = `A Leader Change request was submitted for ${payload.employeeName} from ${payload.organizationNameEn}.\n${payload.employeeName} የዝውውር ጥያቄ ከ${payload.organizationNameAm} ተላክቷል።`;
+    const emailBody = `A Leader Change request has been submitted for review.\n\nEmployee: ${payload.employeeName}\nOrganization: ${payload.organizationNameEn}\nRequest ID: ${payload.requestId}\n\nPlease review it promptly.\n\nሰራተኛ: ${payload.employeeName}\nድርጅት: ${payload.organizationNameAm}\nጥያቄ መለያ: ${payload.requestId}`;
+
+    for (const admin of adminUsers) {
+      await prisma.notification.create({
+        data: {
+          recipientUserId: admin.id,
+          notificationType: "NEW_REQUEST",
+          alertTitle: subject,
+          alertMessage: portalMessage,
+          isReadByRecipient: false,
+        },
+      });
+
+      if (admin.email) {
+        try {
+          await sendSystemEmail(admin.email, subject, emailBody);
+        } catch (emailError) {
+          console.error(
+            `[Receive Service] Failed to send personnel-change notification to admin ${admin.id} (${admin.email}):`,
+            emailError,
+          );
+        }
+      }
+    }
   }
 
   async lookupEmployee(query: string) {
-    const employee = await this.repository.findEmployeeByIdentifier(query);
+    const base = await this.repository.findEmployeeByIdentifier(query);
+    if (!base) return null;
+
+    // Get fresh employee record including documents to ensure latest URLs
+    const employee = await prisma.employee.findUnique({
+      where: { id: base.id },
+      include: {
+        user: {
+          select: {
+            fullName: true,
+            email: true,
+            phone: true,
+            status: true,
+            faydaId: true,
+          },
+        },
+        organization: { select: { id: true, nameEnglish: true } },
+        position: { select: { id: true, name: true } },
+        documents: {
+          select: {
+            id: true,
+            documentType: true,
+            fileUrl: true,
+            uploadedAt: true,
+            isVerified: true,
+          },
+        },
+      },
+    });
+
     if (!employee) return null;
 
     return {
       id: employee.id,
       faydaId: employee.user.faydaId,
+      isBlacklisted: employee.isBlacklisted,
+      employmentStatus: employee.employmentStatus || "",
       user: {
         fullName: employee.user.fullName,
         email: employee.user.email,
@@ -148,6 +326,13 @@ export class TransfersService {
       position: employee.position
         ? { id: employee.position.id, name: employee.position.name }
         : { id: 0, name: "Unassigned" },
+      documents: (employee.documents || []).map((d) => ({
+        id: d.id,
+        type: d.documentType,
+        url: d.fileUrl,
+        uploadedAt: d.uploadedAt,
+        isVerified: d.isVerified,
+      })),
     };
   }
 
@@ -163,7 +348,7 @@ export class TransfersService {
 
   async processTransferDecision(
     requestId: number,
-    action: "RELEASE" | "FINALIZE_APPROVE" | "REJECT",
+    action: "REJECT",
     actionedById: number,
     userOrganizationId: number,
     roles: string[],
@@ -213,7 +398,7 @@ export class TransfersService {
       destinationOrganizationNameAm: targetOrg?.nameAmharic || "Unknown",
       employeeName: employeeDetail?.user?.fullName || "Unknown",
       faydaId: employeeDetail?.user?.faydaId || "Unknown",
-      transferReason: request.reason || "Transfer Request",
+      transferReason: request.reason || "Receive Request",
     };
 
     if (action === "REJECT") {
@@ -263,221 +448,6 @@ export class TransfersService {
           } catch (error) {
             console.error(
               `[Transfer Service] Failed to notify on rejection ${manager.email}:`,
-              error,
-            );
-          }
-        }
-      }
-
-      return result;
-    }
-
-    if (action === "RELEASE") {
-      if (request.sourceOrganizationId !== userOrganizationId) {
-        throw new Error(
-          "Authorization failure. Only the source organization may release the requested employee.",
-        );
-      }
-      if (request.status !== "PENDING") {
-        throw new Error(
-          "Cannot release an employee for a transfer request that is not pending.",
-        );
-      }
-
-      const transferPositionName =
-        request.position?.name || request.employee?.position?.name || "";
-      const normalizedTransferPosition = String(transferPositionName)
-        .trim()
-        .toLowerCase();
-      const isSpecialPosition = SPECIAL_POSITIONS.some(
-        (position) =>
-          position.trim().toLowerCase() === normalizedTransferPosition,
-      );
-
-      const result = await this.repository.executeApprovalTransaction(
-        request.id,
-        request.employeeId,
-        request.targetOrganizationId,
-        actionedById,
-        "SOURCE_RELEASED",
-        !isSpecialPosition,
-      );
-
-      // Notify destination organization HR managers of release
-      const destHrManagers = await this.repository.findHrManagersByOrganization(
-        request.targetOrganizationId,
-      );
-
-      for (const manager of destHrManagers) {
-        if (manager.email) {
-          try {
-            await NotificationService.sendBilingualAlert(
-              manager.id,
-              "TRANSFER_REQUEST_RELEASED",
-              notificationContext,
-            );
-            console.log(
-              `[Transfer Service] Release notification sent to destination HR: ${manager.email}`,
-            );
-          } catch (error) {
-            console.error(
-              `[Transfer Service] Failed to notify destination on release ${manager.email}:`,
-              error,
-            );
-          }
-        }
-      }
-
-      if (isSpecialPosition) {
-        // Create a personnel change request record for admin approval if one does not already exist.
-        const existingPersonnelRequest =
-          await prisma.personnelChangeRequest.findFirst({
-            where: {
-              targetEmployeeId: request.employeeId,
-              sourceOrganizationId: request.sourceOrganizationId,
-              targetOrganizationId: request.targetOrganizationId,
-              requestType: "EXISTING_EMPLOYEE",
-              status: "PENDING",
-            },
-          });
-
-        if (!existingPersonnelRequest) {
-          const targetPositionId =
-            request.requestedPositionId ??
-            request.position?.id ??
-            request.employee?.position?.id;
-
-          if (typeof targetPositionId !== "number") {
-            throw new Error(
-              "Cannot create a personnel change request without a valid target position.",
-            );
-          }
-
-          await prisma.personnelChangeRequest.create({
-            data: {
-              requestType: "EXISTING_EMPLOYEE",
-              initiatedByUserId: actionedById,
-              targetEmployeeId: request.employeeId,
-              sourceOrganizationId: request.sourceOrganizationId,
-              targetOrganizationId: request.targetOrganizationId,
-              targetPositionId,
-              reason: request.reason,
-              status: "PENDING",
-            },
-          });
-        }
-
-        const normalizeStatus = (value?: string) =>
-          String(value || "")
-            .trim()
-            .toLowerCase();
-
-        const adminUsers = (await getUsersByRole("admin")).filter(
-          (user) => normalizeStatus(user.status) === "active",
-        );
-        const superAdminUsers = (await getUsersByRole("super_admin")).filter(
-          (user) => normalizeStatus(user.status) === "active",
-        );
-        const recipients = [...adminUsers, ...superAdminUsers];
-        const recipientsById = new Map<number, (typeof recipients)[0]>();
-
-        for (const recipient of recipients) {
-          if (!recipientsById.has(recipient.id)) {
-            recipientsById.set(recipient.id, recipient);
-          }
-        }
-
-        for (const admin of recipientsById.values()) {
-          if (admin.email) {
-            try {
-              await NotificationService.sendBilingualAlert(
-                admin.id,
-                "TRANSFER_REQUEST_RELEASED",
-                notificationContext,
-              );
-              console.log(
-                `[Transfer Service] Release notification sent to admin user: ${admin.email}`,
-              );
-            } catch (error) {
-              console.error(
-                `[Transfer Service] Failed to notify admin on release ${admin.email}:`,
-                error,
-              );
-            }
-          }
-        }
-      }
-
-      return result;
-    }
-
-    if (action === "FINALIZE_APPROVE") {
-      if (request.status !== "SOURCE_RELEASED") {
-        throw new Error(
-          "Cannot fully approve a transfer that has not yet been released by the source organization.",
-        );
-      }
-
-      const transferPositionName =
-        request.position?.name || request.employee?.position?.name || "";
-      const normalizedTransferPosition = String(transferPositionName)
-        .trim()
-        .toLowerCase();
-      const isSpecialPosition = SPECIAL_POSITIONS.some(
-        (position) =>
-          position.trim().toLowerCase() === normalizedTransferPosition,
-      );
-
-      const isAdminApproval = normalizedRoles.some((role) =>
-        SPECIAL_POSITION_APPROVAL_ROLES.includes(role),
-      );
-
-      if (isSpecialPosition && !isAdminApproval) {
-        throw new Error(
-          "This transfer requires final approval by a user with the admin or super_admin role.",
-        );
-      }
-
-      if (
-        !isSpecialPosition &&
-        request.targetOrganizationId !== userOrganizationId
-      ) {
-        throw new Error(
-          "Authorization failure. Only the destination organization may finalize this transfer.",
-        );
-      }
-
-      const result = await this.repository.executeApprovalTransaction(
-        request.id,
-        request.employeeId,
-        request.targetOrganizationId,
-        actionedById,
-        "FULLY_APPROVED",
-      );
-
-      // Notify both source and destination HR managers of final approval
-      const sourceHrManagers =
-        await this.repository.findHrManagersByOrganization(
-          request.sourceOrganizationId,
-        );
-      const destHrManagers = await this.repository.findHrManagersByOrganization(
-        request.targetOrganizationId,
-      );
-
-      for (const manager of [...sourceHrManagers, ...destHrManagers]) {
-        if (manager.email) {
-          try {
-            await NotificationService.sendBilingualAlert(
-              manager.id,
-              "TRANSFER_REQUEST_APPROVED",
-              notificationContext,
-            );
-            console.log(
-              `[Transfer Service] Final approval notification sent to: ${manager.email}`,
-            );
-          } catch (error) {
-            console.error(
-              `[Transfer Service] Failed to notify on final approval ${manager.email}:`,
               error,
             );
           }

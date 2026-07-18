@@ -21,6 +21,60 @@ import { AutoDismissToast, ToastType } from "./AutoDismissToast";
 import NotificationDropdown from "./notification-dropdown";
 import { SidebarProvider } from "../context/SidebarContext";
 
+const ethMonthsAm = [
+  "መስከረም",
+  "ጥቅምት",
+  "ህዳር",
+  "ታህሳስ",
+  "ጥር",
+  "የካቲት",
+  "መጋቢት",
+  "ሚያዚያ",
+  "ግንቦት",
+  "ሰኔ",
+  "ሐምሌ",
+  "ነሀሴ",
+  "ጳጉሜን",
+];
+
+const ethWeekdaysAm = ["እሁድ", "ሰኞ", "ማክሰኞ", "እሮብ", "ሐሙስ", "አርብ", "ቅዳሜ"];
+
+const JDN_EPOCH = 1724221;
+
+function gregorianToJDN(year: number, month: number, day: number): number {
+  const a = Math.floor((14 - month) / 12);
+  const y = year + 4800 - a;
+  const m = month + 12 * a - 3;
+  return (
+    day +
+    Math.floor((153 * m + 2) / 5) +
+    365 * y +
+    Math.floor(y / 4) -
+    Math.floor(y / 100) +
+    Math.floor(y / 400) -
+    32045
+  );
+}
+
+function gregorianToEthiopian(year: number, month: number, day: number) {
+  const jdn = gregorianToJDN(year, month, day);
+  const yearEC = Math.floor((4 * (jdn - JDN_EPOCH) + 3) / 1461);
+  const remaining = jdn - (365 * yearEC + Math.floor(yearEC / 4) + JDN_EPOCH);
+  const monthEC = Math.floor(remaining / 30) + 1;
+  const dayEC = Math.floor(remaining) - 30 * (monthEC - 1) + 1;
+  return { year: yearEC + 1, month: monthEC, day: dayEC };
+}
+
+function getEthiopianDateString(date: Date): string {
+  const d = gregorianToEthiopian(
+    date.getFullYear(),
+    date.getMonth() + 1,
+    date.getDate(),
+  );
+  const wd = ethWeekdaysAm[date.getDay()];
+  return `${wd}, ${d.day} ${ethMonthsAm[d.month - 1]} ${d.year}`;
+}
+
 interface SidebarItem {
   icon?: React.ReactNode;
   label: string;
@@ -268,15 +322,14 @@ export const DashboardLayout = ({
                   {title}
                 </h1>
                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest hidden sm:block">
-                  {new Date().toLocaleDateString(
-                    language === "am" ? "am-ET" : "en-US",
-                    {
-                      weekday: "long",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    },
-                  )}
+                  {language === "am"
+                    ? getEthiopianDateString(new Date())
+                    : new Date().toLocaleDateString("en-US", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
                 </p>
               </div>
             </div>

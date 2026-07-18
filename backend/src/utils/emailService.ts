@@ -14,10 +14,6 @@ const getTransporter = (): nodemailer.Transporter => {
     const smtpPort = isGmail ? 465 : requestedPort || 587;
     const smtpSecure = smtpPort === 465;
 
-    console.log(
-      `[Email Service] SMTP host=${smtpHost}, port=${smtpPort}, secure=${smtpSecure}`,
-    );
-
     transporter = nodemailer.createTransport({
       host: smtpHost,
       port: smtpPort,
@@ -64,8 +60,6 @@ export const sendSystemEmail = async (
     }
 
     await client.sendMail(mailOptions);
-
-    console.log(`[Email Dispatcher]: Message delivered successfully to ${to}`);
   } catch (error) {
     console.error(
       `[Email Dispatcher Failure]: Could not send email to ${to}:`,

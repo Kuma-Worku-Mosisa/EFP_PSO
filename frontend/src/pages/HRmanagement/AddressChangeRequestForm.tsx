@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { apiRequest } from "../../lib/api";
 import { cn } from "../../lib/utils";
+import { formatInspectionPdfDate } from "../../lib/ethiopianCalendar";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { AutoDismissToast, ToastType } from "../../components/AutoDismissToast";
 import { useLanguage } from "../../context/LanguageContext";
@@ -32,9 +33,17 @@ interface AddressFormData {
 
 interface AddressDetails {
   regionName?: string | null;
+  regionNameEnglish?: string | null;
+  regionNameAmharic?: string | null;
   zoneName?: string | null;
+  zoneNameEnglish?: string | null;
+  zoneNameAmharic?: string | null;
   woredaName?: string | null;
+  woredaNameEnglish?: string | null;
+  woredaNameAmharic?: string | null;
   kebeleName?: string | null;
+  kebeleNameEnglish?: string | null;
+  kebeleNameAmharic?: string | null;
   specialLocation?: string | null;
   houseNumber?: string | null;
 }
@@ -497,10 +506,39 @@ export default function AddressChangeRequestForm() {
   }, [formData.woredaId]);
 
   const getOptionName = (item: LocationOption) =>
-    item.nameEnglish || item.nameAmharic || `#${item.id}`;
+    isAm
+      ? item.nameAmharic || item.nameEnglish || `#${item.id}`
+      : item.nameEnglish || item.nameAmharic || `#${item.id}`;
 
   const mapOptions = (items: LocationOption[]) =>
     items.map((item) => ({ id: item.id, name: getOptionName(item) }));
+
+  const getLocalizedAddressName = (
+    address: AddressDetails | undefined,
+    field: "regionName" | "zoneName" | "woredaName" | "kebeleName",
+  ) => {
+    if (!address) return "";
+
+    const english =
+      field === "regionName"
+        ? address.regionNameEnglish || address.regionName
+        : field === "zoneName"
+          ? address.zoneNameEnglish || address.zoneName
+          : field === "woredaName"
+            ? address.woredaNameEnglish || address.woredaName
+            : address.kebeleNameEnglish || address.kebeleName;
+
+    const amharic =
+      field === "regionName"
+        ? address.regionNameAmharic || address.regionName
+        : field === "zoneName"
+          ? address.zoneNameAmharic || address.zoneName
+          : field === "woredaName"
+            ? address.woredaNameAmharic || address.woredaName
+            : address.kebeleNameAmharic || address.kebeleName;
+
+    return isAm ? amharic || english || "" : english || amharic || "";
+  };
 
   const handleOpenConfirm = (e: React.FormEvent) => {
     e.preventDefault();
@@ -973,7 +1011,7 @@ export default function AddressChangeRequestForm() {
                     {isAm ? "የአስተዳዳሪ አስተያየት" : "Admin Feedback"}
                   </th>
                   <th className="p-4">{isAm ? "ሁኔታ" : "Status"}</th>
-                  <th className="p-4">{isAm ? "ቀን" : "Date"}</th>
+                  <th className="p-4 min-w-[100px]">{isAm ? "ቀን" : "Date"}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 text-gray-700">
@@ -1066,7 +1104,7 @@ export default function AddressChangeRequestForm() {
                           >
                             <div>
                               <span className="font-semibold">
-                                {isAm ? "ሥ.ቦታ:" : "Sp.Loc.:"}
+                                {isAm ? "ልዩ ቦታ:" : "Special Location:"}
                               </span>{" "}
                               {r.currentAddress?.specialLocation || "—"}
                             </div>
@@ -1074,25 +1112,37 @@ export default function AddressChangeRequestForm() {
                               <span className="font-semibold">
                                 {isAm ? "ቀበሌ:" : "Kebele:"}
                               </span>{" "}
-                              {r.currentAddress?.kebeleName || "—"}
+                              {getLocalizedAddressName(
+                                r.currentAddress,
+                                "kebeleName",
+                              ) || "—"}
                             </div>
                             <div>
                               <span className="font-semibold">
                                 {isAm ? "ወሬዳ:" : "Woreda:"}
                               </span>{" "}
-                              {r.currentAddress?.woredaName || "—"}
+                              {getLocalizedAddressName(
+                                r.currentAddress,
+                                "woredaName",
+                              ) || "—"}
                             </div>
                             <div>
                               <span className="font-semibold">
                                 {isAm ? "ዞን:" : "Zone:"}
                               </span>{" "}
-                              {r.currentAddress?.zoneName || "—"}
+                              {getLocalizedAddressName(
+                                r.currentAddress,
+                                "zoneName",
+                              ) || "—"}
                             </div>
                             <div>
                               <span className="font-semibold">
                                 {isAm ? "ክልል:" : "Region:"}
                               </span>{" "}
-                              {r.currentAddress?.regionName || "—"}
+                              {getLocalizedAddressName(
+                                r.currentAddress,
+                                "regionName",
+                              ) || "—"}
                             </div>
                           </div>
                           <button
@@ -1140,7 +1190,7 @@ export default function AddressChangeRequestForm() {
                           >
                             <div>
                               <span className="font-semibold">
-                                {isAm ? "ሥ.ቦታ:" : "Sp.Loc.:"}
+                                {isAm ? "ልዩ ቦታ:" : "Special Location:"}
                               </span>{" "}
                               {r.requestedAddress?.specialLocation || "—"}
                             </div>
@@ -1148,25 +1198,37 @@ export default function AddressChangeRequestForm() {
                               <span className="font-semibold">
                                 {isAm ? "ቀበሌ:" : "Kebele:"}
                               </span>{" "}
-                              {r.requestedAddress?.kebeleName || "—"}
+                              {getLocalizedAddressName(
+                                r.requestedAddress,
+                                "kebeleName",
+                              ) || "—"}
                             </div>
                             <div>
                               <span className="font-semibold">
                                 {isAm ? "ወሬዳ:" : "Woreda:"}
                               </span>{" "}
-                              {r.requestedAddress?.woredaName || "—"}
+                              {getLocalizedAddressName(
+                                r.requestedAddress,
+                                "woredaName",
+                              ) || "—"}
                             </div>
                             <div>
                               <span className="font-semibold">
                                 {isAm ? "ዞን:" : "Zone:"}
                               </span>{" "}
-                              {r.requestedAddress?.zoneName || "—"}
+                              {getLocalizedAddressName(
+                                r.requestedAddress,
+                                "zoneName",
+                              ) || "—"}
                             </div>
                             <div>
                               <span className="font-semibold">
                                 {isAm ? "ክልል:" : "Region:"}
                               </span>{" "}
-                              {r.requestedAddress?.regionName || "—"}
+                              {getLocalizedAddressName(
+                                r.requestedAddress,
+                                "regionName",
+                              ) || "—"}
                             </div>
                           </div>
                           <button
@@ -1285,7 +1347,10 @@ export default function AddressChangeRequestForm() {
                         </span>
                       </td>
                       <td className="p-4 text-xs text-gray-400">
-                        {new Date(r.createdAt).toLocaleString()}
+                        {formatInspectionPdfDate(r.createdAt, {
+                          ethiopian: isAm,
+                          includeTime: false,
+                        })}
                       </td>
                     </motion.tr>
                   ))}

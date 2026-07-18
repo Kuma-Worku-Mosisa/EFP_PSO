@@ -14,19 +14,21 @@ export const Communications = () => {
   
   const t = {
     title: isAm ? "የኮሙኒኬሽን ማዕከል" : "Communication Center",
-    subtitle: isAm ? "ለኤጀንሲዎች ቀጥታ መልእክት ይላኩ" : "Send direct notifications and updates via Email or SMS",
+    subtitle: isAm
+      ? "ለድርጅቶች ቀጥታ መልእክት ይላኩ"
+      : "Send direct notifications and updates via Email or SMS",
     sendEmail: isAm ? "ኢሜይል ላክ" : "Send Email",
     sendSms: isAm ? "SMS ላክ" : "Send SMS",
     subject: isAm ? "ርዕሰ ጉዳይ" : "Subject",
     message: isAm ? "መልእክት" : "Message",
     history: isAm ? "የተላኩ መልእክቶች" : "Sent History",
-    allAgencies: isAm ? "ሁሉም ኤጀንሲዎች" : "All Agencies",
+    allAgencies: isAm ? "ሁሉም ድርጅቶች" : "All Agencies",
     activeOnly: isAm ? "ንቁ የሆኑት ብቻ" : "Active Only",
     recipient: isAm ? "ተቀባይ ቡድን" : "Recipient Group",
     priority: isAm ? "ቅድሚያ የሚሰጠው" : "Message Priority",
     urgent: isAm ? "አስቸኳይ" : "Urgent",
     normal: isAm ? "መደበኛ" : "Normal",
-    recipients: isAm ? "ተቀባዮች" : "Recipients"
+    recipients: isAm ? "ተቀባዮች" : "Recipients",
   };
 
   const [sentHistory, setSentHistory] = useState([

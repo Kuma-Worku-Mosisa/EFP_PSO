@@ -1,9 +1,9 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { useLanguage } from '../context/LanguageContext';
-import { Shield, Globe, Menu, X } from 'lucide-react';
-import { cn } from '../lib/utils';
-import { motion, AnimatePresence } from 'motion/react';
+import React from "react";
+import { Link, useLocation } from "react-router-dom";
+import { useLanguage } from "../context/LanguageContext";
+import { Shield, Globe, Menu, X } from "lucide-react";
+import { cn } from "../lib/utils";
+import { motion, AnimatePresence } from "motion/react";
 
 export const Navbar = () => {
   const { t, language, setLanguage } = useLanguage();
@@ -11,11 +11,11 @@ export const Navbar = () => {
   const location = useLocation();
 
   const navLinks = [
-    { name: t.nav.home, path: '/' },
-    { name: t.nav.services, path: '/services' },
-    { name: t.nav.requirements, path: '/requirements' },
-    { name: t.nav.faq, path: '/faq' },
-    { name: t.nav.contact, path: '/contact' },
+    { name: t.nav.home, path: "/" },
+    { name: t.nav.services, path: "/services" },
+    { name: t.nav.requirements, path: "/requirements" },
+    { name: t.nav.faq, path: "/faq" },
+    { name: t.nav.contact, path: "/contact" },
   ];
 
   return (
@@ -25,9 +25,9 @@ export const Navbar = () => {
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-3">
               <div className="w-14 h-14 flex items-center justify-center overflow-hidden">
-                <img 
-                  src="https://upload.wikimedia.org/wikipedia/commons/3/30/Federal_Police_Commission_of_Ethiopia_Coat_of_Arms_and_Logo.png" 
-                  alt="Federal Police Logo" 
+                <img
+                  src="https://upload.wikimedia.org/wikipedia/commons/3/30/Federal_Police_Commission_of_Ethiopia_Coat_of_Arms_and_Logo.png"
+                  alt="Federal Police Logo"
                   className="w-14 h-14 object-contain"
                   referrerPolicy="no-referrer"
                 />
@@ -50,29 +50,35 @@ export const Navbar = () => {
                 to={link.path}
                 className={cn(
                   "text-sm font-medium transition-colors hover:text-accent",
-                  location.pathname === link.path ? "text-primary border-b-2 border-primary" : "text-gray-600"
+                  location.pathname === link.path
+                    ? "text-primary border-b-2 border-primary"
+                    : "text-gray-600",
                 )}
               >
                 {link.name}
               </Link>
             ))}
-            
+
             <div className="flex items-center space-x-1 bg-gray-100 rounded-xl p-1">
               <button
-                onClick={() => setLanguage('am')}
+                onClick={() => setLanguage("am")}
                 className={cn(
                   "px-4 py-1.5 rounded-lg text-xs font-black transition-all flex items-center space-x-1.5",
-                  language === 'am' ? "bg-primary text-white shadow-lg scale-105" : "text-gray-500 hover:text-primary"
+                  language === "am"
+                    ? "bg-primary text-white shadow-lg scale-105"
+                    : "text-gray-500 hover:text-primary",
                 )}
               >
                 <Globe className="w-3 h-3" />
                 <span>አማርኛ</span>
               </button>
               <button
-                onClick={() => setLanguage('en')}
+                onClick={() => setLanguage("en")}
                 className={cn(
                   "px-4 py-1.5 rounded-lg text-xs font-black transition-all flex items-center space-x-1.5",
-                  language === 'en' ? "bg-primary text-white shadow-lg scale-105" : "text-gray-500 hover:text-primary"
+                  language === "en"
+                    ? "bg-primary text-white shadow-lg scale-105"
+                    : "text-gray-500 hover:text-primary",
                 )}
               >
                 <Globe className="w-3 h-3" />
@@ -98,19 +104,23 @@ export const Navbar = () => {
           <div className="md:hidden flex items-center space-x-2">
             <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-0.5">
               <button
-                onClick={() => setLanguage('am')}
+                onClick={() => setLanguage("am")}
                 className={cn(
                   "px-2 py-1 rounded-md text-[10px] font-black transition-all",
-                  language === 'am' ? "bg-primary text-white shadow-sm" : "text-gray-500"
+                  language === "am"
+                    ? "bg-primary text-white shadow-sm"
+                    : "text-gray-500",
                 )}
               >
                 አማ
               </button>
               <button
-                onClick={() => setLanguage('en')}
+                onClick={() => setLanguage("en")}
                 className={cn(
                   "px-2 py-1 rounded-md text-[10px] font-black transition-all",
-                  language === 'en' ? "bg-primary text-white shadow-sm" : "text-gray-500"
+                  language === "en"
+                    ? "bg-primary text-white shadow-sm"
+                    : "text-gray-500",
                 )}
               >
                 EN
@@ -128,8 +138,15 @@ export const Navbar = () => {
             >
               {t.nav.signUp}
             </Link>
-            <button onClick={() => setIsOpen(!isOpen)} className="text-primary ml-1">
-              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="text-primary ml-1"
+            >
+              {isOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
             </button>
           </div>
         </div>
@@ -139,7 +156,7 @@ export const Navbar = () => {
         {isOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             className="md:hidden bg-white border-t"
           >

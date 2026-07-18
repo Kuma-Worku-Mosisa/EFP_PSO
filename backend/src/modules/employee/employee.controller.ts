@@ -1,6 +1,11 @@
 import { Request, Response } from "express";
 import { ApiResponse } from "../../utils/apiResponse";
-import { registerEmployee, ServiceError } from "./employee.service";
+import {
+  registerEmployee,
+  ServiceError,
+  updateEmployeeBlacklistStatus,
+  updateEmployeeEmploymentStatus,
+} from "./employee.service";
 import prisma from "../../lib/prisma";
 
 const getAuditUserId = (req: Request): number | null => {
@@ -117,6 +122,94 @@ export const registerEmployeeHandler = async (req: Request, res: Response) => {
  * Returns the organization associated with the current user's employee record,
  * including the organization's employees (with user and position info).
  */
+export const updateEmployeeStatusHandler = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const employeeId = Number(req.params.employeeId);
+    const { status } = req.body || {};
+
+    if (!Number.isFinite(employeeId) || employeeId <= 0) {
+      return ApiResponse.error(res, "Invalid employee id", 400);
+    }
+
+    if (typeof status !== "string" || !status.trim()) {
+      return ApiResponse.error(res, "Employee status is required", 400);
+    }
+
+    const actorUserId = getAuditUserId(req);
+    const updatedEmployee = await updateEmployeeEmploymentStatus(
+      employeeId,
+      status,
+      actorUserId,
+    );
+
+    return ApiResponse.success(
+      res,
+      "Employee status updated successfully",
+      updatedEmployee,
+      200,
+    );
+  } catch (error: any) {
+    if (error instanceof ServiceError) {
+      return ApiResponse.error(res, error.message, 400, error.code);
+    }
+
+    console.error("Update Employee Status Error:", error?.message ?? error);
+    return ApiResponse.error(
+      res,
+      "Failed to update employee status",
+      500,
+      error?.message ?? String(error),
+    );
+  }
+};
+
+export const updateEmployeeBlacklistHandler = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const employeeId = Number(req.params.employeeId);
+    const { isBlacklisted } = req.body || {};
+
+    if (!Number.isFinite(employeeId) || employeeId <= 0) {
+      return ApiResponse.error(res, "Invalid employee id", 400);
+    }
+
+    if (typeof isBlacklisted !== "boolean") {
+      return ApiResponse.error(res, "isBlacklisted must be a boolean", 400);
+    }
+
+    const actorUserId = getAuditUserId(req);
+    const updatedEmployee = await updateEmployeeBlacklistStatus(
+      employeeId,
+      isBlacklisted,
+      actorUserId,
+    );
+
+    return ApiResponse.success(
+      res,
+      "Employee blacklist status updated successfully",
+      updatedEmployee,
+      200,
+    );
+  } catch (error: any) {
+    if (error instanceof ServiceError) {
+      return ApiResponse.error(res, error.message, 400, error.code);
+    }
+
+    console.error("Update Employee Blacklist Error:", error?.message ?? error);
+    return ApiResponse.error(
+      res,
+      "Failed to update employee blacklist status",
+      500,
+      error?.message ?? String(error),
+    );
+  }
+};
+
 export const getMyOrganizationHandler = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
