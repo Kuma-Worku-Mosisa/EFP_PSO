@@ -44,6 +44,7 @@ import { BackupRecovery } from "../BackupRecovery";
 import { UserManagement } from "../UserManagement";
 import EFPPositionManagement from "../admin/EFPPositionManagement";
 import { Profile } from "../Profile";
+import { NotFound } from "../NotFound";
 import { useLanguage } from "../../context/LanguageContext";
 
 const PIE_COLORS = [
@@ -520,7 +521,7 @@ export const SystemAdminDashboard: React.FC = () => {
         <Route path="faq-manage" element={<ManageFAQ />} />
         <Route path="backups" element={<BackupRecovery />} />
         <Route path="profile" element={<Profile />} />
-        <Route path="*" element={<Overview />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </DashboardLayout>
   );

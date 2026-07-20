@@ -22,6 +22,7 @@ import { DashboardLayout } from "../components/DashboardLayout";
 import { useLanguage } from "../context/LanguageContext";
 import { useAuth } from "../context/AuthContext";
 import { apiRequest } from "../lib/api";
+import { NotFound } from "./NotFound";
 import { Profile } from "./Profile";
 import { InspectionReviewForm } from "./fieldReviewer/InspectionReviewForm";
 
@@ -731,6 +732,7 @@ export const FieldReviewerDashboard: React.FC = () => {
           }
         />
         <Route path="profile" element={<Profile />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </DashboardLayout>
   );

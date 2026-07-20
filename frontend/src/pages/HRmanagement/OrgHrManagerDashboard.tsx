@@ -35,6 +35,7 @@ import { DashboardLayout } from "../../components/DashboardLayout";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { apiRequest } from "../../lib/api";
+import { NotFound } from "../NotFound";
 import AgenciesManagement from "../admin/AgenciesManagement";
 import { Profile } from "../Profile";
 import EmployeeRegistration from "./EmployeeRegistration";
@@ -547,6 +548,7 @@ export const OrgHrManagerDashboard = () => {
           path="employee-registration"
           element={<EmployeeRegistration />}
         />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </DashboardLayout>
   );

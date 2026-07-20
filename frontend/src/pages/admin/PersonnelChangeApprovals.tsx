@@ -481,7 +481,6 @@ export const PersonnelChangeApprovals = () => {
         setLoading(false);
       }
     };
-
     fetchRequests();
   }, []);
 
@@ -713,14 +712,12 @@ export const PersonnelChangeApprovals = () => {
           isAm ? "እዚህ የክስተት ምክንያት ያስገቡ..." : "Enter the reason for rejection..."
         }
       />
-
       <AutoDismissToast
         isOpen={toastOpen}
         type={toastType}
         message={toastMessage}
         onClose={() => setToastOpen(false)}
       />
-
       {/* Preview Modal */}
       {previewRequest && (
         <motion.div
@@ -814,7 +811,6 @@ export const PersonnelChangeApprovals = () => {
                   </div>
                 </div>
               </div>
-
               {/* Organization Details */}
               <div className="rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-sky-50/30 p-5 shadow-sm">
                 <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100">
@@ -832,8 +828,8 @@ export const PersonnelChangeApprovals = () => {
                       {isAm
                         ? previewRequest.sourceOrganizationNameAm ||
                           previewRequest.sourceOrganizationName ||
-                          "N/A"
-                        : previewRequest.sourceOrganizationName || "N/A"}
+                          "---"
+                        : previewRequest.sourceOrganizationName || "---"}
                     </p>
                   </div>
                   <div>
@@ -911,7 +907,7 @@ export const PersonnelChangeApprovals = () => {
                       {isAm ? "የትምህርት ደረጃ" : "Education Level"}
                     </p>
                     <p className="text-sm font-semibold text-gray-800">
-                      {previewRequest.educationLevel || "—"}
+                      {previewRequest.educationLevel || "—--"}
                     </p>
                   </div>
                   <div>

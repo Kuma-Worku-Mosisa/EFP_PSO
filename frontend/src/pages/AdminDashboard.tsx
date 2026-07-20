@@ -55,6 +55,7 @@ import { UserManagement } from "./UserManagement";
 import { BackupRecovery } from "./BackupRecovery";
 import { PermissionsManagement } from "./PermissionsManagement";
 import { Profile } from "./Profile";
+import { NotFound } from "./NotFound";
 import { ManageNews } from "./ManageNews";
 import { ManagePublicContent } from "./ManagePublicContent";
 import { ManageFAQ } from "./ManageFAQ";
@@ -1036,6 +1037,7 @@ export const AdminDashboard = () => {
           </>
         )}
         <Route path="profile" element={<Profile />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </DashboardLayout>
   );

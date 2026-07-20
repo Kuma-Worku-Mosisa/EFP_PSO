@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 import { apiRequest } from "../lib/api";
+import { NotFound } from "./NotFound";
 
 import { NewApplication } from "./NewApplication";
 import { LicenseViewer } from "./LicenseViewer";
@@ -273,6 +274,7 @@ export const AgencyDashboard = () => {
         <Route path="payment" element={<AgencyPayment />} />
         <Route path="license/:certificateId?" element={<LicenseViewer />} />
         <Route path="profile" element={<Profile />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </DashboardLayout>
   );

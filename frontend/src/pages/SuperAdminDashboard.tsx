@@ -58,6 +58,7 @@ import FormalRequestManager from "../components/FormalRequestManager";
 import { ManageNews } from "./ManageNews";
 import { ManagePublicContent } from "./ManagePublicContent";
 import { ManageFAQ } from "./ManageFAQ";
+import { NotFound } from "./NotFound";
 import { Communications } from "./Communications";
 
 const SuperAdminAgenciesManagement = () => {
@@ -498,7 +499,7 @@ export const SuperAdminDashboard = () => {
         <Route path="communications" element={<Communications />} />
         <Route path="permissions" element={<PermissionsManagement />} />
         <Route path="settings" element={<AdminSettings />} />
-        <Route path="*" element={<SuperOverview />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </DashboardLayout>
   );

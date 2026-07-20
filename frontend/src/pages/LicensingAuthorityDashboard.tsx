@@ -12,6 +12,7 @@ import {
 import { DashboardLayout } from "../components/DashboardLayout";
 import { useLanguage } from "../context/LanguageContext";
 import { apiRequest } from "../lib/api";
+import { NotFound } from "./NotFound";
 import { LicenseManagement } from "./LicenseManagement";
 import { LicenseStampQueue } from "./LicenseStampQueue";
 import { LicenseViewer } from "./LicenseViewer";

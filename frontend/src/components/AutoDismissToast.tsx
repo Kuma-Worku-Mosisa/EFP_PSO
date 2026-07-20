@@ -20,28 +20,25 @@ export const AutoDismissToast: React.FC<AutoDismissToastProps> = ({
   onClose,
   durationMs = 5000,
 }) => {
-  const [progress, setProgress] = React.useState(100);
+  const [progressWidth, setProgressWidth] = React.useState("100%");
 
   React.useEffect(() => {
     if (!isOpen) {
-      setProgress(100);
+      setProgressWidth("100%");
       return;
     }
 
-    const startedAt = Date.now();
-
-    const progressTimer = window.setInterval(() => {
-      const elapsed = Date.now() - startedAt;
-      const remainingPercent = Math.max(0, 100 - (elapsed / durationMs) * 100);
-      setProgress(remainingPercent);
-    }, 50);
+    setProgressWidth("100%");
+    const animationFrame = window.requestAnimationFrame(() => {
+      setProgressWidth("0%");
+    });
 
     const closeTimer = window.setTimeout(() => {
       onClose();
     }, durationMs);
 
     return () => {
-      window.clearInterval(progressTimer);
+      window.cancelAnimationFrame(animationFrame);
       window.clearTimeout(closeTimer);
     };
   }, [durationMs, isOpen, onClose]);
@@ -95,9 +92,9 @@ export const AutoDismissToast: React.FC<AutoDismissToastProps> = ({
 
         <div className="h-1 w-full bg-gray-100">
           <div
-            className={`h-full transition-[width] duration-75 ease-linear`}
+            className={`h-full transition-[width] duration-5000 ease-linear`}
             style={{
-              width: `${progress}%`,
+              width: progressWidth,
               background: isSuccess ? borderColor : accentColor,
             }}
           />

@@ -111,8 +111,12 @@ export const DashboardLayout = ({
   const isSuperAdmin = user?.roles.includes("super_admin");
   const isLicensingAuthority = user?.roles.includes("licensing_authority");
   const isOrgHrManager = user?.roles.includes("org_hr_manager");
+  const isSystemAdmin = user?.roles.includes("system_admin");
   const isAdmin =
-    !isLicensingAuthority && !isOrgHrManager && user?.roles.includes("admin");
+    !isLicensingAuthority &&
+    !isOrgHrManager &&
+    !isSystemAdmin &&
+    user?.roles.includes("admin");
   const isAgency = user?.roles.includes("agency");
   const isFieldReviewer = user?.roles.includes("field_reviewer");
 
@@ -431,9 +435,13 @@ export const DashboardLayout = ({
                                 ? "/licensing-authority/profile"
                                 : isFieldReviewer
                                   ? "/field-reviewer/profile"
-                                  : isAgency
-                                    ? "/dashboard/profile"
-                                    : "/admin/profile"
+                                  : isOrgHrManager
+                                    ? "/org-hr-manager/profile"
+                                    : isSystemAdmin
+                                      ? "/system-admin/profile"
+                                      : isAgency
+                                        ? "/dashboard/profile"
+                                        : "/admin/profile"
                           }
                           onClick={() => setShowProfile(false)}
                           className="w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 text-sm text-gray-600"
