@@ -373,7 +373,7 @@ export const SuperAdminDashboard = () => {
     {
       icon: <FileCheck className="w-5 h-5" />,
       label: "License Management",
-      path: "/admin/licenses",
+      path: "/super-admin/licenses",
     },
     {
       icon: <Map className="w-5 h-5" />,

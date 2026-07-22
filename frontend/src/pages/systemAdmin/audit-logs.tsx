@@ -128,6 +128,129 @@ export default function AuditLogViewer() {
     }
   };
 
+  const resolveReadableText = (value: unknown): string | null => {
+    if (value === null || value === undefined) return null;
+
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      return trimmed || null;
+    }
+
+    if (typeof value === "number" || typeof value === "boolean") {
+      return String(value);
+    }
+
+    if (Array.isArray(value)) {
+      const items = value
+        .map((item) => resolveReadableText(item))
+        .filter((item): item is string => Boolean(item));
+      return items.length ? items.join(", ") : null;
+    }
+
+    if (typeof value === "object") {
+      const record = value as Record<string, unknown>;
+
+      if (typeof record.role_name === "string" && record.role_name.trim()) {
+        return record.role_name.replace(/_/g, " ");
+      }
+      if (typeof record.name === "string" && record.name.trim()) {
+        return record.name;
+      }
+      if (typeof record.fullName === "string" && record.fullName.trim()) {
+        return record.fullName;
+      }
+      if (typeof record.username === "string" && record.username.trim()) {
+        return record.username;
+      }
+      if (record.roles && typeof record.roles === "object") {
+        const nested = resolveReadableText(record.roles);
+        if (nested) return nested;
+      }
+      if (Array.isArray(record.user_roles)) {
+        const roleNames = record.user_roles
+          .map((item) => resolveReadableText(item))
+          .filter((item): item is string => Boolean(item));
+        if (roleNames.length) return roleNames.join(", ");
+      }
+      if (typeof record.value === "string" && record.value.trim()) {
+        return record.value;
+      }
+    }
+
+    return null;
+  };
+
+  const renderValueCell = (value: unknown): React.ReactNode => {
+    if (value === null || value === undefined) {
+      return <span className="text-gray-400">—</span>;
+    }
+
+    const simpleText = resolveReadableText(value);
+    if (simpleText) {
+      return <span className="break-words text-gray-900">{simpleText}</span>;
+    }
+
+    if (Array.isArray(value)) {
+      if (value.length === 0) {
+        return <span className="text-gray-400">[]</span>;
+      }
+
+      return (
+        <div className="space-y-1">
+          {value.slice(0, 3).map((item, index) => (
+            <div
+              key={`${index}-${JSON.stringify(item)}`}
+              className="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-sm text-gray-700"
+            >
+              {renderValueCell(item)}
+            </div>
+          ))}
+          {value.length > 3 && (
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+              +{value.length - 3} {isAm ? "ተጨማሪ" : "more"}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    if (typeof value === "object") {
+      const entries = Object.entries(value as Record<string, unknown>);
+      if (entries.length === 0) {
+        return (
+          <span className="text-gray-400">
+            {isAm ? "ባዶ ዕቃ" : "Empty object"}
+          </span>
+        );
+      }
+
+      return (
+        <div className="space-y-1">
+          {entries.slice(0, 3).map(([key, childValue]) => (
+            <div
+              key={key}
+              className="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5"
+            >
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                {key}
+              </div>
+              <div className="mt-1 text-sm text-gray-800">
+                {renderValueCell(childValue)}
+              </div>
+            </div>
+          ))}
+          {entries.length > 3 && (
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+              +{entries.length - 3} {isAm ? "ተጨማሪ" : "more"}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return <span className="break-words text-gray-900">{String(value)}</span>;
+  };
+
   // Render state as key-value pairs, optionally diff-highlighted
   const renderStateFields = (
     raw: string | null,
@@ -181,8 +304,6 @@ export default function AuditLogViewer() {
           </thead>
           <tbody className="divide-y divide-gray-200">
             {entries.map(([key, value]) => {
-              const displayValue =
-                value !== null && value !== undefined ? String(value) : "—";
               const isChanged =
                 highlightDiff &&
                 compareObj &&
@@ -203,7 +324,16 @@ export default function AuditLogViewer() {
                     {key}
                   </td>
                   <td className="px-4 py-3 text-gray-900 break-words font-medium">
-                    {displayValue}
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        {renderValueCell(value)}
+                      </div>
+                      {isChanged && (
+                        <span className="shrink-0 rounded-full bg-amber-600 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
+                          {isAm ? "ተሻሽሏል" : "Updated"}
+                        </span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               );

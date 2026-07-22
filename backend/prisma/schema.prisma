@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "sqlserver"
+  url      = env("DATABASE_URL") // Pulls dynamically from your protected .env file
 }
 
 // Note: SQL Server connector does not support Prisma enums.

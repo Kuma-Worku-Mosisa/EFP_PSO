@@ -31,7 +31,7 @@ A full-stack enterprise resource planning system for managing personnel security
 - **Address Change Requests** – Submit and approve location change requests
 - **Multilingual Support** – English and Amharic interface
 - **Ethiopian Calendar Integration** – Display dates in Ethiopian calendar format
-- **Role-Based Access Control** – Admin, manager, operations, security guard roles
+- **Role-Based Access Control** – Admin, super Admin,System Admin, Hr org manager, field reviewer,  and License authority roles
 - **Audit Logging** – Track all system changes
 - **Notifications** – Bilingual email and in-app alerts
 

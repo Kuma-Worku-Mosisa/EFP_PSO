@@ -3,9 +3,153 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import crypto from "crypto";
+import type { NextFunction, Request, Response } from "express";
 
 // Define the base upload directory
 const UPLOAD_BASE_DIR = path.join(process.cwd(), "uploads");
+const SECURE_DOCUMENTS_UPLOAD_DIR = path.join(UPLOAD_BASE_DIR, "secure-documents");
+const ALLOWED_DOCUMENT_EXTENSIONS = new Set(["pdf", "jpg", "jpeg", "png"]);
+const ALLOWED_DOCUMENT_MIME_TYPES = new Map<string, string>([
+  ["application/pdf", "pdf"],
+  ["image/jpeg", "jpg"],
+  ["image/png", "png"],
+]);
+
+export const sanitizeDocumentTypePrefix = (value: unknown): string | null => {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmedValue = value.trim();
+  if (!trimmedValue) {
+    return null;
+  }
+
+  const withoutNullBytes = trimmedValue.replace(/\0/g, "");
+  const withoutTraversal = withoutNullBytes.replace(/\.\.(?:[\\/]+|$)/g, "");
+  const sanitized = withoutTraversal.replace(/[^a-zA-Z0-9-]/g, "");
+
+  if (
+    !sanitized ||
+    sanitized.length > 64 ||
+    sanitized !== withoutTraversal ||
+    /[\\/]/.test(withoutTraversal) ||
+    /\.\./.test(withoutTraversal)
+  ) {
+    return null;
+  }
+
+  return sanitized.toLowerCase();
+};
+
+export const buildSecureDocumentFilename = (
+  documentType: string,
+  file: Express.Multer.File,
+): string => {
+  const prefix = sanitizeDocumentTypePrefix(documentType);
+  if (!prefix) {
+    throw new Error(
+      "Invalid documentType. Use only letters, numbers, and hyphens.",
+    );
+  }
+
+  const extension = path.extname(file.originalname || "").toLowerCase();
+  const normalizedExtension = extension.replace(/^\./, "");
+
+  if (!ALLOWED_DOCUMENT_EXTENSIONS.has(normalizedExtension)) {
+    throw new Error(`Unsupported document extension: ${normalizedExtension}`);
+  }
+
+  return `${prefix}_${crypto.randomUUID()}${extension}`;
+};
+
+export const createSecureDocumentUploadMiddleware = (
+  fieldName = "document",
+  destinationDir = SECURE_DOCUMENTS_UPLOAD_DIR,
+) => {
+  if (!fs.existsSync(destinationDir)) {
+    fs.mkdirSync(destinationDir, { recursive: true });
+  }
+
+  const storage = multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      cb(null, destinationDir);
+    },
+    filename: (req, file, cb) => {
+      try {
+        const documentType = req.body?.documentType;
+        cb(null, buildSecureDocumentFilename(documentType, file));
+      } catch (error) {
+        cb(
+          error instanceof Error
+            ? error
+            : new Error("Upload filename creation failed"),
+          "",
+        );
+      }
+    },
+  });
+
+  const upload = multer({
+    storage,
+    limits: {
+      fileSize: 10 * 1024 * 1024,
+    },
+    fileFilter: (req, file, cb) => {
+      const documentType = sanitizeDocumentTypePrefix(req.body?.documentType);
+      if (!documentType) {
+        return cb(
+          new Error(
+            "Invalid documentType. Use only letters, numbers, and hyphens.",
+          ),
+        );
+      }
+
+      const extension = path
+        .extname(file.originalname || "")
+        .toLowerCase()
+        .replace(/^\./, "");
+      const mimeType = file.mimetype?.toLowerCase();
+
+      const allowedMime = ALLOWED_DOCUMENT_MIME_TYPES.get(mimeType || "");
+      const isAllowedExtension = ALLOWED_DOCUMENT_EXTENSIONS.has(extension);
+      const isAllowedMime = Boolean(allowedMime && allowedMime === extension);
+
+      if (!isAllowedExtension || !isAllowedMime) {
+        return cb(
+          new Error(
+            `Unsupported file type. Allowed types: ${Array.from(ALLOWED_DOCUMENT_EXTENSIONS).join(", ")}`,
+          ),
+        );
+      }
+
+      cb(null, true);
+    },
+  });
+
+  return (req: Request, res: Response, next: NextFunction) => {
+    upload.single(fieldName)(req, res, (error: unknown) => {
+      if (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Document upload failed";
+
+        if (message.includes("too large")) {
+          return next(new Error("File exceeds the 10MB upload limit"));
+        }
+
+        return next(new Error(message));
+      }
+
+      next();
+    });
+  };
+};
+
+export const secureDocumentUpload = createSecureDocumentUploadMiddleware();
+
+// Define the base upload directory
 const ORGANIZATION_ROOT_FOLDER = "organization";
 
 // Ensure base upload directory exists
@@ -20,6 +164,13 @@ export const VALID_ROLES = [
   "operations",
   "administrator",
   "security_guard",
+];
+
+const TRANSFER_DOCUMENT_ROLE_SUFFIXES = [
+  "fingerprint_doc",
+  "medical_doc",
+  "guarantee_doc",
+  "resignation_record_doc",
 ];
 
 const sanitizeFilenamePrefix = (value: string) =>
@@ -223,8 +374,11 @@ export const createOrganizationDocumentsUploader = () => {
         new RegExp(`^(${VALID_ROLES.join("|")})_`, "i"),
       );
       const role = roleMatch ? roleMatch[1].toLowerCase() : "";
+      const isTransferDocumentRole = TRANSFER_DOCUMENT_ROLE_SUFFIXES.some(
+        (suffix) => fieldName.toLowerCase().endsWith(`_${suffix}`) || fieldName.toLowerCase() === suffix,
+      );
 
-      if (!VALID_ROLES.includes(role)) {
+      if (!VALID_ROLES.includes(role) && !isTransferDocumentRole) {
         return cb(
           new Error(`Invalid document role: ${role || file.fieldname}`),
           "",

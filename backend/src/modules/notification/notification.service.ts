@@ -4,6 +4,7 @@ import nodemailer from "nodemailer";
 import fs from "fs/promises";
 import path from "path";
 import crypto from "crypto";
+import { fileURLToPath } from "url";
 import {
   NotificationType,
   NotificationContext,
@@ -57,6 +58,8 @@ const transporter = nodemailer.createTransport(
 let smtpAuthFailed = false;
 let smtpVerifyPromise: Promise<void> | null = null;
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const BACKEND_ROOT = path.resolve(__dirname, "../../../");
 const FAILED_QUEUE_PATH = path.join(
   BACKEND_ROOT,
