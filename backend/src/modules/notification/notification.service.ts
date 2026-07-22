@@ -1,5 +1,5 @@
 // filepath: src/modules/notification/notification.service.ts
-import prisma from "../../lib/prisma";
+import prisma from "../../lib/prisma.js";
 import nodemailer from "nodemailer";
 import fs from "fs/promises";
 import path from "path";
@@ -9,8 +9,8 @@ import {
   NotificationType,
   NotificationContext,
   getBilingualTemplate,
-} from "./notification.types";
-import { getUsersByRole } from "../user/user.service";
+} from "./notification.types.js";
+import { getUsersByRole } from "../user/user.service.js";
 
 interface SmtpSendError {
   responseCode?: number;

@@ -7,7 +7,10 @@ import type { NextFunction, Request, Response } from "express";
 
 // Define the base upload directory
 const UPLOAD_BASE_DIR = path.join(process.cwd(), "uploads");
-const SECURE_DOCUMENTS_UPLOAD_DIR = path.join(UPLOAD_BASE_DIR, "secure-documents");
+const SECURE_DOCUMENTS_UPLOAD_DIR = path.join(
+  UPLOAD_BASE_DIR,
+  "secure-documents",
+);
 const ALLOWED_DOCUMENT_EXTENSIONS = new Set(["pdf", "jpg", "jpeg", "png"]);
 const ALLOWED_DOCUMENT_MIME_TYPES = new Map<string, string>([
   ["application/pdf", "pdf"],
@@ -131,9 +134,7 @@ export const createSecureDocumentUploadMiddleware = (
     upload.single(fieldName)(req, res, (error: unknown) => {
       if (error) {
         const message =
-          error instanceof Error
-            ? error.message
-            : "Document upload failed";
+          error instanceof Error ? error.message : "Document upload failed";
 
         if (message.includes("too large")) {
           return next(new Error("File exceeds the 10MB upload limit"));
@@ -375,7 +376,9 @@ export const createOrganizationDocumentsUploader = () => {
       );
       const role = roleMatch ? roleMatch[1].toLowerCase() : "";
       const isTransferDocumentRole = TRANSFER_DOCUMENT_ROLE_SUFFIXES.some(
-        (suffix) => fieldName.toLowerCase().endsWith(`_${suffix}`) || fieldName.toLowerCase() === suffix,
+        (suffix) =>
+          fieldName.toLowerCase().endsWith(`_${suffix}`) ||
+          fieldName.toLowerCase() === suffix,
       );
 
       if (!VALID_ROLES.includes(role) && !isTransferDocumentRole) {

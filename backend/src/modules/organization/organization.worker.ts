@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import prisma from "../../lib/prisma";
+import prisma from "../../lib/prisma.js";
 
 /**
  * Daily sweep to expire service contracts whose terminatedAt is past.
