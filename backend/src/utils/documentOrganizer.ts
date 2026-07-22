@@ -118,17 +118,41 @@ export const isDocumentTypeMatch = (
  * Format: {role}_{documentType}
  */
 export const parseFieldName = (fieldName: string): DocumentMapping | null => {
-  const rolePattern = new RegExp(`^(${VALID_ROLES.join("|")})_(.+)$`, "i");
-  const match = fieldName.match(rolePattern);
+  const trimmedFieldName = String(fieldName || "").trim();
+  const normalizedFieldName = normalizeDocumentToken(trimmedFieldName);
 
-  if (!match) {
-    return null;
+  const rolePattern = new RegExp(`^(${VALID_ROLES.join("|")})_(.+)$`, "i");
+  const match = trimmedFieldName.match(rolePattern);
+
+  if (match) {
+    const role = match[1].toLowerCase();
+    const documentType = match[2];
+
+    // Preserve the whole incoming field name when the field itself maps to a
+    // known document alias. This avoids splitting "organization_id_doc" into
+    // role="organization" and documentType="id_doc", which would incorrectly
+    // create a new document type instead of updating Organizational Identification.
+    if (DOCUMENT_TYPE_ALIASES[normalizedFieldName]) {
+      return {
+        fieldName: trimmedFieldName,
+        role,
+        documentType: trimmedFieldName,
+      };
+    }
+
+    return {
+      fieldName: trimmedFieldName,
+      role,
+      documentType,
+    };
   }
 
+  // Accept bare document field names for transfer-related uploads and
+  // persist them under the generic organization role.
   return {
-    fieldName,
-    role: match[1].toLowerCase(),
-    documentType: match[2],
+    fieldName: trimmedFieldName,
+    role: "organization",
+    documentType: trimmedFieldName,
   };
 };
 

@@ -146,15 +146,19 @@ export class TransfersController {
 
       const uploadedFiles = req.body?.uploadedFiles || null;
 
-      const result = await this.service.initiateTransfer({
-        employeeId: Number(employeeId),
-        targetOrganizationId: Number(resolvedTargetOrganizationId),
-        requestedPositionId: requestedPositionId
-          ? Number(requestedPositionId)
-          : undefined,
-        reason,
-        initiatedById,
-      }, uploadedFiles);
+      const result = await this.service.initiateTransfer(
+        {
+          employeeId: Number(employeeId),
+          targetOrganizationId: Number(resolvedTargetOrganizationId),
+          requestedPositionId: requestedPositionId
+            ? Number(requestedPositionId)
+            : undefined,
+          reason,
+          initiatedById,
+          roles,
+        },
+        uploadedFiles,
+      );
 
       res.status(201).json({ success: true, data: result });
     } catch (error: any) {

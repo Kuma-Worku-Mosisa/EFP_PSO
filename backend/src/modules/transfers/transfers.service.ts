@@ -1,3 +1,4 @@
+//filepath: backend/src/modules/transfers/transfers.service.ts
 import { TransfersRepository } from "./transfers.repository";
 import { NotificationService } from "../notification/notification.service";
 import { getUsersByRole } from "../user/user.service";
@@ -25,6 +26,7 @@ export class TransfersService {
       requestedPositionId?: number;
       reason: string;
       initiatedById: number;
+      roles: string[];
     },
     uploadedFiles?: Record<string, string> | null,
   ) {
@@ -124,18 +126,63 @@ export class TransfersService {
       throw new Error("Target position is required for this transfer request.");
     }
 
-    const personnelChangeRequest = await prisma.personnelChangeRequest.create({
-      data: {
-        initiatedByUserId: payload.initiatedById,
-        targetEmployeeId: payload.employeeId,
-        requestType: "EXISTING_EMPLOYEE",
+    let targetPositionName = employee.position?.name || "";
+    if (
+      payload.requestedPositionId &&
+      payload.requestedPositionId !== employee.positionId
+    ) {
+      const targetPosition = await prisma.position.findUnique({
+        where: { id: payload.requestedPositionId },
+        select: { name: true },
+      });
+      targetPositionName = targetPosition?.name || targetPositionName;
+    }
+
+    const isSpecialPosition = SPECIAL_POSITIONS.some(
+      (position) =>
+        String(position).trim().toLowerCase() ===
+        String(targetPositionName).trim().toLowerCase(),
+    );
+
+    let transferRequest;
+    let personnelChangeRequest: any = null;
+
+    if (isSpecialPosition) {
+      transferRequest = await prisma.transferRequest.create({
+        data: {
+          employeeId: payload.employeeId,
+          sourceOrganizationId: employee.organizationId,
+          targetOrganizationId: payload.targetOrganizationId,
+          requestedPositionId: targetPositionId,
+          reason: payload.reason || "Transfer request",
+          initiatedById: payload.initiatedById,
+          status: "PENDING",
+        },
+      });
+
+      personnelChangeRequest = await prisma.personnelChangeRequest.create({
+        data: {
+          initiatedByUserId: payload.initiatedById,
+          targetEmployeeId: payload.employeeId,
+          requestType: "EXISTING_EMPLOYEE",
+          sourceOrganizationId: employee.organizationId,
+          targetOrganizationId: payload.targetOrganizationId,
+          targetPositionId: targetPositionId,
+          reason: payload.reason || "Transfer request",
+          status: "PENDING",
+        },
+      });
+    } else {
+      const directTransfer = await this.repository.createDirectTransferRequestAndUpdateEmployee({
+        employeeId: payload.employeeId,
         sourceOrganizationId: employee.organizationId,
         targetOrganizationId: payload.targetOrganizationId,
-        targetPositionId: targetPositionId,
+        requestedPositionId: targetPositionId,
         reason: payload.reason || "Transfer request",
-        status: "PENDING",
-      },
-    });
+        initiatedById: payload.initiatedById,
+      });
+      transferRequest = directTransfer.transferRequest;
+    }
 
     // Fetch employee details for notification context
     const employeeDetail = await prisma.employee.findUnique({
@@ -213,16 +260,18 @@ export class TransfersService {
       }
     }
 
-    await this.notifyActiveAdminsAboutPersonnelChangeRequest({
-      requestId: personnelChangeRequest.id,
-      organizationNameEn:
-        employeeDetail?.organization?.nameEnglish || "Unknown",
-      organizationNameAm:
-        employeeDetail?.organization?.nameAmharic || "Unknown",
-      employeeName: employeeDetail?.user?.fullName || "Unknown",
-    });
+    if (isSpecialPosition && personnelChangeRequest) {
+      await this.notifyActiveAdminsAboutPersonnelChangeRequest({
+        requestId: personnelChangeRequest.id,
+        organizationNameEn:
+          employeeDetail?.organization?.nameEnglish || "Unknown",
+        organizationNameAm:
+          employeeDetail?.organization?.nameAmharic || "Unknown",
+        employeeName: employeeDetail?.user?.fullName || "Unknown",
+      });
+    }
 
-    return personnelChangeRequest;
+    return transferRequest;
   }
 
   private async notifyActiveAdminsAboutPersonnelChangeRequest(payload: {
