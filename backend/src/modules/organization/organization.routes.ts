@@ -30,7 +30,7 @@ router.post(
 router.get(
   "/address-change-requests",
   authenticate,
-  authorize(["org_hr_manager", "admin", "system_admin", "super_admin"]),
+  authorize(["org_hr_manager", "admin", "super_admin"]),
   getAddressChangeRequestsHandler,
 );
 

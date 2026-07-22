@@ -18,12 +18,14 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
 
     /* Correct Path Aliasing without baseUrl */
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "**/*.d.ts"],
-  "exclude": ["node_modules"]
+  "include": ["src/**/*", "src/**/*.d.ts"],
+  "exclude": ["node_modules", "dist"]
 }
