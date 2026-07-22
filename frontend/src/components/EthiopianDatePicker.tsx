@@ -156,7 +156,6 @@ export default function EthiopianDatePicker({
   if (!useEthiopian) {
     return (
       <div className="relative" ref={wrapperRef}>
-        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
         <input
           ref={nativeDateRef}
           type="date"
@@ -167,7 +166,7 @@ export default function EthiopianDatePicker({
             setShowPicker(true);
           }}
           onClick={() => nativeDateRef.current?.showPicker?.()}
-          className={`${className} cursor-pointer focus:outline-none focus:ring-0`}
+          className={`${className} cursor-pointer`}
         />
         {showPicker && pendingDate && (
           <div className="absolute top-full mt-1 left-0 bg-white rounded-xl border border-gray-200 shadow-lg z-30 p-3 w-64 flex items-center justify-end gap-2">
@@ -217,21 +216,22 @@ export default function EthiopianDatePicker({
 
   return (
     <div className="relative" ref={wrapperRef}>
-      <div className="relative">
-        <Calendar
-          className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 z-10 cursor-pointer"
-          onClick={() => setShowPicker(!showPicker)}
-        />
+      <div
+        className="flex items-center rounded-lg border border-slate-300 bg-white hover:border-[#003366]/50 transition-all shadow-sm focus-within:ring-2 focus-within:ring-[#003366]/30 focus-within:border-[#003366]"
+        onClick={() => setShowPicker(!showPicker)}
+      >
         <input
           type="text"
           readOnly
           value={
             value ? `${ethDay} ${ethMonthsAm[ethMonth - 1]} ${ethYear}` : ""
           }
-          onClick={() => setShowPicker(!showPicker)}
           placeholder={placeholder}
-          className={`${className} pr-10 cursor-pointer`}
+          className="flex-1 min-w-0 border-0 outline-none p-2.5 text-sm bg-transparent cursor-pointer"
         />
+        <div className="flex items-center justify-center w-10 h-full pr-1 shrink-0 cursor-pointer">
+          <Calendar className="w-4 h-4 text-gray-400" />
+        </div>
       </div>
       {showPicker && (
         <div className="absolute top-full mt-1 left-0 bg-white rounded-xl border border-gray-200 shadow-lg z-30 p-4 w-72">
