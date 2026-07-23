@@ -11,11 +11,15 @@ import path from "path";
 import fs from "fs";
 import dns from "dns";
 import { promisify } from "util";
+import crypto from "crypto";
 import { buildPrefixedFilename } from "../../middleware/fileUpload";
 import { sendSystemEmail } from "../../utils/emailService";
 import { createOtpForUser, verifyOtpForUser } from "./otp.service";
 
 const dnsResolveMx = promisify(dns.resolveMx);
+
+// Store password reset tokens (in production, use database)
+const passwordResetTokens = new Map<string, { email: string; expiresAt: number }>();
 
 const validateEmailDomain = async (email: string): Promise<{ valid: boolean; error?: string }> => {
   try {
@@ -443,6 +447,151 @@ export const verifyRegisterEmailOtpHandler = async (req: Request, res: Response)
     return ApiResponse.error(
       res,
       "Failed to verify email",
+      500,
+      error.message,
+    );
+  }
+};
+
+// Password Reset Handlers
+
+export const forgotPasswordHandler = async (req: Request, res: Response) => {
+  try {
+    const email = String(req.body?.email || "").trim();
+
+    if (!email) {
+      return ApiResponse.error(res, "Email is required", 400);
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return ApiResponse.error(res, "Invalid email format", 400);
+    }
+
+    // Validate email domain has MX records to prevent DOS attacks
+    const domainValidation = await validateEmailDomain(email);
+    if (!domainValidation.valid) {
+      return ApiResponse.error(
+        res,
+        domainValidation.error || "Email domain does not exist or cannot receive emails",
+        400,
+      );
+    }
+
+    // Check if user exists - only send reset link if email exists in database
+    const user = await UserService.findUserByUniqueField("email", email);
+    if (!user) {
+      return ApiResponse.error(res, "Email not found in our system", 404);
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const expiresAt = Date.now() + 30 * 60 * 1000; // 30 minutes
+
+    passwordResetTokens.set(resetToken, { email, expiresAt });
+
+    // Create reset link
+    const resetLink = `${process.env.FRONTEND_URL || "http://localhost:3001"}/reset-password?token=${resetToken}`;
+
+    // Send email
+    const subject = "Password Reset Request - EFP-PSO";
+    const body = `Hello,\n\nYou have requested to reset your password. Click the link below to set a new password:\n\n${resetLink}\n\nThis link will expire in 30 minutes.\n\nIf you did not request this, please ignore this email.`;
+
+    await sendSystemEmail(email, subject, body);
+
+    return ApiResponse.success(res, "Password reset link sent successfully");
+  } catch (error: any) {
+    console.error("Forgot Password Error:", error);
+    return ApiResponse.error(
+      res,
+      "Failed to process password reset request",
+      500,
+      error.message,
+    );
+  }
+};
+
+export const verifyResetTokenHandler = async (req: Request, res: Response) => {
+  try {
+    const token = String(req.query?.token || "").trim();
+
+    if (!token) {
+      return ApiResponse.error(res, "Token is required", 400);
+    }
+
+    const resetData = passwordResetTokens.get(token);
+    if (!resetData) {
+      return ApiResponse.error(res, "Invalid or expired token", 400);
+    }
+
+    if (Date.now() > resetData.expiresAt) {
+      passwordResetTokens.delete(token);
+      return ApiResponse.error(res, "Token has expired", 400);
+    }
+
+    return ApiResponse.success(res, "Token is valid", {
+      email: resetData.email,
+    });
+  } catch (error: any) {
+    console.error("Verify Reset Token Error:", error);
+    return ApiResponse.error(
+      res,
+      "Failed to verify token",
+      500,
+      error.message,
+    );
+  }
+};
+
+export const resetPasswordHandler = async (req: Request, res: Response) => {
+  try {
+    const token = String(req.body?.token || "").trim();
+    const newPassword = String(req.body?.password || "").trim();
+
+    if (!token || !newPassword) {
+      return ApiResponse.error(res, "Token and password are required", 400);
+    }
+
+    // Validate password strength
+    if (newPassword.length < 8) {
+      return ApiResponse.error(res, "Password must be at least 8 characters long", 400);
+    }
+
+    const resetData = passwordResetTokens.get(token);
+    if (!resetData) {
+      return ApiResponse.error(res, "Invalid or expired token", 400);
+    }
+
+    if (Date.now() > resetData.expiresAt) {
+      passwordResetTokens.delete(token);
+      return ApiResponse.error(res, "Token has expired", 400);
+    }
+
+    // Get user
+    const user = await UserService.findUserByUniqueField("email", resetData.email);
+    if (!user) {
+      return ApiResponse.error(res, "User not found", 404);
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword },
+    });
+
+    // Remove used token
+    passwordResetTokens.delete(token);
+
+    return ApiResponse.success(res, "Password reset successfully");
+  } catch (error: any) {
+    console.error("Reset Password Error:", error);
+    return ApiResponse.error(
+      res,
+      "Failed to reset password",
       500,
       error.message,
     );

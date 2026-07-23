@@ -16,6 +16,9 @@ import {
   uploadProfilePhotoHandler,
   sendRegisterEmailOtpHandler,
   verifyRegisterEmailOtpHandler,
+  forgotPasswordHandler,
+  verifyResetTokenHandler,
+  resetPasswordHandler,
 } from "./user.controller";
 import {
   registerValidation,
@@ -35,6 +38,9 @@ router.post("/register", registerValidation, registerHandler);
 router.post("/register/email-otp/send", sendRegisterEmailOtpHandler);
 router.post("/register/email-otp/verify", verifyRegisterEmailOtpHandler);
 router.get("/validate", validateUserFieldHandler);
+router.post("/forgot-password", forgotPasswordHandler);
+router.get("/reset-password/verify", verifyResetTokenHandler);
+router.post("/reset-password", resetPasswordHandler);
 
 // --- PROTECTED ROUTES (ANY AUTHENTICATED USER) ---
 router.get("/me", authenticate, getCurrentUserHandler);

@@ -1,4 +1,3 @@
-import React from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -21,6 +20,8 @@ import { Services } from "./pages/Services";
 import { FAQ } from "./pages/FAQ";
 import { Contact } from "./pages/Contact";
 import { Register } from "./pages/auth/register/Register";
+import { ForgotPassword } from "./pages/auth/forgot-password/ForgotPassword";
+import { ResetPassword } from "./pages/auth/reset-password/ResetPassword";
 import { SuperAdminDashboard } from "./pages/SuperAdminDashboard";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { NotFound } from "./pages/NotFound";
@@ -54,6 +55,22 @@ function App() {
               element={
                 <Layout>
                   <Register />
+                </Layout>
+              }
+            />
+            <Route
+              path="/forgot-password"
+              element={
+                <Layout>
+                  <ForgotPassword />
+                </Layout>
+              }
+            />
+            <Route
+              path="/reset-password"
+              element={
+                <Layout>
+                  <ResetPassword />
                 </Layout>
               }
             />
