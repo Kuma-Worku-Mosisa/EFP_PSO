@@ -228,6 +228,7 @@ export default function EmployeeRegistration() {
   const [showTotalExpLearnMore, setShowTotalExpLearnMore] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [docPreviewUrl, setDocPreviewUrl] = useState<string | null>(null);
 
   const hiddenPositionNames = [
     "Manager of Organization",
@@ -1989,11 +1990,7 @@ export default function EmployeeRegistration() {
                                   const url = URL.createObjectURL(
                                     formData.documents[doc.key]!,
                                   );
-                                  window.open(url, "_blank");
-                                  setTimeout(
-                                    () => URL.revokeObjectURL(url),
-                                    60000,
-                                  );
+                                  setDocPreviewUrl(url);
                                 }}
                                 className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border border-[#003366]/20 text-[10px] font-bold text-[#003366] hover:bg-[#003366]/5 transition-colors"
                               >
@@ -2138,6 +2135,42 @@ export default function EmployeeRegistration() {
           )}
         </div>
       </div>
+
+      {docPreviewUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => {
+            URL.revokeObjectURL(docPreviewUrl);
+            setDocPreviewUrl(null);
+          }}
+        >
+          <div
+            className="relative bg-white rounded-2xl shadow-2xl w-[90vw] max-w-4xl h-[85vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-gray-50">
+              <h3 className="text-sm font-bold text-[#003366]">
+                {isAm ? "የሰነድ ቅድመ ዕይታ" : "Document Preview"}
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  URL.revokeObjectURL(docPreviewUrl);
+                  setDocPreviewUrl(null);
+                }}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <iframe
+              src={docPreviewUrl}
+              title="Document Preview"
+              className="flex-1 w-full border-0"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

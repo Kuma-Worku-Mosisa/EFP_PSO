@@ -577,6 +577,9 @@ export default function CriminalReport() {
       setReporterTitle("");
       setReporterJobResponsibility("");
       setReporterSignature("");
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
       setShowSignaturePreview(false);
       setFormErrors({});
     } catch (err: any) {

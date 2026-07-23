@@ -14,6 +14,12 @@ import {
   Briefcase,
   Mail,
   Fingerprint,
+  Upload,
+  FileText,
+  Eye,
+  Trash2,
+  CheckCircle2,
+  X,
 } from "lucide-react";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { AutoDismissToast } from "../../components/AutoDismissToast";
@@ -105,6 +111,9 @@ export default function EmployeeTransferManager() {
   const [toastOpen, setToastOpen] = useState(false);
   const [toastType, setToastType] = useState<"success" | "error">("success");
   const [toastMessage, setToastMessage] = useState("");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [activeDocField, setActiveDocField] = useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Tab 1: Initiate Form State
   const [searchQuery, setSearchQuery] = useState("");
@@ -305,6 +314,10 @@ export default function EmployeeTransferManager() {
         guarantee_doc: null,
         resignation_record_doc: null,
       });
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
     } catch (err: any) {
       setDocumentUploadError(err.message || null);
       setGlobalError(err.message || "Failed to submit transfer request.");
@@ -688,12 +701,15 @@ export default function EmployeeTransferManager() {
                   transition={{ duration: 0.3 }}
                   className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 mb-6"
                 >
-                  <div className="flex items-start justify-between gap-4 mb-5">
+                  <div className="flex items-center gap-3 pb-4 border-b border-gray-100 mb-5">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#003366] to-[#001F3F] text-[#FFD700] flex items-center justify-center shadow-sm">
+                      <Upload className="w-4 h-4" />
+                    </div>
                     <div>
-                      <h4 className="text-lg font-bold text-[#003366]">
+                      <h4 className="text-sm font-bold text-[#003366]">
                         {t("Upload required documents", "የሚያስፈልጉ ሰነዶችን ይስቀሉ")}
                       </h4>
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-xs text-gray-500 mt-0.5">
                         {t(
                           "Add the resigned employee documents below before submitting the transfer request.",
                           "የተቀረው ሰራተኛ ሰነዶችን የዝውውር ጥያቄ ከማስገባት በፊት ያስጨምሩ።",
@@ -702,68 +718,154 @@ export default function EmployeeTransferManager() {
                     </div>
                   </div>
 
-                  <div className="space-y-3">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      if (file && activeDocField) {
+                        handleTransferDocSelect(activeDocField, file);
+                      }
+                      e.target.value = "";
+                    }}
+                  />
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {[
                       {
                         fieldName: "fingerprint_doc",
-                        label: t("Fingerprint from Police", "ከፖሊስ የጣት አሻራ"),
+                        labelEn: "Fingerprint from Police",
+                        labelAm: "ከፖሊስ የጣት አሻራ",
                       },
                       {
                         fieldName: "organization_id_doc",
-                        label: t(
-                          "Organizational Identification",
-                          "የድርጅት መታወቂያ",
-                        ),
+                        labelEn: "Organizational Identification",
+                        labelAm: "የድርጅት መታወቂያ",
                       },
                       {
                         fieldName: "medical_doc",
-                        label: t("Medical Result", "የህክምና ውጤት"),
+                        labelEn: "Medical Result",
+                        labelAm: "የህክምና ውጤት",
                       },
                       {
                         fieldName: "guarantee_doc",
-                        label: t("Proof of Guarantee", "የማስረጃ ማስረጃ"),
+                        labelEn: "Proof of Guarantee",
+                        labelAm: "የማስረጃ ማስረጃ",
                       },
                       {
                         fieldName: "resignation_record_doc",
-                        label: t("Resignation Record", "የመልቀቂያ መዝገብ"),
+                        labelEn: "Resignation Record",
+                        labelAm: "የመልቀቂያ መዝገብ",
                       },
                     ].map((docItem) => {
-                      const selectedFile =
-                        transferDocumentFiles[docItem.fieldName];
-                      const docLabel =
-                        docItem.label || getDocumentTypeName(docItem.fieldName);
+                      const selectedFile = transferDocumentFiles[docItem.fieldName];
+                      const docLabel = isAm ? docItem.labelAm : docItem.labelEn;
                       return (
-                        <label
+                        <motion.div
                           key={docItem.fieldName}
-                          className="flex flex-col gap-2 rounded-2xl border border-gray-200 bg-gray-50 p-3"
+                          whileHover={{ y: -2 }}
+                          className={`group relative rounded-[20px] border-2 transition-all duration-500 p-4 ${
+                            selectedFile
+                              ? "bg-white border-solid border-green-200 shadow-lg shadow-green-500/5 ring-4 ring-green-50/30"
+                              : "bg-gray-50/50 border-dashed border-gray-200 hover:border-[#003366]/40 hover:bg-white"
+                          }`}
                         >
-                          <span className="text-sm font-semibold text-gray-700">
-                            {docLabel}
-                          </span>
-                          <input
-                            type="file"
-                            accept=".pdf"
-                            onChange={(e) =>
-                              handleTransferDocSelect(
-                                docItem.fieldName,
-                                e.target.files?.[0] || null,
-                              )
-                            }
-                            className="text-sm text-gray-600 file:mr-4 file:rounded-full file:border-0 file:bg-[#003366] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white hover:file:bg-[#001F3F]"
-                          />
                           {selectedFile && (
-                            <span className="text-xs text-gray-500">
-                              {t("Selected", "ተመርጧል")}: {selectedFile.name} (
-                              {formatFileSize(selectedFile.size)})
-                            </span>
+                            <div className="absolute -top-3 -right-3 z-10">
+                              <div className="flex items-center space-x-1 bg-green-500 text-white px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-xl shadow-green-500/30 border-2 border-white">
+                                <CheckCircle2 className="w-3 h-3" />
+                                <span>{t("UPLOADED", "ተሰቅሏል")}</span>
+                              </div>
+                            </div>
                           )}
-                        </label>
+
+                          <div className="flex items-center gap-4">
+                            <div
+                              className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 flex-shrink-0 shadow-sm ${
+                                selectedFile
+                                  ? "bg-green-50 text-green-500"
+                                  : "bg-white border text-gray-400"
+                              }`}
+                            >
+                              {selectedFile ? (
+                                <FileText className="w-6 h-6" />
+                              ) : (
+                                <Upload className="w-6 h-6" />
+                              )}
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <h4
+                                  className={`text-sm font-black tracking-tight break-words leading-snug ${
+                                    selectedFile ? "text-green-600" : "text-[#003366]"
+                                  }`}
+                                >
+                                  {selectedFile ? selectedFile.name : docLabel}
+                                </h4>
+                                <span className="text-xs text-orange-500 font-black bg-orange-50 px-1.5 rounded-md">
+                                  *
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-3 mt-1">
+                                <span className="text-[11px] text-gray-400 font-bold uppercase tracking-widest">
+                                  {selectedFile
+                                    ? `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`
+                                    : "PDF Max 5MB"}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center space-x-2 flex-shrink-0">
+                              {!selectedFile ? (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveDocField(docItem.fieldName);
+                                    fileInputRef.current?.click();
+                                  }}
+                                  className="px-4 py-2 bg-white border-2 border-gray-100 text-[#003366] rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-sm hover:border-[#003366] hover:shadow-lg transition-all active:scale-95"
+                                >
+                                  {t("Select File", "ፋይል ይምረጡ")}
+                                </button>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (selectedFile) {
+                                        setPreviewUrl(URL.createObjectURL(selectedFile));
+                                      }
+                                    }}
+                                    className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setTransferDocumentFiles((prev) => ({
+                                        ...prev,
+                                        [docItem.fieldName]: null,
+                                      }));
+                                    }}
+                                    className="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </motion.div>
                       );
                     })}
                   </div>
 
                   {documentUploadError && (
-                    <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                       {documentUploadError}
                     </div>
                   )}
@@ -1101,6 +1203,45 @@ export default function EmployeeTransferManager() {
             </div>
           )}
         </motion.div>
+      )}
+
+      {previewUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => {
+            URL.revokeObjectURL(previewUrl);
+            setPreviewUrl(null);
+          }}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="relative bg-white rounded-2xl shadow-2xl w-[90vw] max-w-4xl h-[85vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-gray-50">
+              <h3 className="text-sm font-bold text-[#003366]">
+                {t("Document Preview", "የሰነድ ቅድመ ዕይታ")}
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  URL.revokeObjectURL(previewUrl);
+                  setPreviewUrl(null);
+                }}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <iframe
+              src={previewUrl}
+              title="Document Preview"
+              className="flex-1 w-full border-0"
+            />
+          </motion.div>
+        </div>
       )}
     </motion.div>
   );

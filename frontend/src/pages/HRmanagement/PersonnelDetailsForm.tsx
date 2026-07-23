@@ -1061,7 +1061,9 @@ export default function PersonnelDetailsForm() {
 
       if (res?.success) {
         setSubmitted(true);
-        setTimeout(() => setSubmitted(false), 3000);
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
       } else {
         throw new Error(
           res?.message || "Failed to submit personnel change request",

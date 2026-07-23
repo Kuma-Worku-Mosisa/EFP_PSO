@@ -785,6 +785,9 @@ export default function InstitutionReports() {
       setToastType("success");
       setToastMessage(successMessage);
       setToastOpen(true);
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
     } catch (err: any) {
       const errorMessage =
         err?.message || (isAm ? "ሪፖርቱን መላክ አልተሳካም" : "Failed to send report");

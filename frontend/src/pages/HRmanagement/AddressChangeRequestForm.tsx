@@ -591,6 +591,9 @@ export default function AddressChangeRequestForm() {
       setWoredas([]);
       setKebeles([]);
       setIsConfirmOpen(false);
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
     } catch (error: any) {
       console.error("Failed to submit request", error);
       const msg =
