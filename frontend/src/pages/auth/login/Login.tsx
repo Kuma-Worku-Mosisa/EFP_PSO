@@ -1,5 +1,5 @@
 //filepath: frontend/src/pages/auth/login/Login.tsx
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLanguage } from "../../../context/LanguageContext";
 import { useAuth } from "../../../context/AuthContext";
 import {
@@ -8,8 +8,6 @@ import {
   User,
   ArrowRight,
   AlertCircle,
-  Mail,
-  MessageSquare,
   Eye,
   EyeOff,
 } from "lucide-react";
@@ -43,28 +41,277 @@ export const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [otpMethod, setOtpMethod] = useState<"email" | "sms">("email");
   const [isOtpSent, setIsOtpSent] = useState(false);
+  const [showOtpModal, setShowOtpModal] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
+  const [otpDigits, setOtpDigits] = useState<string[]>(Array(6).fill(""));
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [otpExpiryTime, setOtpExpiryTime] = useState<number | null>(null);
+  const [otpCountdown, setOtpCountdown] = useState(0);
+  const [otpResendCountdown, setOtpResendCountdown] = useState(0);
+  const [otpInvalidAttempts, setOtpInvalidAttempts] = useState(0);
+  const [otpLocked, setOtpLocked] = useState(false);
+  const [otpMessage, setOtpMessage] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [maskedEmail, setMaskedEmail] = useState<string>("");
+
+  const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
   });
 
-  const handleSendOtp = async () => {
-    setOtpLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsOtpSent(true);
-    setOtpLoading(false);
+  const otpStatusClasses = useMemo(() => {
+    if (!isOtpSent) return "text-gray-500";
+    if (otpCountdown <= 60) return "text-amber-600";
+    return "text-emerald-600";
+  }, [isOtpSent, otpCountdown]);
+
+  useEffect(() => {
+    if (!otpExpiryTime) return;
+
+    const updateCountdown = () => {
+      const remainingMs = otpExpiryTime - Date.now();
+      const remainingSec = Math.max(0, Math.ceil(remainingMs / 1000));
+      setOtpCountdown(remainingSec);
+
+      if (remainingSec <= 0) {
+        setOtpVerified(false);
+        setOtpMessage(
+          language === "am"
+            ? "የማረጋገጫ ኮድ ጊዜው አልፎበታል። እባክዎ አዲስ ኮድ ይላኩ።"
+            : "The verification code has expired. Please request a new one.",
+        );
+      }
+    };
+
+    updateCountdown();
+    const timer = window.setInterval(updateCountdown, 1000);
+    return () => window.clearInterval(timer);
+  }, [otpExpiryTime, language]);
+
+  useEffect(() => {
+    if (!isOtpSent || otpResendCountdown <= 0 || otpVerified || otpLocked)
+      return;
+
+    const timer = window.setInterval(() => {
+      setOtpResendCountdown((prev) => (prev > 1 ? prev - 1 : 0));
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [isOtpSent, otpResendCountdown, otpVerified, otpLocked]);
+
+  const handleOtpChange = (index: number, value: string) => {
+    const cleanedValue = value.replace(/\D/g, "").slice(0, 1);
+    const nextDigits = [...otpDigits];
+    nextDigits[index] = cleanedValue;
+    setOtpDigits(nextDigits);
+    setValue("otpCode", nextDigits.join(""), { shouldValidate: true });
+
+    if (cleanedValue && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
   };
 
-  const onSubmit = async (data: LoginFormValues) => {
+  const handleOtpKeyDown = (
+    index: number,
+    event: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (event.key === "Backspace" && !otpDigits[index] && index > 0) {
+      const nextDigits = [...otpDigits];
+      nextDigits[index - 1] = "";
+      setOtpDigits(nextDigits);
+      setValue("otpCode", nextDigits.join(""), { shouldValidate: true });
+      otpRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (event: React.ClipboardEvent<HTMLInputElement>) => {
+    const pasted = event.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
+    if (!pasted) return;
+
+    event.preventDefault();
+    const nextDigits = Array(6).fill("");
+    pasted.split("").forEach((digit, index) => {
+      nextDigits[index] = digit;
+    });
+
+    setOtpDigits(nextDigits);
+    setValue("otpCode", nextDigits.join(""), { shouldValidate: true });
+    const focusIndex = Math.min(pasted.length, 5);
+    otpRefs.current[focusIndex]?.focus();
+  };
+
+  const handleSendOtp = async () => {
+    setOtpLoading(true);
     setLoginError(null);
+    setOtpMessage(null);
+    setOtpLocked(false);
+    setOtpInvalidAttempts(0);
+
+    try {
+      const identifier = watch("identifier")?.trim();
+      const password = watch("password")?.trim();
+
+      if (!identifier) {
+        setOtpMessage(
+          language === "am"
+            ? "እባክዎ መጀመሪያ የተጠቃሚ ስም ያስገቡ"
+            : "Please enter your username first",
+        );
+        setOtpLoading(false);
+        return;
+      }
+
+      if (!password) {
+        setOtpMessage(
+          language === "am"
+            ? "እባክዎ መጀመሪያ የይለፍ ቃል ያስገቡ"
+            : "Please enter your password first",
+        );
+        setOtpLoading(false);
+        return;
+      }
+
+      const res = await apiRequest("/users/login/otp/send", {
+        method: "POST",
+        body: JSON.stringify({
+          identifier,
+          password,
+          method: "email",
+        }),
+      });
+
+      const email = res?.data?.email || res?.email || "";
+      setMaskedEmail(email ? maskEmail(email) : "");
+      setIsOtpSent(true);
+      setShowOtpModal(true);
+      setOtpVerified(false);
+      setOtpDigits(Array(6).fill(""));
+      setValue("otpCode", "", { shouldValidate: true });
+      setOtpExpiryTime(Date.now() + 5 * 60 * 1000);
+      setOtpResendCountdown(60);
+      setOtpMessage(null);
+    } catch (err: any) {
+      const errorMessage = err?.message || "Unable to send OTP";
+      setOtpMessage(errorMessage);
+      setLoginError(errorMessage);
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const maskEmail = (email: string) => {
+    const trimmed = email.trim();
+    if (!trimmed.includes("@")) return trimmed;
+
+    const [localPart, domain] = trimmed.split("@", 2);
+    if (!localPart || !domain) return trimmed;
+
+    const visiblePrefix = localPart.slice(0, Math.min(2, localPart.length));
+    const maskedLocal = `${visiblePrefix}${"*".repeat(Math.max(1, localPart.length - visiblePrefix.length))}`;
+
+    return `${maskedLocal}@${domain}`;
+  };
+
+  const handleVerifyOtp = async () => {
+    if (otpLocked) {
+      setOtpMessage(
+        language === "am"
+          ? "ብዙ የማይሰራ ሙከራዎች ተከትለዋል። እባክዎ አዲስ ኮድ ይላኩ።"
+          : "Too many invalid attempts. Please request a new code.",
+      );
+      return;
+    }
+
+    const identifier = watch("identifier")?.trim();
+    const joinedOtp = otpDigits.join("");
+    if (!identifier || joinedOtp.length !== 6) {
+      setOtpMessage(
+        language === "am"
+          ? "እባክዎ ኮድ ያስገቡ"
+          : "Please enter the verification code",
+      );
+      return;
+    }
+
+    try {
+      await apiRequest("/users/login/otp/verify", {
+        method: "POST",
+        body: JSON.stringify({
+          identifier,
+          code: joinedOtp,
+        }),
+      });
+      setOtpVerified(true);
+      setOtpInvalidAttempts(0);
+      setOtpMessage(
+        language === "am"
+          ? "ኮድ ተረጋግጧል። በራስ-ግባ በመሄድ ላይ..."
+          : "Code verified successfully. Signing you in...",
+      );
+
+      const password = watch("password")?.trim();
+      const loginData = {
+        identifier,
+        password,
+        otpCode: joinedOtp,
+      };
+
+      await performLogin(loginData, true);
+      setShowOtpModal(false);
+    } catch (err: any) {
+      const nextAttempts = otpInvalidAttempts + 1;
+      setOtpInvalidAttempts(nextAttempts);
+
+      if (nextAttempts >= 3) {
+        setOtpLocked(true);
+        setOtpMessage(
+          language === "am"
+            ? "በጣም ብዙ የማይሰራ ሙከራዎች ተከትለዋል። እባክዎ አዲስ ኮድ ይላኩ።"
+            : "Too many invalid attempts. Please request a new code.",
+        );
+      } else {
+        const remaining = 3 - nextAttempts;
+        setOtpMessage(
+          language === "am"
+            ? `${remaining} ቀሪ ሙከራዎች አሉ።`
+            : `${remaining} attempt${remaining === 1 ? "" : "s"} remaining.`,
+        );
+      }
+      setOtpVerified(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (otpResendCountdown > 0 || otpLocked || otpVerified) return;
+    await handleSendOtp();
+  };
+
+  const performLogin = async (
+    data: LoginFormValues,
+    otpIsVerified = otpVerified,
+  ) => {
+    setLoginError(null);
+
+    if (!otpIsVerified) {
+      setLoginError(
+        language === "am"
+          ? "እባክዎ የማረጋገጫ ኮድ በመጀመሪያ ያረጋግጡ"
+          : "Please verify the OTP before logging in",
+      );
+      return;
+    }
+
     try {
       const res = await apiRequest("/users/login", {
         method: "POST",
@@ -94,9 +341,7 @@ export const Login = () => {
 
       login(normalizedUser, token);
 
-      // Dynamic Role-Based Navigation
       if (normalizedUser.roles?.includes("system_admin")) {
-        // System admins go to the system admin dashboard
         navigate("/system-admin/dashboard");
       } else if (normalizedUser.roles?.includes("super_admin")) {
         navigate("/super-admin/dashboard");
@@ -114,6 +359,15 @@ export const Login = () => {
     } catch (err: any) {
       setLoginError(err.message || "Login failed");
     }
+  };
+
+  const onSubmit = async (data: LoginFormValues) => {
+    if (!otpVerified) {
+      await handleSendOtp();
+      return;
+    }
+
+    await performLogin(data, otpVerified);
   };
 
   return (
@@ -213,69 +467,20 @@ export const Login = () => {
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setOtpMethod("email")}
-                  className={`p-3 rounded-xl border flex items-center justify-center space-x-2 transition-all ${
-                    otpMethod === "email"
-                      ? "border-primary bg-primary/5 text-primary font-bold"
-                      : "border-gray-200 text-gray-500"
-                  }`}
-                >
-                  <Mail className="w-4 h-4" />
-                  <span className="text-sm">Email</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setOtpMethod("sms")}
-                  className={`p-3 rounded-xl border flex items-center justify-center space-x-2 transition-all ${
-                    otpMethod === "sms"
-                      ? "border-primary bg-primary/5 text-primary font-bold"
-                      : "border-gray-200 text-gray-500"
-                  }`}
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  <span className="text-sm">SMS</span>
-                </button>
-              </div>
-
-              {!isOtpSent ? (
-                <button
-                  type="button"
-                  onClick={handleSendOtp}
-                  className="w-full py-3 bg-gray-100 text-primary font-bold rounded-xl hover:bg-gray-200"
-                >
-                  {otpLoading
-                    ? language === "am"
-                      ? "በመላክ ላይ..."
-                      : "Sending..."
-                    : t.auth.sendOtp}
-                </button>
-              ) : (
-                <input
-                  {...register("otpCode")}
-                  placeholder={language === "am" ? "የማረጋገጫ ኮድ" : "OTP Code"}
-                  className="w-full py-4 bg-primary/5 border border-primary/20 rounded-2xl text-center font-bold tracking-[0.5em]"
-                />
-              )}
-            </div>
-
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || otpLoading}
               className={`w-full bg-primary text-white font-bold py-4 rounded-2xl flex items-center justify-center space-x-2 transition-all ${
-                isSubmitting
+                isSubmitting || otpLoading
                   ? "opacity-50 cursor-not-allowed"
                   : "hover:shadow-lg active:scale-95"
               }`}
             >
               <span>
-                {isSubmitting
+                {isSubmitting || otpLoading
                   ? language === "am"
-                    ? "በመግባት ላይ..."
-                    : "Logging in..."
+                    ? "በመላክ ላይ..."
+                    : "Sending OTP..."
                   : t.auth.signIn}
               </span>
               <ArrowRight className="w-5 h-5" />
@@ -293,6 +498,137 @@ export const Login = () => {
           </p>
         </div>
       </div>
+
+      {showOtpModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-md rounded-[28px] bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-bold text-primary">
+                  {language === "am" ? "የማረጋገጫ ኮድ" : "Verification Code"}
+                </h3>
+                <p className="mt-2 text-sm text-gray-500">
+                  {language === "am"
+                    ? `ይህ ኮድ ወደ "${maskedEmail || "ኢሜልዎ"}" ተልኳል። በ5 ደቂቃ ውስጥ ያረጋግጡ።`
+                    : `We sent a one-time code to "${maskedEmail || "your email"}". Please verify it within 5 minutes.`}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowOtpModal(false)}
+                className="text-xl text-gray-400 hover:text-gray-600"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className={`font-medium ${otpStatusClasses}`}>
+                  {otpCountdown > 0
+                    ? `${language === "am" ? "የቀሪ ሰአት" : "Time remaining"}: ${Math.floor(otpCountdown / 60)}:${String(otpCountdown % 60).padStart(2, "0")}`
+                    : language === "am"
+                      ? "ኮድ ጊዜው አልፎበታል"
+                      : "Code expired"}
+                </span>
+                <span className="text-gray-500">
+                  {otpInvalidAttempts > 0
+                    ? `${language === "am" ? "ሙከራ" : "Attempts"}: ${otpInvalidAttempts}/3`
+                    : ""}
+                </span>
+              </div>
+
+              <div className="rounded-2xl border border-primary/10 bg-gradient-to-br from-primary/5 to-white p-4">
+                <div className="flex items-center justify-center gap-2 sm:gap-3">
+                  {otpDigits.map((digit, index) => (
+                    <input
+                      key={index}
+                      ref={(element) => {
+                        otpRefs.current[index] = element;
+                      }}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(event) =>
+                        handleOtpChange(index, event.target.value)
+                      }
+                      onKeyDown={(event) => handleOtpKeyDown(index, event)}
+                      onPaste={handleOtpPaste}
+                      className={`h-12 w-11 rounded-xl border text-center text-lg font-bold outline-none transition-all sm:h-14 sm:w-12 ${
+                        otpVerified
+                          ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                          : otpCountdown <= 60
+                            ? "border-amber-300 bg-amber-50 text-amber-700"
+                            : "border-primary/20 bg-white text-primary shadow-sm focus:border-primary"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <p className="mt-3 text-center text-xs text-gray-500">
+                  {language === "am"
+                    ? "በ6 አሃዝ ኮድ ያስገቡ"
+                    : "Enter the 6-digit code"}
+                </p>
+              </div>
+
+              {otpMessage && (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-700">
+                  {otpMessage}
+                </div>
+              )}
+
+              <div className="flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-gray-50/70 px-3 py-3">
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={otpResendCountdown > 0 || otpLocked || otpVerified}
+                  className={`flex items-center gap-2 text-sm font-semibold ${
+                    otpResendCountdown > 0 || otpLocked || otpVerified
+                      ? "text-gray-400 cursor-not-allowed"
+                      : "text-accent hover:underline"
+                  }`}
+                >
+                  <span className="text-xs  tracking-[0.1em] text-gray-400">
+                    {language === "am" ? "ካላደረሱ" : "If you don't get OTP yet"}
+                  </span>
+                  <span>
+                    {otpResendCountdown > 0
+                      ? `${language === "am" ? "እንደገና ላክ" : "Resend"} (${otpResendCountdown}s)`
+                      : language === "am"
+                        ? "እንደገና ላክ"
+                        : "Resend"}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleVerifyOtp}
+                  disabled={otpDigits.join("").length !== 6 || otpLocked}
+                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-gray-300"
+                >
+                  {language === "am" ? "አረጋግጥ" : "Verify"}
+                </button>
+              </div>
+
+              {otpMessage && (
+                <div
+                  className={`rounded-2xl border px-3 py-3 text-sm ${
+                    otpMessage.toLowerCase().includes("expired") ||
+                    otpMessage.toLowerCase().includes("invalid") ||
+                    otpMessage.toLowerCase().includes("attempt")
+                      ? "border-amber-200 bg-amber-50 text-amber-700"
+                      : otpVerified
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                        : "border-gray-200 bg-gray-50 text-gray-600"
+                  }`}
+                >
+                  {otpMessage}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

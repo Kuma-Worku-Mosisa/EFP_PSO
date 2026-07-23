@@ -11,6 +11,8 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
+  X,
+  RefreshCw,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { Link, useNavigate } from "react-router-dom";
@@ -87,6 +89,15 @@ export const Register = () => {
   const [isOtpVerified, setIsOtpVerified] = React.useState(false);
   const [showPassword, setShowPassword] = React.useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+  const [showEmailOtpModal, setShowEmailOtpModal] = React.useState(false);
+  const [isEmailVerified, setIsEmailVerified] = React.useState(false);
+  const [emailOtpCode, setEmailOtpCode] = React.useState("");
+  const [emailOtpLoading, setEmailOtpLoading] = React.useState(false);
+  const [usernameExists, setUsernameExists] = React.useState(false);
+  const [faydaIdExists, setFaydaIdExists] = React.useState(false);
+  const [emailExists, setEmailExists] = React.useState(false);
+  const [otpAttempts, setOtpAttempts] = React.useState(0);
+  const [maxOtpAttempts] = React.useState(3);
 
   const showToast = React.useCallback((type: ToastType, message: string) => {
     setToast({ isOpen: true, type, message });
@@ -142,7 +153,6 @@ export const Register = () => {
         return "bg-gray-200";
     }
   };
-
   const getStrengthText = (level: number) => {
     if (!passwordValue) return "";
     switch (level) {
@@ -179,7 +189,134 @@ export const Register = () => {
     showToast("success", "Fayda ID verified successfully.");
   };
 
+  const handleSendEmailOtp = async () => {
+    const email = watch("email");
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showToast("error", "Please enter a valid email address.");
+      return;
+    }
+    setEmailOtpLoading(true);
+    try {
+      await apiRequest("/users/register/email-otp/send", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      });
+      setShowEmailOtpModal(true);
+      setOtpAttempts(0); // Reset attempts when new OTP is sent
+      setEmailOtpCode(""); // Clear previous code
+      showToast("success", "Verification code sent to your email.");
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to send verification code.");
+    } finally {
+      setEmailOtpLoading(false);
+    }
+  };
+
+  const handleVerifyEmailOtp = async () => {
+    const email = watch("email");
+    if (!emailOtpCode || emailOtpCode.length !== 6) {
+      showToast("error", "Please enter a valid 6-digit verification code.");
+      return;
+    }
+
+    if (otpAttempts >= maxOtpAttempts) {
+      showToast("error", "Maximum attempts reached. Please request a new code.");
+      return;
+    }
+
+    setEmailOtpLoading(true);
+    try {
+      await apiRequest("/users/register/email-otp/verify", {
+        method: "POST",
+        body: JSON.stringify({ email, code: emailOtpCode }),
+      });
+      setIsEmailVerified(true);
+      setShowEmailOtpModal(false);
+      setEmailOtpCode("");
+      setOtpAttempts(0);
+      showToast("success", "Email verified successfully.");
+    } catch (err: any) {
+      setOtpAttempts(prev => prev + 1);
+      const remainingAttempts = maxOtpAttempts - (otpAttempts + 1);
+      if (remainingAttempts > 0) {
+        showToast("error", `Invalid verification code. ${remainingAttempts} attempts remaining.`);
+      } else {
+        showToast("error", "Maximum attempts reached. Please request a new code.");
+      }
+    } finally {
+      setEmailOtpLoading(false);
+    }
+  };
+
+  const handleClearOtp = () => {
+    setEmailOtpCode("");
+  };
+
+  const handleCloseEmailOtpModal = () => {
+    setShowEmailOtpModal(false);
+    setEmailOtpCode("");
+  };
+
+  const checkFieldExists = async (field: string, value: string) => {
+    if (!value || value.length < 3) return;
+
+    try {
+      const response = await apiRequest(`/users/validate?field=${field}&value=${encodeURIComponent(value)}`);
+      if (response.exists) {
+        if (field === "username") setUsernameExists(true);
+        if (field === "faydaId") setFaydaIdExists(true);
+        if (field === "email") setEmailExists(true);
+      } else {
+        if (field === "username") setUsernameExists(false);
+        if (field === "faydaId") setFaydaIdExists(false);
+        if (field === "email") setEmailExists(false);
+      }
+    } catch (error) {
+      // If validation fails, we don't block the user
+      console.error(`Field validation error for ${field}:`, error);
+    }
+  };
+
+  const handleUsernameChange = (value: string) => {
+    setValue("username", value);
+    checkFieldExists("username", value);
+  };
+
+  const handleFaydaIdChange = (value: string) => {
+    setFaydaIdInput(value);
+    setValue("faydaId", value);
+    if (value.length === 16) {
+      checkFieldExists("faydaId", value);
+    } else {
+      setFaydaIdExists(false);
+    }
+  };
+
+  const handleEmailChange = (value: string) => {
+    setValue("email", value);
+    // Only check if email format is valid
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      checkFieldExists("email", value);
+    } else {
+      setEmailExists(false);
+    }
+  };
+
   const onSubmit = async (data: RegisterFormValues) => {
+    // Prevent submission if fields already exist
+    if (usernameExists) {
+      showToast("error", "Username already taken. Please choose a different username.");
+      return;
+    }
+    if (emailExists) {
+      showToast("error", "Email already registered. Please use a different email address.");
+      return;
+    }
+    if (faydaIdExists) {
+      showToast("error", "Fayda ID already registered. Please use a different Fayda ID.");
+      return;
+    }
+
     // if (!isOtpVerified) {
     //   alert("Please verify your Fayda ID via SMS first.");
     //   return;
@@ -432,13 +569,12 @@ export const Register = () => {
                         const digits = e.target.value
                           .replace(/\D/g, "")
                           .slice(0, 16);
-                        setFaydaIdInput(digits);
-                        setValue("faydaId", digits);
+                        handleFaydaIdChange(digits);
                       }}
                       disabled={isOtpVerified}
                       placeholder={t.register.faydaPlaceholder}
                       className={`w-full pl-12 pr-4 py-4 bg-white border rounded-2xl outline-none focus:ring-2 focus:ring-primary transition-all ${
-                        errors.faydaId ? "border-red-500" : "border-gray-200"
+                        errors.faydaId ? "border-red-500" : faydaIdExists ? "border-orange-500" : "border-gray-200"
                       } ${isOtpVerified ? "bg-green-50" : ""}`}
                     />
                   </div>
@@ -462,6 +598,11 @@ export const Register = () => {
                 {errors.faydaId && (
                   <p className="text-xs text-red-500 ml-1">
                     {errors.faydaId.message}
+                  </p>
+                )}
+                {faydaIdExists && !errors.faydaId && (
+                  <p className="text-xs text-orange-500 ml-1">
+                    Fayda ID already registered
                   </p>
                 )}
               </div>
@@ -493,28 +634,7 @@ export const Register = () => {
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700 ml-1">
-                  {t.register.username}
-                </label>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    {...register("username")}
-                    placeholder={t.register.usernamePlaceholder}
-                    className={`w-full pl-12 pr-4 py-4 bg-gray-50 border rounded-2xl outline-none focus:ring-2 focus:ring-primary transition-all ${
-                      errors.username ? "border-red-500" : "border-gray-200"
-                    }`}
-                  />
-                </div>
-                {errors.username && (
-                  <p className="text-xs text-red-500 ml-1">
-                    {errors.username.message}
-                  </p>
-                )}
-              </div>
-
+            <div className="space-y-6">
               <div className="space-y-2">
                 <label className="text-sm font-bold text-gray-700 ml-1">
                   {t.register.email}
@@ -525,175 +645,232 @@ export const Register = () => {
                     {...register("email")}
                     type="email"
                     placeholder={t.register.emailPlaceholder}
-                    className={`w-full pl-12 pr-4 py-4 bg-gray-50 border rounded-2xl outline-none focus:ring-2 focus:ring-primary transition-all ${
-                      errors.email ? "border-red-500" : "border-gray-200"
-                    }`}
+                    disabled={isEmailVerified}
+                    onChange={(e) => handleEmailChange(e.target.value)}
+                    className={`w-full pl-12 pr-24 py-4 bg-gray-50 border rounded-2xl outline-none focus:ring-2 focus:ring-primary transition-all ${
+                      errors.email ? "border-red-500" : emailExists ? "border-orange-500" : "border-gray-200"
+                    } ${isEmailVerified ? "bg-green-50" : ""}`}
                   />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                    {isEmailVerified ? (
+                      <div className="flex items-center space-x-1 text-green-600 font-bold text-xs">
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Verified</span>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleSendEmailOtp}
+                        disabled={emailOtpLoading || emailExists}
+                        className="text-xs font-bold text-primary hover:text-secondary transition-colors disabled:opacity-50"
+                      >
+                        {emailOtpLoading ? "Sending..." : "Verify Email"}
+                      </button>
+                    )}
+                  </div>
                 </div>
                 {errors.email && (
                   <p className="text-xs text-red-500 ml-1">
                     {errors.email.message}
                   </p>
                 )}
+                {emailExists && !errors.email && (
+                  <p className="text-xs text-orange-500 ml-1">
+                    Email already registered
+                  </p>
+                )}
               </div>
+
+              {isEmailVerified && (
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-700 ml-1">
+                    {t.register.username}
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      {...register("username")}
+                      placeholder={t.register.usernamePlaceholder}
+                      onChange={(e) => handleUsernameChange(e.target.value)}
+                      className={`w-full pl-12 pr-4 py-4 bg-gray-50 border rounded-2xl outline-none focus:ring-2 focus:ring-primary transition-all ${
+                        errors.username ? "border-red-500" : usernameExists ? "border-orange-500" : "border-gray-200"
+                      }`}
+                    />
+                  </div>
+                  {errors.username && (
+                    <p className="text-xs text-red-500 ml-1">
+                      {errors.username.message}
+                    </p>
+                  )}
+                  {usernameExists && !errors.username && (
+                    <p className="text-xs text-orange-500 ml-1">
+                      Username already taken
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700 ml-1">
-                  {t.register.password}
-                </label>
-                <div className="relative">
-                  <input
-                    {...register("password")}
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    className={`w-full px-6 py-4 bg-gray-50 border rounded-2xl outline-none focus:ring-2 focus:ring-primary transition-all pr-12 ${
-                      errors.password ? "border-red-500" : "border-gray-200"
-                    }`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-primary transition-colors"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
+            {isEmailVerified && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-700 ml-1">
+                    {t.register.password}
+                  </label>
+                  <div className="relative">
+                    <input
+                      {...register("password")}
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      className={`w-full px-6 py-4 bg-gray-50 border rounded-2xl outline-none focus:ring-2 focus:ring-primary transition-all pr-12 ${
+                        errors.password ? "border-red-500" : "border-gray-200"
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-primary transition-colors"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
 
-                {passwordValue && (
-                  <div className="space-y-1.5 px-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-                        Security Strength
-                      </span>
-                      <span
-                        className={`text-[10px] font-black uppercase tracking-widest ${
-                          strength === 1
-                            ? "text-red-500"
-                            : strength === 2
-                              ? "text-orange-500"
-                              : strength === 3
-                                ? "text-yellow-600"
-                                : "text-green-600"
-                        }`}
-                      >
-                        {getStrengthText(strength)}
-                      </span>
-                    </div>
-                    <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden flex gap-0.5">
-                      {[1, 2, 3, 4].map((step) => (
-                        <div
-                          key={step}
-                          className={`h-full flex-1 transition-all duration-500 ${
-                            strength >= step
-                              ? getStrengthColor(strength)
-                              : "bg-gray-100"
+                  {passwordValue && (
+                    <div className="space-y-1.5 px-1">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                          Security Strength
+                        </span>
+                        <span
+                          className={`text-[10px] font-black uppercase tracking-widest ${
+                            strength === 1
+                              ? "text-red-500"
+                              : strength === 2
+                                ? "text-orange-500"
+                                : strength === 3
+                                  ? "text-yellow-600"
+                                  : "text-green-600"
                           }`}
-                        />
-                      ))}
+                        >
+                          {getStrengthText(strength)}
+                        </span>
+                      </div>
+                      <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden flex gap-0.5">
+                        {[1, 2, 3, 4].map((step) => (
+                          <div
+                            key={step}
+                            className={`h-full flex-1 transition-all duration-500 ${
+                              strength >= step
+                                ? getStrengthColor(strength)
+                                : "bg-gray-100"
+                            }`}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {errors.password && (
-                  <p className="text-xs text-red-500 ml-1">
-                    {errors.password.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700 ml-1">
-                  {t.register.confirmPassword}
-                </label>
-                <div className="relative">
-                  <input
-                    {...register("confirmPassword")}
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    className={`w-full px-6 py-4 bg-gray-50 border rounded-2xl outline-none focus:ring-2 focus:ring-primary transition-all pr-12 ${
-                      errors.confirmPassword
-                        ? "border-red-500"
-                        : "border-gray-200"
-                    }`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-primary transition-colors"
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
-                  </button>
+                  {errors.password && (
+                    <p className="text-xs text-red-500 ml-1">
+                      {errors.password.message}
+                    </p>
+                  )}
                 </div>
 
-                {confirmPasswordValue && (
-                  <div className="space-y-1.5 px-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-                        Match Accuracy
-                      </span>
-                      <span
-                        className={`text-[10px] font-black uppercase tracking-widest ${
-                          confirmPasswordValue === passwordValue
-                            ? "text-green-600"
-                            : "text-red-500"
-                        }`}
-                      >
-                        {confirmPasswordValue === passwordValue
-                          ? "MATCHED"
-                          : "MISMATCH"}
-                      </span>
-                    </div>
-                    <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                      <motion.div
-                        initial={false}
-                        animate={{
-                          width:
-                            confirmPasswordValue === passwordValue
-                              ? "100%"
-                              : "30%",
-                          backgroundColor:
-                            confirmPasswordValue === passwordValue
-                              ? "#10b981"
-                              : "#ef4444",
-                        }}
-                        className="h-full rounded-full"
-                      />
-                    </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-700 ml-1">
+                    {t.register.confirmPassword}
+                  </label>
+                  <div className="relative">
+                    <input
+                      {...register("confirmPassword")}
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      className={`w-full px-6 py-4 bg-gray-50 border rounded-2xl outline-none focus:ring-2 focus:ring-primary transition-all pr-12 ${
+                        errors.confirmPassword
+                          ? "border-red-500"
+                          : "border-gray-200"
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-primary transition-colors"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </button>
                   </div>
-                )}
 
-                {errors.confirmPassword && (
-                  <p className="text-xs text-red-500 ml-1">
-                    {errors.confirmPassword.message}
-                  </p>
-                )}
+                  {confirmPasswordValue && (
+                    <div className="space-y-1.5 px-1">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                          Match Accuracy
+                        </span>
+                        <span
+                          className={`text-[10px] font-black uppercase tracking-widest ${
+                            confirmPasswordValue === passwordValue
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }`}
+                        >
+                          {confirmPasswordValue === passwordValue
+                            ? "MATCHED"
+                            : "MISMATCH"}
+                        </span>
+                      </div>
+                      <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={false}
+                          animate={{
+                            width:
+                              confirmPasswordValue === passwordValue
+                                ? "100%"
+                                : "30%",
+                            backgroundColor:
+                              confirmPasswordValue === passwordValue
+                                ? "#10b981"
+                                : "#ef4444",
+                          }}
+                          className="h-full rounded-full"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {errors.confirmPassword && (
+                    <p className="text-xs text-red-500 ml-1">
+                      {errors.confirmPassword.message}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="md:col-span-2 pt-4">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className={`w-full blue-gradient text-white font-bold py-5 rounded-2xl hover:shadow-xl hover:scale-[1.01] transition-all flex items-center justify-center space-x-2 ${
-                  isSubmitting ? "opacity-70 cursor-not-allowed" : ""
-                }`}
-              >
-                <span>
-                  {isSubmitting ? t.register.submitting : t.register.submit}
-                </span>
-                {!isSubmitting && <ArrowRight className="w-5 h-5" />}
-              </button>
-            </div>
+            {isEmailVerified && (
+              <div className="md:col-span-2 pt-4">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={`w-full blue-gradient text-white font-bold py-5 rounded-2xl hover:shadow-xl hover:scale-[1.01] transition-all flex items-center justify-center space-x-2 ${
+                    isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+                  }`}
+                >
+                  <span>
+                    {isSubmitting ? t.register.submitting : t.register.submit}
+                  </span>
+                  {!isSubmitting && <ArrowRight className="w-5 h-5" />}
+                </button>
+              </div>
+            )}
           </form>
 
           <div className="text-center">
@@ -709,6 +886,112 @@ export const Register = () => {
           </div>
         </div>
       </div>
+
+      {/* Email OTP Modal */}
+      {showEmailOtpModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl relative"
+          >
+            <button
+              onClick={handleCloseEmailOtpModal}
+              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="text-center space-y-6">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                <Mail className="w-8 h-8 text-primary" />
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-2xl font-bold text-gray-900">
+                  Verify Your Email
+                </h3>
+                <p className="text-gray-500 text-sm">
+                  Enter the 6-digit code sent to{" "}
+                  <span className="font-semibold text-gray-700">
+                    {watch("email")}
+                  </span>
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex gap-2 justify-center">
+                  {Array(6)
+                    .fill(0)
+                    .map((_, i) => (
+                      <input
+                        key={i}
+                        type="text"
+                        maxLength={1}
+                        value={emailOtpCode[i] || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (!/\d/.test(value)) return;
+                          const newCode =
+                            emailOtpCode.slice(0, i) + value + emailOtpCode.slice(i + 1);
+                          setEmailOtpCode(newCode);
+                          if (value && i < 5) {
+                            (e.target.nextElementSibling as HTMLInputElement)?.focus();
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Backspace" && !emailOtpCode[i] && i > 0) {
+                            const target = e.target as HTMLInputElement;
+                            const prev = target.previousElementSibling as HTMLInputElement;
+                            if (prev) prev.focus();
+                          }
+                        }}
+                        className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-200 rounded-xl outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      />
+                    ))}
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={handleClearOtp}
+                    disabled={!emailOtpCode}
+                    className="text-sm text-gray-500 hover:text-primary transition-colors disabled:opacity-50 flex items-center gap-1"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Clear
+                  </button>
+                  <span className="text-xs text-gray-400">
+                    {maxOtpAttempts - otpAttempts} attempts remaining
+                  </span>
+                </div>
+
+                <button
+                  onClick={handleVerifyEmailOtp}
+                  disabled={emailOtpLoading || emailOtpCode.length !== 6 || otpAttempts >= maxOtpAttempts}
+                  className="w-full py-4 bg-primary text-white rounded-2xl font-bold text-sm shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  {emailOtpLoading ? "Verifying..." : "Verify Email"}
+                </button>
+
+                <div className="text-center">
+                  <p className="text-sm text-gray-500">
+                    Didn't receive the code?{" "}
+                    <button
+                      type="button"
+                      onClick={handleSendEmailOtp}
+                      disabled={emailOtpLoading}
+                      className="text-primary font-bold hover:underline disabled:opacity-50"
+                    >
+                      Resend
+                    </button>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

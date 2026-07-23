@@ -25,14 +25,14 @@ router.get(
 router.get(
   "/incoming-pending",
   authenticate,
-  authorize(["org_hr_manager", "admin", "system_admin", "super_admin"]),
+  authorize(["org_hr_manager", "admin", "super_admin"]),
   controller.getIncomingPendingRequests,
 );
 
 router.get(
   "/history",
   authenticate,
-  authorize(["org_hr_manager", "admin", "system_admin", "super_admin"]),
+  authorize(["org_hr_manager", "admin", "super_admin"]),
   controller.getTransferHistory,
 );
 
@@ -56,7 +56,7 @@ router.post(
 router.patch(
   "/:id/decision",
   authenticate,
-  authorize(["org_hr_manager", "admin", "system_admin", "super_admin"]),
+  authorize(["org_hr_manager", "admin", "super_admin"]),
   controller.handleDecision,
 );
 

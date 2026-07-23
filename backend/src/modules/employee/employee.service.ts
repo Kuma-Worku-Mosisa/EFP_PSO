@@ -1,3 +1,4 @@
+//filepath: backend/src/modules/employee/employee.service.ts
 import prisma from "../../lib/prisma";
 import * as bcrypt from "bcryptjs";
 import { createAuditLog } from "../../utils/auditLogger";
@@ -414,12 +415,6 @@ export const registerEmployee = async (
         },
       });
 
-      const employeeRole = await tx.roles.upsert({
-        where: { role_name: "employee" },
-        update: {},
-        create: { role_name: "employee" },
-      });
-
       const createdUser = await tx.user.create({
         data: {
           username: input.username,
@@ -429,9 +424,6 @@ export const registerEmployee = async (
           password: hashedPassword,
           faydaId: input.faydaId,
           status: "ACTIVE",
-          user_roles: {
-            create: [{ role_id: employeeRole.role_id }],
-          },
         },
       });
 

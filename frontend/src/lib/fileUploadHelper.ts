@@ -115,16 +115,12 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
     "image/jpeg",
     "image/png",
     "image/jpg",
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "application/vnd.ms-excel",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   ];
 
   if (!allowedMimes.includes(file.type)) {
     return {
       valid: false,
-      error: `File type "${file.type}" is not allowed. Allowed: PDF, images, Word, Excel.`,
+      error: `File type "${file.type}" is not allowed. Allowed: PDF, images`,
     };
   }
 

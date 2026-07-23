@@ -3,6 +3,8 @@ import { Router } from "express";
 import {
   registerHandler,
   loginHandler,
+  sendLoginOtpHandler,
+  verifyLoginOtpHandler,
   getAllUsers,
   getUserByIdHandler,
   getCurrentUserHandler,
@@ -12,6 +14,8 @@ import {
   getRolesHandler,
   validateUserFieldHandler,
   uploadProfilePhotoHandler,
+  sendRegisterEmailOtpHandler,
+  verifyRegisterEmailOtpHandler,
 } from "./user.controller";
 import {
   registerValidation,
@@ -25,7 +29,11 @@ const router = Router();
 
 // --- PUBLIC ROUTES ---
 router.post("/login", loginValidation, loginHandler);
+router.post("/login/otp/send", sendLoginOtpHandler);
+router.post("/login/otp/verify", verifyLoginOtpHandler);
 router.post("/register", registerValidation, registerHandler);
+router.post("/register/email-otp/send", sendRegisterEmailOtpHandler);
+router.post("/register/email-otp/verify", verifyRegisterEmailOtpHandler);
 router.get("/validate", validateUserFieldHandler);
 
 // --- PROTECTED ROUTES (ANY AUTHENTICATED USER) ---

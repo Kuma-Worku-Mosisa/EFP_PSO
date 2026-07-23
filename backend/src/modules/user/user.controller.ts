@@ -9,7 +9,39 @@ import jwt from "jsonwebtoken";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import dns from "dns";
+import { promisify } from "util";
 import { buildPrefixedFilename } from "../../middleware/fileUpload";
+import { sendSystemEmail } from "../../utils/emailService";
+import { createOtpForUser, verifyOtpForUser } from "./otp.service";
+
+const dnsResolveMx = promisify(dns.resolveMx);
+
+const validateEmailDomain = async (email: string): Promise<{ valid: boolean; error?: string }> => {
+  try {
+    const domain = email.split("@")[1];
+    if (!domain) {
+      return { valid: false, error: "Invalid email format" };
+    }
+
+    // Check if the domain has MX records
+    const mxRecords = await dnsResolveMx(domain);
+    if (!mxRecords || mxRecords.length === 0) {
+      return { valid: false, error: "Email domain does not exist or cannot receive emails" };
+    }
+
+    return { valid: true };
+  } catch (error: any) {
+    // Check if it's a DNS lookup failure (domain doesn't exist)
+    if (error.code === 'ENOTFOUND' || error.code === 'ENODATA') {
+      return { valid: false, error: "Email domain does not exist" };
+    }
+
+    // For other DNS errors (temporary issues), we'll allow but log the error
+    console.warn("Email domain validation encountered temporary DNS issue:", error);
+    return { valid: true };
+  }
+};
 
 const getAuditContext = (req: Request) => {
   const rawUserId = req.user?.userId ?? req.user?.id ?? null;
@@ -185,6 +217,99 @@ export const registerHandler = async (req: Request, res: Response) => {
   }
 };
 
+export const sendLoginOtpHandler = async (req: Request, res: Response) => {
+  try {
+    const identifier = String(req.body?.identifier || "").trim();
+    const password = String(req.body?.password || "").trim();
+    const method = String(req.body?.method || "email")
+      .trim()
+      .toLowerCase();
+
+    if (!identifier) {
+      return ApiResponse.error(res, "Username or email is required", 400);
+    }
+
+    if (!password) {
+      return ApiResponse.error(res, "Password is required", 400);
+    }
+
+    if (method !== "email") {
+      return ApiResponse.error(
+        res,
+        "Only email OTP is currently supported",
+        400,
+      );
+    }
+
+    const user = await UserService.findUserByUsername(identifier);
+    if (!user) {
+      return ApiResponse.error(res, "Invalid username or password", 401);
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return ApiResponse.error(res, "Invalid username or password", 401);
+    }
+
+    const otp = createOtpForUser(identifier, user.email);
+    const subject = "Your EFP-PSO login verification code";
+    const body = `Hello ${user.fullName || user.username},\n\nYour verification code is ${otp.code}.\nThis code will expire in 5 minutes.\n\nIf you did not request this code, please ignore this email.`;
+
+    await sendSystemEmail(user.email, subject, body);
+
+    return ApiResponse.success(res, "Verification code sent successfully", {
+      email: user.email,
+      expiresInMinutes: otp.expiresInMinutes,
+    });
+  } catch (error: any) {
+    console.error("Send Login OTP Error:", error);
+    return ApiResponse.error(
+      res,
+      "Failed to send verification code",
+      500,
+      error.message,
+    );
+  }
+};
+
+export const verifyLoginOtpHandler = async (req: Request, res: Response) => {
+  try {
+    const identifier = String(req.body?.identifier || "").trim();
+    const code = String(req.body?.code || "").trim();
+
+    if (!identifier || !code) {
+      return ApiResponse.error(
+        res,
+        "Identifier and verification code are required",
+        400,
+      );
+    }
+
+    const result = verifyOtpForUser(identifier, code);
+    if (!result.valid) {
+      return ApiResponse.error(
+        res,
+        result.reason === "expired"
+          ? "Verification code has expired. Please request a new one."
+          : "Invalid verification code",
+        400,
+      );
+    }
+
+    return ApiResponse.success(res, "Verification code accepted", {
+      verified: true,
+    });
+  } catch (error: any) {
+    console.error("Verify Login OTP Error:", error);
+    return ApiResponse.error(
+      res,
+      "Failed to verify verification code",
+      500,
+      error.message,
+    );
+  }
+};
+
 export const validateUserFieldHandler = async (req: Request, res: Response) => {
   const field = String(req.query.field || "").trim();
   const value = String(req.query.value || "").trim();
@@ -231,6 +356,97 @@ export const validateUserFieldHandler = async (req: Request, res: Response) => {
     existingValue,
     exactMatch,
   });
+};
+
+export const sendRegisterEmailOtpHandler = async (req: Request, res: Response) => {
+  try {
+    const email = String(req.body?.email || "").trim();
+
+    if (!email) {
+      return ApiResponse.error(res, "Email is required", 400);
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return ApiResponse.error(res, "Invalid email format", 400);
+    }
+
+    // Validate email domain has MX records
+    const domainValidation = await validateEmailDomain(email);
+    if (!domainValidation.valid) {
+      return ApiResponse.error(
+        res,
+        domainValidation.error || "Email domain does not exist or cannot receive emails",
+        400,
+      );
+    }
+
+    // Check if email already exists
+    const existingUser = await UserService.findUserByUniqueField("email", email);
+    if (existingUser) {
+      return ApiResponse.error(res, "Email already registered", 409);
+    }
+
+    // Generate and store OTP
+    const otp = createOtpForUser(email, email);
+    const subject = "Verify your email for EFP-PSO registration";
+    const body = `Hello,\n\nYour email verification code is ${otp.code}.\nThis code will expire in 5 minutes.\n\nIf you did not request this code, please ignore this email.`;
+
+    await sendSystemEmail(email, subject, body);
+
+    return ApiResponse.success(res, "Verification code sent successfully", {
+      email,
+      expiresInMinutes: otp.expiresInMinutes,
+    });
+  } catch (error: any) {
+    console.error("Send Register Email OTP Error:", error);
+    return ApiResponse.error(
+      res,
+      "Failed to send verification code",
+      500,
+      error.message,
+    );
+  }
+};
+
+export const verifyRegisterEmailOtpHandler = async (req: Request, res: Response) => {
+  try {
+    const email = String(req.body?.email || "").trim();
+    const code = String(req.body?.code || "").trim();
+
+    if (!email || !code) {
+      return ApiResponse.error(
+        res,
+        "Email and verification code are required",
+        400,
+      );
+    }
+
+    const result = verifyOtpForUser(email, code);
+    if (!result.valid) {
+      return ApiResponse.error(
+        res,
+        result.reason === "expired"
+          ? "Verification code has expired. Please request a new one."
+          : "Invalid verification code",
+        400,
+      );
+    }
+
+    return ApiResponse.success(res, "Email verified successfully", {
+      verified: true,
+      email,
+    });
+  } catch (error: any) {
+    console.error("Verify Register Email OTP Error:", error);
+    return ApiResponse.error(
+      res,
+      "Failed to verify email",
+      500,
+      error.message,
+    );
+  }
 };
 
 /**
